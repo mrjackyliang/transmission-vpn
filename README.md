@@ -9,17 +9,24 @@ To use this script, you must first create the VPN using DiskStation Manager and 
 By default, you must retrieve these bits of information before the script works. This requires basic knowledge of SSH. Here are the variables that may be changed depending on your configuration. Examples will be contained inside the file. Please follow the exact format.
 
 __VPN_CONFID__ - Synology Configuration ID (Instructions Below)
+
 __VPN_CONFNAME__ - Synology Configuration Name (l2tpclient, pptpclient, ovpnclient)
+
 __VPN_PROTO__ - Synology Protocol (l2tp, pptp, openvpn)
+
 __VPN_UINAME__ - Synology VPN Profile Name (Found in Control Panel > Network > Network Interface)
 
 __TRANS_USER__ - The user running under Transmission
+
 __TRANS_GROUP__ - The group of Transmission's user
+
 __TRANS_VAR__ - Path where the settings.json file is located (Full Path, no ending backslash)
+
 __TRANS_SSSS__ - Path where the Transmission start-stop-status file is located (Full Path, no ending backslash)
 
 ## Get Synology Configuration ID
 To retrieve the __VPN_CONFID__, follow these steps:
+
 1. SSH into __/usr/syno/etc/synovpnclient/__
 1. Type cd YOUR_PROTOCOL (l2tp, openvpn, or pptp)
 1. Type in __ls -l__ to list out the files
