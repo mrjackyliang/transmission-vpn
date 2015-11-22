@@ -28,14 +28,20 @@ __TRANS_SSSS__ - Path where the Transmission start-stop-status file is located (
 To retrieve the __VPN_CONFID__, follow these steps:
 
 1. SSH into __/usr/syno/etc/synovpnclient/__
-1. Type cd YOUR_PROTOCOL (l2tp, openvpn, or pptp)
-1. Type in __ls -l__ to list out the files
-1. Find a file called __connect_l4758264759__ (similar example)
-1. __l4758264759__ (similar example) is your Configuration ID
+2. Type cd YOUR_PROTOCOL (l2tp, openvpn, or pptp)
+3. Type in __ls -l__ to list out the files
+4. Find a file called __connect_l4758264759__ (similar example)
+5. __l4758264759__ (similar example) is your Configuration ID
 
 NOTE: If you have more than one of the same protocol connections (e.g. Two L2TP VPNs), use __vim__ or __nano__ to dig around the files and find the correct Configuration ID.
 
 ## Scheduling
 If you want to automate the script, you can use the Task Scheduler application provided inside the DiskStation Manager. Make sure the script is ran under root to prevent any issues.
 
-To run this script, use __transmissionvpn.sh start__ or __transmissionvpn.sh stop__
+To run this script, use the following commands:
+
+1. __transmissionvpn.sh start__
+2. __transmissionvpn.sh stop__
+3. 
+## OpenVPN Fix
+This script by default detects and uses the ppp0 interface from the NAS. If you are using OpenVPN, please change the configuration to tun0 in the script. Future releases will contain a variable that makes changes easier.
