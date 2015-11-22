@@ -42,6 +42,6 @@ To run this script, use the following commands:
 
 1. __transmissionvpn.sh start__
 2. __transmissionvpn.sh stop__
-3. 
+
 ## OpenVPN Fix
 This script by default detects and uses the ppp0 interface from the NAS. If you are using OpenVPN, please change the configuration to tun0 in the script. Future releases will contain a variable that makes changes easier.
