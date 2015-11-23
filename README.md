@@ -9,7 +9,7 @@ To use this script, here are the steps you need to follow:
 
 1. Create the VPN using DiskStation Manager
 2. Install Transmission from SynoCommunity's repo
-3. Find and Fill Out the VPN Settings (below)
+3. Fill Out the VPN Settings/Optionals (below)
 
 ## Retrieve Variables
 These are the descriptions of the variables that may be changed depending on your configuration. Examples are located in the script. Please follow the exact format unless you know what you're doing.
