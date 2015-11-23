@@ -1,21 +1,24 @@
 transmissionVPN
 ================
 
-This is a Transmission + VPN script for Synology NAS devices. Its entire purpose is to connect to a VPN of your choice (L2TP, PPTP, or OpenVPN) then checks the VPN interface's IP address and binds it to the Transmission configuration file.
+This is a special script for Synology NAS devices that helps you force Transmission's connection under the VPN you specify. It works with L2TP, PPTP, and OpenVPN connections. The script connects to VPN then sets Transmission to your VPN port. If it cannot find one, it will shut off VPN and prevent Transmission from working.
 
-__In other words, Transmission ONLY connects to VPN while other applications DO NOT!__
+__Transmission ONLY connects to VPN while other applications DO NOT!__
 
-To use this script, you must first create the VPN using DiskStation Manager and install Transmission from SynoCommunity's repository. After all that, then change the variables in this script.
+To use this script, here are the steps you need to follow:
+1. Create the VPN using DiskStation Manager
+2. Install Transmission from SynoCommunity's repo
+3. Find and Fill Out the VPN Settings (below)
 
 ## Retrieve Variables
-You must retrieve the required settings before the script works. Here are the variables that may be changed depending on your configuration. Examples will be provided inside the script.
+These are the descriptions of the variables that may be changed depending on your configuration. Examples are located in the script. Please follow the exact format unless you know what you're doing.
 
-Please follow the exact format unless you know what you're doing. Some variables DO NOT need to be changed, but are provided in case you do (e.g. App Settings). __If you need help, feel free to open an issue on GitHub!__
+__If you need help, feel free to open an issue on GitHub!__
 
 ##### VPN Settings
-1. __VPN_CONFID__ - Synology Configuration ID (Instructions Below)
-2. __VPN_CONFNAME__ - Synology Configuration Name (l2tpclient, pptpclient, ovpnclient)
-3. __VPN_PROTO__ - Synology Protocol (l2tp, pptp, openvpn)
+1. __VPN_CONFID__ - Synology Configuration ID (e.g. l1234567890, instructions below)
+2. __VPN_CONFNAME__ - Synology Configuration Name (l2tpclient, pptpclient, or ovpnclient)
+3. __VPN_PROTO__ - Synology Protocol (l2tp, pptp, or openvpn)
 4. __VPN_UINAME__ - Synology VPN Name (Control Panel > Network > Network Interface)
 
 ##### VPN Optionals
@@ -33,19 +36,21 @@ Please follow the exact format unless you know what you're doing. Some variables
 ## Get Synology Configuration ID
 To retrieve the __VPN_CONFID__, follow these steps:
 
-1. SSH or Telnet into __/usr/syno/etc/synovpnclient/__
-2. Type __cd PROTOCOL__ (Replace PROTOCOL with l2tp, openvpn, or pptp)
-3. Type in __ls -l__ to list out the files
-4. Find a file called __connect_l1234567890__
-5. __l1234567890__ is your Configuration ID
+1. SSH or Telnet into your Synology NAS Box
+2. Type __cd /usr/syno/etc/synovpnclient/__
+3. Type __cd PROTOCOL__ (Replace PROTOCOL with l2tp, openvpn, or pptp)
+4. Type in __ls -l__ to list out the files
+5. Find a file called __connect_l1234567890__
 6. Copy the text __l1234567890__ to the variable above
 
-NOTE 1: __l1234567890__ is an example. Each configuration ID per VPN connection is unique and YOU must connect to your Synology NAS though SSH or Telnet to retrieve it.
-
-NOTE 2: If you have more than one of the same protocol connections (e.g. two L2TP VPNs), you can use __vim__ or __nano__ (install it with SynoCommunity's repo) to dig around the files to find the correct Configuration ID.
+NOTE: __l1234567890__ is an example. Each configuration ID (per VPN connection) is UNIQUE and YOU must connect to your Synology NAS though SSH or Telnet to retrieve it.
 
 ## Task Scheduling
 If you want to automate the script, you can use the Task Scheduler application provided inside the DiskStation Manager. Make sure the script is ran under root to prevent any issues occurring.
+
+This script is purely useful for checking if your Transmission connection is working properly, and breaks Transmission if the VPN connection is off to prevent a leak. Here is one scenario where I would use it:
+
+* Run __transmissionvpn.sh repair__ every 1 or 5 minutes.
 
 ## How to Use this Script
 Before you use this script, use the following commands:
