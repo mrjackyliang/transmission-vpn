@@ -1,7 +1,9 @@
 transmissionVPN
 ================
 
-This is a Transmission + VPN script for Synology NAS devices. Its entire purpose is to connect to a VPN of your choice (L2TP, PPTP, or OpenVPN) then checks the VPN interface's IP address and binds it to the Transmission configuration file. __In other words, Transmission ONLY connects to VPN while other applications DO NOT!__
+This is a Transmission + VPN script for Synology NAS devices. Its entire purpose is to connect to a VPN of your choice (L2TP, PPTP, or OpenVPN) then checks the VPN interface's IP address and binds it to the Transmission configuration file.
+
+__In other words, Transmission ONLY connects to VPN while other applications DO NOT!__
 
 To use this script, you must first create the VPN using DiskStation Manager and install Transmission from SynoCommunity's repository. After all that, then change the variables in this script.
 
