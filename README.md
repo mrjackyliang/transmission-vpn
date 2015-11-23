@@ -6,7 +6,9 @@ This is a Transmission + VPN script for Synology NAS devices. Its entire purpose
 To use this script, you must first create the VPN using DiskStation Manager and install Transmission from SynoCommunity's repository. After all that, then change the variables in this script.
 
 ## Retrieve Variables
-You must retrieve the required settings before the script works. Here are the variables that may be changed depending on your configuration. Examples will be provided inside the script. Please follow the exact format unless you know what you're doing. Some variables DO NOT need to be changed, but are provided in case you do. __If you need help, feel free to open an issue on GitHub!__
+You must retrieve the required settings before the script works. Here are the variables that may be changed depending on your configuration. Examples will be provided inside the script.
+
+Please follow the exact format unless you know what you're doing. Some variables DO NOT need to be changed, but are provided in case you do. __If you need help, feel free to open an issue on GitHub!__
 
 ##### VPN Settings
 1. __VPN_CONFID__ - Synology Configuration ID (Instructions Below)
@@ -38,7 +40,7 @@ To retrieve the __VPN_CONFID__, follow these steps:
 
 NOTE 1: __l1234567890__ is an example. Each configuration ID is unique and YOU must connect to your Synology NAS though SSH or Telnet to retrieve it.
 
-NOTE 2: If you have more than one of the same protocol connections (e.g. two L2TP VPNs), use __vim__ or __nano__ (install it with SynoCommunity's repo) to dig around the files and find the correct Configuration ID. __EXPERIENCED USERS ONLY!__
+NOTE 2: If you have more than one of the same protocol connections (e.g. two L2TP VPNs), you can use __vim__ or __nano__ (install it with SynoCommunity's repo) to dig around the files to find the correct Configuration ID. __EXPERIENCED USERS ONLY!__
 
 ## Scheduling
 If you want to automate the script, you can use the Task Scheduler application provided inside the DiskStation Manager. Make sure the script is ran under root to prevent any issues occurring.
