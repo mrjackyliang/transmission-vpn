@@ -6,6 +6,7 @@ This is a special script for Synology NAS that helps you force Transmission's co
 __In other words, Transmission ONLY connects to VPN while other applications DO NOT!__
 
 To use this script, here are the steps you need to follow:
+
 1. Create the VPN using DiskStation Manager
 2. Install Transmission from SynoCommunity's repo
 3. Find and Fill Out the VPN Settings (below)
