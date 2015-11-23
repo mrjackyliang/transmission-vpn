@@ -10,51 +10,51 @@ To use this script, you must first create the VPN using DiskStation Manager and 
 ## Retrieve Variables
 You must retrieve the required settings before the script works. Here are the variables that may be changed depending on your configuration. Examples will be provided inside the script.
 
-Please follow the exact format unless you know what you're doing. Some variables DO NOT need to be changed, but are provided in case you do. __If you need help, feel free to open an issue on GitHub!__
+Please follow the exact format unless you know what you're doing. Some variables DO NOT need to be changed, but are provided in case you do (e.g. App Settings). __If you need help, feel free to open an issue on GitHub!__
 
 ##### VPN Settings
 1. __VPN_CONFID__ - Synology Configuration ID (Instructions Below)
 2. __VPN_CONFNAME__ - Synology Configuration Name (l2tpclient, pptpclient, ovpnclient)
 3. __VPN_PROTO__ - Synology Protocol (l2tp, pptp, openvpn)
-4. __VPN_UINAME__ - Synology VPN Profile Name (Found in Control Panel > Network > Network Interface)
+4. __VPN_UINAME__ - Synology VPN Name (Control Panel > Network > Network Interface)
 
 ##### VPN Optionals
 1. __VPN_TYPE__ - The type of connection you will route though (__ppp__ for L2TP/PPTP VPN, or __tun__ for OpenVPN)
 2. __VPN_INTERFACE__ - The default interface you will be connecting to (__ppp0__ for L2TP/PPTP, or __tun0__ for OpenVPN)
-3. __VPN_RETRY__ - How many retries (times) if VPN fails to connect (default is 10)
-4. __VPN_INTERVAL__ - The time (in seconds) to wait between each retry (default is 30)
+3. __VPN_RETRY__ - How many retries (times) if VPN fails to connect (default is __10__)
+4. __VPN_INTERVAL__ - The time (in seconds) to wait between each retry (default is __30__)
 
 ##### App Settings
-1. __TRANS_USER__ - The user running under Transmission
-2. __TRANS_GROUP__ - The group of Transmission's user
-3. __TRANS_VAR__ - Path where the settings.json file is located (Full Path, no ending backslash)
-4. __TRANS_SSSS__ - Path where the Transmission start-stop-status file is located (Full Path, no ending backslash)
+1. __TRANS_USER__ - The user running under Transmission (default is __transmission__)
+2. __TRANS_GROUP__ - The group of Transmission's user (default is __users__)
+3. __TRANS_VAR__ - Path where the settings.json file is located (full path, no ending backslash)
+4. __TRANS_SSSS__ - Path where the Transmission start-stop-status file is located (full path, no ending backslash)
 
 ## Get Synology Configuration ID
 To retrieve the __VPN_CONFID__, follow these steps:
 
 1. SSH or Telnet into __/usr/syno/etc/synovpnclient/__
-2. Type cd PROTOCOL (Replace PROTOCOL with l2tp, openvpn, or pptp)
+2. Type __cd PROTOCOL__ (Replace PROTOCOL with l2tp, openvpn, or pptp)
 3. Type in __ls -l__ to list out the files
-4. Find a file called __connect_l4758264759__
+4. Find a file called __connect_l1234567890__
 5. __l1234567890__ is your Configuration ID
 6. Copy the text __l1234567890__ to the variable above
 
-NOTE 1: __l1234567890__ is an example. Each configuration ID is unique and YOU must connect to your Synology NAS though SSH or Telnet to retrieve it.
+NOTE 1: __l1234567890__ is an example. Each configuration ID per VPN connection is unique and YOU must connect to your Synology NAS though SSH or Telnet to retrieve it.
 
-NOTE 2: If you have more than one of the same protocol connections (e.g. two L2TP VPNs), you can use __vim__ or __nano__ (install it with SynoCommunity's repo) to dig around the files to find the correct Configuration ID. __EXPERIENCED USERS ONLY!__
+NOTE 2: If you have more than one of the same protocol connections (e.g. two L2TP VPNs), you can use __vim__ or __nano__ (install it with SynoCommunity's repo) to dig around the files to find the correct Configuration ID.
 
-## Scheduling
+## Task Scheduling
 If you want to automate the script, you can use the Task Scheduler application provided inside the DiskStation Manager. Make sure the script is ran under root to prevent any issues occurring.
 
-## How to use
+## How to Use this Script
 Before you use this script, use the following commands:
 
-1. __transmissionvpn.sh install__ - INSTALLER. Stops VPN, binds 127.0.0.1 to Transmission
-2. __transmissionvpn.sh uninstall__ - UNINSTALLER. Stops VPN, binds 0.0.0.0 to Transmission
+1. __transmissionvpn.sh install__ - Installer. Stops VPN, binds 127.0.0.1 to Transmission
+2. __transmissionvpn.sh uninstall__ - Uninstaller. Stops VPN, binds 0.0.0.0 to Transmission
 
 To run this script, use the following commands:
 
-1. __transmissionvpn.sh start__ - Starts the VPN, binds VPN address to Transmission
-2. __transmissionvpn.sh stop__ - Stops the VPN, binds 127.0.0.1 to Transmission
-3. __transmissionvpn.sh repair__ - Fixes stalled VPNs, decides which IP address to bind
+1. __transmissionvpn.sh start__ - Start. Starts the VPN, binds VPN address to Transmission
+2. __transmissionvpn.sh stop__ - Stop. Stops the VPN, binds 127.0.0.1 to Transmission
+3. __transmissionvpn.sh repair__ - Repair. Fixes stalled VPNs, decides which IP address to bind
