@@ -30,7 +30,7 @@ These are the descriptions of the variables that may be changed depending on you
 1. __TRANS_USER__ - The user running under Transmission (default is __transmission__)
 2. __TRANS_GROUP__ - The group of Transmission's user (default is __users__)
 3. __TRANS_VAR__ - Path where the settings.json file is located (full path, no ending backslash)
-4. __TRANS_SSSS__ - Path where the Transmission start-stop-status file is located (full path, no ending backslash)
+4. __TRANS_SSSS__ - Path where the Transmission start-stop-status file is located (full path)
 
 ## Get Synology Configuration ID
 To retrieve the __VPN_CONFID__, follow these steps:
