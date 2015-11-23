@@ -53,4 +53,4 @@ To run this script, use the following commands:
 
 1. __transmissionvpn.sh start__ - Starts the VPN, binds VPN address to Transmission
 2. __transmissionvpn.sh stop__ - Stops the VPN, binds 127.0.0.1 to Transmission
-3. __transmissionvpn.sh autofix__ - Fixes stalled VPNs, decides which IP address to bind
+3. __transmissionvpn.sh repair__ - Fixes stalled VPNs, decides which IP address to bind
