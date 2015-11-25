@@ -47,7 +47,7 @@ start)
 
             # Get VPN IP Address
             VPN_ADDR=`ifconfig $VPN_INTERFACE | grep 'inet addr:' | cut -d: -f2 | awk '{print $1}'`
-            echo "VPN Address is: "$VPN_ADDR
+            echo "VPN Address is "$VPN_ADDR
 
             # Stops Transmission
             $TRANS_SSSS stop
@@ -117,6 +117,10 @@ repair)
     # Define variables
     VPN_ADDR=`ifconfig $VPN_INTERFACE | grep 'inet addr:' | cut -d: -f2 | awk '{print $1}'`
     VPN_RESP=`curl -sS --interface $VPN_INTERFACE http://ipinfo.io/ip`
+
+    # Display both IP addresses
+    echo "Interface IP is "$VPN_ADDR
+    echo "ipinfo.io IP is "$VPN_RESP
 
     # If IP Address does not match
     if [ "$VPN_ADDR" != "$VPN_RESP" ]; then
@@ -217,8 +221,8 @@ uninstall)
     # Stops Transmission
     $TRANS_SSSS stop
 
-    # Binds IPv4 Home Address to interface
-    echo "Binding IPv4 Home Address ..."
+    # Binds IPv4 Default Address to interface
+    echo "Binding IPv4 Default Address ..."
     cat $TRANS_VAR/settings.json | sed "s/.*bind-address-ipv4.*/    \"bind-address-ipv4\"\: \"0.0.0.0\",/g" > $TRANS_VAR/settings.json.bak
     chmod 600 $TRANS_VAR/settings.json.bak
     chown $TRANS_USER:$TRANS_GROUP $TRANS_VAR/settings.json.bak
@@ -240,7 +244,7 @@ uninstall)
 ;;
 *)
     echo "Welcome to transmissionVPN!"
-    echo "Usage: start|stop|repair|install|uninstall"
+    echo "Usage: {start|stop|repair|install|uninstall}"
     echo "Example: transmissionvpn.sh start"
 ;;
 esac
