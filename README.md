@@ -41,8 +41,9 @@ To retrieve the __VPN_CONFID__, follow these steps:
 4. Type in __ls -l__ to list out the files
 5. Find a file called __connect_l1234567890__
 6. Copy the text __l1234567890__ to the variable above
+7. __l1234567890__ is your Configuration ID
 
-NOTE: __l1234567890__ is an example. Each configuration ID (per VPN connection) is UNIQUE and YOU must connect to your Synology NAS though SSH or Telnet to retrieve it.
+NOTE: __l1234567890__ is an example. Each configuration ID (per VPN connection) is UNIQUE and YOU MUST connect to your Synology NAS though SSH or Telnet to retrieve it.
 
 ## Task Scheduling
 If you want to automate the script, you can use the Task Scheduler application provided inside the DiskStation Manager. Make sure the script is ran under root to prevent any issues occurring.
