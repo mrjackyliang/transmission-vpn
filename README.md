@@ -41,7 +41,7 @@ To retrieve the __VPN_CONFID__, follow these steps:
 4. Type in __ls -l__ to list out the files
 5. Find a file called __connect_l1234567890__
 6. Copy the text __l1234567890__ to the variable above
-7. Type __exit__ once to logout of SSH
+7. Type __exit__ once to logout of SSH or Telnet
 
 NOTE: __l1234567890__ is an example. Each configuration ID (per VPN connection) is UNIQUE and YOU MUST connect to your Synology NAS though SSH or Telnet to retrieve it.
 
