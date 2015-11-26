@@ -10,8 +10,8 @@ VPN_UINAME=YourVPN
 # VPN Optionals
 VPN_TYPE=ppp
 VPN_INTERFACE=ppp0
-VPN_RETRY=10
-VPN_INTERVAL=30
+VPN_RETRY=5
+VPN_INTERVAL=10
 
 # App Settings
 TRANS_USER=transmission
@@ -118,6 +118,12 @@ repair)
     VPN_ADDR=`ifconfig $VPN_INTERFACE | grep 'inet addr:' | cut -d: -f2 | awk '{print $1}'`
     VPN_RESP=`curl -sS --interface $VPN_INTERFACE http://ipinfo.io/ip`
 
+    # Redefine variables if empty (bugfix)
+    if [ "$VPN_ADDR" = "" ] || [ "$VPN_RESP" = "" ]; then
+        VPN_ADDR="unknown"
+        VPN_RESP="not found"
+    fi
+
     # Display both IP addresses
     echo "Interface IP is "$VPN_ADDR
     echo "ipinfo.io IP is "$VPN_RESP
@@ -155,6 +161,16 @@ repair)
         # Redefine variables
         VPN_ADDR=`ifconfig $VPN_INTERFACE | grep 'inet addr:' | cut -d: -f2 | awk '{print $1}'`
         VPN_RESP=`curl -sS --interface $VPN_INTERFACE http://ipinfo.io/ip`
+
+        # Redefine variables if empty (bugfix)
+        if [ "$VPN_ADDR" = "" ] || [ "$VPN_RESP" = "" ]; then
+            VPN_ADDR="unknown"
+            VPN_RESP="not found"
+        fi
+
+        # Display both IP addresses
+        echo "Interface IP is "$VPN_ADDR
+        echo "ipinfo.io IP is "$VPN_RESP
 
         # Checks VPN connection
         if [ "$VPN_ADDR" != "$VPN_RESP" ]; then
@@ -244,7 +260,7 @@ uninstall)
 ;;
 *)
     echo "Welcome to transmissionVPN!"
-    echo "Usage: {start|stop|repair|install|uninstall}"
+    echo "Usage: start|stop|repair|install|uninstall"
     echo "Example: transmissionvpn.sh start"
 ;;
 esac
