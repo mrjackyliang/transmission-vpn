@@ -40,7 +40,7 @@ To retrieve the __VPN_CONFID__, follow these steps:
 3. Type __cd PROTOCOL__ (Replace PROTOCOL with l2tp, openvpn, or pptp)
 4. Type in __ls -l__ to list out the files
 5. Find a file called __connect_l1234567890__
-6. Copy the text __l1234567890__ to the variable above
+6. Copy the text __l1234567890__ to the VPN_CONFID above
 7. Type __exit__ once to logout of SSH or Telnet
 
 NOTE: __l1234567890__ is an example. Each configuration ID (per VPN connection) is UNIQUE and YOU MUST connect to your Synology NAS though SSH or Telnet to retrieve it.
@@ -50,16 +50,18 @@ If you want to automate the script, you can use the Task Scheduler application p
 
 This script is purely useful for checking if your Transmission connection is working properly, and breaks Transmission if the VPN connection is off to prevent a leak. Here is one scenario where I would use it:
 
-* Run __transmissionvpn.sh repair__ every 1 or 5 minutes.
+* Run __/volume1/transmissionvpn.sh repair__ every 1 or 5 minutes.
 
 ## How to Use this Script
 Before you use this script, use the following commands:
 
-1. __transmissionvpn.sh install__ - Installer. Stops VPN, binds 127.0.0.1 to Transmission
-2. __transmissionvpn.sh uninstall__ - Uninstaller. Stops VPN, binds 0.0.0.0 to Transmission
+1. __sh transmissionvpn.sh install__ - Installer. Stops VPN, binds 127.0.0.1 to Transmission
+2. __sh transmissionvpn.sh uninstall__ - Uninstaller. Stops VPN, binds 0.0.0.0 to Transmission
 
 To run this script, use the following commands:
 
-1. __transmissionvpn.sh start__ - Start. Starts the VPN, binds VPN address to Transmission
-2. __transmissionvpn.sh stop__ - Stop. Stops the VPN, binds 127.0.0.1 to Transmission
-3. __transmissionvpn.sh repair__ - Repair. Fixes stalled VPNs, decides which IP address to bind
+1. __sh transmissionvpn.sh start__ - Start. Starts the VPN, binds VPN address to Transmission
+2. __sh transmissionvpn.sh stop__ - Stop. Stops the VPN, binds 127.0.0.1 to Transmission
+3. __sh transmissionvpn.sh repair__ - Repair. Fixes stalled VPNs, decides which IP address to bind
+
+NOTE: If the script is located in /volume1/examplefolder/, navigate to that folder (using the __cd__ command) before executing the commands above.
