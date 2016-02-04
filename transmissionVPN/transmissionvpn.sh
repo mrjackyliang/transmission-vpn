@@ -13,6 +13,10 @@ VPN_INTERFACE=ppp0
 VPN_RETRY=5
 VPN_INTERVAL=10
 
+# Other Settings
+PORT_FWD=
+IP_CHECK=http://ipinfo.io/ip
+
 # App Settings
 TRANS_USER=transmission
 TRANS_GROUP=users
@@ -116,7 +120,8 @@ stop)
 repair)
     # Define variables
     VPN_ADDR=`ifconfig $VPN_INTERFACE | grep 'inet addr:' | cut -d: -f2 | awk '{print $1}'`
-    VPN_RESP=`curl -sS --interface $VPN_INTERFACE http://ipinfo.io/ip`
+    VPN_RESP=`curl -sS --interface $VPN_INTERFACE $IP_CHECK`
+    VPN_PORT=`php -n portforward.php $VPN_ADDR $PORT_FWD`
 
     # Redefine variables if empty (bugfix)
     if [ "$VPN_ADDR" = "" ] || [ "$VPN_RESP" = "" ]; then
@@ -127,9 +132,10 @@ repair)
     # Display both IP addresses
     echo "Interface IP is "$VPN_ADDR
     echo "ipinfo.io IP is "$VPN_RESP
+    echo "Network Port is "$VPN_PORT
 
     # If IP Address does not match
-    if [ "$VPN_ADDR" != "$VPN_RESP" ]; then
+    if [ "$VPN_ADDR" != "$VPN_RESP" ] || [ "$VPN_PORT" == "closed" ]; then
 
         # Show Message
         echo "VPN is not working ..."
@@ -160,7 +166,8 @@ repair)
 
         # Redefine variables
         VPN_ADDR=`ifconfig $VPN_INTERFACE | grep 'inet addr:' | cut -d: -f2 | awk '{print $1}'`
-        VPN_RESP=`curl -sS --interface $VPN_INTERFACE http://ipinfo.io/ip`
+        VPN_RESP=`curl -sS --interface $VPN_INTERFACE $IP_CHECK`
+        VPN_PORT=`php -n portforward.php $VPN_ADDR $PORT_FWD`
 
         # Redefine variables if empty (bugfix)
         if [ "$VPN_ADDR" = "" ] || [ "$VPN_RESP" = "" ]; then
@@ -171,12 +178,13 @@ repair)
         # Display both IP addresses
         echo "Interface IP is "$VPN_ADDR
         echo "ipinfo.io IP is "$VPN_RESP
+        echo "Network Port is "$VPN_PORT
 
         # Checks VPN connection
-        if [ "$VPN_ADDR" != "$VPN_RESP" ]; then
+        if [ "$VPN_ADDR" != "$VPN_RESP" ] || [ "$VPN_PORT" == "closed" ]; then
 
             # Show Message
-            echo "ERROR 1002: VPN does not provide an internet connection or ipinfo.io is not accessible."
+            echo "ERROR 1002: VPN cannot connect to the internet."
 
             # Kill VPN connection
             synovpnc kill_client
@@ -198,7 +206,7 @@ repair)
     else
 
         # Show Message
-        echo "VPN is working!"
+        echo "VPN is already working!"
 
     fi
 ;;
