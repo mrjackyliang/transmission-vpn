@@ -27,7 +27,7 @@ These are the descriptions of the variables that may be changed depending on you
 4. __VPN_INTERVAL__ - The time (in seconds) to wait between each retry (default is __30__)
 
 ##### VPN Features
-1. __PORT_FWD__ - Carries an additional port forwarding check (default is empty, 51413 for Transmission)
+1. __PORT_FWD__ - Carries an additional port forwarding check (default is empty, 51413 for Transmission default)
 2. __IP_CHECK__ - Which URL to use to check your external IP address (default is http://ipinfo.io/ip)
 
 ##### App Settings
