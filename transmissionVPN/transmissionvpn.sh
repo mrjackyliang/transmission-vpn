@@ -13,7 +13,7 @@ VPN_INTERFACE=ppp0
 VPN_RETRY=5
 VPN_INTERVAL=10
 
-# Other Settings
+# VPN Features
 PORT_FWD=
 IP_CHECK=http://ipinfo.io/ip
 
@@ -134,7 +134,7 @@ repair)
     echo "ipinfo.io IP is "$VPN_RESP
     echo "Network Port is "$VPN_PORT
 
-    # If IP Address does not match
+    # If IP Address does not match or port is closed
     if [ "$VPN_ADDR" != "$VPN_RESP" ] || [ "$VPN_PORT" == "closed" ]; then
 
         # Show Message
@@ -269,7 +269,7 @@ uninstall)
 *)
     echo "Welcome to transmissionVPN!"
     echo "Usage: start|stop|repair|install|uninstall"
-    echo "Example: transmissionvpn.sh start"
+    echo "Example: sh transmissionvpn.sh start"
 ;;
 esac
 
