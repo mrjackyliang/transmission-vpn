@@ -184,7 +184,7 @@ repair)
         if [ "$VPN_ADDR" != "$VPN_RESP" ] || [ "$VPN_PORT" == "closed" ]; then
 
             # Show Message
-            echo "ERROR 1002: VPN cannot connect to the internet."
+            echo "ERROR 1002: VPN cannot connect to the internet or "$PORT_FWD" port is closed."
 
             # Kill VPN connection
             synovpnc kill_client
