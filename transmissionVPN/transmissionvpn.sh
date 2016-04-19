@@ -167,7 +167,6 @@ repair)
         # Redefine variables
         VPN_ADDR=`ifconfig $VPN_INTERFACE | grep 'inet addr:' | cut -d: -f2 | awk '{print $1}'`
         VPN_RESP=`curl -sS --interface $VPN_INTERFACE $IP_CHECK`
-        #VPN_PORT=`php -n portforward.php $VPN_ADDR $PORT_FWD`
 
         # Redefine variables if empty (bugfix)
         if [ "$VPN_ADDR" = "" ] || [ "$VPN_RESP" = "" ]; then
@@ -178,14 +177,11 @@ repair)
         # Display both IP addresses
         echo "Interface IP is "$VPN_ADDR
         echo "ipinfo.io IP is "$VPN_RESP
-        #echo "Network Port is "$VPN_PORT
 
         # Checks VPN connection
-        #if [ "$VPN_ADDR" != "$VPN_RESP" ] || [ "$VPN_PORT" == "closed" ]; then
         if [ "$VPN_ADDR" != "$VPN_RESP" ]; then
 
             # Show Message
-            #echo "ERROR 1002: VPN cannot connect to the internet or "$PORT_FWD" port is closed."
             echo "ERROR 1002: VPN cannot connect to the internet."
 
             # Kill VPN connection
