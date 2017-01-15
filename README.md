@@ -70,12 +70,13 @@ To run this script, use the following commands:
 
 NOTE: If the script is located in /volume1/examplefolder/, navigate to that folder (using the __cd__ command) before executing the commands above.
 
-## BUGFIX - Transmission No Internet
-If binding IP addresses don't allow Transmission to download anything, read below:
+## No Internet Bugfix
+If this script took Transmission offline (cannot download), here's a simple fix:
 
-1. Go to Control Panel > Network > General
-2. Click __Advanced Settings__
-3. Check __Enable Multiple Gateways__
-4. Click __OK__ then __Apply__.
+1. In your DiskStation Manager..
+2. Go to Control Panel > Network > General
+3. Click __Advanced Settings__
+4. Check __Enable Multiple Gateways__
+5. Click __OK__ then __Apply__.
 
 NOTE: Once this setting is enabled, you will not need to restart the script. The internet for Transmission will start working immediately.
