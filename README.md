@@ -76,6 +76,6 @@ If binding IP addresses don't allow Transmission to download anything, read belo
 1. Go to Control Panel > Network > General
 2. Click __Advanced Settings__
 3. Check __Enable Multiple Gateways__
-4. Click __OK__ to save.
+4. Click __OK__ then __Apply__.
 
 NOTE: Once this setting is enabled, you will not need to restart the script. The internet for Transmission will start working immediately.
