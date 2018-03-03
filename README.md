@@ -34,7 +34,6 @@ These are the descriptions of the variables that may be changed depending on you
 1. __TRANS_USER__ - The user running under Transmission (default is __transmission__)
 2. __TRANS_GROUP__ - The group of Transmission's user (default is __users__)
 3. __TRANS_VAR__ - Path where the settings.json file is located (full path, no ending backslash)
-4. __TRANS_SSSS__ - Path where the Transmission start-stop-status file is located (full path)
 
 ## Get Synology Configuration ID
 To retrieve the __VPN_CONFID__, follow these steps:
@@ -80,3 +79,11 @@ If this script took Transmission offline (cannot download), follow the instructi
 5. Click __OK__ then __Apply__.
 
 NOTE: Once this setting is enabled, you do not need to re-run the script. The internet for Transmission will start working immediately.
+
+## Maintainer Change Fix
+In light of the recent update from Daioul (v2.92-12) to Safihre (v2.93-13), it broke the start and stop Transmission script, and changed the default user and groups. If you are using Safihre's version, here are the changes needed to be made:
+
+- The default variable of __TRANS_USER__ is "svc-transmission"
+- The default variable of __TRANS_GROUP__ is "root"
+
+NOTE: This script has replaced the start-stop-status script with synopkg (Synology Package Center Command Line).

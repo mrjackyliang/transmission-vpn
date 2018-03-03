@@ -21,7 +21,6 @@ IP_CHECK=http://ipinfo.io/ip
 TRANS_USER=transmission
 TRANS_GROUP=users
 TRANS_VAR=/volume1/@appstore/transmission/var
-TRANS_SSSS=/var/packages/transmission/scripts/start-stop-status
 
 # Script Starts
 case "$1" in
@@ -54,7 +53,7 @@ start)
             echo "VPN Address is "$VPN_ADDR
 
             # Stops Transmission
-            $TRANS_SSSS stop
+            synopkg stop transmission
 
             # Binds IPv4 VPN Address to interface
             echo "Binding IPv4 VPN Address ..."
@@ -64,7 +63,7 @@ start)
             mv $TRANS_VAR/settings.json.bak $TRANS_VAR/settings.json
 
             # Starts Transmission
-            $TRANS_SSSS start
+            synopkg start transmission
 
         else
 
@@ -80,7 +79,7 @@ stop)
     if echo `ifconfig` | grep -q "$VPN_TYPE"; then
 
         # Stops Transmission
-        $TRANS_SSSS stop
+        synopkg stop transmission
 
         # Binds IPv4 Home Address to interface
         echo "Binding IPv4 Home Address ..."
@@ -90,7 +89,7 @@ stop)
         mv $TRANS_VAR/settings.json.bak $TRANS_VAR/settings.json
 
         # Starts Transmission
-        $TRANS_SSSS start
+        synopkg start transmission
 
         # Show Message
         echo "VPN is disconnecting ..."
@@ -131,7 +130,7 @@ repair)
 
     # Display both IP addresses
     echo "Interface IP is "$VPN_ADDR
-    echo "ipinfo.io IP is "$VPN_RESP
+    echo "API Query IP is "$VPN_RESP
     echo "Network Port is "$VPN_PORT
 
     # If IP Address does not match or port is closed
@@ -141,7 +140,7 @@ repair)
         echo "VPN is not working ..."
 
         # Stops Transmission
-        $TRANS_SSSS stop
+        synopkg stop transmission
 
         # Binds IPv4 Home Address to interface
         echo "Binding IPv4 Home Address ..."
@@ -176,7 +175,7 @@ repair)
 
         # Display both IP addresses
         echo "Interface IP is "$VPN_ADDR
-        echo "ipinfo.io IP is "$VPN_RESP
+        echo "API Query IP is "$VPN_RESP
 
         # Checks VPN connection
         if [ "$VPN_ADDR" != "$VPN_RESP" ]; then
@@ -199,7 +198,7 @@ repair)
         fi
 
         # Starts Transmission
-        $TRANS_SSSS start
+        synopkg start transmission
 
     else
 
@@ -213,7 +212,7 @@ install)
     echo "Installing ..."
 
     # Stops Transmission
-    $TRANS_SSSS stop
+    synopkg stop transmission
 
     # Binds IPv4 Home Address to interface
     echo "Binding IPv4 Home Address ..."
@@ -223,7 +222,7 @@ install)
     mv $TRANS_VAR/settings.json.bak $TRANS_VAR/settings.json
 
     # Starts Transmission
-    $TRANS_SSSS start
+    synopkg start transmission
 
     # Checks if VPN is connected
     if echo `ifconfig` | grep -q "$VPN_TYPE"; then
@@ -241,7 +240,7 @@ uninstall)
     echo "Uninstalling ..."
 
     # Stops Transmission
-    $TRANS_SSSS stop
+    synopkg stop transmission
 
     # Binds IPv4 Default Address to interface
     echo "Binding IPv4 Default Address ..."
@@ -251,7 +250,7 @@ uninstall)
     mv $TRANS_VAR/settings.json.bak $TRANS_VAR/settings.json
 
     # Starts Transmission
-    $TRANS_SSSS start
+    synopkg start transmission
 
     # Checks if VPN is connected
     if echo `ifconfig` | grep -q "$VPN_TYPE"; then
