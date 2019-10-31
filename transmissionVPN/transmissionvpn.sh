@@ -10,16 +10,16 @@ VPN_UINAME=YourVPN
 # VPN Optionals
 VPN_TYPE=ppp
 VPN_INTERFACE=ppp0
-VPN_RETRY=5
-VPN_INTERVAL=10
+VPN_RETRY=10
+VPN_INTERVAL=30
 
 # VPN Features
 PORT_FWD=
 IP_CHECK=http://ipinfo.io/ip
 
 # App Settings
-TRANS_USER=transmission
-TRANS_GROUP=users
+TRANS_USER=sc-transmission
+TRANS_GROUP=transmission
 TRANS_VAR=/volume1/@appstore/transmission/var
 
 # Script Starts
