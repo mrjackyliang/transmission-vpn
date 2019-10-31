@@ -38,7 +38,7 @@ These are the descriptions of the variables that may be changed depending on you
 ## Get Synology Configuration ID
 To retrieve the __VPN_CONFID__, follow these steps:
 
-1. SSH or Telnet into your Synology NAS Box
+1. SSH or Telnet into your Synology DiskStation
 2. Type __cd /usr/syno/etc/synovpnclient/__
 3. Type __cd PROTOCOL__ (Replace PROTOCOL with l2tp, openvpn, or pptp)
 4. Type in __ls -l__ to list out the files
@@ -72,20 +72,41 @@ NOTE: If the script is located in /volume1/examplefolder/, navigate to that fold
 ## No Internet Bug Fix
 If this script took Transmission offline (cannot download), follow the instructions below:
 
-1. In your DiskStation Manager..
+1. In your DiskStation Manager
 2. Go to Control Panel > Network > General
 3. Click __Advanced Settings__
 4. Check __Enable Multiple Gateways__
-5. Click __OK__ then __Apply__.
+5. Click __OK__ then __Apply__
 
 NOTE: Once this setting is enabled, you do not need to re-run the script. The internet for Transmission will start working immediately.
+
+## Wrong VPN Interface
+When running the start script for the first time, you might come across this error: `ppp0: error fetching interface information: Device not found`.
+
+Here's how you can fix this issue:
+1. In your DiskStation Manager
+2. Go to Control Panel > Network > Network Interface
+3. Select your VPN, then click __Connect__
+4. Once connected, SSH or Telnet into your NAS
+5. Type __ifconfig__ into the Terminal
+6. Find the VPN interface. It should NOT be `eth0` or `lo`
+7. Copy the interface name (left of `Link encap:`)
+8. Replace the __VPN_INTERFACE__ with the copied one
+9. Restart the TransmissionVPN script.
+
+## Port Forwarding Limitations
+If, the script returns `Network Port is closed` every time you run the repair script, please check if your VPN is connected behind a NAT device.
+
+The script does not support checking ports behind NAT, as it will simply mark the specified port as `closed`. If the VPN is behind a NAT device, make sure the `PORT_FWD` variable is blank.
+
+NOTE: The repair script will fail/restart when `PORT_FWD` is not empty while behind NAT.
 
 ## Maintainer Change Fix
 In light of the recent update from Daioul (v2.92-12) to Safihre (v2.93-13), it broke the start and stop Transmission script, and changed the default user and groups.
 
 If you are using Safihre's version, here are the changes needed to be made:
 
-- The default variable of __TRANS_USER__ is "svc-transmission"
-- The default variable of __TRANS_GROUP__ is "root"
+- The default variable of __TRANS_USER__ is "sc-transmission"
+- The default variable of __TRANS_GROUP__ is "transmission"
 
 NOTE: This script has replaced the start-stop-status script with synopkg (Synology Package Center Command Line).
