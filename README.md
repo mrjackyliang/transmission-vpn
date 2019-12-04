@@ -31,8 +31,8 @@ These are the descriptions of the variables that may be changed depending on you
 2. __IP_CHECK__ - Which URL to use to check your external IP address (default is http://ipinfo.io/ip)
 
 ##### App Settings
-1. __TRANS_USER__ - The user running under Transmission (default is __transmission__)
-2. __TRANS_GROUP__ - The group of Transmission's user (default is __users__)
+1. __TRANS_USER__ - The user running under Transmission (default is __sc-transmission__)
+2. __TRANS_GROUP__ - The group of Transmission's user (default is __transmission__)
 3. __TRANS_VAR__ - Path where the settings.json file is located (full path, no ending backslash)
 
 ## Get Synology Configuration ID
