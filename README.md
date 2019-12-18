@@ -4,7 +4,7 @@ transmissionVPN
 [![GitHub Issues](https://img.shields.io/github/issues/mrjackyliang/transmissionVPN?style=flat-square&color=blue)](https://github.com/mrjackyliang/transmissionVPN/issues)
 [![GitHub Top Languages](https://img.shields.io/github/languages/top/mrjackyliang/transmissionVPN?style=flat-square&color=success)](https://github.com/mrjackyliang/transmissionVPN)
 [![GitHub License](https://img.shields.io/github/license/mrjackyliang/transmissionVPN?style=flat-square&color=orange)](https://github.com/mrjackyliang/transmissionVPN/blob/master/LICENSE)
-[![Donate via PayPal](https://img.shields.io/badge/Donate-PayPal-green.svg?style=flat-square&color=red)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=2GQ9HF2C6PZMN&source=url)
+[![Become a Patreon](https://img.shields.io/badge/donate-patreon-orange?style=flat-square&color=red)](https://www.patreon.com/mrjackyliang)
 
 This is a special script for Synology NAS that helps you force Transmission's connection under the VPN you specify. It works with L2TP, PPTP, and OpenVPN connections. The script connects to VPN then sets Transmission to your VPN port. If it cannot find one, it will shut off VPN and prevent Transmission from working.
 
