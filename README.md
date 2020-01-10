@@ -17,7 +17,7 @@ To use this script, here are the steps you need to follow:
 3. Fill Out the VPN Settings/Optionals (below)
 
 ## Retrieve Variables
-These are the descriptions of the variables that may be changed depending on your configuration. Examples are located inside the script. Please follow the exact format unless you know what you're doing. __If you need help, feel free to open an issue on GitHub!__
+These are the descriptions of the variables that may be changed depending on your configuration. Examples are located inside the script. Please follow the exact format unless you know what you're doing. __If you need help, feel free to [open an issue](https://github.com/mrjackyliang/transmissionVPN/issues/new/choose) on GitHub!__
 
 ##### VPN Settings
 1. __VPN_CONFID__ - Synology Configuration ID (e.g. l1234567890, instructions below)
@@ -114,4 +114,4 @@ If you are using Safihre's version, here are the changes needed to be made:
 - The default variable of __TRANS_USER__ is "sc-transmission"
 - The default variable of __TRANS_GROUP__ is "transmission"
 
-NOTE: This script has replaced the start-stop-status script with synopkg (Synology Package Center Command Line).
+NOTE: This script has replaced the `start-stop-status` script with `synopkg` (Synology Package Center Command Line).
