@@ -106,13 +106,3 @@ If, the script returns `Network Port is closed` every time you run the repair sc
 The script does not support checking ports behind NAT, as it will simply mark the specified port as `closed`. If the VPN is behind a NAT device, make sure the `PORT_FWD` variable is blank.
 
 __NOTE:__ The repair script will fail/restart when `PORT_FWD` is not empty while behind NAT.
-
-## Maintainer Change Fix
-In light of the recent update from Daioul (v2.92-12) to Safihre (v2.93-13), it broke the start and stop Transmission script, and changed the default user and groups.
-
-If you are using Safihre's version, here are the changes needed to be made:
-
-- The default variable of __TRANS_USER__ is "sc-transmission"
-- The default variable of __TRANS_GROUP__ is "transmission"
-
-__NOTE:__ This script has replaced the `start-stop-status` script with `synopkg` (Synology Package Center Command Line).
