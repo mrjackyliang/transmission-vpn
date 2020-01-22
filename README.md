@@ -1,7 +1,7 @@
 transmissionVPN
 ================
 
-[![GitHub Issues](https://img.shields.io/github/issues/mrjackyliang/transmissionVPN?style=flat-square&color=blue)](https://github.com/mrjackyliang/transmissionVPN/issues)
+[![Works with v2.94-16](https://img.shields.io/badge/works%20with-v2.94--16-brown?style=flat-square&color=blue)](https://github.com/mrjackyliang/transmissionVPN)
 [![GitHub Top Languages](https://img.shields.io/github/languages/top/mrjackyliang/transmissionVPN?style=flat-square&color=success)](https://github.com/mrjackyliang/transmissionVPN)
 [![GitHub License](https://img.shields.io/github/license/mrjackyliang/transmissionVPN?style=flat-square&color=yellow)](https://github.com/mrjackyliang/transmissionVPN/blob/master/LICENSE)
 [![Become a GitHub Sponsor](https://img.shields.io/badge/sponsor-github-black?style=flat-square&color=orange)](https://github.com/sponsors/mrjackyliang)
@@ -18,7 +18,7 @@ To use this script, here are the steps you need to follow:
 3. Fill Out the VPN Settings/Optionals (below)
 
 ## Retrieve Variables
-These are the descriptions of the variables that may be changed depending on your configuration. Examples are located inside the script. Please follow the exact format unless you know what you're doing. __If you need help, feel free to [open an issue](https://github.com/mrjackyliang/transmissionVPN/issues/new/choose) on GitHub!__
+These are the descriptions of the variables that may be changed depending on your configuration. Examples are located below and inside the script. Please follow the exact format unless you know what you're doing. __If you need help, feel free to [open an issue](https://github.com/mrjackyliang/transmissionVPN/issues/new/choose) on GitHub!__
 
 ##### VPN Settings
 1. __VPN_CONFID__ - Synology Configuration ID (e.g. l1234567890, instructions below)
@@ -52,7 +52,7 @@ To retrieve the __VPN_CONFID__, follow these steps:
 6. Copy the text __l1234567890__ to the VPN_CONFID above
 7. Type __exit__ once to logout of SSH or Telnet
 
-NOTE: __l1234567890__ is an example. Each configuration ID (per VPN connection) is UNIQUE and YOU MUST connect to your Synology NAS though SSH or Telnet to retrieve it.
+__NOTE:__ The "__l1234567890__" ID is an example. Each configuration ID (per VPN connection) is UNIQUE and YOU MUST connect to your Synology NAS though SSH or Telnet to retrieve it.
 
 ## Task Scheduling
 If you want to automate the script, you can use the Task Scheduler application provided inside the DiskStation Manager. Make sure the script is ran under root to prevent any issues occurring.
@@ -73,7 +73,7 @@ To run this script, use the following commands:
 2. __sh transmissionvpn.sh stop__ - Stop. Stops the VPN, binds 127.0.0.1 to Transmission
 3. __sh transmissionvpn.sh repair__ - Repair. Fixes stalled VPNs, decides which IP address to bind
 
-NOTE: If the script is located in /volume1/examplefolder/, navigate to that folder (using the __cd__ command) before executing the commands above.
+__NOTE:__ If the script is located in /volume1/examplefolder/, navigate to that folder (using the __cd__ command) before executing the commands above.
 
 ## No Internet Bug Fix
 If this script took Transmission offline (cannot download), follow the instructions below:
@@ -84,7 +84,7 @@ If this script took Transmission offline (cannot download), follow the instructi
 4. Check __Enable Multiple Gateways__
 5. Click __OK__ then __Apply__
 
-NOTE: Once this setting is enabled, you do not need to re-run the script. The internet for Transmission will start working immediately.
+__NOTE:__ Once this setting is enabled, you do not need to re-run the script. The internet for Transmission will start working immediately.
 
 ## Wrong VPN Interface
 When running the start script for the first time, you might come across this error: `ppp0: error fetching interface information: Device not found`.
@@ -105,7 +105,7 @@ If, the script returns `Network Port is closed` every time you run the repair sc
 
 The script does not support checking ports behind NAT, as it will simply mark the specified port as `closed`. If the VPN is behind a NAT device, make sure the `PORT_FWD` variable is blank.
 
-NOTE: The repair script will fail/restart when `PORT_FWD` is not empty while behind NAT.
+__NOTE:__ The repair script will fail/restart when `PORT_FWD` is not empty while behind NAT.
 
 ## Maintainer Change Fix
 In light of the recent update from Daioul (v2.92-12) to Safihre (v2.93-13), it broke the start and stop Transmission script, and changed the default user and groups.
@@ -115,4 +115,4 @@ If you are using Safihre's version, here are the changes needed to be made:
 - The default variable of __TRANS_USER__ is "sc-transmission"
 - The default variable of __TRANS_GROUP__ is "transmission"
 
-NOTE: This script has replaced the `start-stop-status` script with `synopkg` (Synology Package Center Command Line).
+__NOTE:__ This script has replaced the `start-stop-status` script with `synopkg` (Synology Package Center Command Line).
