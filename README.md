@@ -101,7 +101,7 @@ Here's how you can fix this issue:
 9. Restart the TransmissionVPN script.
 
 ## Port Forwarding Limitations
-If, the script returns `Network Port is closed` every time you run the repair script, please check if your VPN is connected behind a NAT device.
+If the script returns `Network Port is closed` every time you run the repair script, please check if your VPN is connected behind a NAT device.
 
 The script does not support checking ports behind NAT, as it will simply mark the specified port as `closed`. If the VPN is behind a NAT device, make sure the `PORT_FWD` variable is blank.
 
