@@ -120,7 +120,7 @@ repair)
     # Define variables
     VPN_ADDR=`ifconfig $VPN_INTERFACE | grep 'inet addr:' | cut -d: -f2 | awk '{print $1}'`
     VPN_RESP=`curl -sS --interface $VPN_INTERFACE $IP_CHECK`
-    VPN_PORT=`php -n portforward.php $VPN_ADDR $PORT_FWD`
+    VPN_PORT=`php -n transmissionvpn_portfwd.php $VPN_ADDR $PORT_FWD`
 
     # Redefine variables if empty (bugfix)
     if [ "$VPN_ADDR" = "" ] || [ "$VPN_RESP" = "" ]; then
