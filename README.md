@@ -1,7 +1,7 @@
 transmissionVPN
 ================
 
-[![Works with v2.94-16](https://img.shields.io/badge/works%20with-v2.94--16-brown?style=flat-square&color=blue)](https://github.com/mrjackyliang/transmissionVPN)
+[![GitHub Releases](https://img.shields.io/github/v/release/mrjackyliang/transmissionVPN?style=flat-square&color=blue&label=latest%20release&sort=semver)](https://github.com/mrjackyliang/transmissionVPN/releases)
 [![GitHub Top Languages](https://img.shields.io/github/languages/top/mrjackyliang/transmissionVPN?style=flat-square&color=success)](https://github.com/mrjackyliang/transmissionVPN)
 [![GitHub License](https://img.shields.io/github/license/mrjackyliang/transmissionVPN?style=flat-square&color=yellow)](https://github.com/mrjackyliang/transmissionVPN/blob/master/LICENSE)
 [![Become a GitHub Sponsor](https://img.shields.io/badge/sponsor-github-black?style=flat-square&color=orange)](https://github.com/sponsors/mrjackyliang)
