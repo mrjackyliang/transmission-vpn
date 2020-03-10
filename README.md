@@ -94,7 +94,7 @@ Here's how you can fix this issue:
 6. Find the VPN interface. It should NOT be `eth0` or `lo`
 7. Copy the interface name (left of `Link encap:`)
 8. Replace the __VPN_INTERFACE__ with the copied one
-9. Restart the TransmissionVPN script.
+9. Restart the TransmissionVPN script
 
 ## Port Forwarding Limitations
 If the script returns `Network Port is closed` every time you run the repair script, please check if your VPN is connected behind a NAT device.
