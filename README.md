@@ -58,7 +58,7 @@ If you want to automate the script, you can use the Task Scheduler application p
 
 This script is purely useful for checking if your Transmission connection is working properly, and breaks Transmission if the VPN connection is off to prevent a leak. Here is one scenario where I would use it:
 
-* Run __/volume1/transmissionvpn.sh repair__ every 1 or 5 minutes.
+* Run __/volume1/transmissionvpn.sh repair__ every 1 or 5 minutes
 
 ## How to Use this Script
 Before you use this script, use the following commands:
