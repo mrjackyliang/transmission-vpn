@@ -12,7 +12,6 @@ This is a special script for Synology NAS that helps you force Transmission's co
 __In other words, Transmission ONLY connects to VPN while other applications DO NOT!__
 
 To use this script, here are the steps you need to follow:
-
 1. Create the VPN using DiskStation Manager
 2. Install Transmission from SynoCommunity's repo
 3. Fill Out the VPN Settings/Optionals (below)
@@ -63,12 +62,10 @@ This script is purely useful for checking if your Transmission connection is wor
 
 ## How to Use this Script
 Before you use this script, use the following commands:
-
 1. __sh transmissionvpn.sh install__ - Installer. Stops VPN, binds 127.0.0.1 to Transmission
 2. __sh transmissionvpn.sh uninstall__ - Uninstaller. Stops VPN, binds 0.0.0.0 to Transmission
 
 To run this script, use the following commands:
-
 1. __sh transmissionvpn.sh start__ - Start. Starts the VPN, binds VPN address to Transmission
 2. __sh transmissionvpn.sh stop__ - Stop. Stops the VPN, binds 127.0.0.1 to Transmission
 3. __sh transmissionvpn.sh repair__ - Repair. Fixes stalled VPNs, decides which IP address to bind
@@ -77,7 +74,6 @@ __NOTE:__ If the script is located in /volume1/examplefolder/, navigate to that 
 
 ## No Internet Bug Fix
 If this script took Transmission offline (cannot download), follow the instructions below:
-
 1. In your DiskStation Manager
 2. Go to Control Panel > Network > General
 3. Click __Advanced Settings__
