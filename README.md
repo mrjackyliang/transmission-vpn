@@ -14,7 +14,7 @@ __In other words, Transmission ONLY connects to VPN while other applications DO 
 To use this script, here are the steps you need to follow:
 1. Create the VPN using DiskStation Manager
 2. Install Transmission from SynoCommunity's repo
-3. Fill Out the VPN Settings/Optionals (below)
+3. Fill out the VPN Settings/Optionals (below)
 
 ## Retrieve Variables
 These are the descriptions of the variables that may be changed depending on your configuration. Examples are located below and inside the script (`transmissionvpn.sh`). __If you need help, feel free to [open an issue](https://github.com/mrjackyliang/transmissionVPN/issues/new/choose) on GitHub!__
