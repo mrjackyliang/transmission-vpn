@@ -41,7 +41,7 @@ These are the descriptions of the variables that may be changed depending on you
 3. __TRANS_VAR__ - Path where the settings.json file is located (full path, no ending backslash)
 
 ## Get Synology Configuration ID
-To retrieve the __VPN_CONFID__, follow these steps:
+To retrieve the VPN_CONFID, follow these steps:
 
 1. SSH or Telnet into your Synology DiskStation
 2. Type __cd /usr/syno/etc/synovpnclient/__
@@ -93,7 +93,7 @@ Here's how you can fix this issue:
 5. Type __ifconfig__ into the Terminal
 6. Find the VPN interface. It should NOT be `eth0` or `lo`
 7. Copy the interface name (left of `Link encap:`)
-8. Replace the __VPN_INTERFACE__ with the copied one
+8. Replace the VPN_INTERFACE with the copied one
 9. Restart the TransmissionVPN script
 
 ## Port Forwarding Limitations
