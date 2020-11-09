@@ -1,9 +1,9 @@
-transmissionVPN
-================
+Transmission VPN
+=================
 
-[![GitHub Releases](https://img.shields.io/github/v/release/mrjackyliang/transmissionVPN?style=flat-square&color=blue&sort=semver)](https://github.com/mrjackyliang/transmissionVPN/releases)
-[![GitHub Top Languages](https://img.shields.io/github/languages/top/mrjackyliang/transmissionVPN?style=flat-square&color=success)](https://github.com/mrjackyliang/transmissionVPN)
-[![GitHub License](https://img.shields.io/github/license/mrjackyliang/transmissionVPN?style=flat-square&color=yellow)](https://github.com/mrjackyliang/transmissionVPN/blob/master/LICENSE)
+[![GitHub Releases](https://img.shields.io/github/v/release/mrjackyliang/transmission-vpn?style=flat-square&color=blue&sort=semver)](https://github.com/mrjackyliang/transmission-vpn/releases)
+[![GitHub Top Languages](https://img.shields.io/github/languages/top/mrjackyliang/transmission-vpn?style=flat-square&color=success)](https://github.com/mrjackyliang/transmission-vpn)
+[![GitHub License](https://img.shields.io/github/license/mrjackyliang/transmission-vpn?style=flat-square&color=yellow)](https://github.com/mrjackyliang/transmission-vpn/blob/master/LICENSE)
 [![Become a GitHub Sponsor](https://img.shields.io/badge/sponsor-github-black?style=flat-square&color=orange)](https://github.com/sponsors/mrjackyliang)
 
 This is a special script for Synology NAS that helps you force Transmission's connection under the VPN you specify. It works with L2TP, PPTP, and OpenVPN connections. The script connects to VPN then sets Transmission to your VPN port. If it cannot find one, it will shut off VPN and prevent Transmission from working.
@@ -16,7 +16,7 @@ To use this script, here are the steps you need to follow:
 3. Fill out the VPN Settings/Optionals (below)
 
 ## Retrieve Variables
-These are the descriptions of the variables that may be changed depending on your configuration. Examples are located below and inside the script (`transmissionvpn.sh`). __If you need help, feel free to [open an issue](https://github.com/mrjackyliang/transmissionVPN/issues/new/choose) on GitHub!__
+These are the descriptions of the variables that may be changed depending on your configuration. Examples are located below and inside the script (`transmission-vpn.sh`). __If you need help, feel free to [open an issue](https://github.com/mrjackyliang/transmission-vpn/issues/new/choose) on GitHub!__
 
 ##### VPN Settings
 1. __VPN_CONFID__ - Synology Configuration ID (e.g. l1234567890, instructions below)
@@ -57,17 +57,17 @@ If you want to automate the script, you can use the Task Scheduler application p
 
 This script is purely useful for checking if your Transmission connection is working properly, and breaks Transmission if the VPN connection is off to prevent a leak. Here is one scenario where I would use it:
 
-* Run __/volume1/transmissionvpn.sh repair__ every 1 or 5 minutes
+* Run __/volume1/transmission-vpn.sh repair__ every 1 or 5 minutes
 
 ## How to Use this Script
 Before you use this script, use the following commands:
-1. __sh transmissionvpn.sh install__ - Installer. Stops VPN, binds 127.0.0.1 to Transmission
-2. __sh transmissionvpn.sh uninstall__ - Uninstaller. Stops VPN, binds 0.0.0.0 to Transmission
+1. __sh transmission-vpn.sh install__ - Installer. Stops VPN, binds 127.0.0.1 to Transmission
+2. __sh transmission-vpn.sh uninstall__ - Uninstaller. Stops VPN, binds 0.0.0.0 to Transmission
 
 To run this script, use the following commands:
-1. __sh transmissionvpn.sh start__ - Start. Starts the VPN, binds VPN address to Transmission
-2. __sh transmissionvpn.sh stop__ - Stop. Stops the VPN, binds 127.0.0.1 to Transmission
-3. __sh transmissionvpn.sh repair__ - Repair. Fixes stalled VPNs, decides which IP address to bind
+1. __sh transmission-vpn.sh start__ - Start. Starts the VPN, binds VPN address to Transmission
+2. __sh transmission-vpn.sh stop__ - Stop. Stops the VPN, binds 127.0.0.1 to Transmission
+3. __sh transmission-vpn.sh repair__ - Repair. Fixes stalled VPNs, decides which IP address to bind
 
 __NOTE:__ If the script is located in /volume1/examplefolder/, navigate to that folder (using the __cd__ command) before executing the commands above.
 
@@ -92,8 +92,8 @@ Here's how you can fix this issue:
 5. Type __ifconfig__ into the Terminal
 6. Find the VPN interface. It should NOT be `eth0` or `lo`
 7. Copy the interface name (left of `Link encap:`)
-8. Replace the VPN_INTERFACE with the copied one
-9. Restart the TransmissionVPN script
+8. Replace the VPN_INTERFACE with the copied interface name
+9. Restart the Transmission VPN script
 
 ## Port Forwarding Limitations
 If the script returns `Network Port is closed` every time you run the repair script, please check if your VPN is connected behind a NAT device.

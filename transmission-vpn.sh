@@ -1,5 +1,5 @@
-# transmissionVPN
-# ================
+# Transmission VPN
+# =================
 
 # VPN Settings
 VPN_CONFID=l1234567890
@@ -120,7 +120,7 @@ repair)
     # Define variables
     VPN_ADDR=`ifconfig $VPN_INTERFACE | grep 'inet addr:' | cut -d: -f2 | awk '{print $1}'`
     VPN_RESP=`curl -sS --interface $VPN_INTERFACE $IP_CHECK`
-    VPN_PORT=`php -n portforwarding.php $VPN_ADDR $PORT_FWD`
+    VPN_PORT=`php -n port-forwarding.php $VPN_ADDR $PORT_FWD`
 
     # Redefine variables if empty (bugfix)
     if [ "$VPN_ADDR" = "" ] || [ "$VPN_RESP" = "" ]; then
@@ -264,9 +264,9 @@ uninstall)
     echo "Uninstalled!"
 ;;
 *)
-    echo "Welcome to transmissionVPN!"
+    echo "Welcome to Transmission VPN!"
     echo "Usage: start|stop|repair|install|uninstall"
-    echo "Example: sh transmissionvpn.sh start"
+    echo "Example: sh transmission-vpn.sh start"
 ;;
 esac
 
