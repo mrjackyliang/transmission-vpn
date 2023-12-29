@@ -1,0 +1,68 @@
+name: Bug Report
+description: Found an unexpected issue or problem? Report it here.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: I truly appreciate you taking the time to share this bug report with me.
+  - type: markdown
+    attributes:
+      value: Please __fill out the form with as much detail as possible__ so the contributors can easily recreate the bug and work swiftly to assist you in resolving it. Thank you for your cooperation!
+  - type: markdown
+    attributes:
+      value: ---
+  - type: checkboxes
+    id: pre-check
+    attributes:
+      label: Pre-check confirmation
+      description: Before proceeding further, please confirm the following by checking each box. This confirmation is crucial for contributors to effectively identify and address the bug. __All boxes MUST be checked; failure to comply will result in the immediate closure of this bug report.__
+      options:
+        - label: I have provided a descriptive title for the bug I am having
+          required: true
+        - label: "I have kept the original title prefix, __\"[Bug]: \"__"
+          required: true
+        - label: I have done my research, and this is __NOT__ a duplicate bug report
+          required: true
+        - label: I am __NOT__ requesting a new feature
+          required: true
+  - type: input
+    id: email
+    attributes:
+      label: Your email address
+      description: Help the contributors easily get in touch with you if they need more information. __If possible, please consider using an alias you have access to as this information is publicly visible.__
+      placeholder: e.g. user@example.com
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: Tell us exactly what happened
+      description: Provide a comprehensive description of __the steps or circumstances__ that led to the occurrence of this bug.
+      placeholder: e.g. When I was doing ..., I expected ... to happen, but I got ... instead.
+    validations:
+      required: true
+  - type: input
+    id: dsm-version
+    attributes:
+      label: Synology® DSM version
+      description: What version of Synology® DSM are you using? Please note that only products that are not "End of Life" as listed in the [Product Support Status](https://www.synology.com/en-us/products/status?status=all&firmware_support=suspended) will be considered.
+      placeholder: e.g. 7.2.1-69057 Update 3
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs relevant to this bug
+      description: Copy and paste all logs related to this bug. __Do not include logs unrelated to this project.__ This block will be automatically formatted into code, so __no need for backticks__ or special markup.
+      render: Shell
+    validations:
+      required: true
+  - type: checkboxes
+    id: legal
+    attributes:
+      label: Legal Agreements
+      description: By submitting a new bug report, you confirm that you have read, understood, and agree to the [Terms of Use](https://www.cbnventures.io/terms/) and [Privacy Policy](https://www.cbnventures.io/privacy/). If you have questions about these policies, feel free to [get in touch](https://www.cbnventures.io/get-in-touch/) with us.
+      options:
+        - label: I agree to the Terms of Use and Privacy Policy
+          required: true

@@ -1,10 +1,11 @@
 Transmission VPN
 =================
 
-[![GitHub Releases](https://img.shields.io/github/v/release/mrjackyliang/transmission-vpn?style=flat-square&color=blue&sort=semver)](https://github.com/mrjackyliang/transmission-vpn/releases)
-[![GitHub Top Languages](https://img.shields.io/github/languages/top/mrjackyliang/transmission-vpn?style=flat-square&color=success)](https://github.com/mrjackyliang/transmission-vpn)
-[![GitHub License](https://img.shields.io/github/license/mrjackyliang/transmission-vpn?style=flat-square&color=yellow)](https://github.com/mrjackyliang/transmission-vpn/blob/master/LICENSE)
-[![Become a GitHub Sponsor](https://img.shields.io/badge/sponsor-github-black?style=flat-square&color=orange)](https://github.com/sponsors/mrjackyliang)
+[![GitHub Releases](https://img.shields.io/github/v/release/mrjackyliang/transmission-vpn?style=flat-square&logo=github&logoColor=%23ffffff&color=%23b25da6)](https://github.com/mrjackyliang/transmission-vpn/releases)
+[![GitHub Top Languages](https://img.shields.io/github/languages/top/mrjackyliang/transmission-vpn?style=flat-square&logo=gnubash&logoColor=%23ffffff&color=%236688c3)](https://github.com/mrjackyliang/transmission-vpn)
+[![GitHub License](https://img.shields.io/github/license/mrjackyliang/transmission-vpn?style=flat-square&logo=googledocs&logoColor=%23ffffff&color=%2348a56a)](https://github.com/mrjackyliang/transmission-vpn/blob/main/LICENSE)
+[![Become a GitHub Sponsor](https://img.shields.io/badge/github-sponsor-gray?style=flat-square&logo=githubsponsors&logoColor=%23ffffff&color=%23eaaf41)](https://github.com/sponsors/mrjackyliang)
+[![Donate via PayPal](https://img.shields.io/badge/paypal-donate-gray?style=flat-square&logo=paypal&logoColor=%23ffffff&color=%23ce4a4a)](https://liang.nyc/paypal)
 
 This is a special script for Synology NAS that helps you force Transmission's connection under the VPN you specify. It works with L2TP, PPTP, and OpenVPN connections. The script connects to VPN then sets Transmission to your VPN port. If it cannot find one, it will shut off VPN and prevent Transmission from working.
 
