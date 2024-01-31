@@ -1,14 +1,14 @@
 name: Bug Report
 description: Found an unexpected issue or problem? Report it here.
 title: "[Bug]: "
-labels: ["bug"]
+labels: [ "bug" ]
 body:
   - type: markdown
     attributes:
       value: I truly appreciate you taking the time to share this bug report with me.
   - type: markdown
     attributes:
-      value: Please __fill out the form with as much detail as possible__ so the contributors can easily recreate the bug and work swiftly to assist you in resolving it. Thank you for your cooperation!
+      value: Please __fill out the form with as much detail as possible__ so I can easily recreate the bug and work swiftly to assist you in resolving it. Thank you for your cooperation!
   - type: markdown
     attributes:
       value: ---
@@ -16,53 +16,72 @@ body:
     id: pre-check
     attributes:
       label: Pre-check confirmation
-      description: Before proceeding further, please confirm the following by checking each box. This confirmation is crucial for contributors to effectively identify and address the bug. __All boxes MUST be checked; failure to comply will result in the immediate closure of this bug report.__
+      description: Before proceeding further, please confirm the following by checking each box. This confirmation is crucial for me to effectively identify and address the bug. __All boxes MUST be checked; failure to comply will result in the immediate closure of this bug report.__
       options:
-        - label: I have provided a descriptive title for the bug I am having
+        - label: I have provided a descriptive title for the bug I am currently having
           required: true
         - label: "I have kept the original title prefix, __\"[Bug]: \"__"
           required: true
-        - label: I have done my research, and this is __NOT__ a duplicate bug report
+        - label: I have read the `README.md` file, and this is __NOT__ a duplicate bug report
           required: true
         - label: I am __NOT__ requesting a new feature
+          required: true
+        - label: I am not requesting help that is related to a support request
           required: true
   - type: input
     id: email
     attributes:
       label: Your email address
-      description: Help the contributors easily get in touch with you if they need more information. __If possible, please consider using an alias you have access to as this information is publicly visible.__
+      description: Help me easily get in touch with you if I need more information. __If possible, please consider using an alias you have access to as this information is publicly visible.__
       placeholder: e.g. user@example.com
     validations:
       required: true
   - type: textarea
     id: what-happened
     attributes:
-      label: Tell us exactly what happened
+      label: Tell me exactly what happened
       description: Provide a comprehensive description of __the steps or circumstances__ that led to the occurrence of this bug.
       placeholder: e.g. When I was doing ..., I expected ... to happen, but I got ... instead.
+    validations:
+      required: true
+  - type: input
+    id: program-version
+    attributes:
+      label: Program version
+      description: What version of the program are you using? You may find this information inside the `package.json` file, where it says `version`.
+      placeholder: e.g. 1.0.0
     validations:
       required: true
   - type: input
     id: dsm-version
     attributes:
       label: Synology® DSM version
-      description: What version of Synology® DSM are you using? Please note that only products that are not "End of Life" as listed in the [Product Support Status](https://www.synology.com/en-us/products/status?status=all&firmware_support=suspended) will be considered.
-      placeholder: e.g. 7.2.1-69057 Update 3
+      description: What version of Synology® DSM are you using? Please note that only products that are not "End of Life" as listed in the [Product Support Status](https://www.synology.com/en-us/products/status?status=all&firmware_support=suspended) page will be considered.
+      placeholder: e.g. 7.2.1-69057 Update 4
     validations:
       required: true
   - type: textarea
     id: logs
     attributes:
-      label: Logs relevant to this bug
+      label: Captured logs relevant to this report
       description: Copy and paste all logs related to this bug. __Do not include logs unrelated to this project.__ This block will be automatically formatted into code, so __no need for backticks__ or special markup.
+      placeholder: Please include logs relevant to this bug report. If this is filled with miscellaneous content (e.g. no logs, cannot find logs), this bug report will be closed immediately.
       render: Shell
     validations:
       required: true
   - type: checkboxes
+    id: post-check
+    attributes:
+      label: Post-check confirmation
+      description: Before proceeding further, please confirm the following by checking each box. This confirmation is crucial for the consideration of your request. __All boxes MUST be checked; failure to comply will result in your request being closed.__
+      options:
+        - label: I have filled in the form __exactly as requested__ and did not attempt to circumvent form validation
+          required: true
+  - type: checkboxes
     id: legal
     attributes:
       label: Legal Agreements
-      description: By submitting a new bug report, you confirm that you have read, understood, and agree to the [Terms of Use](https://www.cbnventures.io/terms/) and [Privacy Policy](https://www.cbnventures.io/privacy/). If you have questions about these policies, feel free to [get in touch](https://www.cbnventures.io/get-in-touch/) with us.
+      description: By submitting a new bug report, you confirm that you have read, understood, and agree to the [Terms of Use](https://www.cbnventures.io/terms/) and [Privacy Policy](https://www.cbnventures.io/privacy/). If you have questions about these policies, feel free to [get in touch](https://www.cbnventures.io/get-in-touch/) with my team.
       options:
         - label: I agree to the Terms of Use and Privacy Policy
           required: true

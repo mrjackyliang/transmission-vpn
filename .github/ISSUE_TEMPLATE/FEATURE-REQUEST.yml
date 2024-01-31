@@ -1,14 +1,14 @@
 name: Feature Request
 description: Have a new feature in mind? Share your request with me.
 title: "[Feature]: "
-labels: ["enhancement"]
+labels: [ "enhancement" ]
 body:
   - type: markdown
     attributes:
       value: Thank you for contributing to the improvement of this project by submitting a feature request!
   - type: markdown
     attributes:
-      value: Please __fill out the form with as much detail as possible__ to help the contributors understand your feature request better. Your input is valuable in shaping the future of this project.
+      value: Please __fill out the form with as much detail as possible__ to help me understand your feature request better. Your input is valuable in shaping the future of this project.
   - type: markdown
     attributes:
       value: ---
@@ -16,7 +16,7 @@ body:
     id: pre-check
     attributes:
       label: Pre-check confirmation
-      description: Before proceeding further, please confirm the following by checking each box. This confirmation is crucial for the consideration of your request. __All boxes MUST be checked; failure to comply may result in your request being closed.__
+      description: Before proceeding further, please confirm the following by checking each box. This confirmation is crucial for the consideration of your request. __All boxes MUST be checked; failure to comply will result in your request being closed.__
       options:
         - label: I have provided a descriptive title for my feature request
           required: true
@@ -28,7 +28,7 @@ body:
     id: email
     attributes:
       label: Your email address
-      description: Help the contributors easily get in touch with you if they need more information. __If possible, please consider using an alias you have access to as this information is publicly visible.__
+      description: Help me easily get in touch with you if I need more information. __If possible, please consider using an alias you have access to as this information is publicly visible.__
       placeholder: e.g. user@example.com
     validations:
       required: true
@@ -36,15 +36,23 @@ body:
     id: feature-description
     attributes:
       label: Describe the new feature requested
-      description: Provide a detailed description of the feature you would like to see implemented. Include any relevant information or use cases that might help the contributors understand the need for this feature.
+      description: Provide a detailed description of the feature you would like to see implemented. Include any relevant information or use cases that might help me understand the need for this feature.
       placeholder: e.g. I would like a new feature that allows...
     validations:
       required: true
   - type: checkboxes
+    id: post-check
+    attributes:
+      label: Post-check confirmation
+      description: Before proceeding further, please confirm the following by checking each box. This confirmation is crucial for the consideration of your request. __All boxes MUST be checked; failure to comply will result in your request being closed.__
+      options:
+        - label: I have filled in the form __exactly as requested__ and did not attempt to circumvent form validation.
+          required: true
+  - type: checkboxes
     id: legal
     attributes:
       label: Legal Agreements
-      description: By submitting a new feature request, you confirm that you have read, understood, and agree to the [Terms of Use](https://www.cbnventures.io/terms/) and [Privacy Policy](https://www.cbnventures.io/privacy/). If you have questions about these policies, feel free to [get in touch](https://www.cbnventures.io/get-in-touch/) with us.
+      description: By submitting a new feature request, you confirm that you have read, understood, and agree to the [Terms of Use](https://www.cbnventures.io/terms/) and [Privacy Policy](https://www.cbnventures.io/privacy/). If you have questions about these policies, feel free to [get in touch](https://www.cbnventures.io/get-in-touch/) with my team.
       options:
         - label: I agree to the Terms of Use and Privacy Policy
           required: true
