@@ -51,7 +51,7 @@ To retrieve the VPN_CONFID, follow these steps:
 6. Copy the text __l1234567890__ to the VPN_CONFID above
 7. Type __exit__ once to logout of SSH or Telnet
 
-__NOTE:__ The "__l1234567890__" ID is an example. Each configuration ID (per VPN connection) is UNIQUE and YOU MUST connect to your Synology NAS though SSH or Telnet to retrieve it.
+__Note:__ The "__l1234567890__" ID is an example. Each configuration ID (per VPN connection) is UNIQUE and YOU MUST connect to your Synology NAS though SSH or Telnet to retrieve it.
 
 ## Task Scheduling
 If you want to automate the script, you can use the Task Scheduler application provided inside the DiskStation Manager. Make sure the script is ran under root to prevent any issues occurring.
@@ -70,7 +70,7 @@ To run this script, use the following commands:
 2. __sh transmission-vpn.sh stop__ - Stop. Stops the VPN, binds 127.0.0.1 to Transmission
 3. __sh transmission-vpn.sh repair__ - Repair. Fixes stalled VPNs, decides which IP address to bind
 
-__NOTE:__ If the script is located in /volume1/examplefolder/, navigate to that folder (using the __cd__ command) before executing the commands above.
+__Note:__ If the script is located in /volume1/examplefolder/, navigate to that folder (using the __cd__ command) before executing the commands above.
 
 ## No Internet Bug Fix
 If this script took Transmission offline (cannot download), follow the instructions below:
@@ -80,7 +80,7 @@ If this script took Transmission offline (cannot download), follow the instructi
 4. Check __Enable Multiple Gateways__
 5. Click __OK__ then __Apply__
 
-__NOTE:__ Once this setting is enabled, you do not need to re-run the script. The internet for Transmission will start working immediately.
+__Note:__ Once this setting is enabled, you do not need to re-run the script. The internet for Transmission will start working immediately.
 
 ## Wrong VPN Interface
 When running the start script for the first time, you might come across this error: `ppp0: error fetching interface information: Device not found`.
@@ -101,4 +101,4 @@ If the script returns `Network Port is closed` every time you run the repair scr
 
 The script does not support checking ports behind NAT, as it will simply mark the specified port as `closed`. If the VPN is behind a NAT device, make sure the `PORT_FWD` variable is blank.
 
-__NOTE:__ The repair script will fail/restart when `PORT_FWD` is not empty while behind NAT.
+__Note:__ The repair script will fail/restart when `PORT_FWD` is not empty while behind NAT.
