@@ -1,0 +1,147 @@
+---
+id: web-proxy
+title: Web proxy
+description: Route HTTP and SOCKS5 clients through a VPN connection chosen for each proxy login, with separate usernames and passwords for each device.
+sidebar_position: 2
+keywords:
+  - transmission vpn
+  - web proxy
+  - http proxy
+  - socks5 proxy
+  - proxy login
+tags:
+  - remote access
+  - web proxy
+  - vpn
+---
+
+import ThemedImage from '@theme/ThemedImage';
+import { Frame, Terminology } from '@cbnventures/docusaurus-preset-nova/blocks';
+
+import webProxyOneLight from './_assets_/web-proxy-1-light.png';
+import webProxyOneDark from './_assets_/web-proxy-1-dark.png';
+import webProxyTwoLight from './_assets_/web-proxy-2-light.png';
+import webProxyTwoDark from './_assets_/web-proxy-2-dark.png';
+import webProxyThreeLight from './_assets_/web-proxy-3-light.png';
+import webProxyThreeDark from './_assets_/web-proxy-3-dark.png';
+
+Use the opt-in <Terminology title="Authenticated HTTP and SOCKS5 service that sends private-network clients through a VPN connection" to="/docs/reference/terminology#web-proxy">web proxy</Terminology> when another device or container on your home network needs to use one of your VPN connections.
+
+## Turn on the web proxy
+
+1. Open **Remote apps** in the navigation.
+2. Add a VPN connection if you don't have one yet.
+3. Under **Web proxy**, select **Add login**.
+4. Enter a username, then choose a **VPN connection**.
+5. Select **Add login**, then copy the generated password when it appears.
+6. Turn on the **Web proxy** switch.
+
+The generated password is shown once, so it is recommended to copy it before closing the dialog. A VPN connection is required before you can add a login or turn on the proxy. The switch doesn't depend on logins: with none, the proxy is on but nobody can sign in.
+
+Without a VPN connection, the switch is unavailable. The heading note links **Add VPN connection**, while **Logins** says `Logins can be added once there's a VPN connection.`
+
+Its state reads **No logins** while it is on without any login, **Ready** when at least one login's connection is protected, **Waiting for the VPN** when none is protected, or **Off** when the switch is off.
+
+<Frame caption="The web proxy ready with labels above its copyable addresses" style={{ maxWidth: 474, marginInline: 'auto' }}>
+  <ThemedImage sources={{ light: webProxyOneLight, dark: webProxyOneDark }} alt="Web proxy card switched on and ready with HTTP and SOCKS5 labels above their copyable addresses, followed by living-room-tv on Default Northwind Toronto and laptop on Contoso Frankfurt, each with Edit and Delete" width={472} height={486} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+## Manage logins
+
+Give each device or container its own username and generated password. Usernames can contain letters, numbers, `.`, `_`, and `-`.
+
+- **Edit** changes the username or VPN connection. Saving with **Generate a new password** also replaces the current password and shows the new one once, so clients using the old password stop authenticating right away.
+- **Delete** removes the login, whether the proxy is on or off.
+- **VPN connection** chooses the connection used by that login. Choose **Default** to follow the current default connection, or choose a named connection to keep using it when the default changes.
+
+Passwords are shown only after the login is added or saved with **Generate a new password**.
+
+<Frame caption="Adding a web proxy login" style={{ maxWidth: 522, marginInline: 'auto' }}>
+  <ThemedImage sources={{ light: webProxyTwoLight, dark: webProxyTwoDark }} alt="Add login dialog filled with the tablet-browser username, a note that its password is generated and shown once, and Fabrikam New York selected as its VPN connection" width={520} height={440} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+## Publish the port
+
+Both protocols share port 22605:
+
+- HTTP: `http://<host>:22605`
+- SOCKS5: `socks5://<host>:22605`
+
+Each copy row puts **HTTP** or **SOCKS5** above its address. Long addresses wrap only after `://` or `/`, and copying keeps the address unchanged.
+
+The included Compose file publishes it. Set `TRANSMISSION_VPN_PROXY_PORT` when the host should use another port:
+
+```bash
+TRANSMISSION_VPN_PROXY_PORT=8080 docker compose up --build --detach
+```
+
+With `docker run`, publish the container port directly:
+
+```bash
+-p 22605:22605
+```
+
+:::warning
+On a Docker network without IPv6, Docker can forward an outside IPv6 client from its private gateway address, which makes that client look local to the proxy. It is recommended to use the provided Compose file, whose network has IPv6, or bind `docker run` to the host's LAN address with `-p <LAN address>:22605:22605`.
+:::
+
+The [Installation](/docs/getting-started/installation/#volumes-and-ports) page lists every published port.
+
+## Network limits
+
+Only clients from these private ranges may connect:
+
+- `10.0.0.0/8`
+- `172.16.0.0/12`
+- `192.168.0.0/16`
+- `fc00::/7`
+- `fe80::/10`
+
+Other clients are disconnected. The proxy connects only to public IPv4 destinations. It refuses private, loopback, reserved, multicast, and IPv6 destinations.
+
+:::warning
+HTTP Basic and SOCKS5 username and password authentication are not encrypted on your private network. Anyone who can read that traffic can read the credentials.
+:::
+
+## When a connection is unavailable
+
+The proxy sends no destination traffic outside the login's selected tunnel. An authenticated HTTP client receives `503 Service Unavailable` when that connection is blocked. An authenticated SOCKS5 client receives a general failure response.
+
+The listener stays available so clients get that result instead of falling back to another route. That login starts passing traffic only after its connection returns to **Protected**.
+
+<Frame caption="The web proxy waiting for the VPN with address labels above their values" style={{ maxWidth: 474, marginInline: 'auto' }}>
+  <ThemedImage sources={{ light: webProxyThreeLight, dark: webProxyThreeDark }} alt="Web proxy card switched on with a Waiting for the VPN state, HTTP and SOCKS5 labels above their addresses, and living-room-tv on Default Northwind Toronto and laptop on Contoso Frankfurt" width={472} height={517} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+## Client protocol support
+
+- HTTP clients can send `CONNECT` requests or plain `http://` requests in proxy form. HTTPS clients use `CONNECT`.
+- SOCKS5 clients must use username and password authentication and the `CONNECT` command.
+- A domain name is looked up by the proxy. The lookup uses the DNS servers from the login's selected connection, and both the DNS request and destination connection use that tunnel.
+- An HTTP request without valid credentials receives `407 Proxy Authentication Required`. A SOCKS5 client receives an authentication failure.
+
+After 10 failed sign-ins from one client within 5 minutes, that client is blocked for 5 minutes. HTTP clients receive `429 Too Many Requests` during the block.
+
+## Client examples
+
+Use `curl` through the HTTP proxy:
+
+```bash
+curl -x 'http://proxy-user:proxy-password@<host>:22605' https://example.com/
+```
+
+Use curl's `socks5h` form to send the destination name to the SOCKS5 proxy for lookup through the tunnel:
+
+```bash
+curl -x 'socks5h://proxy-user:proxy-password@<host>:22605' https://example.com/
+```
+
+For another container on the same Docker network, set its standard proxy variables to the Transmission VPN service name:
+
+```yaml
+environment:
+  HTTP_PROXY: "http://proxy-user:proxy-password@app:22605"
+  HTTPS_PROXY: "http://proxy-user:proxy-password@app:22605"
+```
+
+The other container must use software that reads these variables.

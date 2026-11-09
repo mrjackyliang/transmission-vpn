@@ -1,0 +1,108 @@
+---
+id: development
+title: Development
+description: Set up Transmission VPN for development, run the checks and builds for each workspace, and maintain the Docusaurus documentation site and its test suites.
+sidebar_position: 1
+keywords:
+  - transmission vpn
+  - development
+  - contributing
+  - npm workspaces
+  - testing
+  - documentation site
+tags:
+  - contributing
+  - development
+  - testing
+---
+
+import { Terminology } from '@cbnventures/docusaurus-preset-nova/blocks';
+
+Work on Transmission VPN from source with the repository's npm workspaces, Docker build stages, and documentation checks.
+
+## Repository Layout
+
+```text title="Repository root"
+transmission-vpn/
+|-- apps/
+|   |-- transmission/     # Web interface (React and Vite) and control-api/ (Go)
+|   `-- docs/             # This documentation site (Docusaurus)
+|-- packages/
+|   `-- docker/           # Container rootfs, s6 services, manifest, and container tests
+|-- tests/                # Root project tests
+|-- Dockerfile            # The single image, built from the repository root
+`-- compose.yml           # Local build and run
+```
+
+`PROJECT_RULES.md` at the repository root describes the runtime design and project boundaries.
+
+## Commands
+
+| Command                                                         | Purpose                                                                                                                                  |
+|-----------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------|
+| `npm run check`                                                 | Lints, type-checks, and tests the root, then runs `check` in every workspace.                                                            |
+| `npm run build`                                                 | Runs `build` in every workspace.                                                                                                         |
+| `npm run deploy:container`                                      | Runs `docker compose up --build --detach`.                                                                                               |
+| `npm run dev --workspace transmission-vpn-app-transmission`     | Runs the container in the foreground and the interface development server together.                                                      |
+| `npm run dev:web --workspace transmission-vpn-app-transmission` | Starts Vite on port 5173, which forwards `/api` to `127.0.0.1:22602` and `/transmission/rpc` to `127.0.0.1:9091`.                        |
+| `npm run mock --workspace transmission-vpn-app-transmission`    | Starts Vite on port 5173 with a built-in mock API, so the interface runs without the container.                                          |
+| `npm run check --workspace transmission-vpn-app-transmission`   | Lints, type-checks, and unit-tests the web interface.                                                                                    |
+| `npm run check --workspace transmission-vpn-tool-docker`        | Runs the Go tests in a Docker build stage, plus the foundation, fail-closed, OpenVPN, WireGuard, and several-connection container tests. |
+| `npm run dev --workspace transmission-vpn-docs`                 | Starts the documentation development server.                                                                                             |
+
+With the mock API, setting `MOCK_KEY_REPLACED=true` starts the interface as if the <Terminology title="Key that encrypts saved secrets, such as VPN logins" to="/docs/reference/terminology#installation-key">installation key</Terminology> had been lost, so the **Saved secrets were removed** notice and a paused notification show.
+
+## Architecture
+
+The image runs one service graph under <Terminology title="Supervisor that starts, restarts, and stops the services" to="/docs/reference/terminology#s6-overlay">s6-overlay</Terminology>:
+
+```text title="Service graph"
+base
+`-- config-init (oneshot)
+    |-- directory-controller (longrun)
+    |   `-- control-api (longrun)
+    `-- firewall-init (oneshot)
+        |-- vpn-controller (longrun)
+        `-- transmission (longrun)
+```
+
+- **`config-init`** — Validates <Terminology title="User and group IDs that own Transmission's files" to="/docs/reference/terminology#puid-and-pgid">`PUID`</Terminology>, <Terminology title="User and group IDs that own Transmission's files" to="/docs/reference/terminology#puid-and-pgid">`PGID`</Terminology>, `TZ`, and the <Terminology title="Kernel device /dev/net/tun that VPN tunnels need" to="/docs/reference/terminology#tun-device">TUN device</Terminology>, and prepares persistent folders.
+- **`firewall-init`** — Installs the <Terminology title="Rules that confine Transmission's traffic to the tunnel" to="/docs/reference/terminology#firewall-boundary">firewall boundary</Terminology>, and its down script removes the rules after the protected services stop.
+- **Go binaries** — `transmission-vpn-api`, `transmission-vpn-directory-controller`, `transmission-vpn-vpn-controller`, and `transmission-vpn-transmission-runner`, all built from `apps/transmission/control-api`.
+- **Web interface** — Built with Vite and served by `transmission-vpn-api` from `/usr/local/share/transmission-vpn/web`.
+
+## Testing
+
+- **Go** — The image build runs `go test ./...` in its `control-api-test` stage, so a failing test stops the build.
+- **Web interface** — Vitest unit tests run through the workspace's `check` script.
+- **Container** — `packages/docker/tests` holds a foundation test and a <Terminology title="Blocking Transmission traffic whenever the VPN is unavailable" to="/docs/reference/terminology#fail-closed">fail-closed</Terminology> integration test that builds the image and checks identities, firewall rules, blocked egress, the claim flow, a <Terminology title="API-triggered Transmission restart that applies pending settings" to="/docs/reference/terminology#controlled-restart">controlled restart</Terminology>, and a missing <Terminology title="Docker capability that lets the container manage networking" to="/docs/reference/terminology#net_admin">`NET_ADMIN`</Terminology>.
+- **OpenVPN** — `check:openvpn` verifies policy routing, fixed source binding, SNAT, peer loss, and recovery through an OpenVPN server container.
+- **Several connections** — `check:multi-vpn` runs two isolated tunnels and Transmission daemons, then verifies combined RPC, per-login proxy routes, torrent moves, removal with a move target, and duplicate WireGuard provider addresses.
+- **WireGuard** — `check:wireguard` in `packages/docker` runs an end-to-end test against a WireGuard server in a second container, once with the kernel module and once with <Terminology title="WireGuard run by wireguard-go when the kernel lacks it" to="/docs/reference/terminology#userspace-wireguard">`wireguard-go`</Terminology>. It checks that:
+  - Slot 0 Transmission traffic leaves only through `wg0`, from its fixed private address.
+  - The uploaded file's IPv6 lines are stripped.
+  - A dead server blocks Transmission until the server returns.
+  - Shutdown blocks the tunnel before the firewall is removed.
+
+## Documentation Site
+
+- **Pages** — Each sidebar category is a folder in `apps/docs/docs/` with a `_category_.json`, and `sidebars.ts` generates the sidebar from the folders.
+- **Conventions** — Page structure, frontmatter, and voice follow `conventions/documentation.md`.
+- **Glossary** — Terms are defined as H2 headings in `docs/reference/terminology.mdx`, and pages link to them with the `Terminology` component from `@cbnventures/docusaurus-preset-nova/blocks`.
+
+### Homepage Blocks
+
+- `src/pages/index.tsx` builds the homepage from blocks exported by `@cbnventures/docusaurus-preset-nova/blocks`, such as `Canvas`, `InstallStrip`, `Features`, `Stats`, and `BlogPreview`, with its own hero and VPN panel inside `Canvas`.
+- `docusaurus.config.ts` reads the site identity from the root `nova.config.json` through `NovaIdentity`.
+
+### Checks and Build
+
+```bash
+npm run check --workspace transmission-vpn-docs
+npm run build --workspace transmission-vpn-docs
+```
+
+- `check` runs ESLint, three type-checks, and Vitest suites for frontmatter, links, Markdown tables, terminology, dotenv files, and type declarations.
+- The Markdown table suite expects every table to match the output of Nova's `MarkdownTable`.
+- The terminology suite checks every `Terminology` link against the H2 headings in `docs/reference/terminology.mdx`.
+- `build` produces the static site and fails on broken links.

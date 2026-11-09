@@ -1,0 +1,65 @@
+---
+title: "Introducing the New Transmission VPN: Rebuilt for Docker"
+description: The new Transmission VPN replaces the old Synology script with one Docker image that blocks torrent traffic until a verified OpenVPN or WireGuard tunnel is up.
+slug: introducing-the-new-transmission-vpn
+authors:
+  - mrjackyliang
+keywords:
+  - transmission vpn
+  - docker
+  - openvpn
+  - wireguard
+  - bittorrent
+  - leak protection
+  - synology
+tags:
+  - release
+  - docker
+  - vpn
+---
+
+Putting Transmission behind a VPN often means wiring several containers together and tuning a long list of environment variables. When the tunnel drops, you're left reading logs to find out whether torrent traffic stopped with it.
+
+The new Transmission VPN is my answer: one Docker image that runs Transmission, an OpenVPN or WireGuard tunnel, and a web interface together, and keeps torrent traffic blocked until the tunnel is verified.
+
+{/* truncate */}
+
+## Why I Built It
+
+Transmission VPN began as a shell script for Synology NAS, released as versions 1.0.0 through 1.3.2. It bound the Synology Transmission package to a VPN connection managed by DSM, which tied it to one NAS platform.
+
+Combined Transmission and VPN images prove the need, but they can bury routine settings in environment variables and leave VPN state to the logs. So I rebuilt Transmission VPN from the ground up as one portable container that keeps Transmission familiar and makes protection easy to see.
+
+## What It Does
+
+The image bundles Transmission 4.1, OpenVPN, WireGuard, and a web interface for your torrents and the VPN. Out of the box, it:
+
+- **Blocks Transmission until the tunnel checks out** — The firewall is up before Transmission starts, and traffic flows only once the tunnel passes its checks.
+- **Blocks it again on every drop** — When OpenVPN stops or restarts, or a WireGuard server stops answering, Transmission is blocked at once, and no setting turns this off.
+- **Keeps DNS in the tunnel** — While protected, DNS goes to servers reached through the tunnel, and Transmission can't send DNS around it.
+- **Shows protection at a glance** — The sidebar and the **VPN** page say whether traffic is protected right now, without a trip to the logs.
+
+## Set Up in the Web Interface
+
+No environment variable picks your VPN provider or holds your credentials. You claim the installation with a one-time code from the logs, create the administrator account, and connect from the **VPN** page:
+
+1. In **Provider**, pick PureVPN, Private Internet Access, IPVanish, NordVPN, Surfshark, IVPN, Mullvad, or Custom, and choose OpenVPN or WireGuard when it offers both.
+2. Select **Refresh list** to download the provider's official server list, or upload your own `.ovpn` or WireGuard `.conf` file.
+3. Add up to 128 servers to **Fallback order**, so one unreachable server doesn't stop a new connection.
+4. Enter your username and password or WireGuard key, and select **Test and connect**.
+
+Transmission stays blocked during the test, and its status changes to **Protected** only when a server passes every check. After a drop, the container works through the list again on its own.
+
+## Try It
+
+From the repository root, one command builds the image and starts the container:
+
+```bash
+docker compose up --build --detach
+```
+
+:::info
+Transmission VPN is pre-release software at version `0.0.1`. No container release has been tagged yet, so for now you build the image from source.
+:::
+
+Head to [Installation](/docs/getting-started/installation/) for the full requirements. Coming from the Synology script, the [Migration Guide](/docs/getting-started/migration/) shows how to reuse the downloads you already have.

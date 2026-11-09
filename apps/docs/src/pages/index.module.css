@@ -1,0 +1,285 @@
+/**
+ * ============================
+ * Hero
+ * ============================
+ */
+
+.hero {
+  overflow-x: clip;
+}
+
+.hero-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  max-width: var(--nova-grid-container-max);
+  margin-inline: auto;
+  padding-inline: var(--nova-grid-padding);
+  padding-block: clamp(3rem, 8vh, 5rem);
+
+  text-align: center;
+}
+
+@media (min-width: 1024px) {
+  .hero-inner {
+    flex-direction: row;
+    gap: 3rem;
+
+    text-align: left;
+  }
+}
+
+/**
+ * ============================
+ * Hero - Content
+ * ============================
+ */
+
+.hero-content {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.75rem, 1.5vw, 1rem);
+  width: 100%;
+  min-width: 0;
+}
+
+@media (min-width: 1024px) {
+  .hero-content {
+    flex: 1;
+    width: auto;
+  }
+}
+
+.hero-content :global(.nova-hero-eyebrow),
+.hero-content :global(.nova-hero-heading),
+.hero-content :global(.nova-hero-tagline),
+.hero-content :global(.nova-hero-actions) {
+  margin: 0;
+}
+
+.hero-content :global(.nova-hero-eyebrow) {
+  align-self: center;
+}
+
+@media (min-width: 1024px) {
+  .hero-content :global(.nova-hero-eyebrow) {
+    align-self: flex-start;
+  }
+}
+
+.hero-content :global(.nova-hero-tagline) {
+  max-width: none;
+}
+
+.hero-actions {
+  justify-content: center;
+}
+
+@media (min-width: 1024px) {
+  .hero-actions {
+    justify-content: flex-start;
+  }
+}
+
+/**
+ * ============================
+ * VPN Panel
+ * ============================
+ */
+
+/* Mirrors the connection details on the web interface's VPN page. */
+.vpn-panel {
+  --vpn-panel-protected: #1f812d;
+
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+  max-width: 28rem;
+  padding: 1.25rem;
+
+  font-family: var(--nova-font-code);
+  font-size: 0.75rem;
+  line-height: 1.6;
+  color: var(--nova-color-text);
+  text-align: left;
+
+  background: var(--nova-color-surface-raised);
+  border: 1px solid var(--nova-color-border);
+  border-radius: var(--nova-shape-radius);
+}
+
+/* A fixed width keeps the longest endpoint on one line beside the heading. */
+@media (min-width: 1024px) {
+  .vpn-panel {
+    flex: none;
+    width: 26rem;
+  }
+}
+
+:global([data-theme="dark"]) .vpn-panel {
+  --vpn-panel-protected: #61bd67;
+}
+
+.vpn-panel-title {
+  margin: 0;
+
+  font-family: var(--nova-font-display);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.vpn-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  margin: 0;
+}
+
+.vpn-detail {
+  display: grid;
+  grid-template-columns: 5rem minmax(0, 1fr);
+  gap: 1rem;
+}
+
+.vpn-detail-label {
+  color: var(--nova-color-text-muted);
+}
+
+.vpn-detail-value {
+  margin: 0;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  overflow: hidden;
+}
+
+.vpn-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+
+  font-weight: 600;
+  color: var(--vpn-panel-protected);
+}
+
+/* A ring grows out of the dot and fades, like a live connection light. */
+.vpn-status-dot {
+  width: 8px;
+  height: 8px;
+
+  background: var(--vpn-panel-protected);
+  border-radius: 50%;
+
+  animation: vpn-status-pulse 2s ease-out infinite;
+}
+
+@keyframes vpn-status-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--vpn-panel-protected) 55%, transparent);
+  }
+
+  100% {
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--vpn-panel-protected) 0%, transparent);
+  }
+}
+
+/**
+ * ============================
+ * VPN Panel - Torrents
+ * ============================
+ */
+
+.torrent-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 1rem 0 0;
+
+  list-style: none;
+  border-top: 1px solid var(--nova-color-border);
+}
+
+.torrent {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.375rem 1rem;
+
+  transition: opacity 400ms ease;
+}
+
+/* Hides the finished download while its bar resets for the next loop. */
+.torrent-restarting {
+  opacity: 0;
+}
+
+.torrent-name {
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  overflow: hidden;
+}
+
+.torrent-state {
+  color: var(--nova-color-text-muted);
+}
+
+/* Seeding is the only green state, matching the web interface. */
+.torrent-state-seeding {
+  color: var(--vpn-panel-protected);
+}
+
+.torrent-progress {
+  grid-column: 1 / -1;
+  height: 4px;
+
+  background: color-mix(in srgb, var(--nova-color-text) 12%, transparent);
+  border-radius: 2px;
+
+  overflow: hidden;
+}
+
+/* A highlight sweeps across the fill while data moves; the width eases between steps. */
+.torrent-progress-value {
+  display: block;
+  height: 100%;
+
+  background-color: var(--nova-color-text-muted);
+  background-image: linear-gradient(90deg, transparent, rgb(255 255 255 / 45%), transparent);
+  background-repeat: no-repeat;
+  background-size: 40% 100%;
+
+  transition: width 500ms linear, background-color 400ms ease;
+  animation: torrent-progress-sweep 1.6s linear infinite;
+}
+
+.torrent-progress-value-seeding {
+  background-color: var(--vpn-panel-protected);
+
+  animation-duration: 2.4s;
+}
+
+@keyframes torrent-progress-sweep {
+  0% {
+    background-position: -67% 0;
+  }
+
+  100% {
+    background-position: 167% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vpn-status-dot,
+  .torrent-progress-value {
+    animation: none;
+  }
+
+  .torrent,
+  .torrent-progress-value {
+    transition: none;
+  }
+}

@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "services": [
+    {
+      "command": "/usr/local/libexec/transmission-vpn/config-init.sh",
+      "critical": false,
+      "dependencies": [],
+      "environment": {},
+      "kind": "oneshot",
+      "name": "config-init",
+      "requiredForHealth": true,
+      "runAsRoot": true,
+      "workspace": "apps/transmission",
+      "writablePaths": []
+    },
+    {
+      "command": "/usr/local/bin/transmission-vpn-api",
+      "critical": false,
+      "dependencies": [
+        "config-init",
+        "directory-controller"
+      ],
+      "environment": {},
+      "kind": "longrun",
+      "name": "control-api",
+      "port": 22602,
+      "requiredForHealth": true,
+      "runAsRoot": false,
+      "workspace": "apps/transmission",
+      "writablePaths": []
+    },
+    {
+      "command": "/usr/local/bin/transmission-vpn-directory-controller",
+      "critical": false,
+      "dependencies": [
+        "config-init"
+      ],
+      "environment": {},
+      "kind": "longrun",
+      "name": "directory-controller",
+      "requiredForHealth": true,
+      "runAsRoot": false,
+      "workspace": "apps/transmission",
+      "writablePaths": []
+    },
+    {
+      "command": "/usr/local/libexec/transmission-vpn/firewall-init.sh",
+      "critical": false,
+      "dependencies": [
+        "config-init"
+      ],
+      "environment": {},
+      "kind": "oneshot",
+      "name": "firewall-init",
+      "requiredForHealth": true,
+      "runAsRoot": true,
+      "workspace": "apps/transmission",
+      "writablePaths": []
+    },
+    {
+      "command": "/usr/local/bin/transmission-vpn-transmission-runner",
+      "critical": false,
+      "dependencies": [
+        "firewall-init"
+      ],
+      "environment": {},
+      "kind": "longrun",
+      "name": "transmission",
+      "requiredForHealth": true,
+      "runAsRoot": false,
+      "workspace": "apps/transmission",
+      "writablePaths": []
+    },
+    {
+      "command": "/usr/local/bin/transmission-vpn-vpn-controller",
+      "critical": false,
+      "dependencies": [
+        "firewall-init"
+      ],
+      "environment": {},
+      "kind": "longrun",
+      "name": "vpn-controller",
+      "requiredForHealth": true,
+      "runAsRoot": true,
+      "workspace": "apps/transmission",
+      "writablePaths": []
+    },
+    {
+      "command": "/usr/local/bin/transmission-vpn-web-proxy",
+      "critical": false,
+      "dependencies": [
+        "firewall-init"
+      ],
+      "environment": {},
+      "kind": "longrun",
+      "name": "web-proxy",
+      "port": 22605,
+      "requiredForHealth": false,
+      "runAsRoot": false,
+      "workspace": "apps/transmission",
+      "writablePaths": []
+    }
+  ],
+  "workspaces": [
+    {
+      "packageName": "transmission-vpn-app-transmission",
+      "path": "apps/transmission",
+      "profile": "container-native",
+      "runtimePaths": []
+    }
+  ]
+}

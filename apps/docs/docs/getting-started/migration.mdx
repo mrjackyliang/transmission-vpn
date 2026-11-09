@@ -1,0 +1,73 @@
+---
+id: migration
+title: Migration Guide
+description: Move a Transmission 3 or 4 setup into Transmission VPN with the import wizard, and map the legacy Synology script variables to the Docker image.
+sidebar_position: 3
+keywords:
+  - transmission vpn
+  - migration
+  - synology
+  - legacy script
+  - existing downloads
+tags:
+  - getting started
+  - migration
+  - synology
+---
+
+import { Terminology } from '@cbnventures/docusaurus-preset-nova/blocks';
+
+Move a Transmission 3 or 4 configuration and its existing downloads with the import wizard, then use the legacy-variable map when the old setup came from the <Terminology title="The original Synology script this image replaces" to="/docs/reference/terminology#legacy-project">legacy script</Terminology>.
+
+## What Changed
+
+- The <Terminology title="The original Synology script this image replaces" to="/docs/reference/terminology#legacy-project">legacy script</Terminology> ran on Synology DSM, connected a VPN profile defined in DSM, and changed the bind address of the Synology Transmission package.
+- The Docker image runs its own Transmission, OpenVPN, and <Terminology title="VPN protocol that signs in with a key pair" to="/docs/reference/terminology#wireguard">WireGuard</Terminology>, so it doesn't use DSM's VPN client or the Synology Transmission package.
+- OpenVPN and WireGuard are the only supported protocols, so L2TP and PPTP connections can't move over.
+- VPN connections still need to be set up in the web interface, while the import wizard can bring over supported Transmission settings, folders, and torrents.
+
+The last release of the <Terminology title="The original Synology script this image replaces" to="/docs/reference/terminology#legacy-project">legacy script</Terminology> is tagged [`v1.3.2`](https://github.com/mrjackyliang/transmission-vpn/tree/v1.3.2) in the GitHub repository.
+
+## Legacy Variables
+
+| Legacy variable                                         | In the Docker image                                                                                                                                                                                                                                                                                                                    |
+|---------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `VPN_CONFID`, `VPN_CONFNAME`, `VPN_PROTO`, `VPN_UINAME` | Not used. Choose a provider or upload a <Terminology title="Your own .ovpn or .conf file for any service" to="/docs/reference/terminology#custom-profile">custom profile</Terminology> on the **VPN** page instead.                                                                                                                    |
+| `VPN_TYPE`, `VPN_INTERFACE`                             | Not used. Each connection's slot sets its interface, `tun<slot>` for OpenVPN or `wg<slot>` for WireGuard.                                                                                                                                                                                                                              |
+| `VPN_RETRY`, `VPN_INTERVAL`                             | Not used. After the tunnel drops, reconnects continue without a limit, with a <Terminology title="Wait between reconnect attempts after the tunnel drops" to="/docs/reference/terminology#retry-interval">retry interval</Terminology> of 10 seconds.                                                                                  |
+| `PORT_FWD`                                              | No equivalent. The old check only tested whether a port was open, and the image doesn't set up <Terminology title="Inbound peer port opened through a VPN or router" to="/docs/reference/terminology#port-forwarding">port forwarding</Terminology>.                                                                                   |
+| `IP_CHECK`                                              | No equivalent. Fixed <Terminology title="Checks a new tunnel must pass before traffic flows" to="/docs/reference/terminology#tunnel-verification">tunnel verification</Terminology> checks run on every connect.                                                                                                                       |
+| `TRANS_USER`, `TRANS_GROUP`                             | <Terminology title="User and group IDs that own Transmission's files" to="/docs/reference/terminology#puid-and-pgid">`PUID`</Terminology> and <Terminology title="User and group IDs that own Transmission's files" to="/docs/reference/terminology#puid-and-pgid">`PGID`</Terminology>, which set the account that runs Transmission. |
+| `TRANS_VAR`                                             | Not used. Each connection's Transmission settings live under `/config/transmission/<connection-id>` and are rebuilt at every start.                                                                                                                                                                                                    |
+
+## Move from Another Transmission
+
+Mount the old Transmission config folder read-only at `/import`, and mount its download folders under `/data` so the wizard can map them without copying the data:
+
+```yaml title="compose.override.yml"
+services:
+  app:
+    volumes:
+      - /path/to/old/config:/import:ro
+      - /path/to/downloads:/data/downloads
+```
+
+1. Stop the old Transmission so its `settings.json`, `torrents`, and `resume` files stay consistent while they are read.
+2. Set <Terminology title="User and group IDs that own Transmission's files" to="/docs/reference/terminology#puid-and-pgid">`PUID`</Terminology> and <Terminology title="User and group IDs that own Transmission's files" to="/docs/reference/terminology#puid-and-pgid">`PGID`</Terminology> to an account that can write to the mounted download folders, using IDs from 1000 to 60000.
+3. Add and test a default VPN connection, as covered in [Connect to a VPN](/docs/vpn/connecting/).
+4. Open **Settings**, find **Backup**, select **Import…**, and choose **Another Transmission**.
+5. Use `/import` as the **Config folder**, map every old folder to its location under `/data`, and review the generated profiles and supported settings.
+6. Select **Import** in **Review**. Every torrent is added paused. One whose data is found is re-checked and returned to its saved paused or running state; one whose data is not found stays paused as **Data missing**.
+
+The old default download folder becomes the <Terminology title="The first profile, used when no named profile matches" to="/docs/reference/terminology#default-profile">Default profile</Terminology>'s folder. Other download folders and any included empty sibling folders become named <Terminology title="The folder, VPN connection, labels, and defaults that belong to a torrent" to="/docs/reference/terminology#profile">profiles</Terminology>, and the old incomplete folder carries over separately.
+
+[Export and Import](/docs/configuration/export-and-import/#import-from-another-transmission) covers every wizard step, the supported settings, and the **Not brought over** list.
+
+:::info
+IDs below 1000 aren't accepted, so a NAS account or group with a lower ID needs a different user or group for the container.
+:::
+
+## What the Legacy Script Doesn't Carry Over
+
+- **DSM VPN profiles** — Upload the `.ovpn` file as a <Terminology title="Your own .ovpn or .conf file for any service" to="/docs/reference/terminology#custom-profile">custom profile</Terminology> or pick a built-in provider.
+- **Task Scheduler jobs** — Jobs that ran the script's `start`, `stop`, or `repair` commands aren't needed, because <Terminology title="Supervisor that starts, restarts, and stops the services" to="/docs/reference/terminology#s6-overlay">s6-overlay</Terminology> supervises the services inside the container.

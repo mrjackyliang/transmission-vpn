@@ -1,0 +1,145 @@
+---
+id: installation
+title: Installation
+description: Build the Transmission VPN image from source and start it with Docker Compose, with the TUN device, NET_ADMIN capability, and volumes it needs.
+sidebar_position: 1
+keywords:
+  - transmission vpn
+  - installation
+  - docker compose
+  - build from source
+  - volumes
+  - environment variables
+tags:
+  - getting started
+  - installation
+  - docker
+---
+
+import { Terminology } from '@cbnventures/docusaurus-preset-nova/blocks';
+
+Build the image from the repository and start it with Docker Compose, which already grants the device, capability, volumes, and ports the container needs.
+
+## Requirements
+
+- **amd64 or arm64 host** — The image builds only for `amd64` and `arm64`, and any other architecture stops the build.
+- **Docker with Compose** — The repository's `compose.yml` builds the image and runs the container.
+- **A copy of the repository** — The build runs from the repository root, where `Dockerfile` and `compose.yml` live.
+- **<Terminology title="Kernel device /dev/net/tun that VPN tunnels need" to="/docs/reference/terminology#tun-device">TUN device</Terminology>** — The host must provide `/dev/net/tun`, which Compose passes into the container.
+- **<Terminology title="Docker capability that lets the container manage networking" to="/docs/reference/terminology#net_admin">`NET_ADMIN`</Terminology> capability** — Compose grants it so the container can manage its firewall and tunnel, and privileged mode isn't needed.
+- **Working iptables** — The container needs a legacy or nft iptables <Terminology title="The iptables variant in use, legacy or nft" to="/docs/reference/terminology#firewall-backend">firewall backend</Terminology>, and it tries legacy first.
+- **A VPN account** — PureVPN, Private Internet Access, IPVanish, NordVPN, Surfshark, IVPN, Mullvad, or another OpenVPN or WireGuard service whose file passes the [custom profile checks](/docs/vpn/custom-profiles/#profile-requirements).
+- **WireGuard kernel module (optional)** — <Terminology title="VPN protocol that signs in with a key pair" to="/docs/reference/terminology#wireguard">WireGuard</Terminology> uses the host's kernel module when it has one, and the slower <Terminology title="WireGuard run by wireguard-go when the kernel lacks it" to="/docs/reference/terminology#userspace-wireguard">`wireguard-go`</Terminology> from the image otherwise, with no extra container settings.
+- **Memory and CPUs for several connections** — The container keeps 256 MiB for shared services and budgets 160 MiB for each connection. It also allows up to two connections per available CPU, using the smaller result. Give the container at least 576 MiB for two connections, 736 MiB for three, or more when the host has room.
+
+Docker memory and CPU limits count as the available resources. [VPN connections](/docs/vpn/connections/#connection-capacity) explains the complete capacity calculation and its fallback.
+
+## Build and Start
+
+Run these commands from the repository root:
+
+```bash title="Repository root"
+# Check the resolved Compose configuration.
+docker compose config
+
+# Build the image and start the container in the background.
+docker compose up --build --detach
+
+# Follow the startup logs.
+docker compose logs --follow app
+```
+
+On the first start, the container works through these steps:
+
+1. It checks <Terminology title="User and group IDs that own Transmission's files" to="/docs/reference/terminology#puid-and-pgid">`PUID`</Terminology>, <Terminology title="User and group IDs that own Transmission's files" to="/docs/reference/terminology#puid-and-pgid">`PGID`</Terminology>, `TZ`, and the <Terminology title="Kernel device /dev/net/tun that VPN tunnels need" to="/docs/reference/terminology#tun-device">TUN device</Terminology>, and prepares its folders.
+2. It creates the database and the <Terminology title="Key that encrypts saved secrets, such as VPN logins" to="/docs/reference/terminology#installation-key">installation key</Terminology> under `/config/app`, and writes Transmission's settings file.
+3. It blocks protected traffic before any Transmission daemon or the <Terminology title="Privileged service that runs tunnels and switches the firewall" to="/docs/reference/terminology#vpn-controller">VPN controller</Terminology> starts.
+4. It starts the web interface, which prints a one-time <Terminology title="One-time code from the logs that creates the administrator" to="/docs/reference/terminology#claim-code">claim code</Terminology> to the logs unless a <Terminology title="Mounted file used instead of a generated claim code" to="/docs/reference/terminology#claim-secret-file">claim secret file</Terminology> is mounted.
+
+:::tip
+The Transmission build runs one compile job at a time by default. A higher `TRANSMISSION_BUILD_JOBS` build argument runs more jobs at once:
+
+```bash
+docker compose build --build-arg TRANSMISSION_BUILD_JOBS=4
+docker compose up --detach
+```
+:::
+
+## Run without Compose
+
+Build the image, then pass the same device, capability, volumes, and three published ports to `docker run`:
+
+```bash
+docker build --tag transmission-vpn:local .
+
+docker run --detach \
+  --name transmission-vpn \
+  --restart unless-stopped \
+  --cap-add NET_ADMIN \
+  --device /dev/net/tun \
+  --publish 22602:22602 \
+  --publish 9091:9091 \
+  --publish 22605:22605 \
+  --volume transmission-vpn-config:/config \
+  --volume transmission-vpn-data:/data \
+  transmission-vpn:local
+```
+
+:::warning
+On a Docker network without IPv6, wildcard publishing can forward outside IPv6 clients from Docker's private gateway address. It is recommended to use the provided Compose file, whose network has IPv6, or bind the optional remote-access ports to the host's LAN address with `--publish <LAN address>:22605:22605` and `--publish <LAN address>:9091:9091`.
+:::
+
+## Environment Variables
+
+| Variable                                                                                                                                  | Default | Description                                                                                                 |
+|-------------------------------------------------------------------------------------------------------------------------------------------|---------|-------------------------------------------------------------------------------------------------------------|
+| <Terminology title="User and group IDs that own Transmission's files" to="/docs/reference/terminology#puid-and-pgid">`PUID`</Terminology> | `1000`  | User ID that runs Transmission and owns its files, from 1000 to 60000.                                      |
+| <Terminology title="User and group IDs that own Transmission's files" to="/docs/reference/terminology#puid-and-pgid">`PGID`</Terminology> | `1000`  | Group ID for the same account, from 1000 to 60000.                                                          |
+| `TZ`                                                                                                                                      | `UTC`   | Time zone name, such as `Europe/London`, that matches a zone installed in the image.                        |
+| `TRANSMISSION_VPN_PORT`                                                                                                                   | `22602` | Host port that Compose publishes for the web interface. The container itself always listens on 22602.       |
+| `TRANSMISSION_VPN_PROXY_PORT`                                                                                                             | `22605` | Host port that Compose publishes for the web proxy. The container itself always listens on 22605.           |
+| `TRANSMISSION_VPN_RPC_PORT`                                                                                                               | `9091`  | Host port that Compose publishes for the compatible RPC route. The container itself always listens on 9091. |
+
+Compose reads these variables from your shell when it starts the container:
+
+```bash
+TRANSMISSION_VPN_PORT=8091 TRANSMISSION_VPN_PROXY_PORT=8080 PUID=1001 PGID=1001 TZ=Europe/London \
+  docker compose up --build --detach
+```
+
+No environment variable selects the VPN provider or tunnel, holds VPN credentials or keys, or changes Transmission's settings. Those live in the web interface, and settings can also come from a <Terminology title="Optional /config/managed.json that seeds or locks settings" to="/docs/reference/terminology#managed-configuration">managed configuration</Terminology> file.
+
+## Volumes and Ports
+
+| Path or port | Purpose                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+|--------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `/config`    | The <Terminology title="The /config folder holding state, keys, and settings" to="/docs/reference/terminology#config-volume">config volume</Terminology>, with the database, the <Terminology title="Key that encrypts saved secrets, such as VPN logins" to="/docs/reference/terminology#installation-key">installation key</Terminology>, each connection's Transmission configuration folder, and the optional <Terminology title="Optional /config/managed.json that seeds or locks settings" to="/docs/reference/terminology#managed-configuration">managed configuration</Terminology> file. |
+| `/data`      | The <Terminology title="The /data folder that holds all downloads" to="/docs/reference/terminology#data-mount">data mount</Terminology>, which holds every download.                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `22602/tcp`  | The <Terminology title="Port 22602, which serves the web interface and API" to="/docs/reference/terminology#control-port">control port</Terminology>, which carries the web interface and the API over plain HTTP.                                                                                                                                                                                                                                                                                                                                                                                 |
+| `22605/tcp`  | The optional <Terminology title="Authenticated HTTP and SOCKS5 service that sends private-network clients through the VPN" to="/docs/reference/terminology#web-proxy">web proxy</Terminology>, which carries authenticated HTTP and SOCKS5 traffic from private networks.                                                                                                                                                                                                                                                                                                                          |
+| `9091/tcp`   | The <Terminology title="Port 9091, which serves only the compatible RPC route" to="/docs/reference/terminology#rpc-port">RPC port</Terminology>, which carries only the optional <Terminology title="Opt-in /transmission/rpc route for third-party apps" to="/docs/reference/terminology#compatible-rpc">compatible RPC</Terminology> route over plain HTTP.                                                                                                                                                                                                                                      |
+
+- The Compose file keeps `/config` and `/data` in named volumes called `config` and `data`.
+- The Compose file turns on IPv6 for the container's network, so the web interface sees each IPv6 visitor's own address. Docker Engine 27 or later picks the IPv6 subnet on its own, and on a host without IPv6, you can delete the `networks` block. IPv6 addresses are often reachable from the internet, so it is recommended to check that your router or host firewall blocks inbound connections to ports 22602, 22605, and 9091.
+- The <Terminology title="Key that encrypts saved secrets, such as VPN logins" to="/docs/reference/terminology#installation-key">installation key</Terminology> in `/config` encrypts the authenticator app's secret, VPN profile contents and connection credentials, and notification secrets, so it is recommended to keep it with the database whenever you copy or move `/config`, as covered in [Updates and Backups](/docs/operations/updates-and-backups/#missing-installation-key).
+- Each Transmission's <Terminology title="Transmission's own RPC, private to the container" to="/docs/reference/terminology#native-rpc">native RPC</Terminology> uses a separate loopback port inside the container, starting at 9092. These ports are never published.
+
+### Use Host Folders
+
+It is recommended to mount host folders when you want to reach downloads from the host or back up `/config` with ordinary file tools. A `compose.override.yml` file next to `compose.yml` replaces the named volumes:
+
+```yaml title="compose.override.yml"
+services:
+  app:
+    volumes:
+      - ./config:/config
+      - ./downloads:/data
+```
+
+It is recommended to set <Terminology title="User and group IDs that own Transmission's files" to="/docs/reference/terminology#puid-and-pgid">`PUID`</Terminology> and <Terminology title="User and group IDs that own Transmission's files" to="/docs/reference/terminology#puid-and-pgid">`PGID`</Terminology> to the host account that owns the downloads folder. [Storage and Permissions](/docs/configuration/storage-and-permissions/) covers the ownership rules.
+
+## Next Steps
+
+- **[First-Run Setup](/docs/getting-started/first-run-setup/)** — Claim the installation and create the administrator account.
+- **[Storage and Permissions](/docs/configuration/storage-and-permissions/)** — Plan folder ownership and the runtime identity.
+- **[Connect to a VPN](/docs/vpn/connecting/)** — Choose a provider and test the first connection.

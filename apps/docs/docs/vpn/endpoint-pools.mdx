@@ -1,0 +1,71 @@
+---
+id: endpoint-pools
+title: Endpoint pools
+description: Order up to 128 VPN endpoints from one provider and tunnel so Transmission VPN can fail over on its own, and choose how it picks the next server after a drop.
+sidebar_position: 4
+keywords:
+  - transmission vpn
+  - endpoint pool
+  - failover
+  - fallback order
+  - endpoint strategy
+  - reconnect
+tags:
+  - vpn
+  - failover
+  - endpoints
+---
+
+import { Terminology } from '@cbnventures/docusaurus-preset-nova/blocks';
+
+Give one VPN connection a list of fallback servers, tried in an order you choose, for tests and reconnects after its tunnel drops.
+
+## Why Use an Endpoint Pool?
+
+1. Tries the next <Terminology title="One VPN server profile you can connect to" to="/docs/reference/terminology#endpoint">endpoint</Terminology> when one can't connect, so a single unreachable server doesn't stop a connection attempt.
+2. Puts your preferred server first, so every test or reconnect with **Sticky** or **Ordered** tries it before the others.
+3. Offers a randomized <Terminology title="How the next endpoint is chosen after a drop" to="/docs/reference/terminology#endpoint-strategy">strategy</Terminology>, so retries don't always start with the same server.
+4. Retries without a limit after the tunnel drops, with traffic blocked in between, so the container can recover without your help.
+
+## Usage
+
+1. On the **VPN** page, select the check box next to each <Terminology title="One VPN server profile you can connect to" to="/docs/reference/terminology#endpoint">endpoint</Terminology> you want in the <Terminology title="Ordered endpoints from one provider and tunnel for failover" to="/docs/reference/terminology#endpoint-pool">pool</Terminology>.
+2. Drag your preferred <Terminology title="One VPN server profile you can connect to" to="/docs/reference/terminology#endpoint">endpoint</Terminology> to the top of **Fallback order** by its handle.
+3. Pick a <Terminology title="How the next endpoint is chosen after a drop" to="/docs/reference/terminology#endpoint-strategy">strategy</Terminology> in the menu next to **Fallback order**, then select **Test and connect**.
+
+## How Pools Work
+
+- **Fallback order** on the **VPN** page is your <Terminology title="Ordered endpoints from one provider and tunnel for failover" to="/docs/reference/terminology#endpoint-pool">endpoint pool</Terminology>, and its first <Terminology title="One VPN server profile you can connect to" to="/docs/reference/terminology#endpoint">endpoint</Terminology> is primary.
+- A <Terminology title="Ordered endpoints from one provider and tunnel for failover" to="/docs/reference/terminology#endpoint-pool">pool</Terminology> holds 1 to 128 <Terminology title="One VPN server profile you can connect to" to="/docs/reference/terminology#endpoint">endpoints</Terminology> from one provider and one <Terminology title="The VPN protocol a connection uses, OpenVPN or WireGuard" to="/docs/reference/terminology#tunnel">tunnel</Terminology>, with no duplicates.
+- Changing the provider or the **Tunnel** switch on the **VPN** page clears **Fallback order**, so OpenVPN and WireGuard <Terminology title="One VPN server profile you can connect to" to="/docs/reference/terminology#endpoint">endpoints</Terminology> never share a <Terminology title="Ordered endpoints from one provider and tunnel for failover" to="/docs/reference/terminology#endpoint-pool">pool</Terminology>.
+- Failures never remove an <Terminology title="One VPN server profile you can connect to" to="/docs/reference/terminology#endpoint">endpoint</Terminology> from the <Terminology title="Ordered endpoints from one provider and tunnel for failover" to="/docs/reference/terminology#endpoint-pool">pool</Terminology>.
+- **Test and connect**, **Reconnect**, and a container restart try the connection's <Terminology title="Ordered endpoints from one provider and tunnel for failover" to="/docs/reference/terminology#endpoint-pool">pool</Terminology> in order with **Sticky** or **Ordered**, and in a shuffled order with **Randomized**.
+
+## Strategies
+
+| Strategy             | After the connection drops                                                                                                                                                                                                                                                                                                                                              |
+|----------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Sticky** (default) | Retries the <Terminology title="One VPN server profile you can connect to" to="/docs/reference/terminology#endpoint">endpoint</Terminology> that was connected, then continues down the <Terminology title="Ordered endpoints from one provider and tunnel for failover" to="/docs/reference/terminology#endpoint-pool">pool</Terminology> and wraps around to the top. |
+| **Ordered**          | Starts with the next <Terminology title="One VPN server profile you can connect to" to="/docs/reference/terminology#endpoint">endpoint</Terminology> after the one that was connected, then continues and wraps around.                                                                                                                                                 |
+| **Randomized**       | Shuffles the <Terminology title="Ordered endpoints from one provider and tunnel for failover" to="/docs/reference/terminology#endpoint-pool">pool</Terminology> on every retry cycle.                                                                                                                                                                                   |
+
+## Reconnects
+
+1. When OpenVPN exits or requests an internal restart, or a WireGuard server stops answering, that connection's Transmission is blocked at once. Other protected connections keep transferring.
+2. The container waits for the saved <Terminology title="Wait between reconnect attempts after the tunnel drops" to="/docs/reference/terminology#retry-interval">retry interval</Terminology>, which defaults to 10 seconds and can be set from 3 to 600 seconds on the **VPN** page.
+3. It works through the <Terminology title="Ordered endpoints from one provider and tunnel for failover" to="/docs/reference/terminology#endpoint-pool">pool</Terminology> in <Terminology title="How the next endpoint is chosen after a drop" to="/docs/reference/terminology#endpoint-strategy">strategy</Terminology> order until one <Terminology title="One VPN server profile you can connect to" to="/docs/reference/terminology#endpoint">endpoint</Terminology> passes <Terminology title="Checks a new tunnel must pass before traffic flows" to="/docs/reference/terminology#tunnel-verification">tunnel verification</Terminology>.
+4. If every <Terminology title="One VPN server profile you can connect to" to="/docs/reference/terminology#endpoint">endpoint</Terminology> fails, it waits again and starts another cycle, with no limit on the number of cycles.
+
+**Reconnect**, **Disconnect and block**, and **Test and connect** stop a reconnect cycle right away instead of waiting for it to reach the end of the <Terminology title="Ordered endpoints from one provider and tunnel for failover" to="/docs/reference/terminology#endpoint-pool">pool</Terminology>.
+
+The last error appears under **Connection error** on the **VPN** page. Internal OpenVPN restart requests terminate the child into this same supervised reconnect path, so endpoint selection and complete tunnel verification run again.
+
+[Leak protection](/docs/vpn/leak-protection/#tunnel-checks) explains how the container notices a WireGuard server that stopped answering.
+
+If the connection stays down for a minute, <Terminology title="One place alerts go, such as a chat or topic" to="/docs/reference/terminology#notification-destination">destinations</Terminology> that chose **VPN dropped** get an alert for it, as covered in [Notifications](/docs/alerts/notifications/#events).
+
+## Catalog Updates and Your Pool
+
+- A <Terminology title="A provider's official endpoint list, downloaded on request" to="/docs/reference/terminology#endpoint-catalog">catalog</Terminology> refresh can retire servers from the provider's list.
+- Retired <Terminology title="One VPN server profile you can connect to" to="/docs/reference/terminology#endpoint">endpoints</Terminology> in your saved connection keep working for **Reconnect** and automatic reconnects.
+- The **VPN** page doesn't list retired endpoints, so the next **Test and connect** leaves them out of the <Terminology title="Ordered endpoints from one provider and tunnel for failover" to="/docs/reference/terminology#endpoint-pool">pool</Terminology>.

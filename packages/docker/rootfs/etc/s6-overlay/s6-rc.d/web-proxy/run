@@ -1,0 +1,4 @@
+#!/command/with-contenv bash
+set -euo pipefail
+
+exec /command/s6-setuidgid webproxy /usr/local/bin/transmission-vpn-web-proxy

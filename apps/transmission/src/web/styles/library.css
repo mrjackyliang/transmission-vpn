@@ -1,0 +1,285 @@
+/**
+ * ============================
+ * Library (Torrents Sidebar)
+ * ============================
+ */
+
+
+.library {
+  display: grid;
+  gap: var(--space-4);
+  padding-top: var(--space-4);
+
+  border-top: 1px solid var(--color-border);
+
+  /* Rows keep the nav's small gap, so a selected row and a hovered one never touch. */
+  & ul {
+    display: grid;
+    gap: 0.125rem;
+    margin: 0;
+    padding: 0;
+
+    list-style: none;
+  }
+
+  & li > ul {
+    margin-top: 0.125rem;
+  }
+}
+
+.library-heading-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.library-heading {
+  padding: 0 var(--space-3) var(--space-1);
+
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-muted);
+}
+
+.library-edit {
+  padding: 0 var(--space-3) var(--space-1);
+
+  font-size: var(--text-xs);
+  font-weight: 550;
+  color: var(--color-muted);
+
+  background: transparent;
+  border: 0;
+
+  &:hover:not(:disabled) {
+    color: var(--color-accent);
+  }
+}
+
+.library-edit-profile {
+  display: inline-flex;
+  gap: var(--space-1);
+  align-items: center;
+}
+
+/* Folders tint across the full width at every depth, so the indent sits inside the tint. */
+.library-row-wrap {
+  display: flex;
+  align-items: center;
+
+  border-radius: var(--radius-md);
+
+  &:hover {
+    background: var(--color-surface-hover);
+  }
+
+  &:has(> .library-row[aria-current="true"]) {
+    background: var(--color-surface-pressed);
+  }
+
+  &:has(> .library-row:focus-visible) {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+}
+
+.library-toggle {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 1rem;
+  height: 1.875rem;
+  padding: 0;
+
+  color: var(--color-muted);
+
+  background: transparent;
+  border: 0;
+}
+
+.library-toggle-icon {
+  display: grid;
+
+  transition: transform 120ms ease;
+}
+
+.library-toggle-open {
+  transform: rotate(90deg);
+}
+
+.library-row {
+  display: flex;
+  flex: 1;
+  gap: var(--space-2);
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  height: 1.875rem;
+  padding: 0 var(--space-3);
+
+  font-size: var(--text-md);
+  color: var(--color-text-soft);
+  text-align: left;
+
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-md);
+
+  & > .icon {
+    color: var(--color-muted);
+  }
+
+  &:hover {
+    color: var(--color-text);
+
+    background: var(--color-surface-hover);
+  }
+
+  &[aria-current="true"] {
+    font-weight: 550;
+    color: var(--color-text);
+
+    background: var(--color-surface-pressed);
+  }
+}
+
+.library-row-wrap .library-row {
+  padding-left: var(--space-1);
+
+  /* The folder's wrap carries the tint and the focus ring. */
+  &:hover,
+  &[aria-current="true"] {
+    background: transparent;
+  }
+
+  &:focus-visible {
+    outline: none;
+  }
+}
+
+/* Without a chevron column, a folder's icon starts at the wrap's padding, like the other rows. */
+.library-row-wrap-flat .library-row {
+  padding-left: 0;
+}
+
+.library-row-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.library-count {
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-muted);
+}
+
+.library-empty {
+  padding: 0 var(--space-3);
+
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+}
+
+.library-row-menu-button {
+  flex: none;
+  width: 1.75rem;
+  height: 1.75rem;
+  margin-right: 0.1rem;
+
+  opacity: 0;
+}
+
+.library-row-wrap:hover .library-row-menu-button,
+.library-row-menu-button[aria-expanded="true"],
+.library-row-menu-button:focus-visible {
+  opacity: 1;
+}
+
+/* Profile menus sit over the count without changing the row's alignment. */
+.profile-row-wrap {
+  position: relative;
+
+  & .library-row {
+    padding-left: var(--space-3);
+  }
+
+  & .library-row-menu-button {
+    position: absolute;
+    top: 50%;
+    right: 0.1rem;
+
+    margin-right: 0;
+
+    transform: translateY(-50%);
+  }
+
+  &:hover,
+  &:focus-within,
+  &:has(.library-row-menu-button[aria-expanded="true"]) {
+    & .library-row-menu-button {
+      opacity: 1;
+    }
+
+    & .library-count {
+      visibility: hidden;
+    }
+  }
+}
+
+.profile-menu {
+  position: absolute;
+  top: calc(100% + var(--space-1));
+  right: 0;
+
+  & > button {
+    height: 1.75rem;
+  }
+}
+
+/* The phone sheet keeps the desktop library's content while enlarging its touch targets. */
+.nav-sheet .library {
+  padding: 0 var(--space-3);
+
+  border-top: 0;
+}
+
+.nav-sheet .library-row {
+  min-height: 2.75rem;
+  height: auto;
+
+  &[aria-current="true"] {
+    background: var(--color-accent-soft);
+  }
+}
+
+.nav-sheet .library-row-wrap .library-row[aria-current="true"] {
+  background: var(--color-accent-soft);
+}
+
+.nav-sheet .profile-row-wrap .library-row {
+  padding-right: calc(2.75rem + var(--space-3));
+}
+
+.nav-sheet .library-edit,
+.nav-sheet .library-row-menu-button,
+.nav-sheet .profile-row-handle {
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+}
+
+.nav-sheet .library-row-menu-button {
+  width: 2.75rem;
+  height: 2.75rem;
+
+  opacity: 1;
+}
+
+.nav-sheet .profile-menu > button {
+  min-height: 2.75rem;
+  height: auto;
+}
+

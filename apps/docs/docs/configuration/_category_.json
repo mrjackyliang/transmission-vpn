@@ -1,0 +1,10 @@
+{
+  "label": "Configuration",
+  "position": 5,
+  "collapsible": true,
+  "collapsed": true,
+  "link": {
+    "type": "generated-index",
+    "description": "Review every setting, seed or lock values with a managed configuration file, and plan storage, ownership, and runtime identity."
+  }
+}

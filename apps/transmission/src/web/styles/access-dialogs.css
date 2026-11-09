@@ -1,0 +1,27 @@
+/**
+ * ============================
+ * Remote App Dialogs
+ * ============================
+ */
+
+.proxy-login-dialog {
+  max-width: 30rem;
+}
+
+.credential-note {
+  padding: var(--space-3);
+
+  font-size: var(--text-sm);
+  color: var(--color-text-soft);
+
+  background: var(--color-accent-soft);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 24%, var(--color-border));
+  border-radius: var(--radius-md);
+}
+
+@media (max-width: 479px) {
+  .proxy-login-dialog .dialog-actions .button {
+    flex: 1;
+  }
+}
+

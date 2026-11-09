@@ -1,0 +1,42 @@
+name: Check Transmission Upstream Version
+
+on:
+  schedule:
+    - cron: "17 9 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Compare pinned and latest series
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Check pinned Transmission series
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          dockerfile_path="Dockerfile"
+          pinned_series="$(sed -n 's/^ARG TRANSMISSION_SERIES="\([^"]*\)"/\1/p' "${dockerfile_path}")"
+          latest_version="$(gh api repos/transmission/transmission/releases/latest --jq '.tag_name')"
+          latest_series="$(cut -d . -f 1-2 <<< "${latest_version}")"
+
+          if [[ -z "${pinned_series}" ]]; then
+            echo "::error file=${dockerfile_path}::Could not read the pinned Transmission series."
+            exit 1
+          fi
+
+          # Builds pick up each new patch on their own; a new series needs a tested repository upgrade.
+          if [[ "${pinned_series}" != "${latest_series}" ]]; then
+            echo "::error file=${dockerfile_path}::Transmission ${latest_version} starts the ${latest_series} series; the image builds ${pinned_series}."
+            exit 1
+          fi
+
+          echo "The image builds the newest Transmission ${pinned_series} release, ${latest_version}."

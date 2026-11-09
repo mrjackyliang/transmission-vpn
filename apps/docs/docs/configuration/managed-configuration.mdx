@@ -1,0 +1,102 @@
+---
+id: managed-configuration
+title: Managed configuration
+description: Seed or lock Transmission VPN settings from a versioned managed.json file in /config, with the same validation as the web interface and clear startup errors.
+sidebar_position: 2
+keywords:
+  - transmission vpn
+  - managed configuration
+  - managed.json
+  - seed
+  - lock
+  - automation
+tags:
+  - configuration
+  - managed configuration
+  - automation
+---
+
+import { Terminology } from '@cbnventures/docusaurus-preset-nova/blocks';
+
+Set or <Terminology title="A managed value that overrides and freezes a setting" to="/docs/reference/terminology#managed-lock">lock</Terminology> settings from a JSON file in `/config`, so a deployment starts with known values that the web interface can't change.
+
+## Why Use Managed Configuration?
+
+1. Applies starting values to a new installation, so it begins with your preferred settings.
+2. Marks values as read-only in the web interface, so the policy lives in one file.
+3. Uses the same validation as the web interface, so an invalid value stops startup instead of being ignored.
+4. Keeps your saved values underneath a <Terminology title="A managed value that overrides and freezes a setting" to="/docs/reference/terminology#managed-lock">lock</Terminology>, so removing the <Terminology title="A managed value that overrides and freezes a setting" to="/docs/reference/terminology#managed-lock">lock</Terminology> brings them back.
+
+## File Location and Format
+
+The <Terminology title="Optional /config/managed.json that seeds or locks settings" to="/docs/reference/terminology#managed-configuration">managed configuration</Terminology> file lives at <Terminology title="Optional /config/managed.json that seeds or locks settings" to="/docs/reference/terminology#managed-configuration">`/config/managed.json`</Terminology>, and the built-in `control` user (UID 65532) must be able to read it.
+
+```json title="/config/managed.json"
+{
+  "version": 1,
+  "settings": {
+    "transmission.downloadQueueSize": {
+      "mode": "seed",
+      "value": 3
+    },
+    "transmission.downloadQueueEnabled": {
+      "mode": "lock",
+      "value": true
+    }
+  }
+}
+```
+
+- **`version`** — Must be `1`.
+- **`settings`** — Maps registered keys from the [Settings](/docs/configuration/settings/) reference to an entry with a `mode` and a `value`.
+- **`mode`** — Either `seed` or `lock`.
+- **`value`** — A JSON value of the setting's type, such as a number, `true` or `false`, a string, or a list of strings.
+
+The file holds settings only, so VPN credentials, other secrets, and notification <Terminology title="One place alerts go, such as a chat or topic" to="/docs/reference/terminology#notification-destination">destinations</Terminology> can't go in it.
+
+## Seeds and Locks
+
+| Mode   | Effect                                                                                                                                                                                                                                                                                                |
+|--------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `seed` | Writes the value once, when nothing is saved for that setting yet. The settings API reports the source `managed-seed` until someone changes it in the web interface.                                                                                                                                  |
+| `lock` | Overrides the saved value while the file contains it. The row shows **<Terminology title="A managed value that overrides and freezes a setting" to="/docs/reference/terminology#managed-lock">Locked</Terminology>** and a read-only control, and the settings API reports the source `managed-lock`. |
+
+## Precedence
+
+1. A <Terminology title="A managed value that overrides and freezes a setting" to="/docs/reference/terminology#managed-lock">lock</Terminology> wins over everything else.
+2. Without a <Terminology title="A managed value that overrides and freezes a setting" to="/docs/reference/terminology#managed-lock">lock</Terminology>, a saved value is used, whether it came from the web interface or a <Terminology title="A managed value applied once when unset" to="/docs/reference/terminology#managed-seed">seed</Terminology>.
+3. Without a saved value, the built-in default is used.
+
+## Validation and Startup
+
+The container reads the file at every start, so changes to it apply at the next start:
+
+```bash
+docker compose restart app
+```
+
+The container stops during startup when the file:
+
+- Can't be read, or isn't valid JSON.
+- Has unknown fields or extra data after the JSON object.
+- Uses a `version` other than `1`.
+- Uses a `mode` other than `seed` or `lock`.
+- Names an unknown setting, or holds a value the setting doesn't allow.
+
+The reason appears in the `error` field of the `control API stopped` log line, such as `unsupported managed configuration version: 2` or `setting transmission.downloadQueueSize: must be between 1 and 1000`.
+
+## Removing a Lock
+
+1. Delete the setting's entry from the file, or delete the whole file.
+2. Restart the container.
+
+The value you saved earlier comes back, or the built-in default when nothing was saved.
+
+## Limits
+
+- **Version 1 only** — The file format has a single version.
+- **Settings only** — Secrets can't be managed through the file.
+- **Default profile folder** — `transmission.downloadDirectory` seeds or locks the **Default profile**'s **Download folder**. A lock makes that field read-only in the profile editor, and an unlocked value applies without a Transmission restart.
+- **Other profile fields** — Labels, paused state, seeding, speed limits, priority, peer limit, and queue position belong to the profile record rather than the settings registry, so `managed.json` can't seed or lock them.
+- **VPN connection details** — Each connection stores its provider, tunnel, endpoints, DNS, retry interval, and peer port outside the settings registry, so `managed.json` can't seed or lock them.
+- **<Terminology title="A third-party Transmission client connecting over RPC" to="/docs/reference/terminology#remote-app">Remote apps</Terminology> switch** — A `true` seed or <Terminology title="A managed value that overrides and freezes a setting" to="/docs/reference/terminology#managed-lock">lock</Terminology> for `rpc.compatibilityEnabled` requires at least one VPN connection, but it does not require an RPC login. Without a VPN connection, startup stops; with no logins, the proxy accepts no sign-ins. A lock also makes the **<Terminology title="Opt-in /transmission/rpc route for third-party apps" to="/docs/reference/terminology#compatible-rpc">RPC proxy</Terminology>** switch fail with `A changed setting is locked by managed configuration.`

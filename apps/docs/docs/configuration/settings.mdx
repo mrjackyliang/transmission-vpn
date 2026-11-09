@@ -1,0 +1,207 @@
+---
+id: settings
+title: Settings
+description: Review the global Transmission settings for incomplete storage, queues, peers, network ports, and blocklists, with their defaults and apply impact.
+sidebar_position: 1
+keywords:
+  - transmission vpn
+  - settings
+  - transmission settings
+  - apply impact
+  - restart
+  - blocklists
+tags:
+  - configuration
+  - settings
+  - transmission
+---
+
+import ThemedImage from '@theme/ThemedImage';
+import { Frame, Terminology } from '@cbnventures/docusaurus-preset-nova/blocks';
+
+import settingsOneLight from './_assets_/settings-1-light.png';
+import settingsOneDark from './_assets_/settings-1-dark.png';
+import settingsTwoLight from './_assets_/settings-2-light.png';
+import settingsTwoDark from './_assets_/settings-2-dark.png';
+import settingsThreeLight from './_assets_/settings-3-light.png';
+import settingsThreeDark from './_assets_/settings-3-dark.png';
+
+Change settings that apply across every profile from the **Settings** page: the incomplete folder, download queue, global peer limit, randomized peer ports, and blocklists. The page ends with **Backup** for portable export and import.
+
+<Frame caption="Global Transmission settings with the incomplete-folder controls">
+  <ThemedImage sources={{ light: settingsTwoLight, dark: settingsTwoDark }} alt="Settings page with Use incomplete folder and Incomplete folder above the download queue, global peer limit, randomized peer port range, blocklist controls, and Blocklist status, followed by the Backup panel with Export and Import" width={1280} height={1735} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+## How Saving Works
+
+1. Open **Settings** in the navigation. On a phone, open **More**, then select **Settings** under `Queue, network and blocklists`.
+2. Change any number of settings, and the save bar counts the unsaved changes.
+3. Select **Save** to validate and save them together, or **Discard** to undo them.
+
+If you try to open another page or sign out with unsaved changes, the interface asks before discarding them. Refreshing or closing the browser tab uses the browser's unsaved-changes warning too.
+
+- **Notes** — Each row shows its key and <Terminology title="Whether a change applies live or after a restart" to="/docs/reference/terminology#apply-impact">apply impact</Terminology>. **Transmission restart required** means the saved value applies after you confirm a restart.
+- **Sources and locks** — A changed, unlocked row reads **Changed from default**. A managed lock reads **Locked** and makes its control unavailable.
+- **<Terminology title="Counter that detects conflicting settings changes" to="/docs/reference/terminology#revision">Revision</Terminology> check** — A save based on an older revision fails with `Settings changed since this revision. Refresh and try again.`
+- **Confirmation** — A successful save shows `Settings saved.` in a notification in the corner.
+
+The page leaves enough space below its last setting for the fixed save bar. Corner notifications sit above the bar while it is present.
+
+<Frame caption="Settings with an unsaved global peer limit and room below the last setting">
+  <ThemedImage sources={{ light: settingsOneLight, dark: settingsOneDark }} alt="Settings page with Global peer limit changed to 300, Use incomplete folder and Incomplete folder, queue controls, randomized peer ports, blocklist sources and status, the Backup panel, and a save bar below the page content reading 1 unsaved change with Discard and Save" width={1280} height={1835} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+## When Changes Take Effect
+
+| Takes effect        | Settings                                                                                                                                            |
+|---------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Immediately**     | The Default profile's Download folder, **Use incomplete folder**, both queue settings, Global peer limit, all blocklist settings, and the RPC proxy |
+| **After a restart** | **Incomplete folder** and the three random peer port settings                                                                                       |
+
+The Download folder is edited on the **Default profile**, and the RPC proxy switch is on **Remote apps**. Both remain registered settings even though the **Settings** page does not show them.
+
+If Transmission isn't running when you save, settings that apply immediately wait for the next start instead, and the page still reports a successful save.
+
+After you save a setting that needs a restart while Transmission is running, a notice names the pending settings and shows **Restart Transmission**. Select the button and confirm to restart every connection's Transmission without reconnecting its VPN.
+
+<Frame caption="Restart Transmission after changing Incomplete folder or the random port range" style={{ maxWidth: 962, marginInline: 'auto' }}>
+  <ThemedImage sources={{ light: settingsThreeLight, dark: settingsThreeDark }} alt="Restart Transmission notice naming Incomplete folder and Random port low as pending, with a Restart Transmission button" width={960} height={70} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+You can also apply pending settings at the next container start:
+
+```bash
+docker compose restart app
+```
+
+The button uses the same <Terminology title="API-triggered Transmission restart that applies pending settings" to="/docs/reference/terminology#controlled-restart">controlled restart</Terminology> as `POST /api/v1/transmission/restart` with `{"confirm": true}`.
+
+## Default Profile
+
+The <Terminology title="The first profile, used when no named profile matches" to="/docs/reference/terminology#default-profile">Default profile</Terminology> owns the defaults for unmatched torrents. Open its **⋯** menu under **Profiles** on the **Torrents** page, then select **Edit**.
+
+Its editor contains **Name**, **Download folder**, **Labels**, **Start paused**, **Seeding**, **Download limit**, **Upload limit**, **Priority**, **Peer limit**, and **Queue position**. It has no **Name patterns**.
+
+The read-only **VPN connection** follows the default connection and says `Always the default connection. Change it on the VPN page.`
+
+| Control         | Storage                          | Default           | Apply behavior                                                                                     |
+|-----------------|----------------------------------|-------------------|----------------------------------------------------------------------------------------------------|
+| Download folder | `transmission.downloadDirectory` | `/data/downloads` | Applies immediately; assigned torrents require **Save and move** when the folder changes           |
+| Labels          | Default profile                  | None              | Starts new torrents and copies to existing torrents only with **Also apply its labels and limits** |
+| Start paused    | Default profile                  | Off               | Starts new torrents                                                                                |
+| Seeding         | Default profile                  | **Never stop**    | Starts new torrents and applies through the optional labels-and-limits copy                        |
+| Speed limits    | Default profile                  | **Unlimited**     | Starts new torrents and applies through the optional labels-and-limits copy                        |
+| Priority        | Default profile                  | **Normal**        | Starts new torrents and applies through the optional labels-and-limits copy                        |
+| Peer limit      | Default profile                  | `50`              | Starts new torrents and applies through the optional labels-and-limits copy                        |
+| Queue position  | Default profile                  | **Normal**        | Starts new torrents and applies through the optional labels-and-limits copy                        |
+
+The Download folder must be inside `/data`, outside the incomplete folder, and different from every named profile's folder. The folder is created automatically when it is missing.
+
+Managed configuration can seed or lock `transmission.downloadDirectory`. A lock makes **Download folder** read-only in the editor.
+
+[Torrent profiles](/docs/torrents/torrent-profiles/#the-default-profile) covers the Default profile's first position, editable name, matching behavior, and folder moves.
+
+## Settings for All Torrents
+
+The page presents these settings in one list, in the same order as the sections below.
+
+### Storage
+
+| Setting                   | Key                                       | Default            | Allowed values                                                                           | Takes effect    |
+|---------------------------|-------------------------------------------|--------------------|------------------------------------------------------------------------------------------|-----------------|
+| **Use incomplete folder** | `transmission.incompleteDirectoryEnabled` | Enabled            | Enabled or disabled                                                                      | Immediately     |
+| **Incomplete folder**     | `transmission.incompleteDirectory`        | `/data/incomplete` | Inside `/data`; contains no profile folder; created automatically if enabled and missing | After a restart |
+
+The **Incomplete folder** field shows a read-only path with **Browse**. Select it to open **Choose incomplete folder**, whose tree checks the incomplete-folder rules before **Use this folder** becomes available; both controls are unavailable when the setting is locked.
+
+The saved path carries an **Incomplete folder** tag in folder pickers.
+
+A folder that cannot be selected can still be opened or closed by clicking its row when it contains subfolders. The reason appears as the row's title.
+
+The incomplete path can't contain `..` segments or end with a slash. It can't contain the Default profile's folder or a named profile's folder, and its path stays reserved when **Use incomplete folder** is off.
+
+Conflict messages name the relationship and the folder involved:
+
+- A profile folder inside `/data/incomplete` says `This is in the incomplete folder, /data/incomplete, which only holds unfinished downloads. Pick a folder outside it.` in the picker. Saving the same path says `Choose a folder outside the incomplete folder, /data/incomplete.`
+- Choosing a profile folder itself as the incomplete folder says `“downloads” is the Default profile's folder, so it can't be the incomplete folder.`
+- Choosing an incomplete folder that contains a profile folder says `Use a folder outside /data/media/films. Torrents in the Films profile finish there.`
+
+### Queue
+
+| Setting               | Key                                 | Default | Allowed values      | Takes effect |
+|-----------------------|-------------------------------------|---------|---------------------|--------------|
+| Enable download queue | `transmission.downloadQueueEnabled` | Enabled | Enabled or disabled | Immediately  |
+| Download queue size   | `transmission.downloadQueueSize`    | `5`     | 1 to 1000           | Immediately  |
+
+### Peer Limit
+
+| Setting           | Key                            | Default | Allowed values | Takes effect |
+|-------------------|--------------------------------|---------|----------------|--------------|
+| Global peer limit | `transmission.peerLimitGlobal` | `200`   | 1 to 100000    | Immediately  |
+
+Each profile owns its per-torrent peer limit. **Global peer limit** caps the aggregate peer count across every torrent.
+
+### Network and Ports
+
+| Setting             | Key                                  | Default  | Allowed values      | Takes effect    |
+|---------------------|--------------------------------------|----------|---------------------|-----------------|
+| Randomize peer port | `transmission.peerPortRandomOnStart` | Disabled | Enabled or disabled | After a restart |
+| Random port low     | `transmission.peerPortRandomLow`     | `49152`  | 1024 to 65535       | After a restart |
+| Random port high    | `transmission.peerPortRandomHigh`    | `65535`  | 1024 to 65535       | After a restart |
+
+Each VPN connection has its own peer port, set on that connection's [VPN page](/docs/vpn/connections/#edit-a-connection).
+
+With **Randomize peer port** off, each Transmission uses its connection's peer port. With it on, the container chooses a separate available port for each Transmission from the range above when the daemon starts.
+
+Transmission VPN doesn't set up <Terminology title="Inbound peer port opened through a VPN or router" to="/docs/reference/terminology#port-forwarding">port forwarding</Terminology> for the peer port.
+
+### Blocklists
+
+| Setting           | Key                                         | Default  | Allowed values                                                   | Takes effect |
+|-------------------|---------------------------------------------|----------|------------------------------------------------------------------|--------------|
+| Enable blocklists | `transmission.blocklistEnabled`             | Disabled | Enabled or disabled                                              | Immediately  |
+| Blocklist sources | `transmission.blocklistSources`             | None     | Up to 20 addresses that start with `https://` and contain no `@` | Immediately  |
+| Update every      | `transmission.blocklistUpdateIntervalHours` | 24 hours | 1 to 168 hours                                                   | Immediately  |
+
+- Each source has its own row. Select **Add source** to add and focus an empty row, or use a row's remove button to delete it.
+- On narrower windows, the **Blocklist sources** editor stacks below the setting name and fills the row.
+- Each saved source shows a line under its URL: its range count and when it last updated, **Waiting for the first update**, **Downloading…** or **Waiting** during an update, or its error in red with **Using the copy from _date_** when a last good copy is still in use.
+- The **Blocklist status** row shows how many ranges are blocked and from how many sources, when it last updated, and when it updates next. **Update now** starts an update. It's unavailable while blocklists are off, with no sources, or while waiting for the VPN.
+- A row must start with `https://` and contain no `@`. The editor accepts at most 20 rows and doesn't save blank rows.
+- Every source is downloaded and combined. Downloads begin only while the default VPN connection is protected, and their HTTPS and DNS sockets are bound to that connection's tunnel address.
+- Sources can be plain text, gzip, or zip. The merger accepts Transmission P2P, DAT, and CIDR ranges for IPv4 and IPv6, then writes normalized files to every Transmission.
+- HTTPS redirects are limited to five and can't downgrade to HTTP. Each source has a 30-second connection limit, a five-minute overall limit, a 64 MiB download limit, a 512 MiB unpacked limit, a 128 MiB normalized-output limit, and a 2,000,000-range limit.
+- A zip source can contain at most 1,000 entries and an 8 MiB central directory. The normalized files for all sources together can use at most 256 MiB and contain at most 3,000,000 ranges.
+- A source that fails keeps its last successful file. With no sources, the merger removes its files and Transmission turns blocklists off even when **Enable blocklists** remains on.
+- Sources refresh when settings change, when a manual or compatible RPC update is requested, after VPN protection returns to a waiting update, and at the configured interval.
+
+## Settings on Other Pages
+
+- Edit the **Default profile**, including `transmission.downloadDirectory`, from its row's **⋯** menu on **Torrents**.
+- Set each connection's name, provider, tunnel, endpoints, DNS, retry interval, and peer port on the [VPN page](/docs/vpn/connections/).
+- Turn `rpc.compatibilityEnabled` on or off with the **RPC proxy** switch under [Remote apps](/docs/remote-access/remote-apps/). A VPN connection is required, but the switch can stay on with no RPC logins.
+
+## Fixed Transmission Behavior
+
+Some Transmission settings are fixed by the container and don't appear on the **Settings** page:
+
+- DHT, peer exchange (PEX), and uTP are on, and Local Peer Discovery is off.
+- Router port mapping (UPnP and NAT-PMP) is off.
+- Script hooks for added, finished, and done-seeding torrents are off.
+- Each <Terminology title="Transmission's own RPC, private to the container" to="/docs/reference/terminology#native-rpc">native RPC</Terminology> listens on a separate loopback port inside the container, starting at `127.0.0.1:9092`.
+- Every Transmission's IPv6 address is bound to `::1`.
+
+At every container start, each Transmission settings file is rebuilt from registered settings, profile and connection settings, and the fixed values above. Other Transmission settings, such as global speed limits, aren't part of it.
+
+## Sources and Locks
+
+- The settings API reports each setting's <Terminology title="Where a setting's current value comes from" to="/docs/reference/terminology#setting-source">setting source</Terminology> as `default`, `user`, `managed-seed`, or `managed-lock`.
+- An unlocked `user` or `managed-seed` value shows **Changed from default**. Default values and locked values don't show that note.
+- A <Terminology title="A managed value that overrides and freezes a setting" to="/docs/reference/terminology#managed-lock">locked</Terminology> row shows **Locked**, and its control can't be edited.
+- [Managed Configuration](/docs/configuration/managed-configuration/) explains <Terminology title="A managed value applied once when unset" to="/docs/reference/terminology#managed-seed">seeds</Terminology> and <Terminology title="A managed value that overrides and freezes a setting" to="/docs/reference/terminology#managed-lock">locks</Terminology>.
+
+## Backup
+
+The final section is **Backup**, with **Export…** and **Import…** beside **Export and import**. It works independently of the settings save bar and makes a portable <Terminology title="a portable JSON backup made from selected Backup sections" to="/docs/reference/terminology#export-file">export file</Terminology> or imports one, and it can also import an existing Transmission 3 or 4 configuration.
+
+See [Export and Import](/docs/configuration/export-and-import/) for the sections, wizard steps, and migration behavior.

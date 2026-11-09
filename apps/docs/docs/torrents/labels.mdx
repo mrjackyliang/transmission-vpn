@@ -1,0 +1,55 @@
+---
+id: labels
+title: Labels
+description: Add free-form labels to torrents, start with a profile's labels, filter the library, and rename or remove labels across every torrent that uses them.
+sidebar_position: 4
+keywords:
+  - transmission vpn
+  - labels
+  - tags
+  - torrent organization
+  - label filters
+tags:
+  - torrents
+  - labels
+  - organization
+---
+
+import ThemedImage from '@theme/ThemedImage';
+import { Frame, Terminology } from '@cbnventures/docusaurus-preset-nova/blocks';
+
+import locationsAndLabelsThreeLight from './_assets_/locations-and-labels-3-light.png';
+import locationsAndLabelsThreeDark from './_assets_/locations-and-labels-3-dark.png';
+
+Use <Terminology title="A free-form tag attached to a torrent" to="/docs/reference/terminology#label">labels</Terminology> to group torrents without changing their profile, folder, or VPN connection.
+
+## How Labels Work
+
+- A torrent can have up to 64 labels. Each label has 1 to 128 characters, and two labels that differ only in capitalization count as duplicates.
+- A new torrent starts with the labels from its selected profile. You can change them in **Add torrent** and later in the torrent's **Options** tab.
+- Saved labels appear as choices in label fields and under **Labels** in the sidebar, and stay available when no torrent uses them. A label you type anywhere, in a profile, Add torrent or a torrent's details, is saved as soon as it is used, and so is a label a remote app sets. Up to 1,024 labels are saved; past that, a new label still works on its torrent but isn't offered as a choice.
+- Selecting a label under **Labels** filters the library. The active label appears as a removable pill under **Search**.
+
+Labels do not choose a download folder or VPN connection. Change the torrent's [profile](/docs/torrents/torrent-profiles/#change-a-torrents-profile) for either of those changes.
+
+## Edit Saved Labels
+
+On a wide screen, select **Edit** beside **Labels** in the **Torrents** sidebar. On a phone, open the **Torrents** page, select **Filters**, then select **Edit** beside **Labels**.
+
+1. Type a label and select **Add**, edit a name in place, or remove one with its delete button.
+2. Review the changes. Renaming a label renames it on every torrent and profile that uses it, and deleting a label removes it from every torrent and profile that uses it.
+3. Select **Save**.
+
+<Frame caption="Editing labels used across the torrent library" style={{ maxWidth: 554, marginInline: 'auto' }}>
+  <ThemedImage sources={{ light: locationsAndLabelsThreeLight, dark: locationsAndLabelsThreeDark }} alt="Labels dialog listing saved labels, with a field to add another and a note that removing a label removes it from its torrents and profiles and renaming one renames it on them" width={552} height={596} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+Renaming or deleting a label does not move a torrent's files, change its profile, or put it on another VPN connection.
+
+If someone else saves first, the dialog loads the latest labels and reapplies your edits. When another change wins the second save too, the merged list stays open so you can review and save again.
+
+## Change One Torrent's Labels
+
+Open the torrent, choose **Options**, edit **Labels**, and select **Save options**. The torrent keeps its profile, folder, VPN connection, and other settings.
+
+To restore a profile's labels, choose that profile in the same tab, turn on **Also apply its labels and limits**, and select **Apply**. This one-time copy also applies the profile's per-torrent limits.

@@ -1,0 +1,147 @@
+---
+id: export-and-import
+title: Export and Import
+description: Export selected Transmission VPN settings to a portable file, import that file elsewhere, or migrate a Transmission 3 or 4 configuration.
+sidebar_position: 4
+keywords:
+  - transmission vpn
+  - export
+  - import
+  - backup
+  - migration
+  - transmission 4
+tags:
+  - configuration
+  - backup
+  - migration
+---
+
+import ThemedImage from '@theme/ThemedImage';
+import { Frame, Terminology } from '@cbnventures/docusaurus-preset-nova/blocks';
+
+import exportAndImportOneLight from './_assets_/export-and-import-1-light.png';
+import exportAndImportOneDark from './_assets_/export-and-import-1-dark.png';
+import exportAndImportTwoLight from './_assets_/export-and-import-2-light.png';
+import exportAndImportTwoDark from './_assets_/export-and-import-2-dark.png';
+import exportAndImportThreeLight from './_assets_/export-and-import-3-light.png';
+import exportAndImportThreeDark from './_assets_/export-and-import-3-dark.png';
+
+Use **Backup** at the end of **Settings** to move selected configuration between installations or bring an existing Transmission 3 or 4 setup into Transmission VPN.
+
+<Frame caption="Settings ends with the Backup panel">
+  <ThemedImage sources={{ light: exportAndImportOneLight, dark: exportAndImportOneDark }} alt="Backup panel at the end of Settings with Export and import, Save this setup to a file, or bring one in. You can also import from another Transmission, and the Export and Import buttons" width={960} height={133} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+## Export
+
+1. Open **Settings**, scroll to **Backup**, and select **Export…**.
+2. Leave every section selected, or clear anything that should stay out of the <Terminology title="a portable JSON backup made from selected Backup sections" to="/docs/reference/terminology#export-file">export file</Terminology>.
+3. Select **Continue**.
+4. Complete <Terminology title="the fresh account check before an export or import" to="/docs/reference/terminology#confirm-its-you">**Confirm it’s you**</Terminology>, then select **Confirm**.
+
+The downloaded file is named `transmission-vpn-export-YYYY-MM-DD.json`. It can be imported into another installation without its <Terminology title="Key that encrypts saved secrets, such as VPN logins" to="/docs/reference/terminology#installation-key">installation key</Terminology>.
+
+### Export Sections
+
+- **Settings and profiles** — Global Transmission settings, the <Terminology title="The first profile, used when no named profile matches" to="/docs/reference/terminology#default-profile">Default profile</Terminology>, and every named <Terminology title="The folder, VPN connection, labels, and defaults that belong to a torrent" to="/docs/reference/terminology#profile">profile</Terminology>.
+- **Labels** — Every saved <Terminology title="A free-form tag attached to a torrent" to="/docs/reference/terminology#label">label</Terminology>, including one that no torrent uses now.
+- **Notifications** — Destinations, events, settings, and sign-ins.
+- **Torrent list** — Metainfo, profile, labels, limits, download folder, and paused state. Downloaded data is never included.
+- **VPN connections** — Providers, endpoints, sign-ins, DNS servers, peer ports, and connection choices.
+- **Remote app logins and API tokens** — Compatible <Terminology title="Username and generated password for the compatible RPC route" to="/docs/reference/terminology#rpc-login">RPC logins</Terminology> and scoped <Terminology title="A scoped credential for automating the API" to="/docs/reference/terminology#api-token">API tokens</Terminology>.
+
+:::warning
+The file holds selected VPN credentials, endpoint configurations, and notification secrets in plain text. RPC passwords and API token values remain stored as digests, but the rest of the file still needs the same protection as a password.
+:::
+
+### Confirm It's You
+
+<Terminology title="the fresh account check before an export or import" to="/docs/reference/terminology#confirm-its-you">Confirm it’s you</Terminology> asks for the current account password and, when the authenticator app is on, its current 6-digit **Authenticator code**. Select **Use a passkey instead** to complete the check with a saved passkey.
+
+The confirmation lasts five minutes, works once, belongs only to that browser session, and is limited to the export or import that requested it. Closing the dialog, using another browser, or trying the other operation requires another confirmation.
+
+## Import an Export File
+
+1. Open **Settings**, scroll to **Backup**, and select **Import…**.
+2. In **Source**, choose <Terminology title="a portable JSON backup made from selected Backup sections" to="/docs/reference/terminology#export-file">**An export file**</Terminology>, then select the JSON file.
+3. Complete **Folders**, **Profiles**, and **Settings** when those steps appear.
+4. Check **Review**, then select **Import**.
+5. Complete <Terminology title="the fresh account check before an export or import" to="/docs/reference/terminology#confirm-its-you">**Confirm it’s you**</Terminology>, then select **Confirm**.
+
+The wizard shows only the steps the file needs. A missing download folder adds **Folders**; saved profiles add **Profiles**; and saved settings add **Settings** before **Review** and **Importing**.
+
+<Frame caption="Review lists every change before anything is applied">
+  <ThemedImage sources={{ light: exportAndImportTwoLight, dark: exportAndImportTwoDark }} alt="Import dialog on Review with Ready to import and checked lines to create or update 6 profiles, replace 3 notification destinations and 2 RPC logins with the same name, skip 3 API tokens that are already here, add 1 torrent paused then re-check 3.7 GB on disk, and start the torrent that was running, above a re-check time note and the Import button" width={1064} height={626} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+### What the Import Changes
+
+- **Settings** — Saved values replace current values when this version supports them and no <Terminology title="A managed value that overrides and freezes a setting" to="/docs/reference/terminology#managed-lock">managed lock</Terminology> blocks them. Unsupported, locked, or invalid values appear under **Not brought over**.
+- **Default profile** — The <Terminology title="The first profile, used when no named profile matches" to="/docs/reference/terminology#default-profile">Default profile</Terminology> is updated in place.
+- **Named profiles** — A new name is added. When the same name already exists, choose **Replace** or **Keep this one**.
+- **Labels** — Saved labels are added without removing labels already here.
+- **Notifications** — Selecting this section merges destinations by name. A destination with the same name, ignoring letter case, is replaced; new destinations are added up to the limit; and destinations not in the file stay.
+- **VPN connections** — A connection with a new name is added when its provider, tunnel, endpoints, sign-in, and slot are available. A connection with the same name is kept, and anything unavailable is skipped with a warning.
+- **Remote access** — Selecting this section merges RPC logins and API tokens. Matching usernames replace RPC logins, duplicate tokens are skipped by ID, name, or stored hash, new credentials are added up to the limit, and credentials not in the file stay.
+- **Torrents** — A torrent already present is skipped. Every other torrent is added paused. When its top-level file or folder is in the mapped folder, it is re-checked and then returned to its saved paused or running state; otherwise it stays paused as **Data missing**.
+- **Unselected sections** — Anything omitted from the file stays as it is here.
+
+The import runs as a background job. Select **Keep importing in the background** or close the dialog without stopping it; the **Backup** section shows the running job and opens it again after a page refresh.
+
+## Import from Another Transmission
+
+Mount the old Transmission config folder into this container as read-only. The folder must directly contain `settings.json`, `torrents`, and, when it exists, `resume`.
+
+```yaml title="compose.override.yml"
+services:
+  app:
+    volumes:
+      - /path/to/old/config:/import:ro
+```
+
+Mount the old download folders under `/data` too. The import reads the mounted config but never changes it, and it does not copy downloaded data.
+
+1. Stop the old Transmission so its config files do not change during the import.
+2. Add and test a default VPN connection in Transmission VPN.
+3. Open **Settings**, scroll to **Backup**, and select **Import…**.
+4. Choose **Another Transmission** in **Source**, enter `/import` as the **Config folder**, and wait for **Checking source…** to finish.
+5. In **Folders**, map every old download and incomplete folder to an existing folder under `/data`.
+6. In **Profiles**, review the generated names, choose a VPN connection when a folder should not follow the default, and clear any empty sibling folder that should be skipped.
+7. In **Settings**, review both the supported changes and **Not brought over**.
+8. In **Review**, check the counts and any warnings, select **Import**, complete <Terminology title="the fresh account check before an export or import" to="/docs/reference/terminology#confirm-its-you">**Confirm it’s you**</Terminology>, and select **Confirm**.
+
+<Frame caption="The source check reads the mounted config folder">
+  <ThemedImage sources={{ light: exportAndImportThreeLight, dark: exportAndImportThreeDark }} alt="Import dialog on Source with Another Transmission selected, Config folder /import, and the check Transmission 4, settings.json, 15 torrents, nothing in it will be changed" width={1064} height={571} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+### Folders and Profiles
+
+The old default download folder becomes the <Terminology title="The first profile, used when no named profile matches" to="/docs/reference/terminology#default-profile">Default profile</Terminology>'s folder. Every other download folder becomes a named <Terminology title="The folder, VPN connection, labels, and defaults that belong to a torrent" to="/docs/reference/terminology#profile">profile</Terminology>, named after the folder.
+
+- **Same paths** — When an old folder exists here at the same path, **Folders** fills it in. Otherwise, choose a folder with **Browse…**.
+- **Empty folders beside them** — When the old download folders are mounted here at the same paths, empty folders next to them are offered as profiles too, because another app may still send torrents there. A folder that a profile here already uses is never offered.
+- **A folder a profile already uses** — When an old folder is mapped to a folder that a profile here already uses, the import suggests that profile's name and updates it instead of creating a second profile.
+- **One folder each** — Each profile keeps its own folder, so two old download folders cannot be mapped to the same folder, and no profile's folder, the **Default profile**'s included, can sit inside another profile's folder or contain one. **Folders** shows the reason in red beside each folder that breaks the rule. The same applies to an export file saved before this rule: each overlapping folder is listed under **Folders**, even when it exists here, and **Import** stays unavailable until each profile has a folder of its own.
+
+The incomplete folder carries over and is mapped separately, so unfinished downloads can continue in place. The folder check looks for each torrent's top-level file or folder and reports **Found**, **Not found**, **Empty**, or a partial count before anything changes.
+
+### What Comes Over
+
+- **Torrent list** — Transmission 3 and 4 torrent and resume files, including labels, added dates, per-torrent limits, folders, and saved paused or running state.
+- **Profiles** — One profile for each included download folder, with the old global seeding, speed, peer, and start-paused behavior as its defaults.
+- **Settings** — **Download queue**, **Seeding**, **Speed limits**, **Blocklists**, **Global peer limit**, **Peers per torrent**, **Incomplete folder**, and **Start added torrents**.
+- **Data check** — Each imported torrent whose top-level file or folder is found is re-checked, then returns to its saved paused or running state. A torrent whose data is not found stays paused and is reported as **Data missing**, so it never starts downloading from scratch.
+
+### Not Brought Over
+
+- **RPC settings and credentials** — Remote apps use separate <Terminology title="Username and generated password for the compatible RPC route" to="/docs/reference/terminology#rpc-login">RPC logins</Terminology> here. Add one afterwards for each app that used the old Transmission, then paste it into that app.
+- **Peer port and port-forwarding settings** — Each VPN connection owns its peer port and incoming-port behavior.
+- **Bind addresses** — Torrent traffic always leaves through its selected VPN connection.
+- **Watch folders** — Watch folders are not supported.
+- **Scripts** — Added, completed, and done-seeding scripts are not supported.
+- **Alternative speed schedules** — Scheduled alternative speeds are not supported.
+- **Encryption and peer discovery policy** — Transmission VPN manages encryption, DHT, peer exchange, Local Peer Discovery, and uTP.
+- **Partial-file renaming** — Renaming partial files is not supported.
+- **Non-HTTPS blocklists** — Blocklist sources must use HTTPS.
+- **Values outside this app's limits** — For example, a global peer limit above 100,000 or a per-torrent peer limit above 10,000. The value here stays.
+- **Other settings without an equivalent** — They remain listed under **Not brought over** with that reason.

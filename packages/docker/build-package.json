@@ -1,0 +1,18 @@
+{
+  "name": "transmission-vpn-tool-docker-build",
+  "private": true,
+  "version": "0.0.0",
+  "workspaces": [
+    "apps/transmission"
+  ],
+  "allowScripts": {
+    "core-js": true,
+    "es5-ext": false,
+    "fsevents": true,
+    "unrs-resolver": true
+  },
+  "engines": {
+    "node": "^22 || ^24 || ^26"
+  },
+  "packageManager": "npm@11.18.0"
+}

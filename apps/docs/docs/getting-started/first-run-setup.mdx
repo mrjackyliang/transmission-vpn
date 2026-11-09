@@ -1,0 +1,107 @@
+---
+id: first-run-setup
+title: First-Run Setup
+description: Claim a new Transmission VPN installation with the one-time claim code from the container logs, create the administrator account, and sign in again later.
+sidebar_position: 2
+keywords:
+  - transmission vpn
+  - first-run setup
+  - claim code
+  - administrator account
+  - sign in
+tags:
+  - getting started
+  - setup
+  - accounts
+---
+
+import ThemedImage from '@theme/ThemedImage';
+import { Frame, Terminology } from '@cbnventures/docusaurus-preset-nova/blocks';
+
+import firstRunSetupOneLight from './_assets_/first-run-setup-1-light.png';
+import firstRunSetupOneDark from './_assets_/first-run-setup-1-dark.png';
+
+Claim a new installation with the one-time code from the container logs, and create the single administrator account.
+
+## Open the Web Interface
+
+Open `http://<docker-host>:22602/` in a browser, where `<docker-host>` is the name or address of the machine that runs Docker. If you changed `TRANSMISSION_VPN_PORT`, use that port instead.
+
+A new installation opens the **Set up your account** screen, which asks for a <Terminology title="One-time code from the logs that creates the administrator" to="/docs/reference/terminology#claim-code">claim code</Terminology>, a username, and a password.
+
+<Frame caption="Setting up the account on the first visit" style={{ maxWidth: 450, marginInline: 'auto' }}>
+  <ThemedImage sources={{ light: firstRunSetupOneLight, dark: firstRunSetupOneDark }} alt="Set up your account screen with a one-time code, a username, and a password rated Strong, above the Create account button" width={448} height={735} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+## Find the Claim Code
+
+Read the code from the container logs:
+
+```bash
+docker compose logs app | grep setupCode
+```
+
+- The line has the message `No administrator account exists yet. Open the web interface to create it with the setup code.`
+- Its `setupCode` field holds the code, and `expiresAt` shows when the code stops working.
+- The code looks like `XXXXX-XXXXX-XXXXX`. Letter case, spaces, and dashes don't matter when you type it.
+- A generated code works for 30 minutes.
+- Without a mounted claim secret, each time the container starts while the installation is unclaimed, it prints a new code, and the previous code stops working.
+- Older codes stay in the logs after a restart, so the last matching line holds the current code.
+
+To get a fresh code, restart the container and read the logs again:
+
+```bash
+docker compose restart app
+docker compose logs app | grep setupCode
+```
+
+## Create the Administrator
+
+1. Enter the code in **<Terminology title="One-time code from the logs that creates the administrator" to="/docs/reference/terminology#claim-code">One-time code</Terminology>**.
+2. Enter a username with 3 to 64 letters, digits, periods, underscores, or hyphens, starting with a letter or digit.
+3. Enter a password with 12 to 1024 characters, then type it again in **Confirm password**. The bar under the field rates it from **Weak** to **Strong**, and any password of 12 or more characters is accepted.
+4. Select **Create account**.
+
+You're signed in right away, and the <Terminology title="One-time code from the logs that creates the administrator" to="/docs/reference/terminology#claim-code">claim code</Terminology> can't be used again. Transmission VPN has a single administrator account, so it is recommended to keep its password in a password manager.
+
+:::warning
+You can change the administrator's username and password under **Sign-in and security** in the account menu, but nothing can reset a forgotten password.
+:::
+
+## Use a Claim Secret File
+
+A <Terminology title="Mounted file used instead of a generated claim code" to="/docs/reference/terminology#claim-secret-file">claim secret file</Terminology> replaces the generated code with a secret you choose, which suits deployments managed by other tools.
+
+- **Location** — Mount the file at `/run/secrets/transmission-vpn-claim`.
+- **Length** — It must hold 12 to 256 characters after surrounding spaces and line breaks are removed.
+- **Lifetime** — It works for 24 hours after the container starts, and each restart while unclaimed starts a new 24-hour window.
+- **Permissions** — The built-in `control` user (UID 65532) must be able to read it, or the web interface doesn't start.
+- **Logging** — The logs note `No administrator account exists yet. Open the web interface to create it with the mounted setup code.` but never print the secret.
+- **Exact match** — Unlike a generated code, a claim secret has to be typed exactly as it is in the file.
+- **After claiming** — The file is no longer read once the installation is claimed.
+
+Compose can mount the file as a secret:
+
+```yaml title="compose.override.yml"
+services:
+  app:
+    secrets:
+      - transmission-vpn-claim
+
+secrets:
+  transmission-vpn-claim:
+    file: ./transmission-vpn-claim.txt
+```
+
+Enter the file's contents in **<Terminology title="One-time code from the logs that creates the administrator" to="/docs/reference/terminology#claim-code">One-time code</Terminology>** to create the administrator.
+
+## Sign In Later
+
+- **Sessions** — A browser session ends 24 hours after you sign in, however much you use it, and reloading the page then shows the **Sign in** screen.
+- **Failed attempts** — After 10 failed sign-in attempts from one address, more attempts are refused until 15 minutes have passed since the first failure. [Notifications](/docs/alerts/notifications/) can alert you when that happens.
+- **Sign out** — Open the account menu and select **Sign out**. The same menu contains **Appearance** and **Sign-in and security** at every screen size.
+
+## Next Steps
+
+- **[Connect to a VPN](/docs/vpn/connecting/)** — Choose a provider, build an <Terminology title="Ordered endpoints from one provider and tunnel for failover" to="/docs/reference/terminology#endpoint-pool">endpoint pool</Terminology>, and test the connection.
+- **[Settings](/docs/configuration/settings/)** — Review the Transmission settings and when changes take effect.

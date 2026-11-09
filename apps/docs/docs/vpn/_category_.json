@@ -1,0 +1,10 @@
+{
+  "label": "VPN Protection",
+  "position": 3,
+  "collapsible": true,
+  "collapsed": true,
+  "link": {
+    "type": "generated-index",
+    "description": "Connect to a VPN provider over OpenVPN or WireGuard, build an endpoint pool, upload custom profiles, and see how leak protection keeps Transmission blocked."
+  }
+}

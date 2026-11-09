@@ -1,0 +1,130 @@
+/**
+ * ============================
+ * Design Tokens
+ * ============================
+ */
+
+/* Light is the base theme; dark layers on top for "dark" and for "system" when the OS is dark. */
+:root {
+  color-scheme: light;
+
+  --color-canvas: #f9fafc;
+  --color-surface: #ffffff;
+  --color-surface-raised: #f1f3f5;
+  --color-surface-hover: #eceef1;
+  --color-surface-pressed: #e3e6ea;
+  --color-border: #dfe2e6;
+  --color-border-strong: #c9cdd3;
+  --color-text: #181b1f;
+  --color-text-soft: #3d4249;
+  --color-muted: #5f646a;
+  --color-ink: #3d4249;
+  --color-on-accent: #ffffff;
+  --color-danger: #be3122;
+  --color-danger-soft: rgb(190 49 34 / 9%);
+  --color-warning: #906106;
+  --color-warning-soft: rgb(144 97 6 / 10%);
+  --color-success: #1f812d;
+  --color-success-soft: rgb(31 129 45 / 9%);
+  --color-scrim: rgb(24 27 31 / 48%);
+  --shadow-raised: 0 1px 2px rgb(24 27 31 / 6%), 0 1px 1px rgb(24 27 31 / 4%);
+  --shadow-float: 0 12px 32px rgb(24 27 31 / 14%), 0 2px 6px rgb(24 27 31 / 8%);
+  --color-switch-knob: #ffffff;
+  --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235f646a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+
+  --font-sans:
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Inter,
+    Roboto,
+    "Helvetica Neue",
+    sans-serif;
+  --font-mono:
+    ui-monospace,
+    "SF Mono",
+    SFMono-Regular,
+    Menlo,
+    Consolas,
+    monospace;
+  --text-xs: 0.75rem;
+  --text-sm: 0.8125rem;
+  --text-md: 0.875rem;
+  --text-lg: 1rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --sidebar-width: 16rem;
+  --control-height: 2.25rem;
+
+  font-family: var(--font-sans);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-canvas: #0f1215;
+  --color-surface: #181b1e;
+  --color-surface-raised: #212428;
+  --color-surface-hover: #26292e;
+  --color-surface-pressed: #2e3237;
+  --color-border: #35383d;
+  --color-border-strong: #464a50;
+  --color-text: #edeff1;
+  --color-text-soft: #c3c7cc;
+  --color-muted: #a0a5ac;
+  --color-ink: #c3c7cc;
+  --color-on-accent: #0f1215;
+  --color-danger: #ff7360;
+  --color-danger-soft: rgb(255 115 96 / 13%);
+  --color-warning: #d79628;
+  --color-warning-soft: rgb(215 150 40 / 14%);
+  --color-success: #61bd67;
+  --color-success-soft: rgb(97 189 103 / 13%);
+  --color-scrim: rgb(0 0 0 / 56%);
+  --shadow-raised: 0 1px 2px rgb(0 0 0 / 40%);
+  --shadow-float: 0 16px 40px rgb(0 0 0 / 48%), 0 2px 6px rgb(0 0 0 / 32%);
+  --color-switch-knob: #edeff1;
+  --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a0a5ac' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+
+@media (prefers-color-scheme: dark) {
+  html[data-theme="system"] {
+    color-scheme: dark;
+
+    --color-canvas: #0f1215;
+    --color-surface: #181b1e;
+    --color-surface-raised: #212428;
+    --color-surface-hover: #26292e;
+    --color-surface-pressed: #2e3237;
+    --color-border: #35383d;
+    --color-border-strong: #464a50;
+    --color-text: #edeff1;
+    --color-text-soft: #c3c7cc;
+    --color-muted: #a0a5ac;
+    --color-ink: #c3c7cc;
+    --color-on-accent: #0f1215;
+    --color-danger: #ff7360;
+    --color-danger-soft: rgb(255 115 96 / 13%);
+    --color-warning: #d79628;
+    --color-warning-soft: rgb(215 150 40 / 14%);
+    --color-success: #61bd67;
+    --color-success-soft: rgb(97 189 103 / 13%);
+    --color-scrim: rgb(0 0 0 / 56%);
+    --shadow-raised: 0 1px 2px rgb(0 0 0 / 40%);
+    --shadow-float: 0 16px 40px rgb(0 0 0 / 48%), 0 2px 6px rgb(0 0 0 / 32%);
+    --color-switch-knob: #edeff1;
+    --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a0a5ac' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  }
+}

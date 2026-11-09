@@ -1,0 +1,108 @@
+---
+id: adding-torrents
+title: Adding Torrents
+description: Add one or several torrents from links or files, review each profile, and check its read-only folder and VPN connection before adding.
+sidebar_position: 1
+keywords:
+  - transmission vpn
+  - add torrent
+  - magnet link
+  - torrent file
+  - download location
+  - labels
+tags:
+  - torrents
+  - magnet links
+  - downloads
+---
+
+import ThemedImage from '@theme/ThemedImage';
+import { Frame, Terminology } from '@cbnventures/docusaurus-preset-nova/blocks';
+
+import addingTorrentsOneLight from './_assets_/adding-torrents-1-light.png';
+import addingTorrentsOneDark from './_assets_/adding-torrents-1-dark.png';
+import addingTorrentsTwoLight from './_assets_/adding-torrents-2-light.png';
+import addingTorrentsTwoDark from './_assets_/adding-torrents-2-dark.png';
+import addingTorrentsThreeLight from './_assets_/adding-torrents-3-light.png';
+import addingTorrentsThreeDark from './_assets_/adding-torrents-3-dark.png';
+import addingTorrentsFourLight from './_assets_/adding-torrents-4-light.png';
+import addingTorrentsFourDark from './_assets_/adding-torrents-4-dark.png';
+
+Add one or several torrents from magnet links, web addresses, or `.torrent` files with **Add torrent** at the top of the **Torrents** page.
+
+When there is no VPN connection, **Add torrent** opens **Add a VPN connection first** instead. Select **Add VPN connection** to open the new-connection form, or **Cancel** to stay on the Torrents page.
+
+## Add a Magnet Link or URL
+
+1. Select **Add torrent**.
+2. On the **Links or magnets** tab, paste one link, or put several links on separate lines.
+3. Choose the options below, then select **Add torrent** in the dialog.
+
+- Magnet links must start with `magnet:` and include an `xt` value.
+- Web addresses must start with `http://` or `https://`, include a host, and contain no username or password.
+
+Each web address shows **Checking…** while the container downloads its `.torrent` file through the default VPN connection to read the torrent's real name and size. That name picks the profile and spots torrents that are already added, so a link such as `…/2026.11.01/torrent/` still matches a pattern like `archlinux-*`. If the file can't be read, for example while the default connection isn't protected, the row keeps the name from the address. Magnet links use their `dn` name without any download.
+
+## Upload a Torrent File
+
+1. Select **Add torrent**, then open the **Torrent files** tab.
+2. Drop one or several `.torrent` files on the drop area, or select the drop area to browse your device.
+3. Choose the options below, then select **Add torrent**.
+
+Each file must be non-empty and smaller than 700 KiB.
+
+## Choose a Profile
+
+For one torrent, **Profile** shows the matched <Terminology title="The folder, VPN connection, labels, and defaults that belong to a torrent" to="/docs/reference/terminology#profile">profile</Terminology>, or the profile with the Default role when no pattern matches. You can choose another profile.
+
+When the name matches several profiles, **Profile** reads `Matches N profiles. Pick one.` Choose a profile before adding the torrent; **Add torrent** stays unavailable until you do.
+
+<Frame caption="A name that matches two profiles waits for a pick" style={{ maxWidth: 586, marginInline: 'auto' }}>
+  <ThemedImage sources={{ light: addingTorrentsFourLight, dark: addingTorrentsFourDark }} alt="Add torrent dialog for Example.Show.S01E05.2160p with the Profile field reading Matches 2 profiles. Pick one., the Default profile's folder and connection shown read-only, and the Add torrent button unavailable" width={584} height={1086} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+The profile supplies **Download location** and **VPN connection**. Both fields are read-only, and the line below the location shows its free space.
+
+The **Labels** field starts with the profile's labels, and **Add paused** starts with its paused choice. You can change either one before adding the torrent. **Also applies** lists the profile's seeding rule, speed limits, priority, peer limit, and queue position.
+
+The **Default profile** supplies its own folder and sends the torrent to the default VPN connection.
+
+<Frame caption="Reviewing a matched profile's read-only folder and VPN" style={{ maxWidth: 586, marginInline: 'auto' }}>
+  <ThemedImage sources={{ light: addingTorrentsOneLight, dark: addingTorrentsOneDark }} alt="Add torrent dialog for The Example Show with the TV profile marked Matched, read-only Download location and VPN connection fields, free-space feedback, editable labels and Add paused, and the profile's seeding, speed, priority, peer, and queue defaults" width={584} height={1086} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+For several torrents, the dialog shows one row for each source. Review or change each row's profile, which decides that torrent's folder, VPN connection, starting labels, paused state, and limits, then select **Add torrents**. Every row with several matches needs a profile choice first.
+
+The result beside each row reads **Added**, **Already added**, or **Failed**. A duplicate's detail says `Already added: <name>, in <profile> on <connection>.`, and a single-source add shows the same message in a notification.
+
+A torrent added by link starts only after the cross-connection duplicate check passes.
+
+<Frame caption="Reviewing a profile for each torrent source" style={{ maxWidth: 906, marginInline: 'auto' }}>
+  <ThemedImage sources={{ light: addingTorrentsTwoLight, dark: addingTorrentsTwoDark }} alt="Add torrents dialog with three sources and a separate matched profile selector on each row, so every torrent gets that profile's folder and VPN connection" width={904} height={622} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+<Frame caption="Added, already-added, and failed torrent results" style={{ maxWidth: 906, marginInline: 'auto' }}>
+  <ThemedImage sources={{ light: addingTorrentsThreeLight, dark: addingTorrentsThreeDark }} alt="Some torrents weren't added dialog with The Example Show marked Already added and its existing profile and connection named, Ubuntu 26.04 Desktop failed, and Example Movie added" width={904} height={475} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+[Torrent profiles](/docs/torrents/torrent-profiles/) covers profile folders, VPN connections, automatic matching, and the **Default profile**.
+
+## Add Labels
+
+- Select saved labels to add them, or type labels separated by commas.
+- A torrent can have up to 64 labels, each with 1 to 128 characters.
+- Two labels that differ only in capitalization count as duplicates and are refused.
+
+[Labels](/docs/torrents/labels/) covers editing the saved list and changing labels later.
+
+## Add Paused
+
+**Add paused** adds the torrent without starting it, so you can review its files, trackers, and options first.
+
+The selected profile supplies this starting value. Changing profiles before adding updates **Add paused** to that profile's choice.
+
+## While Traffic Is Blocked
+
+You can add a magnet or upload a `.torrent` file while its connection is blocked. The torrent stays paused from the network until that connection reads **Protected** on the **VPN** page.
+
+Adding by web address needs the selected connection's Transmission to download the `.torrent` file. Wait for that connection to read **Protected**, or upload the file instead.

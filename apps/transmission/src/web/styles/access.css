@@ -1,0 +1,57 @@
+/**
+ * ============================
+ * Proxy Logins
+ * ============================
+ */
+
+.rpc-login-row,
+.web-proxy-login-row {
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+
+.rpc-login-actions,
+.web-proxy-login-actions {
+  justify-content: flex-start;
+  margin-left: calc(var(--space-2) * -1);
+}
+
+/* The actions sit beside the login only when the card has room for the username and its details. */
+@container (min-width: 28rem) {
+  .rpc-login-row,
+  .web-proxy-login-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+
+  .rpc-login-actions,
+  .web-proxy-login-actions {
+    justify-content: flex-end;
+    margin-left: 0;
+  }
+}
+
+/**
+ * ============================
+ * API Tokens
+ * ============================
+ */
+
+.api-token-list .token-strip-copy {
+  flex-basis: 100%;
+}
+
+.api-token-list .token-actions {
+  margin-left: calc(var(--space-2) * -1);
+}
+
+/* The actions sit beside the token only when the card has room for its scopes and dates. */
+@container (min-width: 28rem) {
+  .api-token-list .token-strip-copy {
+    flex-basis: 0%;
+  }
+
+  .api-token-list .token-actions {
+    margin-left: 0;
+  }
+}

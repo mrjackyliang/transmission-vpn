@@ -1,0 +1,165 @@
+---
+id: torrent-profiles
+title: Torrent profiles
+description: Give every torrent one profile that owns its download folder and VPN connection, supplies labels and limits, and organizes the library.
+sidebar_position: 2
+keywords:
+  - transmission vpn
+  - torrent profiles
+  - default profile
+  - auto-detect
+  - torrent defaults
+  - profile filter
+tags:
+  - torrents
+  - profiles
+  - organization
+---
+
+import ThemedImage from '@theme/ThemedImage';
+import { Frame, Terminology } from '@cbnventures/docusaurus-preset-nova/blocks';
+
+import locationsAndLabelsOneLight from './_assets_/locations-and-labels-1-light.png';
+import locationsAndLabelsOneDark from './_assets_/locations-and-labels-1-dark.png';
+import torrentProfilesOneLight from './_assets_/torrent-profiles-1-light.png';
+import torrentProfilesOneDark from './_assets_/torrent-profiles-1-dark.png';
+import torrentProfilesTwoLight from './_assets_/torrent-profiles-2-light.png';
+import torrentProfilesTwoDark from './_assets_/torrent-profiles-2-dark.png';
+import torrentProfilesThreeLight from './_assets_/torrent-profiles-3-light.png';
+import torrentProfilesThreeDark from './_assets_/torrent-profiles-3-dark.png';
+import torrentProfilesFourLight from './_assets_/torrent-profiles-4-light.png';
+import torrentProfilesFourDark from './_assets_/torrent-profiles-4-dark.png';
+import torrentProfilesFiveLight from './_assets_/torrent-profiles-5-light.png';
+import torrentProfilesFiveDark from './_assets_/torrent-profiles-5-dark.png';
+
+Assign every torrent to one <Terminology title="The folder, VPN connection, labels, and defaults that belong to a torrent" to="/docs/reference/terminology#profile">profile</Terminology> so its files and traffic have one place to go.
+
+## What a Profile Holds
+
+Every profile has these settings:
+
+- **Name**.
+- **Download folder**, which must be a unique folder inside `/data` and outside the incomplete folder.
+- **Labels** for new torrents.
+- **Start paused** for new torrents.
+- **Seeding** set to **Never stop**, or **Stop at a limit** with a ratio, an idle time, or both.
+- **Download limit** and **Upload limit**, each set to **Unlimited** or a speed in KB/s.
+- **Priority**, **Peer limit**, and **Queue position**.
+
+A named profile also has a **VPN connection** and **Name patterns** for automatic matching. Its connection can be a named connection or **Default**, which follows the default VPN connection.
+
+<Frame caption="Editing the TV profile with an overlapping-pattern note" style={{ maxWidth: 906, marginInline: 'auto' }}>
+  <ThemedImage sources={{ light: torrentProfilesTwoLight, dark: torrentProfilesTwoDark }} alt="Edit TV profile dialog with its folder, Fabrikam New York connection, labels and torrent defaults, and an Auto-detect card listing each name pattern on its own row with Add pattern, a note naming the other profiles its patterns can also match, and How to write a pattern" width={904} height={1258} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+## One Folder per Profile
+
+The **Profiles** list is the complete list of profile-owned download folders. The **Default profile** and every named profile must use different folders.
+
+- **No nesting** — Once a folder belongs to a profile, no other profile's folder can sit inside it or contain it. This includes the **Default profile**'s folder, so keep each profile's folder side by side, such as `/data/downloads` and `/data/movies`.
+
+Select **Browse** beside **Download folder** to open **Choose profile folder**. A folder that cannot be used can still be opened to reach its subfolders, but it cannot be selected and **Use this folder** stays unavailable.
+
+The dialog explains the reason, such as `“downloads” is already the Default profile's folder.` or `This folder contains the TV profile's folder.` Saving such a folder is refused too.
+
+### Fixing Overlapping Folders
+
+A setup saved before this rule, or set up through managed configuration, can still have one profile's folder inside another's. **Torrents** then shows **Profile folders overlap** with a line for each profile involved and a **Change folder** button that opens its editor.
+
+Until every profile has its own folder, new torrents can't be added to those profiles, from the console or from remote apps, and saving one of them with its overlapping folder is refused. Choose a folder side by side with the others to clear the warning.
+
+<Frame caption="Opening an unavailable folder to choose a usable subfolder" style={{ maxWidth: 554, marginInline: 'auto' }}>
+  <ThemedImage sources={{ light: locationsAndLabelsOneLight, dark: locationsAndLabelsOneDark }} alt="Choose profile folder dialog with the Default profile's downloads folder and its subfolders unavailable, and the media folder open but unavailable because it holds the TV profile's folder, while audio and films inside it can still be chosen, with Use this folder unavailable until a usable folder is selected" width={552} height={780} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+Select **New folder** to enter a name and select **Create folder**. The picker returns to its tree with the new folder selected, while the profile editor stays open behind it.
+
+Saving a profile creates its folder and any missing parent folders. The folder browser can delete one empty, unassigned folder at a time, but it cannot delete a profile folder, the incomplete folder or anything under it, a separate mount, or a folder that contains torrent data.
+
+## Manage Profiles
+
+On a wide screen, use **Profiles** in the **Torrents** sidebar:
+
+1. Select **New profile** to create one.
+2. Open a named profile's **⋯** menu to **Edit** or **Delete** it.
+
+The profile with the Default role is listed first. Named profiles follow alphabetically, without drag handles or keyboard move controls.
+
+<Frame caption="The Default profile first and named profiles alphabetically">
+  <ThemedImage sources={{ light: torrentProfilesOneLight, dark: torrentProfilesOneDark }} alt="Desktop Torrents page with a profile-choice banner, the Default profile first, named profiles listed alphabetically without drag handles, and a named profile menu open with Edit and Delete" width={1280} height={1282} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+On a phone, open **Torrents**, then select **Filters** beside **Search**. Its sheet shows **Status**, **Profiles**, and **Labels** with their counts, plus **New profile**, every profile's **⋯** menu, and **Edit** for labels. Selecting a row filters the list and closes the sheet.
+
+<Frame caption="Alphabetical profile filters and actions on a phone" style={{ maxWidth: 782, marginInline: 'auto' }}>
+  <ThemedImage sources={{ light: torrentProfilesThreeLight, dark: torrentProfilesThreeDark }} alt="Filters sheet on a phone with a Needs a profile status row, the Default profile first, named profiles alphabetically without drag handles, profile menus, and Edit beside Labels" width={780} height={1688} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+Deleting a named profile that has torrents moves them to the profile with the Default role. The dialog says `Delete <name>? Its N torrents move to <Default name>'s folder, <path>, and to <connection>.`, and **Delete and move** confirms it.
+
+Their files move to that profile's folder, and torrents on another connection move to the default connection's Transmission. Labels and per-torrent settings stay as they are.
+
+A torrent that can't be moved stays where it is, joins the Default profile, and is listed with the reason.
+
+## The Default Profile
+
+The <Terminology title="The first profile, used when no named profile matches" to="/docs/reference/terminology#default-profile">Default profile</Terminology> role is always first. You can edit its **Name**, but it cannot be deleted or assigned name patterns.
+
+Open its **⋯** menu and select **Edit** to use the same editor as named profiles. It contains **Name**, **Download folder**, **Labels**, **Start paused**, **Seeding**, **Download limit**, **Upload limit**, **Priority**, **Peer limit**, and **Queue position**.
+
+Its read-only **VPN connection** shows the current default connection. The hint says `Always the default connection. Change it on the VPN page.`
+
+<Frame caption="Editing the Default profile's name and read-only VPN connection" style={{ maxWidth: 906, marginInline: 'auto' }}>
+  <ThemedImage sources={{ light: torrentProfilesFiveLight, dark: torrentProfilesFiveDark }} alt="Default profile editor with an editable Name, /data/downloads folder, read-only Northwind Toronto VPN connection and its default-connection hint, labels, and torrent defaults, with no Name patterns" width={904} height={1077} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+The folder is the `transmission.downloadDirectory` setting and starts at `/data/downloads`. Managed configuration can seed it or lock it; a lock makes **Download folder** read-only.
+
+An unlocked change applies to Transmission without a restart.
+
+The profile with the Default role receives an add when no named profile matches. It also supplies defaults when you explicitly choose it.
+
+## Save and Move Assigned Torrents
+
+Changing a profile's folder or VPN connection while torrents use it opens **Save and move N torrents?**. Select **Save and move** to save the profile and move each assigned torrent to the profile's folder; when its effective VPN connection changes, the torrent also moves to that connection's Transmission.
+
+<Frame caption="Saving a profile and moving its assigned torrents" style={{ maxWidth: 490, marginInline: 'auto' }}>
+  <ThemedImage sources={{ light: torrentProfilesFourLight, dark: torrentProfilesFourDark }} alt="Save and move 4 torrents confirmation explaining that the profile's torrents must move to its download folder and selected VPN connection, with Cancel and Save and move buttons" width={488} height={215} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+The result lists every torrent that moved or failed. A successful move can include warnings that need review.
+
+## Match Names Automatically
+
+Under **Auto-detect**, each name pattern has its own row. Select **Add pattern** for another row, up to 64, and the trash button to remove one.
+
+A pattern must match the whole torrent name, and matching ignores letter case.
+
+- `*` matches any text, or none.
+- `?` matches exactly one character.
+- Everything else, dots and dashes included, must appear as typed. Put `*` on both sides to match a word anywhere in the name, such as `*2160p*`.
+- A `.torrent` file uses its file name without the `.torrent` ending.
+- A magnet link uses its `dn=` display name.
+- A web address uses the last part of its path.
+
+Select **How to write a pattern** under the patterns for the same rules with examples. Its **Try a name** box lists which of the profile's patterns match a name you paste, before you save.
+
+Overlapping patterns can be saved. The editor names every other profile a name could also match in one note, such as `Can also match the Movies profile. A torrent that matches more than one will ask you to choose.` Patterns like `*2160p*` and `*S??E??*` overlap, because one name can contain both.
+
+One matching named profile is selected automatically, and a source that matches nothing uses the profile with the Default role. When a source matches several profiles, [Add torrent](/docs/torrents/adding-torrents/#choose-a-profile) asks you to choose, while [Remote apps](/docs/remote-access/remote-apps/#where-remote-adds-go) add it paused for resolution.
+
+Remote apps use folder and label matches before name patterns, as covered in [Remote apps](/docs/remote-access/remote-apps/#where-remote-adds-go).
+
+## Change a Torrent's Profile
+
+Open the torrent details, choose **Options**, and select a profile. The hint names the destination folder and, when needed, the destination VPN connection before you select **Apply**.
+
+Applying the change moves the torrent's files to that profile's folder. When the profile uses another connection, it also puts the torrent on that connection's Transmission.
+
+Turn on **Also apply its labels and limits** to copy the chosen profile's labels, seeding rule, speed limits, priority, peer limit, and queue position. Leave it off to keep those per-torrent options.
+
+For several torrents, select them in the library and choose **Change profile** in the selection bar. The same optional **Also apply its labels and limits** choice applies to the whole selection.
+
+## Filter the Library
+
+Select a profile under **Profiles** to show its torrents. The active profile appears as a removable pill under **Search** at every screen width.

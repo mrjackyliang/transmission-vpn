@@ -1,0 +1,122 @@
+---
+id: connections
+title: VPN connections
+description: Run several VPN connections at once, choose the default, understand capacity, and route torrents through the connections owned by their profiles.
+sidebar_position: 1
+keywords:
+  - transmission vpn
+  - vpn connections
+  - default connection
+  - connection capacity
+  - move torrents
+tags:
+  - vpn
+  - connections
+  - torrents
+---
+
+import ThemedImage from '@theme/ThemedImage';
+import { Frame, Terminology } from '@cbnventures/docusaurus-preset-nova/blocks';
+
+import connectionsOneLight from './_assets_/connections-1-light.png';
+import connectionsOneDark from './_assets_/connections-1-dark.png';
+import connectionsTwoLight from './_assets_/connections-2-light.png';
+import connectionsTwoDark from './_assets_/connections-2-dark.png';
+
+A <Terminology title="One VPN tunnel with its own Transmission" to="/docs/reference/terminology#vpn-connection">VPN connection</Terminology> runs its own Transmission. That Transmission sends its traffic only through that connection's tunnel.
+
+You can run several connections at once. When a torrent is added or its profile changes, that profile selects the connection whose Transmission owns it.
+
+## The default connection
+
+One connection is the <Terminology title="The VPN connection used when no other connection is selected" to="/docs/reference/terminology#default-connection">default connection</Terminology>. The first connection becomes the default.
+
+The default connection handles:
+
+- Torrents added with the profile that has the Default role.
+- Remote-app adds when no named profile matches, and paused adds whose names match several profiles until you resolve them.
+- DNS lookups for every Transmission.
+- Web proxy logins set to **Default**.
+
+Making another connection the default also moves the torrents of the Default profile and of every profile whose **VPN connection** is **Default**. When any would move, a dialog says how many first, and **Make default and move** confirms it.
+
+Their files stay in that profile's folder, and a torrent that can't be moved stays on its old connection and is listed with the reason.
+
+The new default then takes later Default-profile adds, unresolved remote adds, Transmission's DNS lookups, and web proxy logins set to **Default**.
+
+## Connection capacity
+
+The **VPN** page summarizes usage as `<N> of <M> connections`. Select **?** beside it to see the memory and CPU values that set the limit, or the two-connection fallback when memory cannot be read.
+
+Capacity uses the container's available memory and CPUs:
+
+1. The container keeps 256 MiB for shared services, then allows one connection for each 160 MiB left.
+2. It allows up to two connections for each available CPU, rounded down to a whole connection.
+3. The smaller result is the capacity, from 1 to 64 connections.
+
+The container reads cgroup memory and CPU limits when Docker supplies them. It uses the available host values when those limits are not present. If it cannot read the memory value, capacity falls back to two connections.
+
+To raise capacity, give the container more memory or CPUs in Docker, Compose, or your container manager. Recreate or restart the container after changing its limits.
+
+The default connection's row says `<Default profile name> torrents and tracker lookups use this connection.` Its saved profile name appears in that sentence.
+
+<Frame caption="Connection usage with capacity help and the Default profile note">
+  <ThemedImage sources={{ light: connectionsOneLight, dark: connectionsOneDark }} alt="VPN page showing 3 of 8 connections with a question-mark capacity explanation, Northwind Toronto marked Default with the note that Default profile torrents and tracker lookups use it, Fabrikam New York protected, and Contoso Frankfurt blocked" width={1280} height={900} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+## Add a connection
+
+1. Open **VPN** in the navigation.
+2. Select **Add connection**.
+3. Enter a name and choose the provider, tunnel, endpoints, sign-in, DNS, retry interval, and peer port.
+4. Select **Test and connect**.
+
+The editor has no status card until the test passes and saves the connection. Each connection then gets its own peer port, starting with an available port at 51413 or above.
+
+[Connect to a VPN](/docs/vpn/connecting/) explains providers, endpoint pools, sign-in fields, and connection tests.
+
+## Edit a connection
+
+Open a connection from the **VPN** page.
+
+- **Name** — Rename the connection, then select **Save**. Renaming saves without reconnecting the VPN.
+- **Peer port** — Enter a port from 1024 to 65535, then select **Save**. The connection's Transmission restarts when it needs the port update.
+- **Provider and connection settings** — Select **Test and connect**. The candidate must pass its checks before it replaces the saved configuration.
+- **Make default** — Choose this action when another connection should handle unmatched adds and Transmission DNS.
+- **Disconnect and block** — Stops this tunnel and blocks its Transmission inside the container.
+- **Reconnect** — Connects this tunnel with its saved configuration and turns its automatic reconnects on.
+
+The connection list shows the protection state and Transmission state for each connection. One blocked connection does not stop protected connections from transferring.
+
+## Remove a connection
+
+The default connection cannot be removed. Make another connection the default first.
+
+When a connection is used by torrents, profiles, or web proxy logins, **Remove** asks where to move them. Choose another connection, then select **Move and remove**. The connection stays in place if a torrent cannot be added to the target.
+
+<Frame caption="Moving dependencies before removing a connection" style={{ maxWidth: 490, marginInline: 'auto' }}>
+  <ThemedImage sources={{ light: connectionsTwoLight, dark: connectionsTwoDark }} alt="Remove Contoso Frankfurt dialog listing 4 torrents, the Linux ISOs profile, and the laptop web proxy login, with Move them to set to Default Northwind Toronto" width={488} height={467} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+Profiles and proxy logins that named the connection are assigned to the selected target. The torrents are moved before the source connection is disconnected and deleted.
+
+## Where torrents live
+
+A torrent lives on one profile and one connection's Transmission. Its connection changes only when:
+
+- You save its profile with another VPN connection and select **Save and move**.
+- You change the torrent to a profile that uses another connection.
+- You remove its connection and choose another connection for everything that uses it.
+- It's in the **Default profile** and you make another connection the default.
+
+Changing a torrent's profile moves its files to that profile's folder and keeps it running or paused as it was. An unfinished torrent keeps its partial data in the incomplete folder and lands in the profile's folder when it finishes. It keeps the torrent's current labels and per-torrent limits unless you turn on **Also apply its labels and limits**.
+
+Connection removal keeps each torrent's files and download folder while transferring it to the target Transmission. It also keeps labels, selected files, file priorities, renamed paths, per-torrent speed and seeding settings, peer limit, running or paused state, and bandwidth group.
+
+The target Transmission starts its own history for that torrent. Uploaded totals and ratio counters start over on the target connection.
+
+## Duplicate provider addresses
+
+Two WireGuard connections can receive the same address from a provider. Some providers assign addresses this way, and it is supported.
+
+Each connection still uses its own private address inside the container. The container sends that address through the matching tunnel and translates it to the provider address at the tunnel boundary.

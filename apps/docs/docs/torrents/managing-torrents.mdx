@@ -1,0 +1,206 @@
+---
+id: managing-torrents
+title: Managing Torrents
+description: Find, filter, and sort torrents in the Transmission VPN library, run batch actions, review details, set per-torrent options, and remove torrents or their data.
+sidebar_position: 3
+keywords:
+  - transmission vpn
+  - manage torrents
+  - torrent library
+  - batch actions
+  - torrent details
+  - remove torrent
+tags:
+  - torrents
+  - library
+  - batch actions
+---
+
+import ThemedImage from '@theme/ThemedImage';
+import { Frame, Terminology } from '@cbnventures/docusaurus-preset-nova/blocks';
+
+import managingTorrentsOneLight from './_assets_/managing-torrents-1-light.png';
+import managingTorrentsOneDark from './_assets_/managing-torrents-1-dark.png';
+import managingTorrentsTwoLight from './_assets_/managing-torrents-2-light.png';
+import managingTorrentsTwoDark from './_assets_/managing-torrents-2-dark.png';
+import managingTorrentsThreeLight from './_assets_/managing-torrents-3-light.png';
+import managingTorrentsThreeDark from './_assets_/managing-torrents-3-dark.png';
+import managingTorrentsFourLight from './_assets_/managing-torrents-4-light.png';
+import managingTorrentsFourDark from './_assets_/managing-torrents-4-dark.png';
+import managingTorrentsFiveLight from './_assets_/managing-torrents-5-light.png';
+import managingTorrentsFiveDark from './_assets_/managing-torrents-5-dark.png';
+import managingTorrentsSevenLight from './_assets_/managing-torrents-7-light.png';
+import managingTorrentsSevenDark from './_assets_/managing-torrents-7-dark.png';
+import managingTorrentsEightLight from './_assets_/managing-torrents-8-light.png';
+import managingTorrentsEightDark from './_assets_/managing-torrents-8-dark.png';
+import managingTorrentsNineLight from './_assets_/managing-torrents-9-light.png';
+import managingTorrentsNineDark from './_assets_/managing-torrents-9-dark.png';
+import managingTorrentsTenLight from './_assets_/managing-torrents-10-light.png';
+import managingTorrentsTenDark from './_assets_/managing-torrents-10-dark.png';
+import managingTorrentsElevenLight from './_assets_/managing-torrents-11-light.png';
+import managingTorrentsElevenDark from './_assets_/managing-torrents-11-dark.png';
+
+Find torrents with filters and search, act on several at once, and adjust each one from its details panel.
+
+## Find Torrents
+
+- **Torrent library** — On wide screens, the sidebar lists **Status**, **Profiles**, and **Labels**, in that order. Every row has a torrent count, and selecting the active row again clears it.
+- **Profile filters** — Choose a <Terminology title="The folder, VPN connection, labels, and defaults that belong to a torrent" to="/docs/reference/terminology#profile">profile</Terminology> to show its torrents. The profile with the Default role is first, followed by named profiles alphabetically.
+- **VPN filters** — Select a connection's torrent count on **VPN** to open the library with that connection applied. The active pill reads **VPN: &lt;name&gt;**.
+- **Status filters** — **All torrents**, **Active** (transferring now), **Downloading**, **Seeding**, and **Paused** always show. **Needs a profile**, **Checking**, **Warnings** (a tracker that warned or isn't working), and **Errors** (a local problem such as missing data or a full disk) appear when a torrent needs them.
+- **Tracker notes** — A torrent whose tracker isn't working keeps its state and shows **Tracker not working** or **Tracker warning** beside it. Public torrents keep finding peers through DHT and peer exchange, while private torrents depend on their trackers. Hover the note, or open the **Trackers** tab, to read the tracker's reply.
+- **Search** — The search box matches torrent names, folder paths, and labels.
+- **Active filters** — The filters in use appear as removable pills under **Search** at every width, with **Clear all** whenever a filter is active.
+- **Sorting** — Select a column heading (**Name**, **Progress**, **Size**, **Down**, **Up**, **ETA**, or **Ratio**) to sort, and select it again to reverse the order. **Size**, **ETA**, and **Ratio** show only on wide screens.
+- **Queue column** — **#** appears when every torrent in the list is on one VPN connection, such as when only one connection exists, a **VPN: &lt;name&gt;** filter is on, or a profile filter's torrents share a connection. Select it to sort by queue position.
+- **Pages** — The menu under the list shows 25, 50, or 100 rows per page.
+- **Sidebar overflow** — When more Status, Profiles, or Labels rows continue below the sidebar, its bottom edge fades. The fade clears when the last row is visible.
+
+Each torrent row carries a VPN tag with the name of its connection. This shows which tunnel carries that torrent's traffic, while a **Needs a profile** tag identifies an unresolved remote add.
+
+<Frame caption="A one-connection VPN filter with the # column visible">
+  <ThemedImage sources={{ light: managingTorrentsEightLight, dark: managingTorrentsEightDark }} alt="Torrents page filtered to Fabrikam New York with the queue number column visible, a profile-choice banner, connection tags, a Needs a profile status row, and named profiles alphabetically" width={1280} height={1154} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+<Frame caption="Several connections with the # column hidden and a profile choice waiting">
+  <ThemedImage sources={{ light: managingTorrentsOneLight, dark: managingTorrentsOneDark }} alt="Torrents page with a one-torrent profile-choice banner and Resolve button, no queue number column across several connections, a Needs a profile row and torrent tag, and named profiles alphabetically" width={1280} height={1282} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+The list refreshes every 2 seconds while the page is open. While it's closed, [Notifications](/docs/alerts/notifications/) can tell you when a torrent finishes, reports an error, or needs a profile choice after a remote add.
+
+## Navigate Between Pages
+
+Each console page has its own address, so browser Back and Forward, refresh, and bookmarks return to the same page. When an address asks you to sign in, a successful sign-in opens that requested page.
+
+- `/` or `/torrents` — **Torrents**.
+- `/vpn` — The VPN connection list; `/vpn/new` opens **New connection**, and `/vpn/<connection-id>` opens a saved connection.
+- `/remote-apps` — **Remote apps**.
+- `/settings` — **Settings**.
+- `/notifications` — **Notifications**.
+- `/account` — **Sign-in and security**.
+
+## Navigate on a Phone
+
+Below 1020 pixels wide, the bottom bar shows at most four tabs in this order: **Torrents**, **VPN**, **Apps**, and **More**. **Apps** opens **Remote apps**.
+
+On the **Torrents** page, **Filters** beside **Search** opens a sheet with **Status**, **Profiles**, and **Labels** and their counts, **New profile**, every profile's **⋯** menu, and **Edit** beside **Labels**. Selecting a row applies the filter and closes the sheet, and the number on **Filters** counts the active filters. Tapping the tab of the page you're on scrolls it back to the top.
+
+**More** opens a sheet with **Settings**, described as `Queue, network and blocklists`, and **Notifications**, described as `Where alerts are sent`.
+
+The account menu contains **Appearance**, **Sign-in and security**, and **Sign out** at every width.
+
+## Batch Actions
+
+1. Select the check box on each torrent, or Shift-click a second check box to select a range.
+2. Use the bar that appears at the bottom of the page, which counts the selected torrents.
+
+<Frame caption="The Change profile selection bar below a profile-choice banner">
+  <ThemedImage sources={{ light: managingTorrentsTwoLight, dark: managingTorrentsTwoDark }} alt="Torrents searched for linux with a profile-choice banner, two torrents checked, no queue number column across several connections, and a 2 selected bar with Start, Pause, Change profile, Remove, more actions, and clear buttons" width={1024} height={900} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+| Control             | What it does                                                                           |
+|---------------------|----------------------------------------------------------------------------------------|
+| **Start**           | Starts the selected torrents, following the download queue.                            |
+| **Pause**           | Stops transfers for the selected torrents.                                             |
+| **Change profile**  | Moves each torrent's files and, when needed, moves it to the profile's VPN connection. |
+| **Remove**          | Removes the torrents, and optionally their data.                                       |
+| **More actions**    | Opens the action menu for the selected torrents.                                       |
+| **Clear selection** | Unselects every torrent.                                                               |
+
+**Change profile** also offers **Also apply its labels and limits**. Leave it off to keep the selected torrents' labels and per-torrent options.
+
+- The check box in the column heading selects every torrent on the current page.
+- One action can include up to 1,000 torrents.
+
+### Action Menu
+
+Right-click a torrent, or select the actions button at the end of its row, to open the action menu. When the torrent is part of the selection, the menu acts on every selected torrent.
+
+- **Start** and **Start now, skip the queue** — The second starts the torrents right away, ahead of the queue.
+- **Pause** — Stops their transfers.
+- **Verify local data** — Checks the downloaded data against the torrent.
+- **Ask trackers for more peers** — Announces to the trackers again.
+- **Move to top of queue**, **Move up one**, **Move down one**, and **Move to bottom of queue** — Change their place in the queue.
+- **Remove…** — Opens the same confirmation as **Remove**.
+
+<Frame caption="The action menu in a multi-connection list without the # column">
+  <ThemedImage sources={{ light: managingTorrentsThreeLight, dark: managingTorrentsThreeDark }} alt="Action menu open below a profile-choice banner in a multi-connection list without the queue number column, listing Start, Start now, skip the queue, Pause, Verify local data, Ask trackers for more peers, four queue moves, and Remove" width={1024} height={900} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+## Resolve Needs a Profile
+
+When a remote app adds a torrent whose name matches several profiles and no folder or label chooses one, the torrent is added paused with the Default profile's folder and connection. Its row gets a **Needs a profile** tag, and **Needs a profile** appears under **Status**.
+
+The banner says `1 torrent matches more than one profile.` or `<N> torrents match more than one profile.` Select **Resolve** there, or open the torrent details and select **Resolve**.
+
+<Frame caption="A torrent waiting for a profile choice">
+  <ThemedImage sources={{ light: managingTorrentsTenLight, dark: managingTorrentsTenDark }} alt="Top of the Torrents page with a 1 torrent matches more than one profile banner and its Resolve button, a Needs a profile row under Status, and Example.Show.S01E04.2160p paused with a Needs a profile tag" width={1280} height={900} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+**Choose a profile** lists each matching profile with the pattern that matched. Choosing one moves the torrent to that profile's folder and VPN connection, adds its labels to the ones the remote app set, applies its limits, and starts it unless the profile has **Start paused** selected.
+
+If the original matching profiles are unavailable, the dialog explains that and offers every profile.
+
+<Frame caption="Choosing between the matching profiles" style={{ maxWidth: 490, marginInline: 'auto' }}>
+  <ThemedImage sources={{ light: managingTorrentsElevenLight, dark: managingTorrentsElevenDark }} alt="Choose a profile dialog for Example.Show.S01E04.2160p listing Movies with its *2160p* pattern and TV with its *S??E??* pattern, and a Cancel button" width={488} height={344} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+## Torrent Details
+
+Select a torrent to open its details panel, which shows its status, queue position, progress, speeds, and time remaining, with **Pause** (or **Start** when the torrent is stopped), **Verify**, and **Reannounce** buttons. A torrent marked **Needs a profile** also has **Resolve**.
+
+The **Pieces** map at the top of **Overview** shows which parts of the torrent are on disk:
+
+- **Squares** — Each square is a run of pieces, and it gets greener the more of them are here. **1 square =** says how many pieces each square holds, since big torrents group more pieces per square.
+- **Amber outline** — No connected peer has a missing piece in that square, so the torrent can't finish until such a peer connects.
+- **Hover** — Hovering a square shows its piece numbers, how many are here, and how many peers have the rest.
+
+<Frame caption="The details panel on the Overview tab" style={{ maxWidth: 706, marginInline: 'auto' }}>
+  <ThemedImage sources={{ light: managingTorrentsFourLight, dark: managingTorrentsFourDark }} alt="Details panel for ubuntu-24.04.2-desktop-amd64.iso at 63%, with its speeds, time remaining, actions, and the Overview tab listing ratio, peers, data, dates, Contoso Frankfurt as its VPN connection, location, info hash, magnet link, creator, and comment" width={704} height={1108} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+| Tab          | Contents                                                                                                                                                                                                             |
+|--------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Overview** | A **Pieces** map, then ratio, peers, data downloaded and uploaded, dates, VPN connection, time spent downloading and seeding, location, info hash, the magnet link with a copy button, the creator, and the comment. |
+| **Files**    | Which files to download and their priorities (High, Normal, or Low), with a filter, **All**, **None**, and **Priority for all…**, saved with **Save**.                                                               |
+| **Peers**    | Connected peers with their address, client, progress, and speeds.                                                                                                                                                    |
+| **Trackers** | Each tracker's tier, last announce result, and counts, plus **Tracker list** for editing the trackers, saved with **Save**.                                                                                          |
+| **Options**  | Profile, labels, bandwidth priority, maximum peers, speed limits, ratio and idle rules, and the **Name** section with its **Rename** button.                                                                         |
+
+- **VPN connection** and **Location** are read-only on **Overview** because the torrent's profile owns both.
+- **Profile** assigns a profile or the **Default profile**. Before **Apply**, the hint says where the files move and, when the VPN differs, which connection's Transmission receives the torrent.
+- **Also apply its labels and limits** copies that profile's labels, seeding rule, speed limits, priority, peer limit, and queue position when you select **Apply**. It stays optional.
+- **Seeding** offers **Custom** and **Never stop** for the ratio and idle rules. A note identifies the assigned profile as the source of the defaults.
+- **Name** renames the top-level file or folder without moving it. A magnet must finish receiving its metadata before **Rename** is available.
+- **Tracker list** takes one tracker per line, with a blank line between tiers, up to 256 KiB in total.
+- **Follow global speed limits** decides whether the session-wide speed limits also apply to the torrent.
+
+<Frame caption="A profile that moves the torrent's files and connection" style={{ maxWidth: 657, marginInline: 'auto' }}>
+  <ThemedImage sources={{ light: managingTorrentsNineLight, dark: managingTorrentsNineDark }} alt="Profile field in the torrent details with TV selected, hints naming the destination folder and Fabrikam New York connection, an Apply button, and Also apply its labels and limits selected" width={655} height={208} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+<Frame caption="Profile-owned choices on the Options tab" style={{ maxWidth: 706, marginInline: 'auto' }}>
+  <ThemedImage sources={{ light: managingTorrentsFiveLight, dark: managingTorrentsFiveDark }} alt="Options tab with the Linux ISOs Profile field, editable labels, Custom ratio and Never stop idle choices, bandwidth priority, peer and speed limits, Follow global speed limits, and Rename" width={704} height={1364} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+<Frame caption="Torrent options while magnet metadata downloads" style={{ maxWidth: 706, marginInline: 'auto' }}>
+  <ThemedImage sources={{ light: managingTorrentsSevenLight, dark: managingTorrentsSevenDark }} alt="Options tab for The Example Show magnet with the TV profile, editable labels and limits, and the Rename field and button unavailable until metadata finishes downloading" width={704} height={1390} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+## Session Statistics
+
+- **Header** — The top of the **Torrents** page counts the torrents, the ones downloading, and the ones seeding, and shows the current download and upload speeds.
+- **This session** — Below the list, the data downloaded and uploaded since Transmission started.
+- **All time** — Below the list, the data downloaded and uploaded across all sessions.
+
+## Removing Torrents and Data
+
+1. Select the torrents, then select **Remove**, or **Remove…** in the action menu.
+2. Turn on **Also delete the downloaded files** only if you want the files deleted too.
+3. Select **Remove**, which reads **Remove and delete files** when the files go too.
+
+Without that option, the torrents leave the list and their files stay on disk.
+
+:::danger
+**Also delete the downloaded files** deletes the files from `/data`, and the web interface can't bring them back.
+:::

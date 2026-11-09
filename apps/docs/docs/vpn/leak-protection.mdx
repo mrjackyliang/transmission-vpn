@@ -1,0 +1,116 @@
+---
+id: leak-protection
+title: Leak protection
+description: See how each Transmission stays inside its VPN tunnel, how traffic fails closed, and how protected DNS follows the default connection.
+sidebar_position: 6
+keywords:
+  - transmission vpn
+  - leak protection
+  - kill switch
+  - protection state
+  - dns
+  - ipv6
+tags:
+  - vpn
+  - security
+  - fail-closed
+---
+
+import ThemedImage from '@theme/ThemedImage';
+import { Frame, Terminology } from '@cbnventures/docusaurus-preset-nova/blocks';
+
+import leakProtectionOneLight from './_assets_/leak-protection-1-light.png';
+import leakProtectionOneDark from './_assets_/leak-protection-1-dark.png';
+import leakProtectionTwoLight from './_assets_/leak-protection-2-light.png';
+import leakProtectionTwoDark from './_assets_/leak-protection-2-dark.png';
+import leakProtectionThreeLight from './_assets_/leak-protection-3-light.png';
+import leakProtectionThreeDark from './_assets_/leak-protection-3-dark.png';
+import leakProtectionFourLight from './_assets_/leak-protection-4-light.png';
+import leakProtectionFourDark from './_assets_/leak-protection-4-dark.png';
+
+Leak protection keeps every Transmission and <Terminology title="Authenticated HTTP and SOCKS5 service that sends private-network clients through a VPN connection" to="/docs/reference/terminology#web-proxy">web proxy</Terminology> request inside its selected VPN connection. There is no direct mode.
+
+## What protects each connection
+
+Each VPN connection has its own Transmission, private address, and tunnel. Transmission sends from that private address, and the container routes it only through the matching tunnel.
+
+The container translates the private address to the provider address at the tunnel boundary. This keeps two connections separate even when a provider gives them the same WireGuard address.
+
+If a tunnel is down, its private route ends inside the container. Traffic from that connection's Transmission fails there and never reaches Docker's normal network.
+
+A separate <Terminology title="Rules that confine Transmission's traffic to its VPN tunnel" to="/docs/reference/terminology#firewall-boundary">firewall boundary</Terminology> is the backstop. It drops any Transmission or proxy traffic that tries to leave on the wrong interface.
+
+## What happens during a drop
+
+- Only the Transmission attached to the failed connection is blocked. Transmissions on protected connections keep working.
+- Torrents stay in the library, but they cannot reach peers or trackers until their connection is protected again.
+- OpenVPN exits, WireGuard handshake failures, route failures, DNS failures, and outside connection failures all enter the same blocked recovery path.
+- Automatic reconnects use the connection's endpoint pool and retry interval.
+- Web proxy requests using the failed connection return a failure instead of using another route.
+
+The firewall is installed before Transmission, the web proxy, or the VPN controller starts. It stays installed until those services stop.
+
+## Protection states
+
+The app combines the state of all enabled connections:
+
+| State         | Meaning                                                               |
+|---------------|-----------------------------------------------------------------------|
+| **Protected** | Every enabled connection is protected.                                |
+| **Partial**   | At least one enabled connection is protected and at least one is not. |
+| **Blocked**   | Connections exist, but none of the enabled connections is protected.  |
+
+With no connections, the app shows setup is required. The container health check can still be healthy because the control page is available for setup.
+
+Each row on the **VPN** page shows that connection's state. Open the connection to see its endpoint, interface, firewall state, and any error.
+
+<Frame caption="Partial protection in the sidebar" style={{ maxWidth: 233, marginInline: 'auto' }}>
+  <ThemedImage sources={{ light: leakProtectionOneLight, dark: leakProtectionOneDark }} alt="Sidebar protection card reading 2 of 3 VPNs protected and Contoso Frankfurt is blocked" width={231} height={66} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+<Frame caption="Partial protection and navigation on a phone" style={{ maxWidth: 782, marginInline: 'auto' }}>
+  <ThemedImage sources={{ light: leakProtectionFourLight, dark: leakProtectionFourDark }} alt="VPN page on a phone with the header reading 2 of 3 VPNs protected, Contoso Frankfurt blocked in the list, and the Torrents, VPN, Apps, and More tabs below" width={780} height={1688} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+<Frame caption="Status details for an OpenVPN connection">
+  <ThemedImage sources={{ light: leakProtectionTwoLight, dark: leakProtectionTwoDark }} alt="Northwind Toronto connection details showing a protected OpenVPN tunnel, its interface, provider, endpoint, pool, firewall, and state time" width={992} height={219} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+<Frame caption="Status details for a WireGuard connection">
+  <ThemedImage sources={{ light: leakProtectionThreeLight, dark: leakProtectionThreeDark }} alt="Fabrikam New York connection details showing a protected WireGuard tunnel, its interface, provider, endpoint, last handshake, pool, firewall, and state time" width={992} height={219} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+## DNS protection
+
+Every Transmission uses DNS through the <Terminology title="The VPN connection used when no other connection is selected" to="/docs/reference/terminology#default-connection">default connection</Terminology>. The container routes those lookups from the default connection's private address through its tunnel.
+
+When the default connection is down, Transmission DNS lookups stop. They do not fall back to the container's normal resolver.
+
+Web proxy logins use the DNS servers of their selected connection. A login set to **Default** follows the default connection.
+
+The control plane can use the normal network while VPN traffic is blocked. This lets it reach providers, download catalogs, and send configured notifications.
+
+## Tunnel checks
+
+A connection becomes **Protected** only after its checks pass:
+
+1. OpenVPN reports that it is ready, or WireGuard receives a handshake.
+2. The connection's tunnel interface exists.
+3. The connection's private address routes through that interface.
+4. DNS works through the protected route.
+5. An outside TCP connection works through the protected route.
+
+The controller keeps checking WireGuard handshakes and outside connections. It blocks and reconnects a WireGuard connection when those checks fail.
+
+## IPv6 and private networks
+
+- Transmission's IPv6 address is bound to `::1`, the container's loopback address.
+- VPN tunnels carry the protected IPv4 traffic. IPv6 cannot provide a fallback route for Transmission.
+- The web interface and compatible RPC route remain reachable from the private network while VPN traffic is blocked.
+- The web proxy accepts private-network clients but connects only to allowed public IPv4 destinations.
+
+## Startup failures
+
+If the firewall cannot be installed, protected services do not start. A common cause is a missing <Terminology title="Docker capability that lets the container manage networking" to="/docs/reference/terminology#net_admin">`NET_ADMIN`</Terminology> capability or TUN device.
+
+[Health and logs](/docs/operations/health-and-logs/) explains the overall state, per-connection status, Transmission readiness, and useful log lines.

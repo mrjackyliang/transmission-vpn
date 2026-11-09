@@ -1,0 +1,346 @@
+---
+id: notifications
+title: Notifications
+description: Send alerts to ntfy, Telegram, email, and eight other services when the VPN changes, a torrent finishes or fails, sign-in is locked, or a remote add needs a profile.
+sidebar_position: 1
+keywords:
+  - transmission vpn
+  - notifications
+  - alerts
+  - ntfy
+  - telegram
+  - webhook
+  - email
+tags:
+  - alerts
+  - notifications
+  - webhooks
+---
+
+import ThemedImage from '@theme/ThemedImage';
+import { Frame, Terminology } from '@cbnventures/docusaurus-preset-nova/blocks';
+
+import notificationsOneLight from './_assets_/notifications-1-light.png';
+import notificationsOneDark from './_assets_/notifications-1-dark.png';
+import notificationsTwoLight from './_assets_/notifications-2-light.png';
+import notificationsTwoDark from './_assets_/notifications-2-dark.png';
+import notificationsThreeLight from './_assets_/notifications-3-light.png';
+import notificationsThreeDark from './_assets_/notifications-3-dark.png';
+import notificationsFourLight from './_assets_/notifications-4-light.png';
+import notificationsFourDark from './_assets_/notifications-4-dark.png';
+import notificationsFiveLight from './_assets_/notifications-5-light.png';
+import notificationsFiveDark from './_assets_/notifications-5-dark.png';
+import notificationsSixLight from './_assets_/notifications-6-light.png';
+import notificationsSixDark from './_assets_/notifications-6-dark.png';
+import notificationsSevenLight from './_assets_/notifications-7-light.png';
+import notificationsSevenDark from './_assets_/notifications-7-dark.png';
+import notificationsEightLight from './_assets_/notifications-8-light.png';
+import notificationsEightDark from './_assets_/notifications-8-dark.png';
+import notificationsNineLight from './_assets_/notifications-9-light.png';
+import notificationsNineDark from './_assets_/notifications-9-dark.png';
+
+Send an alert to your phone, chat, or inbox when the VPN drops or comes back, a torrent finishes or fails, sign-in is locked, or a remote add needs a profile choice.
+
+## Why Use Notifications?
+
+1. Tells you when the VPN has been down for a minute, and again when it's back, so you know downloads stopped without keeping the **VPN** page open.
+2. Reports finished downloads and torrent errors, such as a full disk, so you can act without opening the web interface.
+3. Reports when a remote app's add matches several profiles, so you can resolve **Needs a profile** from the Torrents page.
+4. Sends each alert to every <Terminology title="One place alerts go, such as a chat or topic" to="/docs/reference/terminology#notification-destination">destination</Terminology> that chose its <Terminology title="Something the container can send an alert about" to="/docs/reference/terminology#notification-event">event</Terminology>, from ntfy and Telegram to email and webhooks, so it reaches you wherever you look.
+5. Seals tokens, passwords, and webhook URLs with the <Terminology title="Key that encrypts saved secrets, such as VPN logins" to="/docs/reference/terminology#installation-key">installation key</Terminology> and keeps them out of the destination list and edit dialog after you save, so ordinary notification views don't expose them.
+
+## Open the Notifications Page
+
+- **Wide screens** — Select **Notifications** in the sidebar, below **Settings**.
+- **Phones below 1020 pixels** — Select **More** in the bottom tab bar, then select **Notifications**, described as `Where alerts are sent`.
+
+<Frame caption="The Notifications page with three destinations">
+  <ThemedImage sources={{ light: notificationsOneLight, dark: notificationsOneDark }} alt="Notifications page listing the Downloads feed, Homelab chat, and My phone destinations with their services, event counts, and last sends, where the last attempt to Downloads feed failed with HTTP 502" width={1280} height={423} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+<Frame caption="Opening Notifications from More on a phone" style={{ maxWidth: 782, marginInline: 'auto' }}>
+  <ThemedImage sources={{ light: notificationsTwoLight, dark: notificationsTwoDark }} alt="Transmission VPN on a phone with the More sheet open, listing Settings with Queue, network and blocklists and Notifications with Where alerts are sent, above the Torrents, VPN, Apps, and More tab bar" width={780} height={1688} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+Under **<Terminology title="One place alerts go, such as a chat or topic" to="/docs/reference/terminology#notification-destination">Destinations</Terminology>**, each row shows a <Terminology title="One place alerts go, such as a chat or topic" to="/docs/reference/terminology#notification-destination">destination</Terminology>'s name and service, how many <Terminology title="Something the container can send an alert about" to="/docs/reference/terminology#notification-event">events</Terminology> it hears about, and the result of its last send. The newest <Terminology title="One place alerts go, such as a chat or topic" to="/docs/reference/terminology#notification-destination">destination</Terminology> is listed first.
+
+## Add a Destination
+
+1. Select **Add notification**.
+2. In **Service**, choose where alerts go. **ntfy** is selected at first.
+3. Enter a **Name** you'll recognize, such as the device or chat it goes to.
+4. Fill in the service's fields, as listed in [Services](#services).
+5. Under **<Terminology title="Something the container can send an alert about" to="/docs/reference/terminology#notification-event">Events</Terminology>**, keep the <Terminology title="Something the container can send an alert about" to="/docs/reference/terminology#notification-event">events</Terminology> this <Terminology title="One place alerts go, such as a chat or topic" to="/docs/reference/terminology#notification-destination">destination</Terminology> should hear about. All seven, including **Profile choice needed**, are checked for a new destination.
+6. Select **Add notification** in the dialog.
+
+<Frame caption="Adding an ntfy destination with every event selected" style={{ maxWidth: 586, marginInline: 'auto' }}>
+  <ThemedImage sources={{ light: notificationsThreeLight, dark: notificationsThreeDark }} alt="Add notification dialog with ntfy selected, the name Work laptop, a topic URL, and all seven events checked, including Profile choice needed" width={584} height={955} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+- A name can have up to 80 characters, and each <Terminology title="One place alerts go, such as a chat or topic" to="/docs/reference/terminology#notification-destination">destination</Terminology> needs a different one, whatever the letter case.
+- The dialog's **Add notification** stays unavailable until the name is filled in and at least one <Terminology title="Something the container can send an alert about" to="/docs/reference/terminology#notification-event">event</Terminology> is checked.
+- A field with a problem shows the reason under it, such as `Use the full topic URL, like https://ntfy.sh/my-alerts.`
+
+It is recommended to select **Send test** after adding a <Terminology title="One place alerts go, such as a chat or topic" to="/docs/reference/terminology#notification-destination">destination</Terminology>, as covered in [Send a Test](#send-a-test).
+
+## Services
+
+| Service                | Required fields                                                                                                           | Optional fields                                                       |
+|------------------------|---------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------|
+| ntfy                   | **Topic URL**, the full topic address, such as `https://ntfy.sh/my-alerts`                                                | **Access token**, for a topic that needs one                          |
+| Reverse Proxy for ntfy | **Context URL**, the `https://` address of a context whose interpreter is `transmission-vpn`                              | **Context token**, for a context that needs one                       |
+| Telegram               | **Bot token** from @BotFather, and the **Chat ID** of a user, group, or channel the bot can post to                       | None                                                                  |
+| Discord                | **Webhook URL** from the channel's Integrations settings, starting with `https://discord.com/api/webhooks/`               | None                                                                  |
+| Slack                  | **Webhook URL** of an incoming webhook in your Slack app, starting with `https://hooks.slack.com/`                        | None                                                                  |
+| Gotify                 | **Server URL**, and the **App token** of an application you made in Gotify                                                | None                                                                  |
+| Pushover               | **User key**, and the **App token** of an application you made in Pushover                                                | None                                                                  |
+| Matrix                 | **Homeserver URL**, a **Room ID** such as `!room:example.com`, and the **Access token** of an account already in the room | None                                                                  |
+| Email                  | **SMTP server**, **Port** (`587` at first), **Security** (STARTTLS, TLS, or None), **From**, and **To**                   | **Username** and **Password**, when the server needs a sign-in        |
+| Apprise                | **Apprise URL**, the notify URL of your Apprise API server with its config key                                            | **Service URLs**, separated by spaces, for a stateless Apprise server |
+| Webhook                | **URL** that accepts a JSON `POST`                                                                                        | **Bearer token**, for an endpoint that needs one                      |
+
+- **<Terminology title="A destination setting sealed with the installation key" to="/docs/reference/terminology#secret-field">Secret fields</Terminology>** — Every token, key, and password is a <Terminology title="A destination setting sealed with the installation key" to="/docs/reference/terminology#secret-field">secret field</Terminology>, and so are the Discord, Slack, Apprise, and webhook URLs. The other fields are plain and show their saved values when you edit.
+- **Addresses** — The ntfy, Gotify, Apprise, and webhook URLs can start with `http://` or `https://`, while the Reverse Proxy for ntfy and Matrix addresses need `https://`. Discord also accepts `https://discordapp.com/api/webhooks/`.
+- **Matrix room IDs** — Use the room ID that starts with `!`, such as `!room:example.com`. Room aliases that start with `#` aren't accepted, because sending needs the room ID.
+- **Email** — **To** takes several addresses separated by commas. With **STARTTLS**, the send fails when the server doesn't offer it.
+- **Reverse Proxy for ntfy** — Alerts arrive as the JSON <Terminology title="JSON body sent to webhooks and Reverse Proxy for ntfy" to="/docs/reference/terminology#notification-payload">payload</Terminology> covered in [Webhook Payload](#webhook-payload), which the [Reverse Proxy for ntfy](https://nrp.cbnventures.io/docs/interpreters/transmission-vpn/) context turns into a notification.
+
+<Frame caption="The email fields" style={{ maxWidth: 586, marginInline: 'auto' }}>
+  <ThemedImage sources={{ light: notificationsFourLight, dark: notificationsFourDark }} alt="Add notification dialog with Email selected, showing the SMTP server, Port 587, STARTTLS security, Username, Password, From, and To fields filled in" width={584} height={894} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+## Events
+
+| Event                          | Sent when                                                                                                                                                                                                                                                                     |
+|--------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Saved secrets were removed** | The container started without its <Terminology title="Key that encrypts saved secrets, such as VPN logins" to="/docs/reference/terminology#installation-key">installation key</Terminology> and removed the secrets the old key locked. It's sent while the container starts. |
+| **Sign-in locked**             | Ten failed sign-in attempts from one address within 15 minutes paused sign-in from it. Each address is reported once per 15 minutes.                                                                                                                                          |
+| **VPN dropped**                | One OpenVPN or WireGuard connection has been down for a minute, while it reconnects or after an attempt failed. Each connection is watched separately, and the event details name it and its last error.                                                                      |
+| **VPN back up**                | That connection is protected again after a **VPN dropped** alert. It says how long the connection was down.                                                                                                                                                                   |
+| **Torrent finished**           | A torrent finished downloading. Checking data that's already on disk doesn't count.                                                                                                                                                                                           |
+| **Torrent error**              | Transmission reported a tracker error or a local error, such as a full disk or missing data. Tracker warnings don't count.                                                                                                                                                    |
+| **Profile choice needed**      | A remote app added a torrent whose name matched several profiles after its folder and labels chose none. The torrent is paused and marked **Needs a profile** until you resolve it in the web interface.                                                                      |
+
+- **Checked every 10 seconds** — The container looks for VPN, finished-torrent, and torrent-error events every 10 seconds, but only when at least one <Terminology title="One place alerts go, such as a chat or topic" to="/docs/reference/terminology#notification-destination">destination</Terminology> hears about them. **Profile choice needed** is sent when the remote add is accepted.
+- **Up to five torrents** — Each look sends at most one **Torrent finished** and one **Torrent error** alert, naming up to five torrents and how many more.
+- **Repeated errors** — A torrent is reported again only after its error clears and comes back.
+- **After a restart** — Torrents that finished or failed before the container started aren't reported.
+- **Disconnecting a connection** — **Disconnect and block** isn't a drop, so it sends nothing for that connection.
+- **Sign-in attempts** — Wrong passwords, authenticator codes, recovery codes, passkeys, and password checks all count, while wrong setup codes don't.
+
+## How Alerts Look
+
+- **Title** — An alert's title starts with `Transmission VPN:` and the <Terminology title="Something the container can send an alert about" to="/docs/reference/terminology#notification-event">event</Terminology>, such as `Transmission VPN: VPN dropped`, and email uses it as the subject.
+- **High priority** — **Saved secrets were removed**, **Sign-in locked**, **VPN dropped**, and **Torrent error** use priority 4 on ntfy, 8 on Gotify, and 1 on Pushover. Discord shows them in red, and Apprise sends them as warnings.
+- **Webhooks** — Webhook and Reverse Proxy for ntfy <Terminology title="One place alerts go, such as a chat or topic" to="/docs/reference/terminology#notification-destination">destinations</Terminology> get JSON instead, as covered in [Webhook Payload](#webhook-payload).
+
+```text title="Example alerts"
+Transmission VPN: VPN dropped
+The VPN went down and hasn't come back after a minute. Transmission's traffic is blocked until it does. Last error: all VPN endpoints failed: …
+
+Transmission VPN: VPN back up
+The VPN is back up after 3 minutes down.
+
+Transmission VPN: Torrent finished
+7 torrents finished downloading: One, Two, Three, Four, Five, and 2 more.
+
+Transmission VPN: Sign-in locked
+Ten failed sign-ins from 192.0.2.10. Sign-in from it is paused for 15 minutes.
+```
+
+## Send a Test
+
+1. Select **Send test** on a <Terminology title="One place alerts go, such as a chat or topic" to="/docs/reference/terminology#notification-destination">destination</Terminology>, which reads **Sending…** while it works.
+2. Check that **Test notification** arrives with the message `This is a test from Transmission VPN. Alerts for the events you chose will look like this.`
+
+- A notification in the corner then shows `Test sent to` and the <Terminology title="One place alerts go, such as a chat or topic" to="/docs/reference/terminology#notification-destination">destination</Terminology>'s name, or `The test to … couldn't be sent:` with the reason. Transport reasons name the host when it is safe to show, such as `Couldn't find hooks.example.test. Check the address.`
+- A test goes out no matter which <Terminology title="Something the container can send an alert about" to="/docs/reference/terminology#notification-event">events</Terminology> the <Terminology title="One place alerts go, such as a chat or topic" to="/docs/reference/terminology#notification-destination">destination</Terminology> chose, and it becomes the row's last send.
+
+<Frame caption="A destination after Send test">
+  <ThemedImage sources={{ light: notificationsFiveLight, dark: notificationsFiveDark }} alt="Destinations list where the My phone row shows last sent just now, with a Test sent to My phone. notification in the corner" width={992} height={386} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+## Edit or Remove a Destination
+
+- **Edit** — Opens the same dialog with the note `Leave a saved secret blank to keep it.` Change the name, the <Terminology title="Something the container can send an alert about" to="/docs/reference/terminology#notification-event">events</Terminology>, or the fields, then select **Save**.
+- **Service** — It can't be changed, so add a new <Terminology title="One place alerts go, such as a chat or topic" to="/docs/reference/terminology#notification-destination">destination</Terminology> to switch services.
+- **Saved secrets** — A saved <Terminology title="A destination setting sealed with the installation key" to="/docs/reference/terminology#secret-field">secret field</Terminology> shows **Saved** instead of its value. Leaving it blank keeps the saved value, and typing a new one replaces it.
+- **Optional secrets** — Select **Remove saved value** below an optional secret, such as an ntfy **Access token**, to delete it when you save, or **Keep saved value** to undo that. Required secrets can't be removed this way.
+- **Remove** — Opens a dialog that asks you to confirm with `Alerts stop going to this destination. You can add it again later.`, then stops its alerts right away.
+
+<Frame caption="Editing one selected event beside Profile choice needed" style={{ maxWidth: 586, marginInline: 'auto' }}>
+  <ThemedImage sources={{ light: notificationsSixLight, dark: notificationsSixDark }} alt="Edit Downloads feed dialog with Reverse Proxy for ntfy fixed, its saved context token, Torrent finished selected, and Profile choice needed visible and unchecked" width={584} height={1024} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+<Frame caption="Confirming a removal" style={{ maxWidth: 490, marginInline: 'auto' }}>
+  <ThemedImage sources={{ light: notificationsSevenLight, dark: notificationsSevenDark }} alt="Remove Homelab chat? dialog saying alerts stop going to this destination and that it can be added again later, with Cancel and Remove buttons" width={488} height={235} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+## Secrets
+
+- **Sealed** — <Terminology title="A destination setting sealed with the installation key" to="/docs/reference/terminology#secret-field">Secret fields</Terminology> are encrypted with the <Terminology title="Key that encrypts saved secrets, such as VPN logins" to="/docs/reference/terminology#installation-key">installation key</Terminology> before they're saved. Each <Terminology title="One place alerts go, such as a chat or topic" to="/docs/reference/terminology#notification-destination">destination</Terminology>'s secrets open only for that <Terminology title="One place alerts go, such as a chat or topic" to="/docs/reference/terminology#notification-destination">destination</Terminology>.
+- **Ordinary reads** — The web interface and notification read routes only show that a secret is saved. A freshly confirmed export can include selected destination secrets in plain text.
+- **Backups** — It is recommended to back up `installation.key` with the database, as covered in [Updates and Backups](/docs/operations/updates-and-backups/#back-up-your-data).
+
+## After a Lost Installation Key
+
+When the container starts without its <Terminology title="Key that encrypts saved secrets, such as VPN logins" to="/docs/reference/terminology#installation-key">installation key</Terminology>, it makes a new one and removes what the old key locked, as covered in [Missing Installation Key](/docs/operations/updates-and-backups/#missing-installation-key).
+
+- **Secrets removed** — Every <Terminology title="One place alerts go, such as a chat or topic" to="/docs/reference/terminology#notification-destination">destination</Terminology>'s <Terminology title="A destination setting sealed with the installation key" to="/docs/reference/terminology#secret-field">secret fields</Terminology> are removed. The <Terminology title="One place alerts go, such as a chat or topic" to="/docs/reference/terminology#notification-destination">destination</Terminology> stays with its name, <Terminology title="Something the container can send an alert about" to="/docs/reference/terminology#notification-event">events</Terminology>, and plain fields.
+- **Paused** — A <Terminology title="One place alerts go, such as a chat or topic" to="/docs/reference/terminology#notification-destination">destination</Terminology> missing a required secret gets no alerts, and its **Send test** is unavailable. Its row says which fields to enter, such as `Enter the bot token again. Alerts are paused until you do.`
+- **Optional secrets** — For an optional secret that a lost key removed, such as an ntfy **Access token**, either enter it again or select **Continue without this value** before you save, and the <Terminology title="One place alerts go, such as a chat or topic" to="/docs/reference/terminology#notification-destination">destination</Terminology> resumes. **Require this value** undoes that choice.
+- **Notice** — The **Saved secrets were removed** notice at the top of every page has a link for each one, such as **Set up the Homelab chat notification again**, which opens **Notifications**.
+- **Others keep working** — <Terminology title="One place alerts go, such as a chat or topic" to="/docs/reference/terminology#notification-destination">Destinations</Terminology> without <Terminology title="A destination setting sealed with the installation key" to="/docs/reference/terminology#secret-field">secret fields</Terminology>, such as ntfy without an access token, keep getting alerts. The ones that chose **Saved secrets were removed** get that alert while the container starts.
+
+<Frame caption="Destinations paused after a lost key">
+  <ThemedImage sources={{ light: notificationsEightLight, dark: notificationsEightDark }} alt="Notifications page under the Saved secrets were removed notice, with the Downloads feed and Homelab chat rows asking for their context token and bot token again and their Send test buttons unavailable" width={1280} height={721} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+To set a <Terminology title="One place alerts go, such as a chat or topic" to="/docs/reference/terminology#notification-destination">destination</Terminology> up again:
+
+1. Select **Edit** on it.
+2. Enter each required field marked `A lost key removed it. Enter it again.` For an optional one, enter it again or select **Continue without this value**.
+3. Select **Save**.
+
+<Frame caption="Entering a lost-key secret with the complete event list" style={{ maxWidth: 586, marginInline: 'auto' }}>
+  <ThemedImage sources={{ light: notificationsNineLight, dark: notificationsNineDark }} alt="Edit Downloads feed dialog with an empty Context token field and lost-key hint, Continue without this value, Torrent finished selected, and Profile choice needed visible and unchecked" width={584} height={1024} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+The <Terminology title="One place alerts go, such as a chat or topic" to="/docs/reference/terminology#notification-destination">destination</Terminology> then leaves the notice and gets alerts again.
+
+## Delivery
+
+- **10-second limit** — Each send gets 10 seconds, and a slow service doesn't hold up the others.
+- **No retries** — A failed alert isn't sent again, and the row shows `Last attempt failed` in red with the reason.
+- **Plain-language transport errors** — Refused connections, failed name lookups, timeouts, certificate problems, and unreachable destinations name the host when the diagnostic contains one. Select **Details** under the failed row to read the original transport diagnostic.
+- **Outside the tunnels** — Alerts come from the <Terminology title="The service that runs the web interface and API" to="/docs/reference/terminology#control-plane">control plane</Terminology>, which the firewall doesn't restrict, so **VPN dropped** still goes out while that connection's Transmission is blocked.
+
+## Webhook Payload
+
+Webhook and Reverse Proxy for ntfy <Terminology title="One place alerts go, such as a chat or topic" to="/docs/reference/terminology#notification-destination">destinations</Terminology> receive the same JSON <Terminology title="JSON body sent to webhooks and Reverse Proxy for ntfy" to="/docs/reference/terminology#notification-payload">payload</Terminology> in a `POST`. A saved token is sent as `Authorization: Bearer <token>`.
+
+```json title="Webhook body"
+{
+  "app": "transmission-vpn",
+  "details": {
+    "downSince": "2026-10-26T12:00:10Z",
+    "remoteHost": "us1.vpn.example.com",
+    "upAt": "2026-10-26T12:03:10Z"
+  },
+  "event": "vpn-restored",
+  "message": "The VPN is back up after 3 minutes down.",
+  "occurredAt": "2026-10-26T12:03:10.000Z",
+  "priority": 3,
+  "tags": ["white_check_mark"],
+  "title": "VPN back up",
+  "version": 1
+}
+```
+
+| Field        | Description                                                                                                                                                                                                       |
+|--------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `app`        | Always `transmission-vpn`.                                                                                                                                                                                        |
+| `details`    | Extra data for the <Terminology title="Something the container can send an alert about" to="/docs/reference/terminology#notification-event">event</Terminology>, listed in the next table.                        |
+| `event`      | The <Terminology title="Something the container can send an alert about" to="/docs/reference/terminology#notification-event">event</Terminology>'s key, or `test` for **Send test**.                              |
+| `message`    | The alert's text.                                                                                                                                                                                                 |
+| `occurredAt` | When it happened, in UTC with milliseconds.                                                                                                                                                                       |
+| `priority`   | `4` for high-priority <Terminology title="Something the container can send an alert about" to="/docs/reference/terminology#notification-event">events</Terminology> and `3` for the rest, on ntfy's 1-to-5 scale. |
+| `tags`       | ntfy tag names that show as emoji.                                                                                                                                                                                |
+| `title`      | The <Terminology title="Something the container can send an alert about" to="/docs/reference/terminology#notification-event">event</Terminology>'s name, without `Transmission VPN:`.                             |
+| `version`    | The <Terminology title="JSON body sent to webhooks and Reverse Proxy for ntfy" to="/docs/reference/terminology#notification-payload">payload</Terminology> format, `1`.                                           |
+
+| Key                     | Event                      | Priority | Tags               | `details`                                                            |
+|-------------------------|----------------------------|----------|--------------------|----------------------------------------------------------------------|
+| `secrets-removed`       | Saved secrets were removed | `4`      | `key`, `warning`   | `items`, the removed secrets in the log's words                      |
+| `sign-in-locked`        | Sign-in locked             | `4`      | `lock`             | `address`                                                            |
+| `vpn-dropped`           | VPN dropped                | `4`      | `warning`          | `downSince` and `lastError`                                          |
+| `vpn-restored`          | VPN back up                | `3`      | `white_check_mark` | `downSince`, `upAt`, and `remoteHost`                                |
+| `torrent-finished`      | Torrent finished           | `3`      | `white_check_mark` | `torrents`, each with `name`, `hash`, `downloadDir`, and `totalSize` |
+| `torrent-error`         | Torrent error              | `4`      | `x`                | `torrents`, with the same fields plus `error`                        |
+| `profile-choice-needed` | Profile choice needed      | `3`      | `question`         | `torrent` with `name`, and `profiles`, each with `id` and `name`     |
+| `test`                  | Send test                  | `3`      | `bell`             | Empty                                                                |
+
+- `details.torrents` lists every torrent, even past the five that the message names.
+- `details.profiles` lists every matching profile for **Profile choice needed**.
+- `downSince` and `upAt` are UTC times without milliseconds.
+
+## Manage Notifications From Scripts
+
+The **Notifications** page uses these routes, which scripts can call too:
+
+| Route                                  | What it does                                                                                                                                                                                                                                                                                                                                                                                   |
+|----------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `GET /api/v1/notifications`            | Lists every <Terminology title="One place alerts go, such as a chat or topic" to="/docs/reference/terminology#notification-destination">destination</Terminology>, newest first, with `secrets` naming the saved <Terminology title="A destination setting sealed with the installation key" to="/docs/reference/terminology#secret-field">secret fields</Terminology> but never their values. |
+| `GET /api/v1/notifications/events`     | Lists the <Terminology title="Something the container can send an alert about" to="/docs/reference/terminology#notification-event">events</Terminology> with their labels, descriptions, and whether they're checked at first.                                                                                                                                                                 |
+| `POST /api/v1/notifications`           | Adds a <Terminology title="One place alerts go, such as a chat or topic" to="/docs/reference/terminology#notification-destination">destination</Terminology> from `name`, `service`, `events`, and `settings`, and answers `201`.                                                                                                                                                              |
+| `PUT /api/v1/notifications/{id}`       | Changes a <Terminology title="One place alerts go, such as a chat or topic" to="/docs/reference/terminology#notification-destination">destination</Terminology>'s `name`, `events`, and `settings`, keeping saved secrets that are left out or blank. `clearSecrets` lists optional secrets to clear, saved or removed by a lost key, each once and never with a new value for the same field. |
+| `DELETE /api/v1/notifications/{id}`    | Removes a <Terminology title="One place alerts go, such as a chat or topic" to="/docs/reference/terminology#notification-destination">destination</Terminology> and answers `204`.                                                                                                                                                                                                             |
+| `POST /api/v1/notifications/{id}/test` | Sends the test and answers `{"delivered":true}`, or `false` with a `message`.                                                                                                                                                                                                                                                                                                                  |
+
+:::warning
+These routes accept only a signed-in browser session. An <Terminology title="A scoped credential for automating the API" to="/docs/reference/terminology#api-token">API token</Terminology> gets `403` with the code `session_required`, whatever its scopes.
+:::
+
+### Sign In From a Script
+
+A script signs in the way the web interface does and keeps the session cookies:
+
+```bash
+# Sign in, keep the cookies, and note csrfToken in the answer.
+curl --cookie-jar session.txt --header 'Content-Type: application/json' \
+  --data '{"username":"<username>","password":"<password>"}' \
+  http://<docker-host>:22602/api/v1/auth/login
+
+# List the destinations.
+curl --cookie session.txt http://<docker-host>:22602/api/v1/notifications
+
+# Send a test, passing csrfToken from the sign-in answer.
+curl --cookie session.txt --request POST --header 'X-CSRF-Token: <csrfToken>' \
+  http://<docker-host>:22602/api/v1/notifications/<id>/test
+```
+
+- **Changes** — `POST`, `PUT`, and `DELETE` need the `X-CSRF-Token` header with the session's `csrfToken`.
+- **Authenticator app** — When it's on, the sign-in answers with a `challenge`, which you send with a `code` to `POST /api/v1/auth/login/second-factor`.
+- **Failed sign-ins** — They count toward the sign-in limit, and ten from one address send **Sign-in locked** to the <Terminology title="One place alerts go, such as a chat or topic" to="/docs/reference/terminology#notification-destination">destinations</Terminology> that chose it.
+
+### Request Body
+
+```json title="POST /api/v1/notifications"
+{
+  "name": "My phone",
+  "service": "ntfy",
+  "events": ["vpn-dropped", "vpn-restored", "torrent-error"],
+  "settings": {
+    "url": "https://ntfy.sh/my-alerts",
+    "token": "tk_example"
+  }
+}
+```
+
+| `service`            | `settings` keys                                                                                 |
+|----------------------|-------------------------------------------------------------------------------------------------|
+| `ntfy`               | `url`, `token`                                                                                  |
+| `ntfy-reverse-proxy` | `url`, `token`                                                                                  |
+| `telegram`           | `botToken`, `chatId`                                                                            |
+| `discord`            | `webhookUrl`                                                                                    |
+| `slack`              | `webhookUrl`                                                                                    |
+| `gotify`             | `url`, `token`                                                                                  |
+| `pushover`           | `userKey`, `appToken`                                                                           |
+| `matrix`             | `homeserverUrl`, `roomId`, `accessToken`                                                        |
+| `email`              | `host`, `port`, `security` (`starttls`, `tls`, or `none`), `username`, `password`, `from`, `to` |
+| `apprise`            | `url`, `urls`                                                                                   |
+| `webhook`            | `url`, `token`                                                                                  |
+
+- `events` takes the keys from [Webhook Payload](#webhook-payload), except `test`.
+- A field that isn't listed for the service is refused with `This field isn't accepted.`
+
+### Errors
+
+| Status | Code                      | When                                                                                                                                                                                                   |
+|--------|---------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `401`  | `authentication_required` | No signed-in session.                                                                                                                                                                                  |
+| `403`  | `session_required`        | The request used an <Terminology title="A scoped credential for automating the API" to="/docs/reference/terminology#api-token">API token</Terminology>.                                                |
+| `403`  | `csrf_invalid`            | A change came without a matching `X-CSRF-Token` header.                                                                                                                                                |
+| `404`  | `notification_not_found`  | The <Terminology title="One place alerts go, such as a chat or topic" to="/docs/reference/terminology#notification-destination">destination</Terminology> doesn't exist or was removed.                |
+| `409`  | `notification_exists`     | Another <Terminology title="One place alerts go, such as a chat or topic" to="/docs/reference/terminology#notification-destination">destination</Terminology> uses the name, whatever the letter case. |
+| `422`  | `invalid_request`         | A field failed its check, and `issues` names each one, such as `settings.url` or `events.2`.                                                                                                           |

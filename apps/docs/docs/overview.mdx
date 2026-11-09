@@ -1,0 +1,69 @@
+---
+id: overview
+title: Overview
+description: Run several isolated Transmission and VPN connections in one Docker container, with a fail-closed firewall and one web interface.
+sidebar_position: 1
+keywords:
+  - transmission vpn
+  - overview
+  - transmission
+  - openvpn
+  - wireguard
+  - docker
+  - bittorrent
+tags:
+  - overview
+  - getting started
+---
+
+import { Terminology } from '@cbnventures/docusaurus-preset-nova/blocks';
+
+Run several VPN connections in one Docker container. Each connection has its own Transmission and lets that daemon's traffic out only through its verified OpenVPN or WireGuard tunnel.
+
+## What Is Transmission VPN?
+
+Transmission VPN is a Docker image that bundles Transmission 4.1, OpenVPN, <Terminology title="VPN protocol that signs in with a key pair" to="/docs/reference/terminology#wireguard">WireGuard</Terminology>, and a web interface that manages them. A <Terminology title="Blocking Transmission traffic whenever its VPN connection is unavailable" to="/docs/reference/terminology#fail-closed">fail-closed</Terminology> firewall confines each Transmission to its own tunnel.
+
+It replaces the <Terminology title="The original Synology script this image replaces" to="/docs/reference/terminology#legacy-project">legacy project</Terminology>, a Synology script that bound Transmission to a VPN connection managed by the NAS.
+
+## Why Use Transmission VPN?
+
+1. Blocks each Transmission whenever its VPN connection isn't verified, so a dropped tunnel doesn't let that daemon connect from your own address.
+2. Downloads the official server lists of PureVPN, Private Internet Access, IPVanish, NordVPN, Surfshark, IVPN, and Mullvad on request, so you can pick a server without hunting for profile files.
+3. Accepts a <Terminology title="Your own .ovpn or .conf file for any service" to="/docs/reference/terminology#custom-profile">custom profile</Terminology> from another OpenVPN or WireGuard service, so a provider without a built-in list can still be used.
+4. Runs several connections at once, each with its own Transmission, tunnel, peer port, and torrent list behind one interface.
+5. Tries an ordered <Terminology title="Ordered endpoints from one provider and tunnel for failover" to="/docs/reference/terminology#endpoint-pool">pool</Terminology> of up to 128 <Terminology title="One VPN server profile you can connect to" to="/docs/reference/terminology#endpoint">endpoints</Terminology>, so one unreachable server doesn't stop a connection attempt.
+6. Shows each connection and the combined <Terminology title="Whether enabled VPN connections are protected, partial, or blocked" to="/docs/reference/terminology#protection-state">protection state</Terminology>, so you can tell what can transfer without reading logs.
+7. Gives every torrent a <Terminology title="The folder, VPN connection, labels, and defaults that belong to a torrent" to="/docs/reference/terminology#profile">profile</Terminology> that owns its download folder and VPN connection.
+8. Lets other devices and containers select a VPN connection through an opt-in <Terminology title="Authenticated HTTP and SOCKS5 service that sends private-network clients through a VPN connection" to="/docs/reference/terminology#web-proxy">web proxy</Terminology>.
+
+## What's Included
+
+- **Transmission 4.1** — Built from the official source of the newest 4.1 release. Each VPN connection runs its own daemon, without Transmission's own web interface.
+- **OpenVPN and WireGuard** — Each connection uses one of the two <Terminology title="The VPN protocol a connection uses, OpenVPN or WireGuard" to="/docs/reference/terminology#tunnel">tunnel types</Terminology>. The <Terminology title="Rules that confine each Transmission to its tunnel" to="/docs/reference/terminology#firewall-boundary">firewall boundary</Terminology> keeps each daemon on its selected tunnel.
+- **Eight provider options** — PureVPN, Private Internet Access, IPVanish, NordVPN, Surfshark, IVPN, and Mullvad, each with an official <Terminology title="A provider's official endpoint list, downloaded on request" to="/docs/reference/terminology#endpoint-catalog">catalog</Terminology>, plus Custom for your own `.ovpn` or `.conf` file.
+- **Web interface** — Torrents, VPN, <Terminology title="A third-party Transmission client connecting over RPC" to="/docs/reference/terminology#remote-app">Remote apps</Terminology>, Settings, and Notifications pages, with **Sign-in and security** in the account menu. Each page has a bookmarkable [address](/docs/torrents/managing-torrents/#navigate-between-pages), and phones use **Torrents**, **VPN**, **Apps**, and **More** tabs.
+- **Notifications** — Alerts sent to ntfy, Telegram, email, and eight other services when the VPN drops or comes back, a torrent finishes or fails, or sign-in is locked, as covered in [Notifications](/docs/alerts/notifications/).
+- **Torrent profiles** — One unique folder and effective VPN connection per profile, plus label, paused, seeding, speed, priority, peer, and queue defaults. Named profiles add automatic matching, and the **Default profile** handles everything unmatched.
+- **<Terminology title="A third-party Transmission client connecting over RPC" to="/docs/reference/terminology#remote-app">Remote app</Terminology> access** — An optional, password-protected <Terminology title="Opt-in /transmission/rpc route for third-party apps" to="/docs/reference/terminology#compatible-rpc">compatible RPC</Terminology> route that combines every connection's torrents and gives each app its own login.
+- **Web proxy** — Optional HTTP and SOCKS5 access for private-network clients, with a VPN connection selected for each login.
+- **Private LAN access** — The web interface and compatible RPC route remain reachable from standard private IPv4 networks while each Transmission stays confined to its tunnel.
+- **Health reporting** — A Docker <Terminology title="Docker's periodic self-test of the container's services" to="/docs/reference/terminology#health-check">health check</Terminology> plus <Terminology title="Route confirming the control plane and firewall state" to="/docs/reference/terminology#liveness">liveness</Terminology> and <Terminology title="Route confirming traffic is protected and Transmission ready" to="/docs/reference/terminology#readiness">readiness</Terminology> routes that need no sign-in.
+
+## What It Doesn't Do
+
+- It doesn't set up <Terminology title="Inbound peer port opened through a VPN or router" to="/docs/reference/terminology#port-forwarding">port forwarding</Terminology> through your VPN service or your router.
+- It doesn't serve HTTPS, because the web interface uses plain HTTP on port 22602.
+- It doesn't import settings, VPN connections, or torrents from the <Terminology title="The original Synology script this image replaces" to="/docs/reference/terminology#legacy-project">legacy project</Terminology>.
+
+## Project Status
+
+:::info
+Transmission VPN is pre-release software at version `0.0.1`. No container release has been tagged yet, so these docs cover building the image from source.
+:::
+
+## Next Steps
+
+- **[Installation](/docs/getting-started/installation/)** — Build the image and start the container.
+- **[First-Run Setup](/docs/getting-started/first-run-setup/)** — Create the administrator account with the one-time <Terminology title="One-time code from the logs that creates the administrator" to="/docs/reference/terminology#claim-code">claim code</Terminology>.
+- **[Connect to a VPN](/docs/vpn/connecting/)** — Choose a provider, build an <Terminology title="Ordered endpoints from one provider and tunnel for failover" to="/docs/reference/terminology#endpoint-pool">endpoint pool</Terminology>, and test the connection.

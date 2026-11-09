@@ -1,0 +1,47 @@
+{
+  "name": "transmission-vpn-app-transmission",
+  "version": "2.0.0",
+  "license": "MIT",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "nova utility run-scripts --parallel --node-env development \"dev:*\"",
+    "dev:container": "docker compose --file ../../compose.yml --project-directory ../.. up --build",
+    "dev:web": "vite --host 0.0.0.0",
+    "prod": "nova utility run-scripts --sequential --node-env production \"prod:*\"",
+    "prod:container": "docker compose --file ../../compose.yml --project-directory ../.. up --detach",
+    "check": "nova utility run-scripts --sequential \"check:*\"",
+    "check:lint": "eslint ./ --max-warnings=0",
+    "check:types-config": "nova utility type-check --project tsconfig.config.json",
+    "check:types-tests": "nova utility type-check --project tsconfig.tests.json",
+    "check:types-web": "nova utility type-check --project tsconfig.web.json",
+    "check:test": "vitest run",
+    "build": "nova utility run-scripts --sequential --node-env production \"build:*\"",
+    "build:web": "vite build",
+    "clean": "nova utility run-scripts --parallel \"clean:*\"",
+    "clean:build": "shx rm -rf ./build",
+    "clean:container": "docker compose --file ../../compose.yml --project-directory ../.. down --remove-orphans",
+    "mock": "vite --mode mock"
+  },
+  "engines": {
+    "node": "^22 || ^24 || ^26"
+  },
+  "dependencies": {
+    "@cbnventures/nova": "0.38.0",
+    "notyf": "3.10.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "24.9.1",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.2",
+    "eslint": "9.39.5",
+    "shx": "0.4.0",
+    "typescript": "6.0.3",
+    "vite": "8.3.5",
+    "vitest": "4.1.11"
+  }
+}

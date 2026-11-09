@@ -1,0 +1,217 @@
+/**
+ * ============================
+ * Dialog
+ * ============================
+ */
+
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+
+  display: grid;
+  place-items: end center;
+  padding: var(--space-4) 0 0;
+  overflow-y: auto;
+
+  background: var(--color-scrim);
+}
+
+.dialog {
+  display: grid;
+  gap: var(--space-4);
+  width: 100%;
+  max-width: 34rem;
+  padding: var(--space-5);
+
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  box-shadow: var(--shadow-float);
+
+  & form {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  & > p {
+    color: var(--color-text-soft);
+  }
+
+  & .field-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.dialog-small {
+  max-width: 28rem;
+}
+
+.dialog-body {
+  display: grid;
+  gap: var(--space-4);
+}
+
+/* A generated or one-time secret, with its copy button inside the field. */
+.generated-secret-field {
+  position: relative;
+
+  display: block;
+
+  font-size: var(--text-md);
+  font-weight: 400;
+  color: var(--color-text);
+
+  & input {
+    padding-right: 2.75rem;
+  }
+}
+
+.generated-secret-copy {
+  position: absolute;
+  top: 0.125rem;
+  right: 0.125rem;
+}
+
+/* A dialog takes focus only so screen readers start inside it; it isn't a control, so it shows no ring. */
+.dialog:focus {
+  outline: none;
+}
+
+.dialog-message {
+  color: var(--color-text-soft);
+}
+
+.dialog-heading {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  justify-content: space-between;
+
+  & h2 {
+    font-size: var(--text-lg);
+  }
+
+  & p {
+    margin-top: var(--space-1);
+
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+  }
+
+  & .icon-button {
+    margin: calc(var(--space-1) * -1) calc(var(--space-2) * -1) 0 0;
+  }
+}
+
+/* The title shares its row with the step and Close; the description gets the full width below. */
+.dialog-heading-stepped {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0 var(--space-3);
+
+  & > p {
+    grid-column: 1 / -1;
+  }
+}
+
+.dialog-heading-end {
+  display: flex;
+  flex: none;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.dialog-step {
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+  white-space: nowrap;
+}
+
+.dialog-actions {
+  display: flex;
+  gap: var(--space-2);
+  justify-content: flex-end;
+  padding-top: var(--space-2);
+}
+
+.notification-field {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.notification-secret-action {
+  justify-self: start;
+  height: auto;
+  padding: 0;
+}
+
+@media (min-width: 480px) {
+  .dialog-backdrop {
+    place-items: center;
+    padding: var(--space-4);
+  }
+
+  .dialog {
+    border-radius: var(--radius-lg);
+  }
+}
+
+/**
+ * ============================
+ * Form Rows and Checkboxes
+ * ============================
+ */
+
+.field-row {
+  display: grid;
+  gap: var(--space-4);
+  align-items: start;
+}
+
+@media (min-width: 680px) {
+  .field-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.check-row {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+
+  cursor: pointer;
+
+  & input {
+    flex: none;
+    width: 1rem;
+    height: 1rem;
+    margin: 0.125rem 0 0;
+
+    accent-color: var(--color-accent);
+  }
+
+  & span {
+    display: grid;
+    gap: 0.125rem;
+  }
+
+  & strong {
+    font-weight: 550;
+  }
+
+  & small {
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+  }
+}
+
+.check-row-danger strong {
+  color: var(--color-danger);
+}
+
+/**
+ * ============================
+ * Locations and Labels Editor
+ * ============================
+ */

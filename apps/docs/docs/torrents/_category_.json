@@ -1,0 +1,10 @@
+{
+  "label": "Torrents",
+  "position": 4,
+  "collapsible": true,
+  "collapsed": true,
+  "link": {
+    "type": "generated-index",
+    "description": "Add torrents from links or files, organize them with profiles, and manage their labels and per-torrent options."
+  }
+}

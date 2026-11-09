@@ -1,0 +1,19 @@
+{
+  "extends": [
+    "@cbnventures/nova/presets/tsconfig/dx-essentials.json",
+    "@cbnventures/nova/presets/tsconfig/dx-strict.json",
+    "@cbnventures/nova/presets/tsconfig/role-config.json",
+    "@cbnventures/nova/presets/tsconfig/runtime-node.json"
+  ],
+  "compilerOptions": {
+    "types": [
+      "node"
+    ]
+  },
+  "include": [
+    "./eslint.config.mts",
+    "./mock-api.mts",
+    "./vite.config.mts",
+    "./vitest.config.mts"
+  ]
+}

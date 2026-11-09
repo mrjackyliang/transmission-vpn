@@ -1,0 +1,372 @@
+/**
+ * ============================
+ * Settings
+ * ============================
+ */
+
+.settings-search {
+  width: min(100%, 18rem);
+}
+
+@media (min-width: 720px) {
+  .setting-row:has(.settings-list-editor) {
+    align-items: start;
+  }
+}
+
+.setting-control:has(.settings-directory-field),
+.setting-control:has(.settings-list-editor) {
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 100%;
+
+  & > .field-error {
+    font-size: var(--text-xs);
+    color: var(--color-danger);
+  }
+}
+
+.settings-directory-field {
+  width: 100%;
+  max-width: 20rem;
+}
+
+.settings-directory-value {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  cursor: pointer;
+
+  &:disabled {
+    cursor: not-allowed;
+  }
+}
+
+.settings-list-editor {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  max-width: 20rem;
+}
+
+.settings-list-box {
+  width: 100%;
+  min-width: 0;
+
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-raised);
+
+  overflow: hidden;
+}
+
+.settings-list-body {
+  display: grid;
+  min-width: 0;
+}
+
+.settings-list-item {
+  display: grid;
+  gap: var(--space-1);
+  width: 100%;
+  min-width: 0;
+  padding: var(--space-3);
+
+  & > .field-error {
+    margin-right: calc(2.5rem + var(--space-2));
+
+    font-size: var(--text-xs);
+    color: var(--color-danger);
+    overflow-wrap: anywhere;
+  }
+}
+
+.settings-list-item + .settings-list-item {
+  border-top: 1px solid var(--color-border);
+}
+
+.settings-list-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 2.5rem;
+  gap: var(--space-2);
+  width: 100%;
+  min-width: 0;
+}
+
+.settings-list-remove {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.settings-list-hint {
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+}
+
+.settings-list-empty-state {
+  display: grid;
+  gap: var(--space-1);
+  justify-items: center;
+  min-height: 7.5rem;
+  padding: var(--space-5) var(--space-4);
+
+  text-align: center;
+
+  place-content: center;
+
+  & strong {
+    font-size: var(--text-sm);
+    font-weight: 550;
+    color: var(--color-muted);
+  }
+
+  & span {
+    font-size: var(--text-xs);
+    color: var(--color-muted);
+  }
+}
+
+.settings-list-footer {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+  padding: var(--space-3);
+
+  background: var(--color-surface-raised);
+  border-top: 1px solid var(--color-border);
+
+  & .settings-list-hint {
+    min-width: 0;
+
+    text-align: right;
+  }
+}
+
+.blocklist-source-setting .settings-list-editor {
+  min-width: 0;
+  max-width: 32rem;
+  margin-left: auto;
+}
+
+.blocklist-source-setting .setting-meta .mono {
+  overflow-wrap: normal;
+  word-break: normal;
+  white-space: nowrap;
+}
+
+.blocklist-source-setting .setting-meta {
+  flex-wrap: wrap;
+}
+
+.blocklist-setting-row,
+.blocklist-setting-row .setting-copy,
+.blocklist-setting-row .setting-control,
+.blocklist-source-setting .settings-list-item,
+.blocklist-source-setting .settings-list-row {
+  min-width: 0;
+}
+
+.blocklist-source-setting .settings-list-row .setting-input {
+  max-width: none;
+}
+
+.blocklist-setting-row .switch-control {
+  justify-content: flex-end;
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+}
+
+.blocklist-update-interval {
+  width: 8rem;
+
+  & input {
+    padding-right: 3.75rem;
+  }
+}
+
+.source-status {
+  display: block;
+  width: auto;
+  min-width: 0;
+  margin-right: calc(2.5rem + var(--space-2));
+
+  font-size: var(--text-xs);
+  line-height: 1.4;
+  color: var(--color-muted);
+  overflow-wrap: anywhere;
+}
+
+.source-status-danger {
+  color: var(--color-danger);
+}
+
+/* Progress keeps the secondary text color: red is reserved for errors. */
+.source-status-active {
+  font-weight: 550;
+}
+
+/* Opacity would drop muted text below readable contrast in dark mode. */
+.source-status-muted {
+  color: var(--color-muted);
+}
+
+.blocklist-status-copy {
+  gap: var(--space-1);
+}
+
+.setting-copy > .blocklist-status-summary {
+  font-weight: 550;
+  color: var(--color-text);
+}
+
+.blocklist-status-detail {
+  display: block;
+
+  font-size: var(--text-xs);
+  line-height: 1.45;
+  color: var(--color-muted);
+}
+
+.blocklist-update-button.is-busy .icon {
+  animation: blocklist-update-spin 850ms linear infinite;
+}
+
+@keyframes blocklist-update-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blocklist-update-button.is-busy .icon {
+    animation: none;
+  }
+}
+
+@media (min-width: 720px) {
+  .blocklist-source-setting {
+    grid-template-columns: minmax(0, 1fr) minmax(28rem, 32rem);
+  }
+
+  .setting-control:has(.settings-directory-field),
+  .setting-control:has(.settings-list-editor) {
+    align-items: flex-end;
+  }
+}
+
+.setting-list {
+  container-type: inline-size;
+}
+
+@container (max-width: 52rem) {
+  .blocklist-source-setting {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .blocklist-source-setting .setting-control {
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .blocklist-source-setting .settings-list-editor {
+    max-width: none;
+    margin-left: 0;
+  }
+}
+
+/* Blocklist rows keep the same spacing and type sizes as every other setting row. */
+@media (max-width: 719px) {
+  .blocklist-setting-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+  }
+
+  .blocklist-source-setting {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .blocklist-source-setting .setting-control {
+    width: 100%;
+  }
+
+  .blocklist-source-setting .settings-list-editor {
+    gap: var(--space-1);
+    max-width: none;
+  }
+
+  .blocklist-source-setting .settings-list-item {
+    gap: 0;
+  }
+
+  .blocklist-source-setting .button,
+  .blocklist-source-setting .setting-input,
+  .blocklist-update-button,
+  .blocklist-update-interval .setting-input {
+    min-height: 2.5rem;
+  }
+}
+
+.setting-subgroup {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+
+  background: var(--color-canvas);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.setting-subgroup-title {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+
+  font-size: var(--text-sm);
+  font-weight: 650;
+  color: var(--color-text-soft);
+}
+
+.restart-notice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-5);
+
+  color: var(--color-text);
+
+  background: var(--color-warning-soft);
+  border: 1px solid color-mix(in srgb, var(--color-warning) 28%, var(--color-border));
+  border-radius: var(--radius-lg);
+}
+
+.restart-notice-copy {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  min-width: 0;
+
+  & .icon {
+    color: var(--color-warning);
+  }
+
+  & strong {
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (max-width: 560px) {
+  .restart-notice {
+    align-items: stretch;
+    padding: var(--space-4);
+
+    & .button {
+      width: 100%;
+    }
+  }
+}
+

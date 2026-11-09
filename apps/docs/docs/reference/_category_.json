@@ -1,0 +1,10 @@
+{
+  "label": "Reference",
+  "position": 9,
+  "collapsible": true,
+  "collapsed": true,
+  "link": {
+    "type": "generated-index",
+    "description": "Look up the security model, answers to common questions, and the terms used throughout this documentation."
+  }
+}

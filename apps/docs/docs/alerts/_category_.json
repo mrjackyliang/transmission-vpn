@@ -1,0 +1,10 @@
+{
+  "label": "Alerts",
+  "position": 7,
+  "collapsible": true,
+  "collapsed": true,
+  "link": {
+    "type": "generated-index",
+    "description": "Send alerts to ntfy, Telegram, email, and eight other services when the VPN drops or comes back, a torrent finishes or fails, or sign-in is locked."
+  }
+}

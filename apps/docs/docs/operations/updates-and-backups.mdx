@@ -1,0 +1,160 @@
+---
+id: updates-and-backups
+title: Updates and Backups
+description: Update Transmission VPN, make a portable export or a complete /config backup, and restore the installation without losing its saved credentials.
+sidebar_position: 2
+keywords:
+  - transmission vpn
+  - updates
+  - backups
+  - restore
+  - installation key
+  - config volume
+tags:
+  - operations
+  - backups
+  - updates
+---
+
+import ThemedImage from '@theme/ThemedImage';
+import { Frame, Terminology } from '@cbnventures/docusaurus-preset-nova/blocks';
+
+import updatesAndBackupsOneLight from './_assets_/updates-and-backups-1-light.png';
+import updatesAndBackupsOneDark from './_assets_/updates-and-backups-1-dark.png';
+
+Keep the container current by rebuilding it from updated source, and protect its state by backing up `/config` together with its <Terminology title="Key that encrypts saved secrets, such as VPN logins" to="/docs/reference/terminology#installation-key">installation key</Terminology>.
+
+## Update the Image
+
+1. Update your copy of the repository, for example with `git pull`.
+2. Rebuild and restart the container from the repository root:
+
+```bash title="Repository root"
+docker compose up --build --detach
+```
+
+- At start, the database changes built into the new image are applied automatically.
+- Transmission's settings file is rebuilt from your saved settings.
+- `/config` and `/data` are kept, and an enabled VPN connection reconnects on its own.
+
+:::info
+No container release has been tagged yet, so these steps cover rebuilding from source.
+:::
+
+## Choose an Export or /config Backup
+
+Use an <Terminology title="a portable JSON backup made from selected Backup sections" to="/docs/reference/terminology#export-file">export file</Terminology> when selected settings need to move between installations. It is portable, does not need the source <Terminology title="Key that encrypts saved secrets, such as VPN logins" to="/docs/reference/terminology#installation-key">installation key</Terminology>, and can include settings and profiles, labels, notifications, the torrent list, VPN connections, RPC logins, and API tokens.
+
+Use a complete `/config` backup when the whole installation needs to be restored exactly. It keeps the administrator account, sign-in security, browser sessions, database, import progress, managed configuration, the <Terminology title="Key that encrypts saved secrets, such as VPN logins" to="/docs/reference/terminology#installation-key">installation key</Terminology>, and Transmission's own configuration files together.
+
+Neither choice copies downloaded data under `/data`. [Export and Import](/docs/configuration/export-and-import/) covers portable exports and imports; the sections below cover the complete `/config` copy.
+
+## Back Up Your Data
+
+The <Terminology title="The /config folder holding state, keys, and settings" to="/docs/reference/terminology#config-volume">config volume</Terminology> holds everything the container needs to pick up where it left off:
+
+| Path                                                                                                                                                                         | Contents                                                                                                                                                                                                                                                                                                          |
+|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `/config/app/state.sqlite3`                                                                                                                                                  | The database, with any `-wal` and `-shm` files beside it, holding the settings, the account, the saved VPN connection, the profiles, and the notification <Terminology title="One place alerts go, such as a chat or topic" to="/docs/reference/terminology#notification-destination">destinations</Terminology>. |
+| <Terminology title="Key that encrypts saved secrets, such as VPN logins" to="/docs/reference/terminology#installation-key">`/config/app/keys/installation.key`</Terminology> | The key that decrypts the authenticator app's secret, VPN profile contents and connection credentials, and the notification <Terminology title="A destination setting sealed with the installation key" to="/docs/reference/terminology#secret-field">secret fields</Terminology>.                                |
+| `/config/transmission/`                                                                                                                                                      | Transmission's configuration folder.                                                                                                                                                                                                                                                                              |
+| <Terminology title="Optional /config/managed.json that seeds or locks settings" to="/docs/reference/terminology#managed-configuration">`/config/managed.json`</Terminology>  | The optional <Terminology title="Optional /config/managed.json that seeds or locks settings" to="/docs/reference/terminology#managed-configuration">managed configuration</Terminology> file.                                                                                                                     |
+
+:::danger
+A backup without <Terminology title="Key that encrypts saved secrets, such as VPN logins" to="/docs/reference/terminology#installation-key">`installation.key`</Terminology> can't decrypt VPN profile contents and connection credentials, the authenticator app's secret, or the notification secrets. When the file is missing at start, the container makes a new key and removes them, as covered in [Missing Installation Key](/docs/operations/updates-and-backups/#missing-installation-key).
+:::
+
+It is recommended to stop the container while copying, so the database isn't changing:
+
+1. Stop the container with `docker compose stop app`.
+2. Copy the whole `/config` folder, keeping file ownership and permissions.
+3. Start the container with `docker compose start app`.
+
+### With a Host Folder
+
+When `/config` is a host folder, such as `./config`, archive it from the host:
+
+```bash
+docker compose stop app
+sudo tar -czpf transmission-vpn-config.tar.gz -C ./config .
+docker compose start app
+```
+
+### With the Default Named Volume
+
+When `/config` uses the Compose file's named volume, archive it through a one-off container from the same image:
+
+```bash
+docker compose stop app
+docker compose run --rm --no-deps --entrypoint tar \
+  --volume "$PWD":/backup \
+  app -czpf /backup/transmission-vpn-config.tar.gz -C /config .
+docker compose start app
+```
+
+## Restore a Backup
+
+It is recommended to restore into an empty `/config`, so no files from the old state remain. A key file from another database stops startup with a message that explains the fix, as covered in [Troubleshooting](/docs/operations/troubleshooting/#container-stops-at-startup).
+
+### Into a Host Folder
+
+```bash
+docker compose down
+sudo rm -rf ./config
+sudo mkdir ./config
+sudo tar -xzpf transmission-vpn-config.tar.gz -C ./config
+docker compose up --detach
+```
+
+### Into the Default Named Volume
+
+```bash
+docker compose down
+docker volume rm transmission-vpn_config
+docker compose run --rm --no-deps --entrypoint tar \
+  --volume "$PWD":/backup \
+  app -xzpf /backup/transmission-vpn-config.tar.gz -C /config
+docker compose up --detach
+```
+
+The Compose project is named `transmission-vpn`, so its `config` volume is called `transmission-vpn_config`. After the restore, the saved VPN connection reconnects on its own when it was enabled.
+
+## Missing Installation Key
+
+When <Terminology title="Key that encrypts saved secrets, such as VPN logins" to="/docs/reference/terminology#installation-key">`installation.key`</Terminology> is missing at start, the container makes a new one instead of stopping. Secrets encrypted with the old key can't be opened anymore, so it removes them and keeps everything else.
+
+### What Gets Removed
+
+- **VPN details** — Every saved endpoint and profile is removed, both provider downloads and uploaded `.ovpn` and `.conf` files, along with each connection's username and password or WireGuard key. The connection rows stay with their names, slots, default choice, peer ports, DNS servers, and retry intervals, but they are disabled until their VPN details are entered again. Torrent profiles and web proxy logins keep their connection assignments.
+- **Authenticator app** — It's turned off and its recovery codes are deleted, the same as **Turn off**, so you aren't locked out.
+- **Notification secrets** — Every <Terminology title="One place alerts go, such as a chat or topic" to="/docs/reference/terminology#notification-destination">destination</Terminology>'s <Terminology title="A destination setting sealed with the installation key" to="/docs/reference/terminology#secret-field">secret fields</Terminology>, such as tokens, passwords, and webhook URLs, are removed. The <Terminology title="One place alerts go, such as a chat or topic" to="/docs/reference/terminology#notification-destination">destination</Terminology> stays, but it gets no alerts until you enter them again.
+
+The account, its password and passkeys, sessions, <Terminology title="A scoped credential for automating the API" to="/docs/reference/terminology#api-token">API tokens</Terminology>, settings, torrents, VPN connection rows, and the <Terminology title="One place alerts go, such as a chat or topic" to="/docs/reference/terminology#notification-destination">destinations</Terminology> themselves stay, because they don't use the key. Transmission's traffic stays blocked until a connection passes **Test and connect** again.
+
+On that start, the logs show one warning whose `msg` lists what was removed:
+
+```text
+No installation key was found at /config/app/keys/installation.key, so Transmission VPN made a new one. These saved secrets were locked with the old key and were removed: the VPN details for each connection, the authenticator app for <username>, the <name> notification. Enter them again in the web interface.
+```
+
+<Terminology title="One place alerts go, such as a chat or topic" to="/docs/reference/terminology#notification-destination">Destinations</Terminology> without <Terminology title="A destination setting sealed with the installation key" to="/docs/reference/terminology#secret-field">secret fields</Terminology> that chose **Saved secrets were removed** get an alert with the same list while the container starts. When nothing used the old key, such as on a new installation, there's no warning, no alert, and no notice.
+
+### Enter Them Again
+
+The web interface shows **Saved secrets were removed** at the top of every page, with a link for each removed item:
+
+- **Enter the VPN connection details again** — Opens **VPN**. Select **Refresh list** to download the provider's servers again, or upload your `.ovpn` or `.conf` file again, then enter your VPN username and password or WireGuard key and select **Test and connect**, as covered in [Connect to a VPN](/docs/vpn/connecting/).
+- **Set up the authenticator app** — Opens **Sign-in and security**, where **Set up** under **Authenticator app** turns it back on.
+- **Set up the … notification again** — Names one <Terminology title="One place alerts go, such as a chat or topic" to="/docs/reference/terminology#notification-destination">destination</Terminology> and opens **Notifications**, where **Edit** on that <Terminology title="One place alerts go, such as a chat or topic" to="/docs/reference/terminology#notification-destination">destination</Terminology> asks for its secrets again, as covered in [Notifications](/docs/alerts/notifications/#after-a-lost-installation-key).
+
+<Frame caption="The notice after a lost installation key">
+  <ThemedImage sources={{ light: updatesAndBackupsOneLight, dark: updatesAndBackupsOneDark }} alt="Saved secrets were removed notice with links to set up the authenticator app, enter the VPN connection details again, and set up the Downloads feed and Homelab chat notifications again, and a Dismiss button" width={992} height={275} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+Each item leaves the notice once it's set up again. **Dismiss** hides the notice, and anything not set up again stays removed.
+
+## Lost Authenticator
+
+- With a recovery code, sign in with it in place of the authenticator code. Then open **Sign-in and security**, turn off the authenticator app, and set it up again on your new device.
+- With a passkey, sign in with it and do the same.
+- Without either, delete the <Terminology title="Key that encrypts saved secrets, such as VPN logins" to="/docs/reference/terminology#installation-key">installation key</Terminology> with `docker compose exec app rm /config/app/keys/installation.key` and run `docker compose restart app`. The authenticator app is then turned off so the password signs you in, but the VPN endpoint profiles and credentials and the notification secrets are removed too, as described in [Missing Installation Key](/docs/operations/updates-and-backups/#missing-installation-key).

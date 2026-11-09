@@ -1,0 +1,192 @@
+---
+id: custom-profiles
+title: Custom Profiles
+description: Prepare a .ovpn or WireGuard .conf file that passes Transmission VPN validation, with no scripts or commands, then upload it as a custom profile and connect.
+sidebar_position: 5
+keywords:
+  - transmission vpn
+  - custom profile
+  - ovpn file
+  - conf file
+  - openvpn
+  - wireguard
+  - profile validation
+  - inline certificates
+tags:
+  - vpn
+  - openvpn
+  - wireguard
+  - custom profile
+---
+
+import ThemedImage from '@theme/ThemedImage';
+import { Frame, Terminology } from '@cbnventures/docusaurus-preset-nova/blocks';
+
+import customProfilesOneLight from './_assets_/custom-profiles-1-light.png';
+import customProfilesOneDark from './_assets_/custom-profiles-1-dark.png';
+import customProfilesTwoLight from './_assets_/custom-profiles-2-light.png';
+import customProfilesTwoDark from './_assets_/custom-profiles-2-dark.png';
+
+Upload your own `.ovpn` file or <Terminology title="VPN protocol that signs in with a key pair" to="/docs/reference/terminology#wireguard">WireGuard</Terminology> `.conf` file to connect through a VPN service that has no built-in <Terminology title="A provider's official endpoint list, downloaded on request" to="/docs/reference/terminology#endpoint-catalog">catalog</Terminology>.
+
+## Why Use a Custom Profile?
+
+1. Accepts a validated OpenVPN profile or WireGuard file from any service, so you aren't limited to the built-in providers. Every OpenVPN `remote` line supplies one endpoint.
+2. Rewrites each file into a checked, minimal form, so a downloaded file can't run scripts or commands or change how traffic leaves the container.
+3. Encrypts the saved file with the <Terminology title="Key that encrypts saved secrets, such as VPN logins" to="/docs/reference/terminology#installation-key">installation key</Terminology>, so certificates and keys aren't stored as plain text.
+4. Updates the existing entry when you upload an identical file with the same name, so repeat uploads don't add copies.
+
+## Profile Requirements
+
+The **<Terminology title="The VPN protocol a connection uses, OpenVPN or WireGuard" to="/docs/reference/terminology#tunnel">Tunnel</Terminology>** switch decides which kind of file the **VPN** page takes, and each kind has its own rules.
+
+### OpenVPN Profiles
+
+- **Size** — The **VPN** page accepts files smaller than 900 KB.
+- **One or more `remote` lines** — Each needs a host name or IP address and a port from 1 to 65535. Every line becomes its own <Terminology title="One VPN server profile you can connect to" to="/docs/reference/terminology#endpoint">endpoint</Terminology>, in the same order as the file.
+- **A <Terminology title="Profile part that proves the VPN server's identity" to="/docs/reference/terminology#trust-anchor">trust anchor</Terminology>** — The profile needs an inline `<ca>`, `<tls-auth>`, or `<tls-crypt>` block, or a `peer-fingerprint` line.
+- **<Terminology title="Certificate or key text embedded inside the profile" to="/docs/reference/terminology#inline-block">Inline blocks</Terminology> for certificates and keys** — Paste them between tags such as `<ca>` and `</ca>`, because lines that point to separate files, such as `ca ca.crt`, are rejected.
+- **A `tun` device** — A `dev` line, when the file has one, must be `dev tun` or `dev tun0`.
+- **UDP or TCP** — A `proto` line, and any protocol on a `remote` line, must be `udp`, `udp4`, `tcp`, `tcp-client`, or `tcp4-client`, so IPv6-only transports such as `udp6` are rejected.
+
+The accepted <Terminology title="Certificate or key text embedded inside the profile" to="/docs/reference/terminology#inline-block">inline blocks</Terminology> are `<ca>`, `<cert>`, `<key>`, `<tls-auth>`, `<tls-crypt>`, and `<tls-crypt-v2>`. PKCS #12 files (`pkcs12`) aren't supported.
+
+### WireGuard Files
+
+- **Size** — Up to 64 KiB.
+- **Sections** — One `[Interface]` and exactly one `[Peer]`, with every setting inside one of them.
+- **Format** — Setting names are case-insensitive, and `#` starts a comment.
+- **`[Interface]`**
+  - `PrivateKey` — Required, because the file brings its own <Terminology title="The secret half of your WireGuard key pair" to="/docs/reference/terminology#private-key">private key</Terminology>.
+  - `Address` — Required, with at least one IPv4 address and up to 8.
+  - `DNS` — Optional, with up to 8 IPv4 servers. Without it, the connection uses `1.1.1.1` and `9.9.9.9`.
+  - `MTU` — Optional, from 1280 to 1500.
+  - `ListenPort` and `SaveConfig` — Ignored.
+- **`[Peer]`**
+  - `PublicKey` — Required.
+  - `PresharedKey` — Optional.
+  - `Endpoint` — Required, as an IPv4 address or a host name with a port.
+  - `AllowedIPs` — Optional, and always replaced with `0.0.0.0/0`.
+  - `PersistentKeepalive` — Optional, and always set to 25.
+- **Not allowed**
+  - `PreUp`, `PostUp`, `PreDown`, and `PostDown`, because the container never runs `wg-quick` and a file can't run commands.
+  - `Table` and `FwMark`, because the container manages routing itself.
+  - An IPv6 `Endpoint`.
+  - Any other setting or section.
+
+## What Gets Changed
+
+### In OpenVPN Profiles
+
+<Terminology title="Rewriting a profile into a validated, safe form" to="/docs/reference/terminology#profile-normalization">Profile normalization</Terminology> starts every saved profile with these lines, replacing any equivalents from your file:
+
+```text title="Forced profile lines"
+client
+dev tun0
+auth-user-pass /run/transmission-vpn/openvpn/auth
+auth-nocache
+nobind
+persist-key
+persist-tun
+redirect-gateway def1
+allow-compression no
+verb 3
+```
+
+- Comments, blank lines, and the `compress`, `comp-lzo`, `allow-compression`, and `block-outside-dns` lines in your file are dropped.
+- `redirect-gateway def1` sends IPv4 internet traffic through the tunnel.
+- A `redirect-gateway` line with other options is saved, but the connection is rejected when you test it, so it is recommended to remove such lines first.
+
+### In WireGuard Files
+
+<Terminology title="Rewriting a profile into a validated, safe form" to="/docs/reference/terminology#profile-normalization">Profile normalization</Terminology> rewrites every saved WireGuard file into one fixed form:
+
+- `AllowedIPs` becomes `0.0.0.0/0`, so all IPv4 internet traffic goes through the tunnel.
+- `PersistentKeepalive` becomes 25 seconds, so an idle tunnel keeps a recent <Terminology title="WireGuard's regular key exchange that shows the server answers" to="/docs/reference/terminology#handshake">handshake</Terminology>.
+- IPv6 addresses, IPv6 DNS servers, and `::/0` are removed, so IPv6 stays blocked.
+- DNS search domains, `ListenPort`, `SaveConfig`, and comments are dropped.
+
+## Rejected Directives
+
+These OpenVPN directives fail validation with a message that names the reason:
+
+| Directives                                                                                               | Why they're rejected                                                                                                                                                                                      |
+|----------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `up`, `down`, `down-pre`, `up-restart`, `route-up`, `ipchange`, `learn-address`, `auth-user-pass-verify` | They run programs.                                                                                                                                                                                        |
+| `script-security`, `plugin`                                                                              | They enable script hooks or load plugins.                                                                                                                                                                 |
+| `setenv`                                                                                                 | It changes the OpenVPN process environment.                                                                                                                                                               |
+| `route-noexec`, `route-nopull`, `pull-filter`                                                            | They can stop the tunnel's routes from being installed.                                                                                                                                                   |
+| `http-proxy`, `socks-proxy`                                                                              | OpenVPN connects straight to the VPN endpoint.                                                                                                                                                            |
+| `daemon`, `writepid`                                                                                     | <Terminology title="Supervisor that starts, restarts, and stops the services" to="/docs/reference/terminology#s6-overlay">s6-overlay</Terminology> supervises OpenVPN.                                    |
+| `log`, `log-append`, `status`                                                                            | The container owns OpenVPN's logging and status output.                                                                                                                                                   |
+| `management`                                                                                             | The <Terminology title="Privileged service that runs tunnels and switches the firewall" to="/docs/reference/terminology#vpn-controller">VPN controller</Terminology> owns OpenVPN's management interface. |
+
+Any other directive must be on the list of data-only options, or validation fails with `unsupported directive`. The list is `auth`, `auth-retry`, `cipher`, `connect-retry`, `connect-retry-max`, `connect-timeout`, `data-ciphers`, `data-ciphers-fallback`, `explicit-exit-notify`, `fast-io`, `float`, `fragment`, `hand-window`, `key-direction`, `link-mtu`, `mssfix`, `mute-replay-warnings`, `peer-fingerprint`, `ping`, `ping-exit`, `ping-restart`, `persist-remote-ip`, `pull`, `rcvbuf`, `redirect-gateway`, `remote-cert-tls`, `remote-random`, `remote-random-hostname`, `reneg-sec`, `replay-window`, `resolv-retry`, `server-poll-timeout`, `sndbuf`, `tls-cipher`, `tls-ciphersuites`, `tls-client`, `tls-version-min`, `tran-window`, `tun-mtu`, and `verify-x509-name`.
+
+`route` isn't on the list, so a <Terminology title="Your own .ovpn or .conf file for any service" to="/docs/reference/terminology#custom-profile">custom profile</Terminology> with `route` lines is rejected. WireGuard files have their own refused settings, listed in [WireGuard Files](#wireguard-files).
+
+## Credentials
+
+- **OpenVPN** — The **VPN** page doesn't require a username or password. Enter them in **Username** and **Password** when your service uses password sign-in.
+- **WireGuard** — There's nothing to enter, because the file includes its own <Terminology title="The secret half of your WireGuard key pair" to="/docs/reference/terminology#private-key">private key</Terminology>. The **Sign-in** section reads `This file includes its own key.`
+
+## Upload a Profile
+
+1. Open **VPN**, and in **Provider**, select Custom.
+2. Under **<Terminology title="The VPN protocol a connection uses, OpenVPN or WireGuard" to="/docs/reference/terminology#tunnel">Tunnel</Terminology>**, choose **OpenVPN** or **WireGuard**.
+3. Select **Choose an .ovpn file** or **Choose a .conf file** and pick your <Terminology title="Your own .ovpn or .conf file for any service" to="/docs/reference/terminology#custom-profile">custom profile</Terminology>, or drop the file on that area.
+4. Select **Upload profile**.
+5. When the upload succeeds, the page reports how many endpoints it made, such as `2 VPN endpoints uploaded.` Every OpenVPN endpoint is selected, and **Fallback order** starts in the file's `remote` order. A WireGuard file supplies one endpoint.
+6. Enter credentials if your OpenVPN service needs them, then select **Test and connect**.
+
+<Frame caption="Custom with the OpenVPN tunnel" style={{ maxWidth: 960, marginInline: 'auto' }}>
+  <ThemedImage sources={{ light: customProfilesOneLight, dark: customProfilesOneDark }} alt="Provider section with Custom selected, the Tunnel switch on OpenVPN, an area reading Choose an .ovpn file or drop it here, and an unavailable Upload profile button" width={958} height={309} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+With the WireGuard tunnel, a line under the area reads `The file must include its private key, one peer, and no PostUp/PreDown lines.`
+
+<Frame caption="Custom with the WireGuard tunnel" style={{ maxWidth: 960, marginInline: 'auto' }}>
+  <ThemedImage sources={{ light: customProfilesTwoLight, dark: customProfilesTwoDark }} alt="Provider section with Custom selected, the Tunnel switch on WireGuard, an area reading Choose a .conf file or drop it here, a line saying the file must include its private key, one peer, and no PostUp or PreDown lines, and an unavailable Upload profile button" width={958} height={336} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+- The **Tunnel** switch opens on **OpenVPN**, or on **WireGuard** when the saved connection is a Custom WireGuard one. Switching it clears a chosen file and **Fallback order**.
+- A chosen file shows its name and size, such as `249 B`, until you upload it.
+- A file with one <Terminology title="One VPN server profile you can connect to" to="/docs/reference/terminology#endpoint">endpoint</Terminology> uses the file name without `.ovpn` or `.conf`. Several OpenVPN endpoints add `(1)`, `(2)`, and so on in `remote` order.
+- An edited file uploaded again is saved as a new entry, and uploaded profiles can't be deleted from the web interface.
+- When the <Terminology title="Key that encrypts saved secrets, such as VPN logins" to="/docs/reference/terminology#installation-key">installation key</Terminology> is missing at start, the container removes every saved profile, so it is recommended to keep your `.ovpn` and `.conf` files to upload them again, as covered in [Updates and Backups](/docs/operations/updates-and-backups/#missing-installation-key).
+
+## Validation Errors
+
+Messages about a specific line start with `line` and the line number.
+
+### OpenVPN Messages
+
+| Message                                                               | Fix                                                                                                                                                                            |
+|-----------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `inline block <name> is not allowed`                                  | Keep only the six accepted <Terminology title="Certificate or key text embedded inside the profile" to="/docs/reference/terminology#inline-block">inline blocks</Terminology>. |
+| `external file directive ca is not supported; use an inline block`    | Paste the file's contents between `<ca>` and `</ca>`, and do the same for `cert`, `key`, and the other blocks.                                                                 |
+| `only a tun device is supported`                                      | Use `dev tun`.                                                                                                                                                                 |
+| `unsupported OpenVPN protocol` or `remote protocol is unsupported`    | Use `udp`, `udp4`, `tcp`, `tcp-client`, or `tcp4-client`.                                                                                                                      |
+| `<directive> is not allowed: <reason>`                                | Remove the directive named in the message.                                                                                                                                     |
+| `unsupported directive <name>`                                        | Remove the directive, since it isn't on the list of data-only options.                                                                                                         |
+| `OpenVPN profile does not contain a remote endpoint`                  | Add a `remote` line.                                                                                                                                                           |
+| `OpenVPN profile does not contain a trusted CA or peer fingerprint`   | Add a <Terminology title="Profile part that proves the VPN server's identity" to="/docs/reference/terminology#trust-anchor">trust anchor</Terminology>.                        |
+| `inline block <name> is not closed`                                   | Add the closing tag, such as `</ca>`.                                                                                                                                          |
+| `This is a WireGuard file. Choose the WireGuard tunnel to upload it.` | Switch **Tunnel** to **WireGuard** and upload the file again.                                                                                                                  |
+| `Choose a non-empty OpenVPN profile smaller than 900 KB.`             | Choose a smaller, non-empty file.                                                                                                                                              |
+
+### WireGuard Messages
+
+| Message                                                                                                                                             | Fix                                                                                                                                                               |
+|-----------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `This is not a WireGuard file because it has no [Interface] section. For an OpenVPN profile, choose the OpenVPN tunnel.`                            | Switch **Tunnel** to **OpenVPN** for a `.ovpn` file, or check that the file has an `[Interface]` line.                                                            |
+| `PostUp is not allowed: configurations can't run commands. If the file came from Mullvad, download it again with the kill switch option turned off` | Remove the line, which the message can also name `PreUp`, `PreDown`, or `PostDown`. For a Mullvad file, download it again with the kill switch option turned off. |
+| `Table is not allowed: the container manages routing itself`                                                                                        | Remove the `Table` line, or the `FwMark` line when the message names it.                                                                                          |
+| `Endpoint must be IPv4 or a hostname; IPv6 isn't supported`                                                                                         | Use the server's IPv4 address or host name in `Endpoint`.                                                                                                         |
+| `unsupported [Interface] setting` or `unsupported [Peer] setting`                                                                                   | Remove the setting, since only the settings in [WireGuard Files](#wireguard-files) are accepted.                                                                  |
+| `only [Interface] and [Peer] sections are supported`                                                                                                | Remove the other section.                                                                                                                                         |
+| `a configuration must have exactly one [Peer]` or `WireGuard configuration must have exactly one [Peer]`                                            | Keep one `[Peer]` section, since each file connects to one server.                                                                                                |
+| `WireGuard configuration does not contain a PrivateKey`                                                                                             | Add the `PrivateKey` line, since a custom file signs in with its own key.                                                                                         |
+| `WireGuard configuration does not contain an IPv4 Address`                                                                                          | Add an IPv4 address to the `Address` line.                                                                                                                        |
+| `WireGuard configuration exceeds 65536 bytes`                                                                                                       | Choose a file of 64 KiB or less.                                                                                                                                  |
+| `Choose a non-empty WireGuard file smaller than 900 KB.`                                                                                            | Choose a smaller, non-empty file.                                                                                                                                 |

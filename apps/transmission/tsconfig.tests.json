@@ -1,0 +1,26 @@
+{
+  "extends": [
+    "@cbnventures/nova/presets/tsconfig/dx-essentials.json",
+    "@cbnventures/nova/presets/tsconfig/dx-strict.json",
+    "@cbnventures/nova/presets/tsconfig/role-tests.json",
+    "@cbnventures/nova/presets/tsconfig/runtime-node.json"
+  ],
+  "compilerOptions": {
+    "allowImportingTsExtensions": true,
+    "baseUrl": ".",
+    "ignoreDeprecations": "6.0",
+    "paths": {
+      "@/*": [
+        "src/*"
+      ]
+    },
+    "types": [
+      "node",
+      "vitest/globals"
+    ]
+  },
+  "include": [
+    "./tests/**/*.test.ts",
+    "./vitest.config.mts"
+  ]
+}

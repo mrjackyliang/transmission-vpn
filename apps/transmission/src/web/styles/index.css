@@ -1,0 +1,20 @@
+/* Loads the stylesheets in cascade order: Notyf's base styles, tokens, shared components, then screens. */
+@import "notyf/notyf.min.css";
+@import "./tokens.css";
+@import "./accent.css";
+@import "./components.css";
+@import "./auth.css";
+@import "./shell.css";
+@import "./panels.css";
+@import "./dialogs.css";
+@import "./library.css";
+@import "./torrents.css";
+@import "./torrent-dialogs.css";
+@import "./detail.css";
+@import "./access.css";
+@import "./access-panels.css";
+@import "./access-dialogs.css";
+@import "./vpn.css";
+@import "./settings.css";
+@import "./backup.css";
+@import "./backup-view.css";

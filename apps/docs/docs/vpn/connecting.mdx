@@ -1,0 +1,219 @@
+---
+id: connecting
+title: Connect to a VPN
+description: Choose a VPN provider and tunnel, download its endpoint catalog, build a fallback order, and test the connection before Transmission VPN lets torrents through.
+sidebar_position: 2
+keywords:
+  - transmission vpn
+  - connect
+  - vpn setup
+  - test and connect
+  - fallback order
+  - reconnect
+  - wireguard
+tags:
+  - vpn
+  - setup
+  - openvpn
+  - wireguard
+---
+
+import ThemedImage from '@theme/ThemedImage';
+import { Frame, Terminology } from '@cbnventures/docusaurus-preset-nova/blocks';
+
+import connectingOneLight from './_assets_/connecting-1-light.png';
+import connectingOneDark from './_assets_/connecting-1-dark.png';
+import connectingTwoLight from './_assets_/connecting-2-light.png';
+import connectingTwoDark from './_assets_/connecting-2-dark.png';
+import connectingThreeLight from './_assets_/connecting-3-light.png';
+import connectingThreeDark from './_assets_/connecting-3-dark.png';
+import connectingFourLight from './_assets_/connecting-4-light.png';
+import connectingFourDark from './_assets_/connecting-4-dark.png';
+import connectingFiveLight from './_assets_/connecting-5-light.png';
+import connectingFiveDark from './_assets_/connecting-5-dark.png';
+import connectingSixLight from './_assets_/connecting-6-light.png';
+import connectingSixDark from './_assets_/connecting-6-dark.png';
+import connectingSevenLight from './_assets_/connecting-7-light.png';
+import connectingSevenDark from './_assets_/connecting-7-dark.png';
+
+Connect one Transmission to a VPN service from the **VPN** page. Each saved connection has its own tunnel, status, peer port, and Transmission.
+
+The page opens with the connection list. Select **Add connection** to set one up, or select a saved connection to see its details and settings.
+
+**New connection** shows the editor without a status card. Connection details and status appear after **Test and connect** passes and saves the connection.
+
+## Before You Start
+
+- **An administrator account** — Sign in first, as covered in [First-Run Setup](/docs/getting-started/first-run-setup/).
+- **Your OpenVPN credentials** — PureVPN, Private Internet Access, IPVanish, NordVPN, Surfshark, and IVPN need a username and password for OpenVPN:
+  - **PureVPN** — The manual-connection credentials generated in the PureVPN member area.
+  - **NordVPN and Surfshark** — The service credentials from their manual setup pages.
+  - **IVPN** — Your account ID, with any password.
+- **Your WireGuard key** — Mullvad, NordVPN, Surfshark, and IVPN need a <Terminology title="The secret half of your WireGuard key pair" to="/docs/reference/terminology#private-key">private key</Terminology> from your account's WireGuard setup. Mullvad and IVPN also need the <Terminology title="The IPv4 address a provider assigned to your key" to="/docs/reference/terminology#tunnel-address">tunnel address</Terminology> assigned to that key.
+- **A profile file for other services** — A service without a built-in <Terminology title="A provider's official endpoint list, downloaded on request" to="/docs/reference/terminology#endpoint-catalog">catalog</Terminology> needs its `.ovpn` file or WireGuard `.conf` file, uploaded as a <Terminology title="Your own .ovpn or .conf file for any service" to="/docs/reference/terminology#custom-profile">custom profile</Terminology>.
+
+## Choose a Provider
+
+1. Open **VPN** in the navigation and select **Add connection**, or open a saved connection.
+2. In **Provider**, select Custom, PureVPN, Private Internet Access, IPVanish, NordVPN, Surfshark, IVPN, or Mullvad.
+3. Under **<Terminology title="The VPN protocol a connection uses, OpenVPN or WireGuard" to="/docs/reference/terminology#tunnel">Tunnel</Terminology>**, choose **OpenVPN** or **WireGuard** when the provider offers both. A provider with one tunnel shows its name instead.
+
+The switch opens on **OpenVPN**, or on the saved connection's tunnel when you pick that connection's provider. Changing the provider or the tunnel clears **Fallback order**, the filters, the sign-in fields, and a chosen file, because an <Terminology title="Ordered endpoints from one provider and tunnel for failover" to="/docs/reference/terminology#endpoint-pool">endpoint pool</Terminology> holds one provider and one tunnel.
+
+[Supported Providers](/docs/vpn/providers/) compares the options.
+
+## Download the Endpoint Catalog
+
+The built-in providers show the state of the chosen tunnel's <Terminology title="A provider's official endpoint list, downloaded on request" to="/docs/reference/terminology#endpoint-catalog">catalog</Terminology> under **Provider**, which reads **Endpoint list not downloaded yet** until the first download.
+
+1. Select **Refresh list** to download the provider's official list of servers. It reads **Refreshing…** while it works.
+2. Wait for the line to show the number of <Terminology title="One VPN server profile you can connect to" to="/docs/reference/terminology#endpoint">endpoints</Terminology> and the time of the refresh.
+
+<Frame caption="The VPN page with a downloaded endpoint list">
+  <ThemedImage sources={{ light: connectingOneLight, dark: connectingOneDark }} alt="VPN page with Status Protected, Tunnel OpenVPN, and Interface tun0 through Northwind VPN, and the Provider menu above a Tunnel row reading OpenVPN and a line reading 14 endpoints, updated Oct 20, 2026, with a Refresh list link" width={1280} height={535} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+- The <Terminology title="A provider's official endpoint list, downloaded on request" to="/docs/reference/terminology#endpoint-catalog">catalog</Terminology> doesn't update by itself, so it is recommended to select **Refresh list** again when your provider adds or retires servers.
+- Each tunnel has its own list and refresh time, so a provider's WireGuard list needs its own **Refresh list**, apart from the OpenVPN one.
+- A refresh works while Transmission's traffic is blocked.
+- For Custom, upload a profile as described in [Custom Profiles](/docs/vpn/custom-profiles/). An OpenVPN file contributes one selected endpoint for every `remote` line, in file order.
+
+## Build the Fallback Order
+
+1. Find servers under **<Terminology title="One VPN server profile you can connect to" to="/docs/reference/terminology#endpoint">Endpoints</Terminology>** with the search box and the continent filter, plus the protocol filter for OpenVPN.
+2. Select the check box next to each <Terminology title="One VPN server profile you can connect to" to="/docs/reference/terminology#endpoint">endpoint</Terminology> you want, and it joins **Fallback order**.
+3. Drag an entry by its handle to reorder the list, or remove it with its remove button. With the keyboard, focus a handle and press the up or down arrow key.
+
+<Frame caption="Endpoints and the fallback order" style={{ maxWidth: 960, marginInline: 'auto' }}>
+  <ThemedImage sources={{ light: connectingTwoLight, dark: connectingTwoDark }} alt="Endpoints list with a note that Northwind VPN allows P2P on every server, a search box, continent and protocol filters, and the Toronto and Montreal UDP endpoints checked, above the Fallback order with the Ordered strategy and Toronto, Montreal, and New York in order, each with a drag handle" width={958} height={839} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+- The first <Terminology title="One VPN server profile you can connect to" to="/docs/reference/terminology#endpoint">endpoint</Terminology> in **Fallback order** is primary.
+- An <Terminology title="Ordered endpoints from one provider and tunnel for failover" to="/docs/reference/terminology#endpoint-pool">endpoint pool</Terminology> holds up to 128 <Terminology title="One VPN server profile you can connect to" to="/docs/reference/terminology#endpoint">endpoints</Terminology>, all from the same provider and tunnel.
+- WireGuard <Terminology title="One VPN server profile you can connect to" to="/docs/reference/terminology#endpoint">endpoints</Terminology> are tagged **WireGuard** instead of **UDP** or **TCP**, and their **Fallback order** rows show `host:port` without a protocol.
+- The list shows 100 matches at a time, and **Show 100 more** loads the next set.
+- When the provider publishes which servers allow P2P traffic, a note above the list links to its page, as covered in [P2P Servers](/docs/vpn/providers/#p2p-servers).
+
+## Pick a Strategy
+
+The menu next to **Fallback order** sets the <Terminology title="How the next endpoint is chosen after a drop" to="/docs/reference/terminology#endpoint-strategy">strategy</Terminology>, which decides the <Terminology title="One VPN server profile you can connect to" to="/docs/reference/terminology#endpoint">endpoint</Terminology> the container tries first after the tunnel drops. The line under it describes the choice:
+
+- **Sticky** — Retries the <Terminology title="One VPN server profile you can connect to" to="/docs/reference/terminology#endpoint">endpoint</Terminology> that was connected, then continues down the <Terminology title="Ordered endpoints from one provider and tunnel for failover" to="/docs/reference/terminology#endpoint-pool">pool</Terminology> and wraps around to the top. It's the default.
+- **Ordered** — Starts with the next <Terminology title="One VPN server profile you can connect to" to="/docs/reference/terminology#endpoint">endpoint</Terminology> after the one that was connected, then continues and wraps around.
+- **Randomized** — Shuffles the <Terminology title="Ordered endpoints from one provider and tunnel for failover" to="/docs/reference/terminology#endpoint-pool">pool</Terminology> on every retry cycle.
+
+[Endpoint Pools](/docs/vpn/endpoint-pools/) explains failover in detail.
+
+## Enter Your Sign-In
+
+The **Sign-in** section asks for what the provider and tunnel need.
+
+On a saved connection, leaving a sign-in field empty keeps its saved value until you change the provider or tunnel.
+
+### OpenVPN Sign-In
+
+Enter your credentials in **VPN username** and **VPN password**. Custom labels them **Username** and **Password** and doesn't require them, and IVPN labels the username **Account ID**.
+
+<Frame caption="OpenVPN credentials and the connection buttons" style={{ maxWidth: 960, marginInline: 'auto' }}>
+  <ThemedImage sources={{ light: connectingThreeLight, dark: connectingThreeDark }} alt="OpenVPN Sign-in with the saved VPN username and password left empty to keep them, and Connection with a name, peer port, provider DNS, a 10-second retry interval, and the Disconnect and block, Reconnect, and Test and connect buttons" width={958} height={436} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+### WireGuard Sign-In
+
+- **<Terminology title="The secret half of your WireGuard key pair" to="/docs/reference/terminology#private-key">Private key</Terminology>** — A masked field for the key from your provider account.
+- **<Terminology title="The IPv4 address a provider assigned to your key" to="/docs/reference/terminology#tunnel-address">Tunnel address</Terminology>** — The IPv4 address assigned to that key, with the placeholder `e.g. 10.68.12.34/32`.
+- **Custom** — No fields, because the uploaded file includes its own key, and the section reads `This file includes its own key.`
+
+| Provider  | Private key | Tunnel address                                           |
+|-----------|-------------|----------------------------------------------------------|
+| Mullvad   | Required    | Required                                                 |
+| NordVPN   | Required    | Not asked for, because NordVPN always uses `10.5.0.2/32` |
+| Surfshark | Required    | Optional, and `10.14.0.2/16` is used when it's empty     |
+| IVPN      | Required    | Required                                                 |
+
+The help line under each field says where your provider account shows the value.
+
+<Frame caption="WireGuard sign-in for Fabrikam" style={{ maxWidth: 960, marginInline: 'auto' }}>
+  <ThemedImage sources={{ light: connectingFourLight, dark: connectingFourDark }} alt="WireGuard Sign-in and Connection sections with a hidden private key, a tunnel address of 10.66.42.17/32, the Fabrikam New York name and peer port, custom DNS, a 10-second retry interval, and the connection buttons" width={958} height={599} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+The page checks these fields before the test starts, and [Troubleshooting](/docs/operations/troubleshooting/#vpn-wont-connect) lists the messages.
+
+## Choose connection settings
+
+The **Connection** section controls the saved connection's name, peer port, DNS, and reconnect timing.
+
+- **Name** — Enter a name that identifies the connection in profiles, torrent filters, and proxy logins.
+- **Peer port** — Enter the port used by this connection's Transmission, from 1024 to 65535.
+- **DNS** — Choose **Provider's servers** to use the servers supplied by OpenVPN or the WireGuard profile. Choose **Custom** to enter up to 8 IPv4 addresses, one per line.
+- **<Terminology title="Wait between reconnect attempts after the tunnel drops" to="/docs/reference/terminology#retry-interval">Retry interval</Terminology>** — Enter 3 to 600 seconds. The default is 10 seconds.
+
+Every Transmission sends tracker and peer name lookups through the default connection's DNS. On a connection that is not the default, the DNS field still supplies lookups for web proxy logins that use that connection.
+
+Changing only the name or peer port shows **Save**. It saves without reconnecting the VPN. Other changes use **Test and connect**.
+
+<Frame caption="Renaming a connection without reconnecting" style={{ maxWidth: 481, marginInline: 'auto' }}>
+  <ThemedImage sources={{ light: connectingSevenLight, dark: connectingSevenDark }} alt="Connection section for the non-default Fabrikam connection renamed Fabrikam NYC, with peer port 51414, custom DNS and its routing hint, a 10-second retry interval, Save, and Saves without reconnecting the VPN" width={479} height={625} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+<Frame caption="Custom DNS and retry timing" style={{ maxWidth: 481, marginInline: 'auto' }}>
+  <ThemedImage sources={{ light: connectingFiveLight, dark: connectingFiveDark }} alt="Connection section for Northwind Toronto with peer port 51413, Custom DNS selected, IPv4 addresses 1.1.1.1 and 9.9.9.9, and a retry interval of 30 seconds" width={479} height={530} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+When a test, reconnect, or disconnect is already running, the page reads `A VPN change is running.` The connection buttons stay unavailable until that change finishes.
+
+<Frame caption="Connection actions while a VPN change runs" style={{ maxWidth: 960, marginInline: 'auto' }}>
+  <ThemedImage sources={{ light: connectingSixLight, dark: connectingSixDark }} alt="A VPN change is running notice above unavailable Disconnect and block, Reconnect, and Test and connect buttons" width={958} height={123} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+## Test and Connect
+
+Select **Test and connect**, which reads **Testing…** while it works.
+
+During the test, this connection's Transmission stays blocked. Other protected connections keep working while the container tries the <Terminology title="One VPN server profile you can connect to" to="/docs/reference/terminology#endpoint">endpoints</Terminology> in <Terminology title="Ordered endpoints from one provider and tunnel for failover" to="/docs/reference/terminology#endpoint-pool">pool</Terminology> order, or shuffled with **Randomized**, until one passes <Terminology title="Checks a new tunnel must pass before traffic flows" to="/docs/reference/terminology#tunnel-verification">tunnel verification</Terminology>:
+
+- The tunnel interface exists.
+- Internet traffic goes through the tunnel.
+- A DNS lookup works through the tunnel.
+- A connection to an outside server succeeds.
+
+Each <Terminology title="One VPN server profile you can connect to" to="/docs/reference/terminology#endpoint">endpoint</Terminology> gets up to 60 seconds to connect and up to 20 more seconds for the checks. A WireGuard <Terminology title="One VPN server profile you can connect to" to="/docs/reference/terminology#endpoint">endpoint</Terminology> fails after 30 seconds when its server doesn't answer a <Terminology title="WireGuard's regular key exchange that shows the server answers" to="/docs/reference/terminology#handshake">handshake</Terminology>.
+
+Testing a long <Terminology title="Ordered endpoints from one provider and tunnel for failover" to="/docs/reference/terminology#endpoint-pool">pool</Terminology> of unreachable <Terminology title="One VPN server profile you can connect to" to="/docs/reference/terminology#endpoint">endpoints</Terminology> can therefore take several minutes. A test stops after 15 minutes, even when <Terminology title="One VPN server profile you can connect to" to="/docs/reference/terminology#endpoint">endpoints</Terminology> further down the <Terminology title="Ordered endpoints from one provider and tunnel for failover" to="/docs/reference/terminology#endpoint-pool">pool</Terminology> haven't been tried yet.
+
+Closing the page or losing the connection to the container doesn't stop a test. It still finishes, saves the connection or restores the previous one, and **Status** shows the result when you come back.
+
+### When the Test Passes
+
+- The page shows `VPN connected.`, and this connection's **Status** changes to **Protected**.
+- The connection becomes the <Terminology title="The latest VPN connection that passed its test" to="/docs/reference/terminology#last-known-good-configuration">last-known-good configuration</Terminology>, saved with its sign-in encrypted.
+- The password or private key field clears, because later reconnects use the saved sign-in.
+
+### When the Test Fails
+
+- The error names the failed <Terminology title="One VPN server profile you can connect to" to="/docs/reference/terminology#endpoint">endpoint</Terminology> and whether its address could not be found, it did not reply, its sign-in was refused, or its certificate check failed. An unclassified failure reads `The VPN connection couldn't be verified. Check its endpoints and credentials, then try again.`
+- The previous working connection is restored when it was enabled.
+- This connection's Transmission stays blocked when there was no previous working configuration, or when the connection had been disconnected.
+
+[Troubleshooting](/docs/operations/troubleshooting/#vpn-wont-connect) lists the exact test messages and fixes.
+
+## Read connection status
+
+The connection list shows **Protected**, **Connecting**, **Disconnected**, **Blocked**, **Setup required**, or **Error** for each connection. It also shows the current endpoint, peer port, and torrent count.
+
+Open a connection for its tunnel, interface, provider, endpoint, pool, firewall, state time, and connection error. A WireGuard connection also shows its engine and last handshake.
+
+## Reconnect or Block
+
+- **Reconnect** — Connects this tunnel again with its <Terminology title="The latest VPN connection that passed its test" to="/docs/reference/terminology#last-known-good-configuration">last-known-good configuration</Terminology> and turns automatic reconnects back on. Like a test, it stops after 15 minutes.
+- **Disconnect and block** — Blocks this connection's Transmission, closes its tunnel, and turns its automatic reconnects off, including after a restart, until you select **Reconnect** or test its configuration.
+
+Neither button lets that Transmission use your regular connection. While automatic reconnects are on, the container checks after each saved <Terminology title="Wait between reconnect attempts after the tunnel drops" to="/docs/reference/terminology#retry-interval">retry interval</Terminology> whether the connection was left blocked, for example by a container restart, a <Terminology title="Privileged service that runs tunnels and switches the firewall" to="/docs/reference/terminology#vpn-controller">VPN controller</Terminology> restart, or a **Reconnect** or test that failed. If so, it reconnects the <Terminology title="The latest VPN connection that passed its test" to="/docs/reference/terminology#last-known-good-configuration">last-known-good configuration</Terminology> in the background, trying the whole <Terminology title="Ordered endpoints from one provider and tunnel for failover" to="/docs/reference/terminology#endpoint-pool">pool</Terminology> with no time limit, and tries again until it succeeds. **Reconnect**, **Disconnect and block**, and **Test and connect** take over from it right away.
+
+## Next Steps
+
+- **[VPN connections](/docs/vpn/connections/)** — Choose the default, understand capacity, and move torrents between connections.
+- **[Endpoint Pools](/docs/vpn/endpoint-pools/)** — See how failover and reconnects work.
+- **[Notifications](/docs/alerts/notifications/)** — Get an alert when the VPN drops or comes back.
+- **[Leak Protection](/docs/vpn/leak-protection/)** — Learn what each <Terminology title="Whether Transmission traffic is protected or blocked right now" to="/docs/reference/terminology#protection-state">protection state</Terminology> means.
+- **[Troubleshooting](/docs/operations/troubleshooting/#vpn-wont-connect)** — Fix a connection that fails its test.

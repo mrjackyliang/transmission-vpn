@@ -1,0 +1,124 @@
+---
+id: health-and-logs
+title: Health and logs
+description: Check container health, overall VPN protection, every connection and Transmission, useful logs, and per-connection runtime files.
+sidebar_position: 1
+keywords:
+  - transmission vpn
+  - health check
+  - liveness
+  - readiness
+  - logs
+  - diagnostics
+tags:
+  - operations
+  - health
+  - logs
+---
+
+import { Terminology } from '@cbnventures/docusaurus-preset-nova/blocks';
+
+Use Docker health, the health routes, and the authenticated status route to tell whether the container is running and which connections can transfer.
+
+## Docker health check
+
+The image's <Terminology title="Docker's periodic self-test of the container's services" to="/docs/reference/terminology#health-check">health check</Terminology> runs every 30 seconds. It checks the TUN device, startup markers, firewall rules, supervised services, control API liveness, and the default Transmission's private RPC listener.
+
+```bash
+docker compose ps
+```
+
+A container with no VPN connections is healthy when the control plane, firewall, and setup services are ready. Its Transmission marker uses the `no-connections` phase, so you can open the web interface and create the first connection.
+
+:::warning
+A healthy container can have blocked VPN traffic. Docker health means the container can enforce its safety boundary and serve the control page.
+:::
+
+## Overall protection state
+
+The authenticated `GET /api/v1/status` response includes `protectionState` and a count of protected and enabled connections:
+
+| State            | Meaning                                                               |
+|------------------|-----------------------------------------------------------------------|
+| `protected`      | Every enabled connection is protected.                                |
+| `partial`        | At least one enabled connection is protected and at least one is not. |
+| `blocked`        | Connections exist, but none of the enabled connections is protected.  |
+| `setup-required` | There is no usable default connection, or setup is incomplete.        |
+| `error`          | The firewall state cannot be confirmed.                               |
+
+The sidebar and VPN page use the same overall state. A partial state means protected connections can still transfer while another connection is blocked.
+
+## Each connection and Transmission
+
+The `connections` list in `GET /api/v1/status` reports each saved connection separately. It includes:
+
+- Its name, default and enabled flags, and VPN state.
+- Provider, tunnel, interface, endpoint, pool position, attempt, last error, and state time.
+- WireGuard engine and last handshake when they apply.
+- Its Transmission state, private bind address, RPC port, and peer port.
+
+A Transmission state can be `starting`, `ready`, `exited`, or `missing`. The **VPN** page shows the connection state, and operations that need its daemon wait for `ready`.
+
+## Health routes
+
+Both health routes answer on port 22602 without a sign-in:
+
+| Route                      | Response                                                                                                                                                                                                    |
+|----------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `GET /api/v1/health/live`  | `200` with `{"status":"live"}` while the database answers and the startup and firewall files exist. It can stay live during setup, a partial state, or blocked reconnects.                                  |
+| `GET /api/v1/health/ready` | `200` only when the default connection is protected and its Transmission is ready. Otherwise it returns `503` with `not-ready`, the overall `protectionState`, or `unavailable` when status cannot be read. |
+
+```bash
+curl --include http://<docker-host>:22602/api/v1/health/ready
+```
+
+Use <Terminology title="Route confirming traffic is protected and the default Transmission is ready" to="/docs/reference/terminology#readiness">readiness</Terminology> when a monitor should require the default connection to work. Use <Terminology title="Route confirming the control plane and firewall state" to="/docs/reference/terminology#liveness">liveness</Terminology> when it should require only a working container and safety boundary.
+
+## Read logs
+
+```bash
+docker compose logs --follow app
+```
+
+The Go services write JSON lines with `level` and `msg`. Startup and firewall scripts write plain text.
+
+| Look for                                                                                                          | Meaning                                                                                                                              |
+|-------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------|
+| `config-init: runtime identity 1000:1000 and persistent paths are ready.`                                         | Startup checks passed, here with the default IDs.                                                                                    |
+| `firewall-init: Transmission egress is blocked through the legacy backend.`                                       | The firewall backstop is installed, here with the legacy backend.                                                                    |
+| `"msg":"VPN controller blocked all VPN egress at startup"`                                                        | Every protected source address is blocked before connections are restored.                                                           |
+| `firewall-protect: Transmission egress is restricted to <interface> from <address> with SNAT <provider-address>.` | One connection's private address is allowed through its tunnel and translated to its provider address.                               |
+| `firewall-block: Transmission egress through <interface> is blocked (<reason>).`                                  | One connection was blocked. The reason follows the line.                                                                             |
+| `"msg":"VPN state changed"`                                                                                       | One connection changed state. The line includes `connectionId`, `slot`, state, provider, tunnel, profile, attempt, and error.        |
+| `"msg":"Transmission daemon is ready"`                                                                            | One Transmission answered its first RPC check. The line includes its `connectionId` and private bind address.                        |
+| `"msg":"Transmission daemon did not become ready"`, `"msg":"Transmission daemon exited"`                          | A connection's Transmission failed during startup or stopped. Use its `connectionId` with the status response.                       |
+| `"msg":"moving Transmission torrent"`, `"msg":"moved Transmission torrent"`                                       | A torrent move started or completed. The lines include source and target connection IDs; the completion line also includes warnings. |
+| `"msg":"Transmission torrent move failed"`                                                                        | A move failed. The source torrent is kept when the target add fails.                                                                 |
+| `"msg":"web proxy listener opened"`                                                                               | The web proxy is listening. Individual requests still wait when their login's connection is blocked.                                 |
+| `"msg":"openvpn"` or `"msg":"wireguard-go"`                                                                       | Tunnel process output, with credentials and keys replaced by `[redacted]`.                                                           |
+| `"msg":"control API is ready"`                                                                                    | The web interface and API are listening.                                                                                             |
+| `"msg":"control API stopped"`                                                                                     | The control plane stopped on an unrecoverable error, described in its `error` field.                                                 |
+
+## Runtime status files
+
+The container keeps current state under `/run/transmission-vpn/`:
+
+| File                                      | Contents                                                                                             |
+|-------------------------------------------|------------------------------------------------------------------------------------------------------|
+| `config.ready`                            | Runtime identity and time zone after startup checks.                                                 |
+| `firewall.backend`                        | `legacy` or `nft`.                                                                                   |
+| `firewall.interfaces`                     | Protected tunnel, private address, and provider address entries.                                     |
+| `firewall.ready`                          | Firewall state, backend, protected interfaces, and Transmission user ID.                             |
+| `vpn.status.d/<connection-id>.json`       | One connection's VPN state, slot, tunnel, endpoint, DNS servers, attempt, and last error.            |
+| `vpn.status`                              | A compatibility copy of the default connection's VPN status.                                         |
+| `transmission-state/<connection-id>.json` | One Transmission's `starting`, `ready`, or `exited` state, RPC port, private address, and peer port. |
+| `transmission-config/blocklists.json`     | Desired enabled state, HTTPS sources, update interval, and latest manual request.                    |
+| `transmission-state/blocklists.json`      | Merger state, schedule, total ranges, per-source results, and retained-copy timestamps.              |
+| `services/transmission.ready`             | The default Transmission identity, or the `no-connections` phase before a connection exists.         |
+| `web-proxy-state/status.json`             | `off`, `listening`, `waiting-for-vpn`, or `error`.                                                   |
+
+```bash
+docker compose exec app ls /run/transmission-vpn/vpn.status.d
+```
+
+Runtime files are diagnostic details. Use the API status response for a stable combined view.

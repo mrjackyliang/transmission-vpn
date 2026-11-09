@@ -1,0 +1,20 @@
+{
+  "name": "transmission-vpn-tool-docker",
+  "version": "0.0.0",
+  "license": "MIT",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "check": "nova utility run-scripts --sequential \"check:*\"",
+    "check:control-api": "docker build --file ../../Dockerfile --target control-api-test ../..",
+    "check:foundation": "bash ./tests/foundation.test.sh",
+    "check:integration": "bash ./tests/fail-closed.integration.sh",
+    "check:openvpn": "bash ./tests/openvpn.integration.sh",
+    "check:wireguard": "bash ./tests/wireguard.integration.sh",
+    "check:multi-vpn": "bash ./tests/multi-vpn.integration.sh",
+    "build": "docker compose --file ../../compose.yml --project-directory ../.. build"
+  },
+  "engines": {
+    "node": "^22 || ^24 || ^26"
+  }
+}

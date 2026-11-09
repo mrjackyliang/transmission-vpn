@@ -1,0 +1,94 @@
+[
+  {
+    "assets": [
+      {
+        "digest": null,
+        "name": "transmission-4.2.0.tar.xz"
+      }
+    ],
+    "draft": false,
+    "prerelease": false,
+    "tag_name": "4.2.0"
+  },
+  {
+    "assets": [
+      {
+        "digest": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+        "name": "transmission-4.1.9.tar.xz"
+      }
+    ],
+    "draft": false,
+    "prerelease": false,
+    "tag_name": "4.1.9"
+  },
+  {
+    "assets": [
+      {
+        "digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "name": "transmission-4.1.12.tar.xz"
+      }
+    ],
+    "draft": true,
+    "prerelease": false,
+    "tag_name": "4.1.12"
+  },
+  {
+    "assets": [
+      {
+        "digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "name": "transmission-4.1.10-x64.msi"
+      },
+      {
+        "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "name": "transmission-4.1.10.tar.xz"
+      }
+    ],
+    "draft": false,
+    "prerelease": false,
+    "tag_name": "4.1.10"
+  },
+  {
+    "assets": [
+      {
+        "digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "name": "transmission-4.1.11.tar.xz"
+      }
+    ],
+    "draft": false,
+    "prerelease": true,
+    "tag_name": "4.1.11"
+  },
+  {
+    "assets": [
+      {
+        "digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+        "name": "transmission-4.1.0.tar.xz"
+      }
+    ],
+    "draft": false,
+    "prerelease": false,
+    "tag_name": "4.1.0"
+  },
+  {
+    "assets": [
+      {
+        "digest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "name": "transmission-4.1.0-beta.5.tar.xz"
+      }
+    ],
+    "draft": false,
+    "prerelease": true,
+    "tag_name": "4.1.0-beta.5"
+  },
+  {
+    "assets": [
+      {
+        "digest": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+        "name": "transmission-4.0.6.tar.xz"
+      }
+    ],
+    "draft": false,
+    "prerelease": false,
+    "tag_name": "4.0.6"
+  }
+]

@@ -1,0 +1,331 @@
+---
+id: "terminology"
+title: "Terminology"
+description: "Review the terms used throughout the Transmission VPN documentation, from fail-closed networking and endpoint pools to claim codes and managed settings."
+sidebar_position: 3
+keywords:
+  - "transmission vpn"
+  - "terminology"
+  - "glossary"
+  - "concepts"
+  - "definitions"
+tags:
+  - "reference"
+  - "terminology"
+---
+
+Define the terms and concepts used throughout this documentation.
+
+## Control Plane
+
+The unprivileged service that serves the web interface, the API, and live updates on port 22602 and the optional compatible RPC route on port 9091, and sends notifications. It runs as the built-in `control` user and stays reachable while the VPN is down.
+
+## Control Port
+
+Port 22602. It carries the web interface and the API over plain HTTP, and Compose can publish it on a different host port through `TRANSMISSION_VPN_PORT`.
+
+## RPC Port
+
+Port 9091, Transmission's usual port. It carries only the optional `/transmission/rpc` route over plain HTTP, and Compose can publish it on a different host port through `TRANSMISSION_VPN_RPC_PORT`.
+
+## Web Proxy
+
+The opt-in HTTP and SOCKS5 service on port 22605 that lets private-network devices and containers use a VPN connection. Each login selects a connection or follows the default, and its DNS and destination traffic use that tunnel.
+
+## VPN Connection
+
+One saved VPN setup with its own slot, tunnel, peer port, private address, and Transmission. Its torrents send traffic only through that connection's tunnel.
+
+## Default Connection
+
+The VPN connection used when nothing selects another one. It handles new Default-profile adds and unresolved remote-app pattern ties, DNS for every Transmission, and web proxy logins set to **Default**.
+
+## VPN Controller
+
+The privileged service that starts and stops OpenVPN and WireGuard tunnels, verifies them, works through their endpoint pools, and switches per-connection firewall rules. The control plane reaches it over a local socket that accepts only status, connect, restore, disconnect, and set-default commands.
+
+## Directory Controller
+
+A small service that runs as the Transmission account and lists, creates, or deletes one empty folder under `/data` for the folder browser. It never deletes files or folders recursively, shows only real folders, and refuses symbolic links.
+
+A folder that cannot be selected for the current purpose can still be opened or closed by clicking its row when it contains subfolders, so a usable descendant stays reachable. Its reason is the row's title.
+
+## s6-overlay
+
+The process supervisor that runs as the container's first process. It starts the firewall before the VPN controller and Transmission runner, restarts services that exit, and removes the firewall rules only after the protected services stop.
+
+## Legacy Project
+
+The original Transmission VPN shell script for Synology NAS, released as versions 1.0.0 through 1.3.2. It bound the Synology Transmission package to a VPN connection managed by DSM; the import wizard can read that Transmission 3 or 4 config, but its DSM VPN profile and Task Scheduler jobs do not carry over.
+
+## Fail-Closed
+
+Preventing Transmission and web proxy destination traffic from leaving through a non-VPN route when its connection is unavailable. Traffic is blocked before a tunnel starts, during reconnects, after a disconnect, and during shutdown.
+
+## Firewall Boundary
+
+The iptables rules that match the accounts running Transmission and the web proxy. Per-connection rules accept a fixed private source address only on its protected tunnel, while a source-address backstop drops any attempt to use another interface.
+
+The rules also preserve private RPC and replies to accepted proxy clients. They apply to IPv6 too when the container has IPv6.
+
+## Firewall Backend
+
+The iptables variant the container uses, `legacy` or `nft`. It's chosen at startup with legacy tried first, and the container stops when neither works.
+
+## Tunnel Verification
+
+The checks a connection must pass before Transmission or the web proxy may use its tunnel: its slot interface exists, its fixed private address routes through that interface, DNS succeeds through the protected route, and an outside TCP connection succeeds. They run on every connect and reconnect, and for WireGuard only after the server answers its first handshake.
+
+## Protection State
+
+The combined safety state for enabled connections. The API reports `protected` when all are protected, `partial` when some are protected, `blocked` when none are protected, `setup-required` before a usable default exists, or `error` when firewall state cannot be confirmed.
+
+## Protected DNS
+
+The resolver setup used by every Transmission. DNS leaves through the default connection's fixed private address and tunnel, using its provider or custom servers, and lookups stop while the default connection is down.
+
+## Leak
+
+Traffic that leaves outside the VPN tunnel and exposes your real address, such as a DNS lookup or a connection made during a reconnect.
+
+## Tunnel
+
+The VPN protocol a connection uses. OpenVPN uses `tun<slot>` and WireGuard uses `wg<slot>`, so each connection has its own interface. Every endpoint in a pool uses the same tunnel type.
+
+A provider that offers both shows a **Tunnel** switch on the **VPN** page, which opens on OpenVPN unless the saved connection with that provider uses WireGuard.
+
+## WireGuard
+
+A VPN protocol that signs in with a key pair instead of a username and password. The container runs it with the host's WireGuard kernel module when the host has one, and with userspace WireGuard otherwise.
+
+## Userspace WireGuard
+
+WireGuard run by `wireguard-go`, a program in the image, when the host's kernel has no WireGuard module. It needs no extra container settings, but it's slower than the kernel module on low-end NAS processors.
+
+**Tunnel** on the **VPN** page reads **WireGuard (userspace)** while it's in use, and **WireGuard (kernel)** with the kernel module.
+
+## Private Key
+
+The secret half of your WireGuard key pair, 44 characters of base64 that end in `=`. A custom WireGuard file includes it, while Mullvad, NordVPN, Surfshark, and IVPN ask for it under **Sign-in**.
+
+It's encrypted with the installation key, kept out of ordinary VPN pages and read routes, and never written to logs or error messages. A freshly confirmed export can include it in plain text.
+
+## Tunnel Address
+
+The IPv4 address, such as `10.68.12.34/32`, that a WireGuard provider assigned to your key. Mullvad and IVPN ask for it, Surfshark uses `10.14.0.2/16` when it's left empty, and NordVPN always uses `10.5.0.2/32`.
+
+## Handshake
+
+The key exchange a WireGuard tunnel repeats with its server about every two minutes, which shows the server still answers. A new connection waits up to 30 seconds for the first one, and a handshake older than 3 minutes means the server is gone.
+
+The **VPN** page shows its age under **Last handshake**, such as `42 seconds ago`.
+
+## TUN Device
+
+The kernel device `/dev/net/tun` that OpenVPN and userspace WireGuard use to create tunnel interfaces. The container stops at startup when it's missing, and the health check verifies it.
+
+## NET_ADMIN
+
+The Docker capability that lets the container manage its firewall rules and tunnel interface. Without it, firewall setup fails and the container stops.
+
+Privileged mode isn't needed.
+
+## Port Forwarding
+
+Opening an inbound port so peers can connect to Transmission. No provider adapter requests a forwarded port, and Transmission's router port mapping (UPnP and NAT-PMP) is turned off.
+
+## Provider Adapter
+
+The built-in integration for one VPN service, which supplies its tunnels, catalog sources, credential fields, and capabilities. Adapters provide data only, so they can't run code or change the firewall.
+
+## Endpoint
+
+One VPN server you can connect to, stored as a validated OpenVPN profile or WireGuard configuration. Each endpoint has a name, a location when one is known, a server address and port, and for OpenVPN a protocol (UDP or TCP).
+
+## Endpoint Catalog
+
+A provider's official list of endpoints for one tunnel, downloaded when you select **Refresh list**. Every entry must pass validation before the new list replaces the old one, and a failed refresh keeps the previous list.
+
+WireGuard lists hold no keys, so your private key and tunnel address are added only when you connect.
+
+## Endpoint Pool
+
+The ordered list of endpoints from one provider and one tunnel, shown as **Fallback order** on the VPN page. The first endpoint is primary, a pool holds up to 128 endpoints, and failures never remove an endpoint from it.
+
+## Endpoint Strategy
+
+The rule for choosing the next endpoint after the tunnel drops. **Sticky** retries the current endpoint first, **Ordered** moves to the next one, and **Randomized** shuffles the pool on each cycle.
+
+## Retry Interval
+
+The wait between reconnect cycles after the tunnel drops, from 3 to 600 seconds. The default is 10 seconds, and retries continue until an endpoint passes verification.
+
+## Last-Known-Good Configuration
+
+The most recent configuration for one VPN connection that passed **Test and connect**, saved with its credentials encrypted. That connection restores it at startup and after a failed test, unless **Disconnect and block** turned automatic reconnects off.
+
+## Custom Profile
+
+Your own OpenVPN `.ovpn` file or WireGuard `.conf` file, uploaded on the **VPN** page when **Provider** is Custom. Every OpenVPN `remote` line becomes a selected endpoint in **Fallback order**, following the file's order; a WireGuard file supplies one endpoint.
+
+An OpenVPN profile's certificates and keys must be inline, and a WireGuard file must include its own private key.
+
+## Profile Normalization
+
+The rewrite every OpenVPN profile and WireGuard file goes through before it's saved. Only allowed settings are kept, while scripts, commands, plugins, proxies, route overrides, and file references are rejected.
+
+OpenVPN profiles always get full-tunnel routing on their slot interface. WireGuard files always get `AllowedIPs = 0.0.0.0/0` and `PersistentKeepalive = 25`, and lose their IPv6 addresses.
+
+## Trust Anchor
+
+The part of an OpenVPN profile that proves the server's identity: an inline `<ca>`, `<tls-auth>`, or `<tls-crypt>` block, or a `peer-fingerprint` line. A profile without one is rejected, while a WireGuard file relies on its peer's `PublicKey` instead.
+
+## Inline Block
+
+Certificate or key text pasted into the profile between tags such as `<ca>` and `</ca>`. Lines that point to separate files, such as `ca ca.crt`, are rejected.
+
+## Claim Code
+
+The one-time code that creates the administrator account on a new installation, printed in the container logs as `setupCode`. It looks like `XXXXX-XXXXX-XXXXX`, expires after 30 minutes, and is replaced each time the container starts unclaimed.
+
+## Claim Secret File
+
+A file you mount at `/run/secrets/transmission-vpn-claim` to use your own claim secret instead of a generated code. It must hold 12 to 256 characters and works for 24 hours after the container starts.
+
+## Confirm It's You
+
+The fresh account check before an export or import. It uses the password and current authenticator code, when enabled, or a passkey, then issues a five-minute grant that works once, only for that operation and browser session.
+
+## Export File
+
+A portable JSON backup made from the sections selected under **Settings** > **Backup** > **Export…**. It can move supported configuration to another installation without the source installation key, contains selected secrets in plain text, and never contains downloaded data.
+
+## Remote App
+
+A third-party Transmission client that controls the container through compatible RPC. It connects to `/transmission/rpc` on port 9091 with its own RPC login.
+
+## Compatible RPC
+
+The opt-in `/transmission/rpc` route on port 9091 that lets remote apps use Transmission's RPC protocol. It shows all connections as one Transmission, checks each request's RPC login, and routes supported methods to the right native daemon.
+
+## Native RPC
+
+One Transmission daemon's RPC listener, reachable only on container loopback. Slot 0 starts at `127.0.0.1:9092`, and later slots use the following ports. None is published.
+
+## RPC Login
+
+The username and generated password one remote app uses for compatible RPC. The password is shown once and stored as a digest. It can be regenerated, and the login can be deleted without affecting other apps.
+
+## API Token
+
+A scoped credential for automating the control plane's API, sent as a bearer token that starts with `tvpn_`. Each token has a name, scopes from `torrents:read`, `torrents:write`, `vpn:read`, `vpn:write`, `settings:read`, and `settings:write`, and an optional expiry, all of which can be changed later.
+
+After **Create token**, the same dialog shows **Token for &lt;name&gt;** with the one-time token, a copy button, and **Done**.
+
+The `torrents:write` scope reads `Add, start, stop, and remove torrents, and change their profiles.` The **Remote apps** page refreshes a token's last-used time every three seconds while the page is open in a visible browser tab.
+
+Creating, editing, or revoking a token requires a signed-in browser session. Tokens can't manage notifications either, because those routes also need a browser session.
+
+## Setting Source
+
+Where a setting's current value comes from, reported by the settings API as `default`, `user`, `managed-seed`, or `managed-lock`. In Settings, a `managed-lock` row shows **Locked**.
+
+## Apply Impact
+
+How a saved setting reaches the running container, reported by the settings API as `live` or `transmission-restart`.
+
+Settings that need a restart show **Transmission restart required**. Saving stores the value until you confirm the restart.
+
+## Revision
+
+A counter that goes up with every saved settings change. A save based on an older revision is refused, so a change made in another browser is never overwritten silently.
+
+## Managed Configuration
+
+The optional `/config/managed.json` file that seeds or locks settings. It's validated with the same rules as the web interface and read at every start, and an invalid file stops the container.
+
+## Managed Seed
+
+A managed configuration value that fills a setting only when nothing is saved for it yet. Later changes in the web interface take precedence.
+
+## Managed Lock
+
+A managed configuration value that overrides a setting while the file contains it. Locked settings show **Locked** and can't be edited, and the saved value returns when the lock is removed and the container restarts.
+
+## PUID and PGID
+
+The user and group IDs that run Transmission and own the files it creates, `1000` by default. They must be integers from 1000 to 60000.
+
+## Data Mount
+
+The `/data` folder, which holds every profile folder and the incomplete folder. Torrent data cannot be stored in `/data` itself.
+
+## Incomplete Folder
+
+The folder that holds unfinished data when **Use incomplete folder** is on. Transmission moves completed data to the torrent's profile folder, and the incomplete folder stays reserved even while the setting is off.
+
+The setting key remains `transmission.incompleteDirectory`, and its switch remains `transmission.incompleteDirectoryEnabled`.
+
+## Config Volume
+
+The `/config` folder, which holds the database, the installation key, Transmission's configuration folder, and the optional managed configuration file. It is recommended to back up the whole folder together.
+
+## Installation Key
+
+The 32-byte key at `/config/app/keys/installation.key`, created on first start, that encrypts the authenticator app's secret, VPN profile contents and connection credentials (WireGuard private keys included), and notification secret fields. A start without the file makes a new key and removes those secrets, and a key file from another database stops startup.
+
+## Profile
+
+The download folder, effective VPN connection, labels, paused state, seeding, speed, priority, peer limit, and queue defaults assigned to a torrent. A profile owns one unique folder, and changing a torrent's profile moves its files and transfers it to another Transmission when the VPN connection differs.
+
+Named profiles also have name patterns. Overlapping patterns can be saved, and a torrent that matches several profiles needs a profile choice instead of using one automatically.
+
+The profile with the Default role is listed first, followed by named profiles alphabetically. Profiles have no saved order.
+
+## Default Profile
+
+The profile role listed first and used when no named profile matches. It has the same editable name, folder, labels, paused, seeding, speed, priority, peer, and queue fields as a named profile, but no name patterns.
+
+Its folder is the `transmission.downloadDirectory` setting, and its read-only VPN connection follows the default connection for new adds and assignments. It cannot be deleted.
+
+## Needs a Profile
+
+The state of a paused remote-app add whose name matched several profiles after its folder and labels chose none. It starts in the Default profile's folder and connection until **Choose a profile** moves it, applies that profile's labels and limits, and starts it unless **Start paused** is selected.
+
+## Label
+
+A free-form tag attached to a torrent. Profile labels supply the starting list, but labels can be changed without changing the torrent's profile, folder, or VPN connection.
+
+A label is saved the first time it is used, and saved labels remain available as choices when no torrent uses them. Renaming or deleting a saved label updates every torrent that uses it.
+
+## Health Check
+
+The image's Docker health check, which runs every 30 seconds and confirms the TUN device, required service markers, firewall rules, control plane, and default Transmission's private RPC port. With no connections, the setup-ready container can still be healthy.
+
+## Liveness
+
+The `GET /api/v1/health/live` route, which returns `200` while the database answers and the startup and firewall state files exist, even when the VPN is down. It needs no sign-in.
+
+## Readiness
+
+The `GET /api/v1/health/ready` route, which returns `200` only when the default connection is protected and its Transmission is ready, and `503` otherwise. It needs no sign-in.
+
+## Controlled Restart
+
+An API request, `POST /api/v1/transmission/restart` with `{"confirm": true}`, that applies saved settings and restarts every connection's Transmission without restarting the container. After a saved setting needs it, the Settings page shows a **Restart Transmission** button for the same action.
+
+## Notification Destination
+
+One place alerts go, such as an ntfy topic, a Telegram chat, an email address, or a webhook, set up on the **Notifications** page. Each destination has a name, a service, the events it hears about, and the service's fields.
+
+## Notification Event
+
+Something the container can send an alert about: **Saved secrets were removed**, **Sign-in locked**, **VPN dropped**, **VPN back up**, **Torrent finished**, **Torrent error**, or **Profile choice needed**. Each destination chooses its own events, and all seven are checked when you add one.
+
+## Secret Field
+
+A destination field, such as a token, password, or webhook URL, that's encrypted with the installation key and kept out of ordinary pages and read routes. Leaving it blank when you edit keeps the saved value, a freshly confirmed export can include it in plain text, and a start without the installation key removes it.
+
+## Notification Payload
+
+The JSON body that webhook and Reverse Proxy for ntfy destinations receive, with `version`, `app`, `event`, `title`, `message`, `priority`, `tags`, `occurredAt`, and `details`. Its `app` is always `transmission-vpn`.

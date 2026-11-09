@@ -1,0 +1,10 @@
+{
+  "label": "Contributing",
+  "position": 10,
+  "collapsible": true,
+  "collapsed": true,
+  "link": {
+    "type": "generated-index",
+    "description": "Build, test, and change Transmission VPN from source, including this documentation site."
+  }
+}

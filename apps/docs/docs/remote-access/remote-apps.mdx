@@ -1,0 +1,163 @@
+---
+id: remote-apps
+title: Remote apps
+description: Connect Transmission clients with RPC logins, create scoped API tokens for scripts, and open the web proxy settings for other devices.
+sidebar_position: 1
+keywords:
+  - transmission vpn
+  - remote apps
+  - transmission rpc
+  - rpc proxy
+  - third-party clients
+  - credentials
+tags:
+  - remote access
+  - rpc
+  - remote apps
+---
+
+import ThemedImage from '@theme/ThemedImage';
+import { Frame, Terminology } from '@cbnventures/docusaurus-preset-nova/blocks';
+
+import remoteAppsOneLight from './_assets_/remote-apps-1-light.png';
+import remoteAppsOneDark from './_assets_/remote-apps-1-dark.png';
+import remoteAppsTwoLight from './_assets_/remote-apps-2-light.png';
+import remoteAppsTwoDark from './_assets_/remote-apps-2-dark.png';
+import remoteAppsThreeLight from './_assets_/remote-apps-3-light.png';
+import remoteAppsThreeDark from './_assets_/remote-apps-3-dark.png';
+import remoteAppsFourLight from './_assets_/remote-apps-4-light.png';
+import remoteAppsFourDark from './_assets_/remote-apps-4-dark.png';
+import remoteAppsFiveLight from './_assets_/remote-apps-5-light.png';
+import remoteAppsFiveDark from './_assets_/remote-apps-5-dark.png';
+
+Use **Remote apps** to connect Transmission clients, scripts, and other devices. On a phone, its tab is labeled **Apps**.
+
+The page has separate cards for the **RPC proxy**, **API tokens**, and the <Terminology title="Authenticated HTTP and SOCKS5 service that sends private-network clients through the VPN" to="/docs/reference/terminology#web-proxy">Web proxy</Terminology>.
+
+<Frame caption="Copy rows with each label above its address">
+  <ThemedImage sources={{ light: remoteAppsOneLight, dark: remoteAppsOneDark }} alt="Remote apps page with the RPC proxy and web proxy ready, each copy-row label above an address that wraps after the protocol marker and path slashes, two RPC logins, three API tokens, and two web proxy logins" width={1280} height={952} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+## RPC proxy
+
+The <Terminology title="Opt-in /transmission/rpc route for third-party apps" to="/docs/reference/terminology#compatible-rpc">RPC proxy</Terminology> serves Transmission's standard `/transmission/rpc` path on port 9091. It stays off until you turn it on and keeps every <Terminology title="Transmission's own RPC, private to the container" to="/docs/reference/terminology#native-rpc">native RPC</Terminology> private to the container.
+
+Remote apps see the torrents from every VPN connection in one combined Transmission. The proxy routes each torrent action to the Transmission that owns it.
+
+### Turn it on
+
+1. Open **<Terminology title="A third-party Transmission client connecting over RPC" to="/docs/reference/terminology#remote-app">Remote apps</Terminology>** in the navigation.
+2. Add a VPN connection if you don't have one yet.
+3. Add an <Terminology title="Username and generated password for the compatible RPC route" to="/docs/reference/terminology#rpc-login">RPC login</Terminology> for each app, using the steps below.
+4. Turn on the **RPC proxy** switch.
+
+A VPN connection is required before you can add a login or turn on the proxy. Without one, the only link is **Add VPN connection** in the note under each proxy heading, and each **Logins** section says `Logins can be added once there's a VPN connection.`
+
+The switch doesn't depend on logins. Turning the proxy off keeps its logins, and with no logins it stays on with the **No logins** state, so nobody can sign in.
+
+While a switch change is taking effect, the state reads **Turning on…** or **Turning off…** and the switch stays unavailable.
+
+<Frame caption="Both proxies and their login lists waiting for a VPN connection">
+  <ThemedImage sources={{ light: remoteAppsFiveLight, dark: remoteAppsFiveDark }} alt="Remote apps page with no VPN connections, the RPC proxy and Web proxy switches off and unavailable, a linked Add VPN connection note under each heading, and plain Logins can be added once there's a VPN connection text in both Logins sections" width={1280} height={947} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+### Add a login
+
+Give each app its own <Terminology title="Username and generated password for the compatible RPC route" to="/docs/reference/terminology#rpc-login">RPC login</Terminology>:
+
+1. Select **Add login** in the **Logins** section.
+2. Enter a username for the app.
+3. Select **Add login**.
+4. Copy the generated password. It is shown once.
+
+<Frame caption="The generated password for a new RPC login" style={{ maxWidth: 522, marginInline: 'auto' }}>
+  <ThemedImage sources={{ light: remoteAppsThreeLight, dark: remoteAppsThreeDark }} alt="Login added dialog showing a generated password with a copy button" width={520} height={275} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+The list shows when each login was last used, or **Never used**. **Edit** changes the login's username. Saving it with **Generate a new password** ticked replaces the password and shows the new one once, and apps using the old password stop authenticating right away. **Delete** stops that login from working.
+
+### Connect an app
+
+| App field      | Value                                                                                                                                                                              |
+|----------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Address or URL | The **URL** under **Connection details**, such as `http://<docker-host>:9091/transmission/rpc`.                                                                                    |
+| Username       | The username from that app's <Terminology title="Username and generated password for the compatible RPC route" to="/docs/reference/terminology#rpc-login">RPC login</Terminology>. |
+| Password       | The generated password for that login.                                                                                                                                             |
+
+If an app asks for the host, port, and path separately, use the Docker host, port 9091 or your `TRANSMISSION_VPN_RPC_PORT`, and `/transmission/rpc`.
+
+Each copy row puts its label above the address. Long addresses wrap only after `://` or `/`, and the copied address has no added spaces or line breaks.
+
+:::warning
+The RPC port uses plain HTTP. Keep it on a trusted network because the app sends its username and password without encryption.
+:::
+
+### Where remote adds go
+
+The RPC proxy checks these ways to choose a profile:
+
+1. The app's download folder equals a profile's folder.
+2. One of the app's labels matches a named profile's name or one of its labels, without regard to letter case.
+3. The torrent's name matches a named profile's **Name patterns**.
+
+A folder or label match decides the profile before name patterns are checked. One matching name-pattern profile is selected, while no match uses the profile with the Default role.
+
+When the name matches several profiles, the add is paused in the Default profile's folder and connection and marked **Needs a profile**. The Torrents page lists the matches under **Choose a profile**, and [resolving it](/docs/torrents/managing-torrents/#resolve-needs-a-profile) moves the torrent, adds the selected profile's labels to the app's own, applies its limits, and starts it unless **Start paused** is selected.
+
+The torrent always uses the chosen profile's folder and VPN connection. A folder sent by the app helps select the profile but does not override its folder.
+
+The torrent gets the profile's labels plus any labels the app sends, so apps that track downloads by label still find theirs.
+
+A torrent added by link starts only after the cross-connection duplicate check passes.
+
+## API tokens
+
+Use <Terminology title="A scoped credential for automating the API" to="/docs/reference/terminology#api-token">API tokens</Terminology> for scripts that call the control API on port 22602. They do not work on the RPC route.
+
+1. Select **Create token** in the **API tokens** card.
+2. Enter a name and choose the scopes the script needs.
+3. Choose **Never**, **In 30 days**, **In 90 days**, or **In 1 year** under **Expires**.
+4. Select **Create token**. The same dialog opens its second step, **Token for &lt;name&gt;**, with the token and a copy button.
+5. Copy the token, then select **Done**. It is shown once.
+
+<Frame caption="Creating a token with the torrent profile-writing scope" style={{ maxWidth: 586, marginInline: 'auto' }}>
+  <ThemedImage sources={{ light: remoteAppsTwoLight, dark: remoteAppsTwoDark }} alt="Create token dialog with a script name, control API scopes, torrents:write described as Add, start, stop, and remove torrents, and change their profiles, and a one-year expiry" width={584} height={783} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+<Frame caption="Copying a new token before it's hidden" style={{ maxWidth: 586, marginInline: 'auto' }}>
+  <ThemedImage sources={{ light: remoteAppsFourLight, dark: remoteAppsFourDark }} alt="Token for Backup script step of the Create token dialog with the one-time token, a copy button, and Done" width={584} height={275} style={{ maxWidth: '100%', height: 'auto' }} />
+</Frame>
+
+- **Tokens** lists each token with its scopes, when it was created and last used, and when it expires. The last-used time refreshes every three seconds while **Remote apps** is open and the browser tab is visible.
+- **`torrents:write`** reads `Add, start, stop, and remove torrents, and change their profiles.` It includes `torrents:read`.
+- **Edit** changes a token's name, scopes, or expiry. Its value stays the same, so the app keeps working with the new scopes.
+- **Revoke** asks you to confirm, then deletes the token, and apps using it stop working right away.
+- An expired token stays in the list until you revoke it, or give it a new expiry with **Edit**.
+
+Tokens cannot manage notifications. Those routes need a signed-in browser session, as covered in [Notifications](/docs/alerts/notifications/#manage-notifications-from-scripts).
+
+## Web proxy
+
+The **Web proxy** card lets devices and containers use the VPN for HTTP and SOCKS5 traffic. It uses its own logins and port 22605.
+
+[Set up the web proxy](/docs/remote-access/web-proxy/) to see its network limits, client support, and examples.
+
+## RPC limits
+
+- **Combined list only** — Remote apps can remove only torrents in the combined list. Unknown torrent IDs and hashes are ignored.
+- **Profile-owned locations** — `torrent-set-location` is refused with `Change the torrent's profile in the console to move it.` Change the profile in the web interface to move the files or use another VPN connection.
+- **Session settings** — `session-set` accepts only these settings:
+  - `alt-speed-down`, `alt-speed-enabled`, `alt-speed-time-begin`, `alt-speed-time-day`, `alt-speed-time-enabled`, `alt-speed-time-end`, and `alt-speed-up`.
+  - `blocklist-enabled`, `cache-size-mb`, `dht-enabled`, `encryption`, `lpd-enabled`, `pex-enabled`, and `utp-enabled`.
+  - `download-dir`, `download-queue-enabled`, `download-queue-size`, `incomplete-dir`, and `incomplete-dir-enabled`.
+  - `peer-limit-global`, `peer-limit-per-torrent`, `queue-stalled-enabled`, and `queue-stalled-minutes`.
+  - `seed-queue-enabled`, `seed-queue-size`, `seed-ratio-limit`, `seed-ratio-limited`, `idle-seeding-limit`, and `idle-seeding-limit-enabled`.
+  - `speed-limit-down`, `speed-limit-down-enabled`, `speed-limit-up`, `speed-limit-up-enabled`, `start-added-torrents`, `rename-partial-files`, and `trash-original-torrent-files`.
+- **Setting spelling** — Accepted names can use kebab case, snake case, camel case, or different capitalization.
+- **Refused settings** — Script settings, peer-port settings, random peer-port settings, and port-forwarding settings are refused. Set each peer port on its [VPN connection](/docs/vpn/connections/#edit-a-connection).
+- **Folder boundary** — Session download and incomplete folders and a folder sent with a torrent add must name a folder inside `/data`; `/data` itself is refused.
+- **Refused methods** — `session-close` and methods outside the supported RPC view are refused.
+- **Blocklist updates** — `blocklist-update` requests the runner-owned multi-source merger, waits for up to 60 seconds, and returns the combined `blocklist-size`. It is never forwarded to a native daemon.
+- **Settings that don't last** — At every container start, Transmission's settings file is rebuilt from the [Settings](/docs/configuration/settings/#fixed-transmission-behavior) page, so session settings an app changes through RPC don't carry over a container restart.
+- **Request size** — Each request body can be up to 4 MiB.
+- **No direct access** — Native RPC listeners are never reachable from outside the container.

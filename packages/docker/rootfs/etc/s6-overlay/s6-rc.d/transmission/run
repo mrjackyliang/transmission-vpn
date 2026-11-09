@@ -1,0 +1,5 @@
+#!/command/with-contenv bash
+set -euo pipefail
+
+exec /command/s6-setuidgid transmission \
+  /usr/local/bin/transmission-vpn-transmission-runner

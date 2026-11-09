@@ -1,0 +1,10 @@
+{
+  "label": "Operations and Troubleshooting",
+  "position": 8,
+  "collapsible": true,
+  "collapsed": true,
+  "link": {
+    "type": "generated-index",
+    "description": "Check health and logs, update and back up the container, and fix common startup, sign-in, VPN, and storage problems."
+  }
+}

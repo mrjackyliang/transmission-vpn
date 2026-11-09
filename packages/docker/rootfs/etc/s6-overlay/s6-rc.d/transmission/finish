@@ -1,0 +1,4 @@
+#!/command/with-contenv bash
+set -euo pipefail
+
+exec /usr/local/libexec/transmission-vpn/foundation-service-finish.sh transmission "$@"

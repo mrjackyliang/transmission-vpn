@@ -1,0 +1,699 @@
+/**
+ * ============================
+ * VPN
+ * ============================
+ */
+
+/* The tunnel picker is the account menu's segmented control: full width on phones like the
+   select above it, then sized to its two options. */
+@media (min-width: 480px) {
+  .tunnel-field > .segmented {
+    justify-self: start;
+    width: 16rem;
+  }
+}
+
+/* A provider with one tunnel names it as text, at the picker's height so nothing below moves. */
+.tunnel-fixed {
+  display: flex;
+  align-items: center;
+  min-height: 2.125rem;
+
+  font-size: var(--text-md);
+  color: var(--color-text);
+}
+
+/* A 44-character key is wider than a phone's field, so the masked value ends in an ellipsis. */
+.key-input {
+  text-overflow: ellipsis;
+}
+
+.upload-row {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.vpn-lower-grid {
+  display: grid;
+
+  border-bottom: 1px solid var(--color-border);
+
+  /* Side by side, both sections fill the row, so the divider runs its full height. */
+  & .form-section {
+    align-content: start;
+  }
+
+  /* The grid draws the line under both sections, so the divider ends on it. */
+  & .form-section:last-child {
+    border-bottom: 0;
+  }
+}
+
+@media (max-width: 479px) {
+  .vpn-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    & .button {
+      width: 100%;
+    }
+
+    & .button-danger {
+      grid-column: 1 / -1;
+      justify-self: start;
+      width: max-content;
+    }
+
+    & .form-actions-spacer {
+      display: none;
+    }
+  }
+}
+
+.dns-choice {
+  justify-self: stretch;
+}
+
+.dns-custom-field textarea {
+  min-height: 6rem;
+
+  font-family: var(--font-mono);
+}
+
+.input-suffix {
+  position: relative;
+
+  display: block;
+
+  & input {
+    padding-right: 4.75rem;
+  }
+
+  & > span {
+    position: absolute;
+    top: 50%;
+    right: var(--space-3);
+
+    font-size: var(--text-xs);
+    font-weight: 400;
+    color: var(--color-muted);
+
+    transform: translateY(-50%);
+    pointer-events: none;
+  }
+}
+
+.vpn-change-notice {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  margin: var(--space-4) var(--space-5) 0;
+  padding: var(--space-3);
+
+  font-size: var(--text-sm);
+  color: var(--color-warning);
+
+  background: var(--color-warning-soft);
+  border-radius: var(--radius-md);
+}
+
+/* The form's error sits inside its padding, like the change notice beside it. */
+.vpn-form-error {
+  margin: var(--space-4) var(--space-5) 0;
+}
+
+/* The provider's own word on which of its servers allow P2P, above the endpoint list. */
+.p2p-note {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-start;
+  padding: var(--space-3);
+
+  font-size: var(--text-sm);
+  color: var(--color-text-soft);
+
+  background: var(--color-canvas);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+
+  & .icon {
+    flex: none;
+    margin-top: 0.1rem;
+
+    color: var(--color-muted);
+  }
+
+  & a {
+    font-weight: 600;
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+}
+
+.p2p-note-restricted {
+  color: var(--color-warning);
+
+  background: var(--color-warning-soft);
+  border-color: transparent;
+
+  & .icon {
+    color: var(--color-warning);
+  }
+}
+
+@media (min-width: 1100px) {
+  .vpn-lower-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    & .form-section:first-child {
+      border-right: 1px solid var(--color-border);
+      border-bottom: 0;
+    }
+  }
+}
+
+/**
+ * ============================
+ * Selectable Lists
+ * ============================
+ */
+
+.endpoint-filters {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-2);
+
+  & .search-field {
+    grid-column: 1 / -1;
+  }
+
+  & .select-control {
+    width: 100%;
+  }
+}
+
+@media (min-width: 680px) {
+  .endpoint-filters {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+
+    & .search-field {
+      grid-column: auto;
+    }
+  }
+}
+
+/* WireGuard lists have no UDP/TCP select, so the filters are search and continent only. */
+.endpoint-filters-no-protocol {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 680px) {
+  .endpoint-filters-no-protocol {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+}
+
+.pool-list {
+  max-height: none;
+}
+
+.pool-position {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+
+  font-size: var(--text-xs);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-soft);
+
+  background: var(--color-surface-raised);
+  border-radius: 999px;
+}
+
+.pool-actions {
+  display: flex;
+  gap: 0.125rem;
+
+  & .icon-button {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+}
+
+/* Drag-to-reorder lists (fallback order and profiles) share one grip and one lifted row. */
+.reorder-handle {
+  flex: none;
+  width: 1.75rem;
+  height: 1.75rem;
+
+  color: var(--color-muted);
+
+  cursor: grab;
+  touch-action: none;
+}
+
+.reordering {
+  cursor: grabbing;
+  user-select: none;
+
+  & .reorder-handle {
+    cursor: grabbing;
+  }
+}
+
+.reorder-dragging {
+  position: relative;
+  z-index: 1;
+
+  background: var(--color-surface-raised);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-raised);
+}
+
+@media (max-width: 560px) {
+  .vpn-change-notice {
+    margin-inline: var(--space-4);
+  }
+}
+
+/* Multi-connection VPN list and editor. */
+.vpn-list-heading,
+.vpn-editor-heading {
+  display: flex;
+  gap: var(--space-4);
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.vpn-add-control {
+  display: grid;
+  gap: var(--space-1);
+  justify-items: end;
+
+  & small {
+    max-width: 15rem;
+
+    font-size: var(--text-xs);
+    color: var(--color-muted);
+    text-align: right;
+  }
+}
+
+.vpn-capacity {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+
+  & p {
+    margin: 0;
+  }
+
+  & strong {
+    font-weight: 600;
+    color: var(--color-text-soft);
+  }
+}
+
+.vpn-capacity-info {
+  display: inline-grid;
+  place-items: center;
+  width: 1rem;
+  height: 1rem;
+
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--color-muted);
+
+  border: 1px solid var(--color-border-strong);
+  border-radius: 999px;
+  cursor: help;
+}
+
+.vpn-connection-list {
+  display: grid;
+
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-raised);
+  overflow: visible;
+}
+
+.vpn-connection-row {
+  position: relative;
+
+  display: grid;
+  grid-template-areas:
+    "identity menu"
+    "status menu"
+    "endpoint endpoint"
+    "torrents torrents";
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: start;
+  min-width: 0;
+  padding: var(--space-4);
+
+  border-bottom: 1px solid var(--color-border);
+
+  transition: background 140ms ease;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--color-surface-hover);
+  }
+
+  &:first-child {
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
+
+  &:last-child {
+    border-bottom: 0;
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  }
+}
+
+.vpn-row-open-button {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+
+  padding: 0;
+
+  background: transparent;
+  border: 0;
+  border-radius: inherit;
+
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: -2px;
+  }
+}
+
+.vpn-connection-identity {
+  display: grid;
+  grid-area: identity;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.vpn-connection-identity > span:last-child {
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+}
+
+.vpn-default-note {
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+}
+
+.vpn-row-status {
+  display: grid;
+  grid-area: status;
+  gap: var(--space-1);
+  justify-items: start;
+  min-width: 0;
+
+  & small {
+    max-width: 22rem;
+
+    font-size: var(--text-xs);
+    line-height: 1.35;
+    color: var(--color-muted);
+    overflow-wrap: anywhere;
+  }
+}
+
+.vpn-title-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  min-width: 0;
+
+  & h1 {
+    min-width: 0;
+    margin: 0;
+  }
+
+  & strong {
+    min-width: 0;
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.vpn-default-tag {
+  color: var(--color-accent);
+  background: var(--color-accent-soft);
+  border-color: color-mix(in srgb, var(--color-accent) 22%, transparent);
+}
+
+.vpn-row-endpoint {
+  display: grid;
+  grid-area: endpoint;
+  gap: 0.125rem;
+  min-width: 0;
+
+  & > span {
+    font-size: var(--text-xs);
+    font-weight: 550;
+    color: var(--color-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  & code {
+    overflow: hidden;
+
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--color-text-soft);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  & small {
+    font-size: var(--text-xs);
+    color: var(--color-muted);
+  }
+}
+
+.vpn-torrent-link {
+  position: relative;
+  z-index: 2;
+
+  grid-area: torrents;
+  align-self: center;
+  justify-self: start;
+  padding: 0;
+
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-accent);
+
+  background: none;
+  border: 0;
+}
+
+.vpn-row-menu {
+  position: relative;
+  z-index: 2;
+
+  /* An open menu rises above the rows below it, whose links and buttons share its layer. */
+  &[open] {
+    z-index: 10;
+  }
+
+  grid-area: menu;
+  align-self: start;
+
+  & summary {
+    display: grid;
+
+    list-style: none;
+  }
+
+  & summary::-webkit-details-marker {
+    display: none;
+  }
+
+  & .menu {
+    position: absolute;
+    top: calc(100% + var(--space-1));
+    right: 0;
+    z-index: 5;
+    min-width: 10rem;
+  }
+}
+
+.vpn-back-link {
+  display: inline-flex;
+  gap: var(--space-1);
+  align-items: center;
+  padding: 0;
+
+  font-weight: 600;
+  color: var(--color-accent);
+
+  background: none;
+  border: 0;
+
+  & .icon {
+    transform: rotate(180deg);
+  }
+}
+
+.vpn-connection-form {
+  display: grid;
+  gap: 0;
+}
+
+.remove-vpn-dialog {
+  width: min(100%, 28rem);
+}
+
+.remove-vpn-dependencies {
+  display: grid;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+  padding: var(--space-3) var(--space-4) var(--space-3) 2rem;
+
+  color: var(--color-text-soft);
+
+  background: var(--color-canvas);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+
+  & strong {
+    font-weight: 600;
+    color: var(--color-text);
+  }
+}
+
+.vpn-save-hint {
+  flex-basis: 100%;
+
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+  text-align: right;
+}
+
+.vpn-remove-progress {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  margin-top: var(--space-4);
+  color: var(--color-text-soft);
+}
+
+.torrent-move-results {
+  margin-top: var(--space-4);
+
+  & h3,
+  & ul {
+    margin: 0;
+  }
+
+  & ul {
+    display: grid;
+    gap: var(--space-2);
+    padding: 0;
+    list-style: none;
+  }
+
+  & li {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: var(--space-2);
+    align-items: start;
+    overflow-wrap: anywhere;
+  }
+
+  & .move-result-copy {
+    display: grid;
+    gap: 0.125rem;
+    justify-items: end;
+    min-width: 0;
+    text-align: right;
+  }
+
+  & small {
+    font-size: var(--text-xs);
+    color: var(--color-muted);
+  }
+
+  & .move-failed .move-result-state {
+    color: var(--color-danger);
+  }
+}
+
+.dialog-stacked {
+  z-index: 1;
+  width: min(100%, 30rem);
+  margin: auto;
+  box-shadow: var(--shadow-lg);
+}
+
+@media (min-width: 900px) {
+  .vpn-connection-row {
+    grid-template-areas: "identity status endpoint torrents menu";
+    grid-template-columns: minmax(9rem, 1.15fr) minmax(8rem, 1fr) minmax(8rem, 0.9fr) auto auto;
+    gap: var(--space-4);
+    align-items: center;
+    padding: var(--space-4) var(--space-5);
+  }
+
+  .vpn-row-status,
+  .vpn-row-endpoint {
+    align-content: center;
+  }
+
+  .vpn-row-menu {
+    align-self: center;
+  }
+}
+
+@media (max-width: 479px) {
+  .vpn-list-heading,
+  .vpn-editor-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .vpn-add-control,
+  .vpn-list-heading .button,
+  .vpn-editor-heading .button {
+    width: 100%;
+  }
+
+  .vpn-add-control {
+    justify-items: stretch;
+
+    & small {
+      max-width: none;
+
+      text-align: left;
+    }
+  }
+
+  .vpn-editor-heading h1 {
+    font-size: 1.35rem;
+  }
+
+  .vpn-save-hint {
+    text-align: left;
+  }
+}
+
