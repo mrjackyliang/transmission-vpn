@@ -35,3 +35,118 @@
 ### REMOVED
 - L2TP and PPTP connections are gone. OpenVPN and WireGuard are the supported protocols.
 - The script's port-forwarding check (`PORT_FWD`) and external IP check (`IP_CHECK`) are gone. Tunnel verification runs on every connect instead.
+
+## 1.3.2 - 2020-11-08
+
+### UPDATED
+- The project is now named transmission-vpn instead of transmissionVPN, with the files renamed to `transmission-vpn.sh` and `port-forwarding.php`.
+
+### REMOVED
+- The Patreon link is gone from the README and the funding file.
+
+## 1.3.1 - 2020-07-15
+
+### UPDATED
+- The port forwarding check is now `portforwarding.php` instead of `transmissionvpn_portfwd.php`.
+- The README was reworded, and new issues must use one of the issue templates.
+
+## 1.3.0 - 2020-02-22
+
+### UPDATED
+- The script works with Transmission v2.94-16.
+- `transmissionvpn.sh` moved to the repository root, and the port forwarding check is now `transmissionvpn_portfwd.php`.
+
+### ADDED
+- The project has an ISC license, plus GitHub issue templates for bug reports and feature requests.
+
+### REMOVED
+- The README's Maintainer Change Fix section is gone, since the new defaults already match the current Transmission package.
+
+## 1.2.2 - 2019-10-30
+
+### ADDED
+- The README covers troubleshooting for the `ppp0: error fetching interface information` error, with steps to find the right `VPN_INTERFACE`.
+- The README explains port forwarding behind NAT, where `PORT_FWD` must stay blank.
+
+## 1.2.1 - 2019-10-30
+
+### UPDATED
+- `TRANS_USER` and `TRANS_GROUP` default to `sc-transmission` and `transmission` to match the current SynoCommunity Transmission package.
+- `VPN_RETRY` and `VPN_INTERVAL` default to 10 retries and 30 seconds again.
+
+## 1.2.0 - 2018-03-03
+
+### UPDATED
+- The script works with Transmission v2.93-13.
+- Transmission stops and starts through `synopkg` instead of the package's `start-stop-status` script, so `TRANS_SSSS` is no longer used.
+- The repair output labels the looked-up address as the API query IP instead of ipinfo.io.
+
+### ADDED
+- The README has steps for the SynoCommunity maintainer change, which moved Transmission to a new user and group.
+
+## 1.1.5 - 2017-10-03
+
+### UPDATED
+- The port forwarding check script was reformatted and documented.
+
+### ADDED
+- The README has steps for turning on Multiple Gateways when Transmission can't reach the internet.
+
+## 1.1.4 - 2016-04-19
+
+### REMOVED
+- The leftover commented-out port forwarding check after a reconnect is gone.
+
+## 1.1.3 - 2016-04-18
+
+### REMOVED
+- The second port forwarding check after a reconnect is gone. Repair now confirms only the VPN address once it reconnects.
+
+## 1.1.2 - 2016-02-05
+
+### UPDATED
+- The usage example reads `sh transmissionvpn.sh start`, and the port forwarding check has a header comment.
+
+## 1.1.1 - 2016-02-05
+
+### FIXED
+- `ERROR 1002` now says the forwarded port may be closed, not only that the VPN can't reach the internet.
+
+## 1.1.0 - 2016-02-05
+
+### UPDATED
+- The README's steps for finding the Configuration ID are clearer.
+
+### ADDED
+- A port forwarding check (`portforward.php`) for the `PORT_FWD` port. Repair reconnects when the port is closed.
+- An `IP_CHECK` variable that sets the service used to look up the VPN's public address.
+
+## 1.0.3 - 2015-11-25
+
+### UPDATED
+- `VPN_RETRY` and `VPN_INTERVAL` default to 5 retries and 10 seconds.
+
+### FIXED
+- Repair no longer breaks when the interface or ipinfo.io returns no address. It shows `unknown` and `not found` and reconnects.
+
+## 1.0.2 - 2015-11-25
+
+### UPDATED
+- Repair prints both the interface address and the ipinfo.io address, and uninstall reports binding the default address.
+- The README's setup steps were reworded.
+
+## 1.0.1 - 2015-11-22
+
+### UPDATED
+- `stop` binds Transmission to 127.0.0.1 before disconnecting the VPN.
+
+### ADDED
+- A `repair` command that compares the VPN interface address with ipinfo.io, reconnects when they differ, and keeps Transmission on 127.0.0.1 while the VPN is down.
+- `install` and `uninstall` commands that bind Transmission to 127.0.0.1 or back to 0.0.0.0.
+- `VPN_TYPE`, `VPN_INTERFACE`, `VPN_RETRY`, and `VPN_INTERVAL` variables, so OpenVPN (`tun0`) works alongside L2TP and PPTP (`ppp0`).
+- The README has setup steps for every variable and the Configuration ID.
+
+## 1.0.0 - 2015-11-20
+
+### ADDED
+- The initial Synology DSM script that connects a DSM VPN profile and binds Transmission's `bind-address-ipv4` to the VPN address on `start`, and to 127.0.0.1 on `stop`.
