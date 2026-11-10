@@ -497,7 +497,7 @@ func TestSendMail(t *testing.T) {
 		To:       []string{"me@example.com", "you@example.com"},
 		Subject:  "Transmission VPN: Torrent finished",
 		Text:     "Ubuntu finished downloading.",
-	}); err != nil {
+	}, (&net.Dialer{}).DialContext); err != nil {
 		t.Fatalf("send mail: %v", err)
 	}
 

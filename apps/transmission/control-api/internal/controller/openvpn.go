@@ -12,9 +12,12 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/directdial"
 )
 
 // openVPNDriver runs one OpenVPN child per session.
@@ -193,19 +196,16 @@ func (driver *openVPNDriver) CleanupStale(ctx context.Context) error {
 	return routingError
 }
 
-// startOpenVPN launches the child with a generated root-only profile and status files.
+// openVPNArguments lists the child's arguments for one session's files.
 //
-// Arguments are passed directly without a shell, and all provider-supplied content has
-// already crossed both normalization and controller validation.
-func (driver *openVPNDriver) startOpenVPN(connection Connection) (*openVPNSession, error) {
-	profilePath := filepath.Join(driver.directory, "active.ovpn")
-	statusPath := filepath.Join(driver.directory, "status.txt")
-	processIDPath := filepath.Join(driver.directory, "openvpn.pid")
-
-	command := exec.Command(
-		driver.openVPNPath,
+// The tunnel socket carries the controller's mark, written in decimal because OpenVPN
+// reads it that way, so the firewall lets the encrypted packets out.
+func openVPNArguments(profilePath string, statusPath string, processIDPath string) []string {
+	return []string{
 		"--config",
 		profilePath,
+		"--mark",
+		strconv.Itoa(directdial.Mark),
 		"--script-security",
 		"1",
 		"--remap-usr1",
@@ -217,6 +217,21 @@ func (driver *openVPNDriver) startOpenVPN(connection Connection) (*openVPNSessio
 		"3",
 		"--writepid",
 		processIDPath,
+	}
+}
+
+// startOpenVPN launches the child with a generated root-only profile and status files.
+//
+// Arguments are passed directly without a shell, and all provider-supplied content has
+// already crossed both normalization and controller validation.
+func (driver *openVPNDriver) startOpenVPN(connection Connection) (*openVPNSession, error) {
+	profilePath := filepath.Join(driver.directory, "active.ovpn")
+	statusPath := filepath.Join(driver.directory, "status.txt")
+	processIDPath := filepath.Join(driver.directory, "openvpn.pid")
+
+	command := exec.Command(
+		driver.openVPNPath,
+		openVPNArguments(profilePath, statusPath, processIDPath)...,
 	)
 	output := &openVPNOutput{
 		logger:     driver.logger,

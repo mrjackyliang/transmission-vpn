@@ -10,6 +10,7 @@ import (
 	"io"
 	"log/slog"
 	"math"
+	"net"
 	"net/http"
 	"path/filepath"
 	"runtime"
@@ -136,6 +137,11 @@ type Config struct {
 	Logger              *slog.Logger
 	Version             string
 	MountedSetupCode    bool
+
+	// DirectDial opens connections outside the VPN, for VPN provider catalogs and
+	// notifications. Production passes the VPN controller's direct socket, because the
+	// firewall drops the console's own connections outside the VPN.
+	DirectDial func(ctx context.Context, network string, address string) (net.Conn, error)
 }
 
 // Server implements the versioned local appliance HTTP boundary.
@@ -299,6 +305,14 @@ func NewServer(config Config) (*Server, error) {
 	if _, err := rand.Read(rpcSessionSecret); err != nil {
 		return nil, fmt.Errorf("generate compatible RPC session secret: %w", err)
 	}
+	directDial := config.DirectDial
+	if directDial == nil {
+		var plainDialer net.Dialer
+		directDial = plainDialer.DialContext
+	}
+	downloadCatalog := func(ctx context.Context, source provider.CatalogSource) ([]byte, error) {
+		return downloadVPNCatalogSource(ctx, source, directDial)
+	}
 
 	server := &Server{
 		store:                           config.Store,
@@ -309,7 +323,7 @@ func NewServer(config Config) (*Server, error) {
 		directoryBrowser:                config.DirectoryBrowser,
 		transmission:                    config.Transmission,
 		transmissionClients:             config.TransmissionClients,
-		downloadCatalog:                 downloadVPNCatalogSource,
+		downloadCatalog:                 downloadCatalog,
 		runtimeDirectory:                config.RuntimeDirectory,
 		webProxyConfigPath:              filepath.Join(config.RuntimeDirectory, "web-proxy", "config.json"),
 		webProxyStatusPath:              filepath.Join(config.RuntimeDirectory, "web-proxy-state", "status.json"),
@@ -358,7 +372,7 @@ func NewServer(config Config) (*Server, error) {
 		return nil, fmt.Errorf("publish initial web proxy configuration: %w", err)
 	}
 	server.events = newEventHub(server)
-	server.notifier = newNotifier(server.store, server.installationKey, server.logger)
+	server.notifier = newNotifier(server.store, server.installationKey, server.logger, directDial)
 	server.attempts.onLimitReached = server.notifier.notifySignInLimit
 	server.watcher = newNotificationWatcher(server)
 	server.handler = server.routes()

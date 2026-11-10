@@ -69,11 +69,31 @@ type Sender struct {
 	SendMail func(context.Context, Mail) error
 }
 
-// NewSender returns a sender that uses the network.
-func NewSender() *Sender {
+// DialFunc opens one connection for a send.
+type DialFunc func(ctx context.Context, network string, address string) (net.Conn, error)
+
+// NewSender returns a sender that opens its connections with dial.
+//
+// The firewall only lets the VPN controller's connections leave outside the VPN, so
+// the console passes a dial that asks the controller. Alerts then still arrive while
+// every VPN connection is down.
+func NewSender(dial DialFunc) *Sender {
+	if dial == nil {
+		var plainDialer net.Dialer
+		dial = plainDialer.DialContext
+	}
+
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.DialContext = dial
+
 	return &Sender{
-		Client:   &http.Client{Timeout: sendTimeout},
-		SendMail: sendMail,
+		Client: &http.Client{
+			Timeout:   sendTimeout,
+			Transport: transport,
+		},
+		SendMail: func(ctx context.Context, mail Mail) error {
+			return sendMail(ctx, mail, dial)
+		},
 	}
 }
 
@@ -411,20 +431,22 @@ func valueOr(value string, fallback string) string {
 // Each step gives up after 10 seconds without an answer. STARTTLS is required when the
 // destination asks for it, and the sign-in uses PLAIN, or LOGIN when that's all the
 // server offers.
-func sendMail(ctx context.Context, mail Mail) error {
+func sendMail(ctx context.Context, mail Mail, dial DialFunc) error {
 	address := net.JoinHostPort(mail.Host, strconv.Itoa(mail.Port))
-	dialer := &net.Dialer{Timeout: sendTimeout}
 	tlsConfiguration := &tls.Config{ServerName: mail.Host, MinVersion: tls.VersionTLS12}
 
-	var connection net.Conn
-	var err error
-	if mail.Security == "tls" {
-		connection, err = (&tls.Dialer{NetDialer: dialer, Config: tlsConfiguration}).DialContext(ctx, "tcp", address)
-	} else {
-		connection, err = dialer.DialContext(ctx, "tcp", address)
-	}
+	connection, err := dial(ctx, "tcp", address)
 	if err != nil {
 		return err
+	}
+	if mail.Security == "tls" {
+		tlsConnection := tls.Client(connection, tlsConfiguration)
+		if err := tlsConnection.HandshakeContext(ctx); err != nil {
+			_ = connection.Close()
+
+			return err
+		}
+		connection = tlsConnection
 	}
 	defer connection.Close()
 

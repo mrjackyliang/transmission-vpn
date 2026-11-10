@@ -52,7 +52,7 @@ Plan the `/config` and `/data` folders so the container can start, keep its stat
 - <Terminology title="User and group IDs that own Transmission's files" to="/docs/reference/terminology#puid-and-pgid">`PUID`</Terminology> and <Terminology title="User and group IDs that own Transmission's files" to="/docs/reference/terminology#puid-and-pgid">`PGID`</Terminology> must be integers from 1000 to 60000, and they can't already belong to another account in the image.
 - At start, the container gives the built-in `transmission` account these IDs, so files that Transmission creates belong to them.
 - The `control` account gets the same `PUID`, so every service that writes to `/config` or `/data` owns what it writes. Hosts that ignore group permissions on shared folders, such as Synology, let only a folder's owner write, so these folders need only belong to `PUID`.
-- The `control` account keeps its own group, which the firewall uses to keep the control plane's traffic out of Transmission's rules.
+- The `control` account keeps its own group, which opens the VPN controller's sockets to the control plane and not to Transmission.
 - IDs below 1000 aren't accepted, so a host account or group with a lower ID needs a different user or group for the container.
 
 ## Ownership and Permissions

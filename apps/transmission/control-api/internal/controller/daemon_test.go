@@ -49,6 +49,14 @@ func TestControllerSocketStatus(testingObject *testing.T) {
 	go func() { serveErrors <- daemon.Serve(serveContext) }()
 	waitForSocket(testingObject, daemon.config.SocketPath, serveErrors)
 
+	directInfo, err := os.Stat(daemon.config.DirectSocketPath)
+	if err != nil {
+		testingObject.Fatalf("stat direct connection socket: %v", err)
+	}
+	if directInfo.Mode()&os.ModeSocket == 0 || directInfo.Mode().Perm() != 0o660 {
+		testingObject.Fatalf("direct connection socket mode = %v, want a 0660 socket", directInfo.Mode())
+	}
+
 	client := NewClient(daemon.config.SocketPath, 2*time.Second)
 	statuses, err := client.Status(context.Background())
 	if err != nil {

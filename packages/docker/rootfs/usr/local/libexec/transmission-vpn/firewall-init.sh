@@ -25,6 +25,7 @@ main() {
   selected_backend="$(select_firewall_backend)"
 
   configure_firewall_backend "${selected_backend}"
+  verify_firewall_kernel_support
   remove_protected_rules_by_pattern
   rm -f "${firewall_interfaces_path}"
   remove_firewall_rules

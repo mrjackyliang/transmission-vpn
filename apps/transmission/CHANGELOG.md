@@ -1,5 +1,10 @@
 # transmission-vpn-app-transmission
 
+## 2.0.3 - 2026-11-10
+
+### FIXED
+- Startup no longer stops with `iptables: No chain/target/match by that name` on NAS kernels that leave out iptables' owner match, such as Synology's. The firewall now drops every new connection the container opens outside a VPN tunnel, whichever service opens it, and lets only the VPN controller's own traffic out. The control plane downloads provider catalogs and sends notifications through the controller, so they still work while every VPN connection is down.
+
 ## 2.0.2 - 2026-11-10
 
 ### FIXED

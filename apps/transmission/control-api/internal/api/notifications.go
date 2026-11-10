@@ -100,13 +100,13 @@ type notifier struct {
 	lockedAddresses map[string]time.Time
 }
 
-// newNotifier prepares a notifier that sends over the network.
-func newNotifier(store *storage.Store, installationKey []byte, logger *slog.Logger) *notifier {
+// newNotifier prepares a notifier that sends over connections opened with dial.
+func newNotifier(store *storage.Store, installationKey []byte, logger *slog.Logger, dial notifications.DialFunc) *notifier {
 	return &notifier{
 		store:           store,
 		installationKey: installationKey,
 		logger:          logger,
-		send:            notifications.NewSender().Send,
+		send:            notifications.NewSender(dial).Send,
 		lockedAddresses: map[string]time.Time{},
 	}
 }
@@ -116,12 +116,12 @@ func newNotifier(store *storage.Store, installationKey []byte, logger *slog.Logg
 //
 // The container's first run replaces a lost key and exits right after, so it waits
 // instead of leaving the sends behind. Nothing is sent when nothing was removed.
-func NotifySecretsRemoved(store *storage.Store, installationKey []byte, logger *slog.Logger, items []string) {
+func NotifySecretsRemoved(store *storage.Store, installationKey []byte, logger *slog.Logger, items []string, dial notifications.DialFunc) {
 	if len(items) == 0 {
 		return
 	}
 
-	alerts := newNotifier(store, installationKey, logger)
+	alerts := newNotifier(store, installationKey, logger, dial)
 	alerts.deliver(notifications.BuildSecretsRemovedNotification(notificationApp, "installation key", items))
 	alerts.sends.Wait()
 }

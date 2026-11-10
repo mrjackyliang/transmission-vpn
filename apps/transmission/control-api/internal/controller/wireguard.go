@@ -22,9 +22,9 @@ import (
 const (
 	// wireGuardFirewallMark marks each WireGuard interface's encrypted packets.
 	//
-	// Kernel WireGuard sends them with the sender's socket attached, so Transmission's
-	// owner firewall would drop them on eth0; firewall-common.sh accepts only UDP with
-	// this mark, which Transmission can't set itself.
+	// It is directdial.Mark, written the way WireGuard configuration expects. The
+	// firewall lets only marked packets leave over the container's own network, and
+	// no unprivileged service can set a mark itself.
 	wireGuardFirewallMark = "0xca6c"
 
 	// wireGuardImplementationKernel and wireGuardImplementationUserspace name the engines.
@@ -798,7 +798,8 @@ func bootstrapNameservers(resolverContent []byte) []string {
 // bootstrapLookup resolves IPv4 addresses against fixed nameservers.
 //
 // Go caches resolv.conf for a few seconds, and the controller rewrites that file on
-// every transition, so lookups dial the captured bootstrap servers directly.
+// every transition, so lookups dial the captured bootstrap servers directly. The
+// lookups go outside the VPN, so their sockets carry the controller's mark.
 func bootstrapLookup(nameservers []string) func(ctx context.Context, host string) ([]netip.Addr, error) {
 	return func(ctx context.Context, host string) ([]netip.Addr, error) {
 		if len(nameservers) == 0 {
@@ -810,7 +811,7 @@ func bootstrapLookup(nameservers []string) func(ctx context.Context, host string
 			resolver := net.Resolver{
 				PreferGo: true,
 				Dial: func(dialContext context.Context, network string, _ string) (net.Conn, error) {
-					dialer := net.Dialer{Timeout: 5 * time.Second}
+					dialer := net.Dialer{Timeout: 5 * time.Second, Control: markSocket}
 
 					return dialer.DialContext(dialContext, network, net.JoinHostPort(nameserver, "53"))
 				},

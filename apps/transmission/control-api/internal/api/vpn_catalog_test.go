@@ -278,7 +278,7 @@ func TestCatalogDownloadUsesTheSourceLimits(t *testing.T) {
 			content, err := downloadVPNCatalogSource(context.Background(), provider.CatalogSource{
 				URL:          catalogServer.URL,
 				MaximumBytes: test.maximumBytes,
-			})
+			}, nil)
 			if test.wantError {
 				if err == nil || !strings.Contains(err.Error(), "download size limit") {
 					t.Fatalf("download error = %v, want the size limit", err)

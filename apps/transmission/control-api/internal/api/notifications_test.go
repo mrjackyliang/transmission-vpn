@@ -349,7 +349,7 @@ func TestLostKeyNotification(t *testing.T) {
 		t.Fatalf("replace key = %+v, %v", replaced, err)
 	}
 
-	NotifySecretsRemoved(store, replaced.Key, slog.New(slog.NewTextHandler(io.Discard, nil)), replaced.Removed)
+	NotifySecretsRemoved(store, replaced.Key, slog.New(slog.NewTextHandler(io.Discard, nil)), replaced.Removed, nil)
 
 	select {
 	case body := <-received:

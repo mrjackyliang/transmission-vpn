@@ -18,6 +18,7 @@ import (
 // routine deployment settings or provider-controlled values.
 type options struct {
 	SocketPath              string
+	DirectSocketPath        string
 	RuntimeDirectory        string
 	OpenVPNPath             string
 	WireGuardPath           string
@@ -50,6 +51,7 @@ func main() {
 
 	daemon, err := controller.NewDaemon(controller.DaemonConfig{
 		SocketPath:              configuredOptions.SocketPath,
+		DirectSocketPath:        configuredOptions.DirectSocketPath,
 		RuntimeDirectory:        configuredOptions.RuntimeDirectory,
 		OpenVPNPath:             configuredOptions.OpenVPNPath,
 		WireGuardPath:           configuredOptions.WireGuardPath,
@@ -85,6 +87,12 @@ func parseOptions() options {
 		"socket",
 		"/run/transmission-vpn/controller.sock",
 		"control API command socket",
+	)
+	flag.StringVar(
+		&configuredOptions.DirectSocketPath,
+		"direct-socket",
+		"/run/transmission-vpn/direct.sock",
+		"socket that opens connections outside the VPN for the control API",
 	)
 	flag.StringVar(
 		&configuredOptions.RuntimeDirectory,

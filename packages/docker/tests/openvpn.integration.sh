@@ -261,11 +261,15 @@ api_request() {
   docker exec "${protected_container_name}" wget "${arguments[@]}" "${api_url}${path}"
 }
 
+# The console answers before the VPN controller listens, and every VPN request needs the
+# controller, so both must be ready.
 wait_for_control_plane() {
   local attempt
   for attempt in $(seq 1 30); do
     if docker exec "${protected_container_name}" \
-      wget -q -O /dev/null http://127.0.0.1:22602/api/v1/health/live; then
+      wget -q -O /dev/null http://127.0.0.1:22602/api/v1/health/live \
+      && docker exec "${protected_container_name}" \
+        test -f /run/transmission-vpn/services/vpn-controller.ready; then
       return 0
     fi
     if [[ "$(docker inspect --format '{{.State.Running}}' "${protected_container_name}")" != "true" ]]; then
@@ -483,7 +487,7 @@ verify_protected_path() {
   docker exec "${protected_container_name}" "${ipv4_command}" -w 5 -C OUTPUT \
     -j TVPN_SOURCE_BACKSTOP
   docker exec "${protected_container_name}" "${ipv4_command}" -w 5 \
-    -C TVPN_SOURCE_BACKSTOP -s 198.18.0.0/18 ! -o lo -j DROP
+    -C TVPN_SOURCE_BACKSTOP -s 198.18.0.0/18 -j DROP
   docker exec "${protected_container_name}" "${ipv4_command}" -w 5 \
     -C TVPN_SOURCE_BACKSTOP -s "${local_address}/32" -o tun0 -j RETURN
   docker exec "${protected_container_name}" "${ipv4_command}" -w 5 \
@@ -492,7 +496,7 @@ verify_protected_path() {
     -C POSTROUTING -o tun0 -s "${local_address}/32" \
     -j SNAT --to-source "${address}"
   docker exec "${protected_container_name}" "${ipv4_command}" -w 5 \
-    -C TVPN_TRANSMISSION -s "${local_address}/32" -o tun0 -j ACCEPT
+    -C TVPN_TUNNELS -s "${local_address}/32" -o tun0 -j ACCEPT
 
   local peer_address
   peer_address="$(docker inspect --format \

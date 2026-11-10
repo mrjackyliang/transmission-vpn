@@ -256,6 +256,48 @@ verify_runtime_identity() {
   fi
 }
 
+# Checks one family's egress chain rule by rule, then its rule count, so a missing,
+# extra, or reordered drop is caught. NAS kernels such as Synology's have no owner
+# match, so no rule in the family may need it either.
+verify_egress_chain() {
+  local family_command="${1}"
+  shift
+
+  local expected_rules=("$@")
+  local expected_rule
+  local rule_fields=()
+
+  docker exec "${protected_container_name}" "${family_command}" -w 5 -C OUTPUT \
+    -j TVPN_EGRESS
+  for expected_rule in "${expected_rules[@]}"; do
+    read -r -a rule_fields <<< "${expected_rule}"
+    if ! docker exec "${protected_container_name}" "${family_command}" -w 5 \
+      -C TVPN_EGRESS "${rule_fields[@]}"; then
+      fail "${family_command} TVPN_EGRESS is missing: ${expected_rule}"
+    fi
+  done
+
+  local installed_rules
+  installed_rules="$(docker exec "${protected_container_name}" \
+    "${family_command}" -w 5 -S TVPN_EGRESS)"
+  local installed_rule_count
+  installed_rule_count="$(printf '%s\n' "${installed_rules}" | grep -c '^-A ')"
+  if [[ "${installed_rule_count}" -ne "${#expected_rules[@]}" ]]; then
+    fail "${family_command} TVPN_EGRESS has ${installed_rule_count} rules, expected ${#expected_rules[@]}: ${installed_rules}"
+  fi
+  if [[ "$(printf '%s\n' "${installed_rules}" | tail -n 1)" != "-A TVPN_EGRESS -j DROP" ]]; then
+    fail "${family_command} TVPN_EGRESS does not end by dropping egress: ${installed_rules}"
+  fi
+
+  local table_name
+  for table_name in filter nat; do
+    if docker exec "${protected_container_name}" "${family_command}" -w 5 \
+      -t "${table_name}" -S | grep -Fq -- '-m owner'; then
+      fail "${family_command} ${table_name} rules use the owner match."
+    fi
+  done
+}
+
 verify_firewall_rules() {
   local selected_backend
   selected_backend="$(docker exec "${protected_container_name}" \
@@ -280,121 +322,67 @@ verify_firewall_rules() {
       ;;
   esac
 
-  docker exec "${protected_container_name}" "${ipv4_command}" -w 5 -C OUTPUT \
-    -m owner --uid-owner 12345 ! --gid-owner 65532 \
-    -j TVPN_TRANSMISSION
-  docker exec "${protected_container_name}" "${ipv4_command}" -w 5 \
-    -C TVPN_TRANSMISSION \
-    -j DROP
-  docker exec "${protected_container_name}" "${ipv4_command}" -w 5 \
-    -C TVPN_TRANSMISSION \
-    -o lo -p udp --dport 53 -j DROP
-  docker exec "${protected_container_name}" "${ipv4_command}" -w 5 \
-    -C TVPN_TRANSMISSION \
-    -o lo -p tcp --dport 53 -j DROP
-  docker exec "${protected_container_name}" "${ipv4_command}" -w 5 \
-    -C TVPN_TRANSMISSION \
-    -o lo ! -d 127.0.0.1 -j DROP
-  docker exec "${protected_container_name}" "${ipv4_command}" -w 5 \
-    -C TVPN_TRANSMISSION \
-    -p udp -m mark --mark 0xca6c -j ACCEPT
-  docker exec "${protected_container_name}" "${ipv4_command}" -w 5 -C OUTPUT \
-    -m owner --uid-owner 65531 \
-    -j TVPN_WEB_PROXY
-  docker exec "${protected_container_name}" "${ipv4_command}" -w 5 \
-    -C TVPN_WEB_PROXY \
-    -o lo -j DROP
-  docker exec "${protected_container_name}" "${ipv4_command}" -w 5 \
-    -C TVPN_WEB_PROXY \
-    -o tun+ -p tcp --sport 22605 -j DROP
-  docker exec "${protected_container_name}" "${ipv4_command}" -w 5 \
-    -C TVPN_WEB_PROXY \
-    -o wg+ -p tcp --sport 22605 -j DROP
+  # Each family's egress chain, in order. IPv6 avoids connection tracking, which older
+  # NAS kernels such as Synology's 4.4 keep in a separate module that may be missing.
+  local ipv4_egress_rules=(
+    "-m mark --mark 0xca6c -j ACCEPT"
+    "-o lo -p udp -m conntrack --ctstate NEW --ctorigdstport 53 -j DROP"
+    "-o lo -p tcp -m conntrack --ctstate NEW --ctorigdstport 53 -j DROP"
+    "-o lo -j ACCEPT"
+    "-o tun+ -p tcp --sport 22605 -j DROP"
+    "-o wg+ -p tcp --sport 22605 -j DROP"
+    "-p tcp --sport 22605 -d 10.0.0.0/8 -j ACCEPT"
+    "-p tcp --sport 22605 -d 172.16.0.0/12 -j ACCEPT"
+    "-p tcp --sport 22605 -d 192.168.0.0/16 -j ACCEPT"
+    "-p tcp --sport 22605 -j DROP"
+    "-m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT"
+    "-j TVPN_TUNNELS"
+    "-j DROP"
+  )
+  local ipv6_egress_rules=(
+    "-m mark --mark 0xca6c -j ACCEPT"
+    "-p ipv6-icmp --icmpv6-type 133 -j ACCEPT"
+    "-p ipv6-icmp --icmpv6-type 135 -j ACCEPT"
+    "-p ipv6-icmp --icmpv6-type 136 -j ACCEPT"
+    "-p ipv6-icmp --icmpv6-type 143 -j ACCEPT"
+    "-o lo -p udp --dport 53 -j DROP"
+    "-o lo -p tcp --dport 53 -j DROP"
+    "-o lo -j ACCEPT"
+    "-o tun+ -p tcp --sport 22605 -j DROP"
+    "-o wg+ -p tcp --sport 22605 -j DROP"
+    "-p tcp --sport 22605 -d fc00::/7 -j ACCEPT"
+    "-p tcp --sport 22605 -d fe80::/10 -j ACCEPT"
+    "-p tcp --sport 22605 -j DROP"
+    "-p tcp --sport 22602 -j ACCEPT"
+    "-p tcp --sport 9091 -j ACCEPT"
+    "-j DROP"
+  )
+
+  verify_egress_chain "${ipv4_command}" "${ipv4_egress_rules[@]}"
+  if docker exec "${protected_container_name}" test -s /proc/net/if_inet6; then
+    verify_egress_chain "${ipv6_command}" "${ipv6_egress_rules[@]}"
+    if docker exec "${protected_container_name}" "${ipv6_command}" -w 5 \
+      -S TVPN_EGRESS | grep -Fq -- '-m conntrack'; then
+      fail 'The IPv6 egress chain depends on connection tracking.'
+    fi
+  fi
+
   docker exec "${protected_container_name}" "${ipv4_command}" -w 5 -C OUTPUT \
     -j TVPN_SOURCE_BACKSTOP
   docker exec "${protected_container_name}" "${ipv4_command}" -w 5 \
     -C TVPN_SOURCE_BACKSTOP \
-    -s 198.18.0.0/18 ! -o lo -j DROP
+    -s 198.18.0.0/18 -j DROP
 
   local output_rules
   output_rules="$(docker exec "${protected_container_name}" \
     "${ipv4_command}" -w 5 -S OUTPUT)"
   local backstop_line
   backstop_line="$(printf '%s\n' "${output_rules}" | grep -n -- '-j TVPN_SOURCE_BACKSTOP' | head -n 1 | cut -d: -f1)"
-  local transmission_line
-  transmission_line="$(printf '%s\n' "${output_rules}" | grep -n -- '-j TVPN_TRANSMISSION' | head -n 1 | cut -d: -f1)"
-  local proxy_line
-  proxy_line="$(printf '%s\n' "${output_rules}" | grep -n -- '-j TVPN_WEB_PROXY' | head -n 1 | cut -d: -f1)"
-  if [[ -z "${backstop_line}" || -z "${transmission_line}" || -z "${proxy_line}" \
-    || "${backstop_line}" -ge "${transmission_line}" \
-    || "${backstop_line}" -ge "${proxy_line}" ]]; then
-    fail "The source backstop is not ahead of both owner chains in OUTPUT: ${output_rules}"
-  fi
-
-  local web_proxy_ipv4_networks=(
-    "10.0.0.0/8"
-    "172.16.0.0/12"
-    "192.168.0.0/16"
-  )
-  local web_proxy_ipv4_network
-
-  for web_proxy_ipv4_network in "${web_proxy_ipv4_networks[@]}"; do
-    docker exec "${protected_container_name}" "${ipv4_command}" -w 5 \
-      -C TVPN_WEB_PROXY \
-      -p tcp --sport 22605 -d "${web_proxy_ipv4_network}" -j ACCEPT
-  done
-
-  docker exec "${protected_container_name}" "${ipv4_command}" -w 5 \
-    -C TVPN_WEB_PROXY \
-    -p udp -m mark --mark 0xca6c -j ACCEPT
-  docker exec "${protected_container_name}" "${ipv4_command}" -w 5 \
-    -C TVPN_WEB_PROXY \
-    -j DROP
-
-  if docker exec "${protected_container_name}" test -s /proc/net/if_inet6; then
-    docker exec "${protected_container_name}" "${ipv6_command}" -w 5 -C OUTPUT \
-      -m owner --uid-owner 12345 ! --gid-owner 65532 \
-      -j TVPN_TRANSMISSION
-    docker exec "${protected_container_name}" "${ipv6_command}" -w 5 \
-      -C TVPN_TRANSMISSION \
-      -j DROP
-    docker exec "${protected_container_name}" "${ipv6_command}" -w 5 \
-      -C TVPN_TRANSMISSION \
-      -o lo -p udp --dport 53 -j DROP
-    docker exec "${protected_container_name}" "${ipv6_command}" -w 5 \
-      -C TVPN_TRANSMISSION \
-      -o lo -p tcp --dport 53 -j DROP
-    docker exec "${protected_container_name}" "${ipv6_command}" -w 5 \
-      -C TVPN_TRANSMISSION \
-      -o lo ! -d ::1 -j DROP
-    docker exec "${protected_container_name}" "${ipv6_command}" -w 5 -C OUTPUT \
-      -m owner --uid-owner 65531 \
-      -j TVPN_WEB_PROXY
-    docker exec "${protected_container_name}" "${ipv6_command}" -w 5 \
-      -C TVPN_WEB_PROXY \
-      -o lo -j DROP
-    docker exec "${protected_container_name}" "${ipv6_command}" -w 5 \
-      -C TVPN_WEB_PROXY \
-      -o tun+ -p tcp --sport 22605 -j DROP
-    docker exec "${protected_container_name}" "${ipv6_command}" -w 5 \
-      -C TVPN_WEB_PROXY \
-      -o wg+ -p tcp --sport 22605 -j DROP
-
-    local web_proxy_ipv6_networks=(
-      "fc00::/7"
-      "fe80::/10"
-    )
-    local web_proxy_ipv6_network
-
-    for web_proxy_ipv6_network in "${web_proxy_ipv6_networks[@]}"; do
-      docker exec "${protected_container_name}" "${ipv6_command}" -w 5 \
-        -C TVPN_WEB_PROXY \
-        -p tcp --sport 22605 -d "${web_proxy_ipv6_network}" -j ACCEPT
-    done
-
-    docker exec "${protected_container_name}" "${ipv6_command}" -w 5 \
-      -C TVPN_WEB_PROXY \
-      -j DROP
+  local egress_line
+  egress_line="$(printf '%s\n' "${output_rules}" | grep -n -- '-j TVPN_EGRESS' | head -n 1 | cut -d: -f1)"
+  if [[ -z "${backstop_line}" || -z "${egress_line}" \
+    || "${backstop_line}" -ge "${egress_line}" ]]; then
+    fail "The source backstop is not ahead of the egress chain in OUTPUT: ${output_rules}"
   fi
 }
 
@@ -503,9 +491,7 @@ verify_dynamic_firewall_boundary() {
     /usr/local/libexec/transmission-vpn/firewall-protect.sh \
     tun63 198.18.63.1 198.51.100.2
   docker exec "${protected_container_name}" "${ipv4_command}" -w 5 \
-    -C TVPN_TRANSMISSION -s 198.18.63.1/32 -o tun63 -j ACCEPT
-  docker exec "${protected_container_name}" "${ipv4_command}" -w 5 \
-    -C TVPN_WEB_PROXY -s 198.18.63.1/32 -o tun63 -j ACCEPT
+    -C TVPN_TUNNELS -s 198.18.63.1/32 -o tun63 -j ACCEPT
   docker exec "${protected_container_name}" "${ipv4_command}" -w 5 \
     -C TVPN_SOURCE_BACKSTOP -s 198.18.63.1/32 -o tun63 -j RETURN
   docker exec "${protected_container_name}" "${ipv4_command}" -w 5 \
@@ -515,13 +501,8 @@ verify_dynamic_firewall_boundary() {
     -j SNAT --to-source 198.51.100.2
   if docker exec "${protected_container_name}" test -s /proc/net/if_inet6 \
     && docker exec "${protected_container_name}" "${ipv6_command}" -w 5 \
-      -S TVPN_TRANSMISSION | grep -Fq -- '-o tun63'; then
-    fail 'The protected tun63 path installed a Transmission IPv6 interface allow rule.'
-  fi
-  if docker exec "${protected_container_name}" test -s /proc/net/if_inet6 \
-    && docker exec "${protected_container_name}" "${ipv6_command}" -w 5 \
-      -S TVPN_WEB_PROXY | grep -Fq -- '-o tun63'; then
-    fail 'The protected tun63 path installed a web proxy IPv6 interface allow rule.'
+      -S TVPN_EGRESS | grep -Fq -- '-o tun63'; then
+    fail 'The protected tun63 path installed an IPv6 interface allow rule.'
   fi
   local firewall_interfaces
   firewall_interfaces="$(docker exec "${protected_container_name}" \
@@ -536,12 +517,12 @@ verify_dynamic_firewall_boundary() {
     /usr/local/libexec/transmission-vpn/firewall-protect.sh \
     wg62 198.18.62.1 198.51.100.3
   docker exec "${protected_container_name}" "${ipv4_command}" -w 5 \
-    -C TVPN_TRANSMISSION -s 198.18.62.1/32 -o wg62 -j ACCEPT
+    -C TVPN_TUNNELS -s 198.18.62.1/32 -o wg62 -j ACCEPT
 
   docker exec "${protected_container_name}" \
     /usr/local/libexec/transmission-vpn/firewall-block.sh integration-test tun63
   if docker exec "${protected_container_name}" "${ipv4_command}" -w 5 \
-    -C TVPN_TRANSMISSION -s 198.18.63.1/32 -o tun63 -j ACCEPT > /dev/null 2>&1; then
+    -C TVPN_TUNNELS -s 198.18.63.1/32 -o tun63 -j ACCEPT > /dev/null 2>&1; then
     fail 'The selected tun63 rule survived its blocked transition.'
   fi
   if docker exec "${protected_container_name}" "${ipv4_command}" -w 5 \
@@ -554,7 +535,7 @@ verify_dynamic_firewall_boundary() {
     fail 'The selected tun63 SNAT rule survived its blocked transition.'
   fi
   docker exec "${protected_container_name}" "${ipv4_command}" -w 5 \
-    -C TVPN_TRANSMISSION -s 198.18.62.1/32 -o wg62 -j ACCEPT
+    -C TVPN_TUNNELS -s 198.18.62.1/32 -o wg62 -j ACCEPT
   docker exec "${protected_container_name}" "${ipv4_command}" -w 5 -t nat \
     -C POSTROUTING -o wg62 -s 198.18.62.1/32 \
     -j SNAT --to-source 198.51.100.3
@@ -569,12 +550,8 @@ verify_dynamic_firewall_boundary() {
   docker exec "${protected_container_name}" \
     /usr/local/libexec/transmission-vpn/firewall-block.sh integration-test
   if docker exec "${protected_container_name}" "${ipv4_command}" -w 5 \
-    -C TVPN_TRANSMISSION -s 198.18.62.1/32 -o wg62 -j ACCEPT > /dev/null 2>&1; then
-    fail 'The all-interface block left the wg62 Transmission rule installed.'
-  fi
-  if docker exec "${protected_container_name}" "${ipv4_command}" -w 5 \
-    -C TVPN_WEB_PROXY -s 198.18.62.1/32 -o wg62 -j ACCEPT > /dev/null 2>&1; then
-    fail 'The all-interface block left the wg62 web proxy rule installed.'
+    -C TVPN_TUNNELS -s 198.18.62.1/32 -o wg62 -j ACCEPT > /dev/null 2>&1; then
+    fail 'The all-interface block left the wg62 tunnel rule installed.'
   fi
   if docker exec "${protected_container_name}" "${ipv4_command}" -w 5 -t nat \
     -C POSTROUTING -o wg62 -s 198.18.62.1/32 \
@@ -590,9 +567,7 @@ verify_dynamic_firewall_boundary() {
     /run/transmission-vpn/firewall.ready
 
   docker exec "${protected_container_name}" "${ipv4_command}" -w 5 \
-    -I TVPN_TRANSMISSION 1 -s 198.18.63.1/32 -o tun63 -j ACCEPT
-  docker exec "${protected_container_name}" "${ipv4_command}" -w 5 \
-    -I TVPN_WEB_PROXY 1 -s 198.18.63.1/32 -o tun63 -j ACCEPT
+    -I TVPN_TUNNELS 1 -s 198.18.63.1/32 -o tun63 -j ACCEPT
   docker exec "${protected_container_name}" "${ipv4_command}" -w 5 \
     -I TVPN_SOURCE_BACKSTOP 1 -s 198.18.63.1/32 -o tun63 -j RETURN
   docker exec "${protected_container_name}" "${ipv4_command}" -w 5 \
@@ -613,8 +588,8 @@ verify_dynamic_firewall_boundary() {
     fail 'The startup block left an unrecorded tun63 backstop rule installed.'
   fi
   if docker exec "${protected_container_name}" "${ipv4_command}" -w 5 \
-    -S TVPN_TRANSMISSION | grep -Fq -- '-o tun63'; then
-    fail 'The startup block left an unrecorded tun63 Transmission accept rule installed.'
+    -S TVPN_TUNNELS | grep -Fq -- '-o tun63'; then
+    fail 'The startup block left an unrecorded tun63 tunnel accept rule installed.'
   fi
   if docker exec "${protected_container_name}" "${ipv4_command}" -w 5 -t nat \
     -S POSTROUTING | grep -Fq -- '-o tun63'; then
@@ -713,22 +688,48 @@ verify_egress_is_fail_closed() {
     fail 'The test peer does not have a container-network address.'
   fi
 
-  if ! docker exec "${protected_container_name}" nc -z -w 2 "${peer_address}" 8080; then
-    fail 'The privileged control path could not reach the test peer.'
+  # Nothing in the container opens a connection over its own network unless the VPN
+  # controller marks it, root included.
+  if docker exec "${protected_container_name}" nc -z -w 2 "${peer_address}" 8080; then
+    fail 'An unmarked root process reached the test peer outside the VPN.'
+  fi
+  if docker exec "${protected_container_name}" \
+    timeout 5 \
+    getent ahostsv4 "${peer_container_name}" > /dev/null; then
+    fail 'An unmarked root process used the container resolver outside the VPN.'
   fi
 
-  # The console shares PUID with Transmission, and its own group keeps it out of
-  # Transmission's chain, so it stays reachable and can send alerts while VPNs are down.
-  if ! docker exec "${protected_container_name}" \
+  # The console reaches the network through the controller's direct socket, so alerts
+  # and VPN catalogs still work while every VPN connection is down. The hostname also
+  # proves the controller's marked lookups get answers from Docker's resolver.
+  if docker exec "${protected_container_name}" \
     /command/s6-setuidgid control \
     nc -z -w 2 "${peer_address}" 8080; then
-    fail 'The control plane could not reach the test peer while protection was blocked.'
+    fail 'The control plane opened its own connection outside the VPN.'
   fi
-  if ! docker exec "${protected_container_name}" \
+  if docker exec "${protected_container_name}" \
     timeout 5 \
     /command/s6-setuidgid control \
     getent ahostsv4 "${peer_container_name}" > /dev/null; then
-    fail 'The control plane could not use the container resolver while protection was blocked.'
+    fail 'The control plane used the container resolver outside the VPN.'
+  fi
+  if ! docker exec "${protected_container_name}" \
+    /command/s6-setuidgid control \
+    /usr/local/bin/transmission-vpn-api -probe-direct-dial "${peer_container_name}:8080"; then
+    fail 'The control plane could not reach the test peer through the VPN controller.'
+  fi
+
+  # The controller's sockets belong to the console's group. Transmission shares the
+  # console's user, but not its group, so it can't ask for a connection.
+  if docker exec "${protected_container_name}" \
+    /command/s6-setuidgid transmission \
+    /usr/local/bin/transmission-vpn-api -probe-direct-dial "${peer_address}:8080" > /dev/null 2>&1; then
+    fail 'Transmission opened a connection outside the VPN through the VPN controller.'
+  fi
+  if docker exec "${protected_container_name}" \
+    /command/s6-setuidgid webproxy \
+    /usr/local/bin/transmission-vpn-api -probe-direct-dial "${peer_address}:8080" > /dev/null 2>&1; then
+    fail 'The web proxy opened a connection outside the VPN through the VPN controller.'
   fi
 
   if docker exec "${protected_container_name}" \
@@ -748,15 +749,12 @@ verify_egress_is_fail_closed() {
     fail 'The web proxy reached a non-tunnel peer while protection was blocked.'
   fi
 
+  # A slot address may only leave through its own tunnel. The web proxy sends every
+  # request from one, so its requests can't reach loopback services.
   if docker exec "${protected_container_name}" \
     /command/s6-setuidgid webproxy \
-    nc -z -w 2 127.0.0.1 9092; then
-    fail 'The web proxy reached the loopback-only Transmission RPC listener.'
-  fi
-
-  if ! docker exec "${protected_container_name}" \
-    getent ahostsv4 "${peer_container_name}" > /dev/null; then
-    fail 'The privileged control path could not use the container resolver.'
+    nc -z -w 2 -s 198.18.0.1 127.0.0.1 9092; then
+    fail 'A slot-addressed web proxy request reached the loopback-only Transmission RPC listener.'
   fi
 
   if docker exec "${protected_container_name}" \

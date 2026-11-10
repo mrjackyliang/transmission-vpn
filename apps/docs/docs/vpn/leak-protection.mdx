@@ -38,7 +38,9 @@ The container translates the private address to the provider address at the tunn
 
 If a tunnel is down, its private route ends inside the container. Traffic from that connection's Transmission fails there and never reaches Docker's normal network.
 
-A separate <Terminology title="Rules that confine Transmission's traffic to its VPN tunnel" to="/docs/reference/terminology#firewall-boundary">firewall boundary</Terminology> is the backstop. It drops any Transmission or proxy traffic that tries to leave on the wrong interface.
+A separate <Terminology title="Rules that confine Transmission's traffic to its VPN tunnel" to="/docs/reference/terminology#firewall-boundary">firewall boundary</Terminology> is the backstop. It drops every new connection the container opens outside a VPN tunnel, whichever service opens it. Only the VPN controller's own traffic and replies to incoming connections leave over Docker's normal network.
+
+The rules don't depend on which account sends a packet, so they also work on NAS kernels that leave out iptables' owner match, such as Synology's.
 
 ## What happens during a drop
 
@@ -88,7 +90,7 @@ When the default connection is down, Transmission DNS lookups stop. They do not 
 
 Web proxy logins use the DNS servers of their selected connection. A login set to **Default** follows the default connection.
 
-The control plane can use the normal network while VPN traffic is blocked. This lets it reach providers, download catalogs, and send configured notifications.
+The control plane downloads provider catalogs and sends configured notifications through the VPN controller, which opens those connections over the normal network. They keep working while every VPN connection is down.
 
 ## Tunnel checks
 
@@ -111,6 +113,6 @@ The controller keeps checking WireGuard handshakes and outside connections. It b
 
 ## Startup failures
 
-If the firewall cannot be installed, protected services do not start. A common cause is a missing <Terminology title="Docker capability that lets the container manage networking" to="/docs/reference/terminology#net_admin">`NET_ADMIN`</Terminology> capability or TUN device.
+If the firewall cannot be installed, protected services do not start. A common cause is a missing <Terminology title="Docker capability that lets the container manage networking" to="/docs/reference/terminology#net_admin">`NET_ADMIN`</Terminology> capability or TUN device. The firewall also stops startup when the host's kernel lacks a match its rules need, and the log names the missing match.
 
 [Health and logs](/docs/operations/health-and-logs/) explains the overall state, per-connection status, Transmission readiness, and useful log lines.

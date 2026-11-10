@@ -18,7 +18,7 @@ Define the terms and concepts used throughout this documentation.
 
 ## Control Plane
 
-The unprivileged service that serves the web interface, the API, and live updates on port 22602 and the optional compatible RPC route on port 9091, and sends notifications. It runs as `PUID` with its own group and stays reachable while the VPN is down.
+The unprivileged service that serves the web interface, the API, and live updates on port 22602 and the optional compatible RPC route on port 9091, and sends notifications. It runs as `PUID` with its own group, which lets it use the VPN controller's sockets, and stays reachable while the VPN is down.
 
 ## Control Port
 
@@ -42,7 +42,7 @@ The VPN connection used when nothing selects another one. It handles new Default
 
 ## VPN Controller
 
-The privileged service that starts and stops OpenVPN and WireGuard tunnels, verifies them, works through their endpoint pools, and switches per-connection firewall rules. The control plane reaches it over a local socket that accepts only status, connect, restore, disconnect, and set-default commands.
+The privileged service that starts and stops OpenVPN and WireGuard tunnels, verifies them, works through their endpoint pools, and switches per-connection firewall rules. The control plane reaches it over a local socket that accepts only status, connect, restore, disconnect, and set-default commands, and over a second socket that opens connections outside the VPN for provider catalogs and notifications.
 
 ## Directory Controller
 
@@ -60,13 +60,13 @@ The original Transmission VPN shell script for Synology NAS, released as version
 
 ## Fail-Closed
 
-Preventing Transmission and web proxy destination traffic from leaving through a non-VPN route when its connection is unavailable. Traffic is blocked before a tunnel starts, during reconnects, after a disconnect, and during shutdown.
+Preventing traffic from leaving through a non-VPN route. Transmission and web proxy traffic is blocked before a tunnel starts, during reconnects, after a disconnect, and during shutdown, and no other service can open a connection outside the VPN except through the VPN controller.
 
 ## Firewall Boundary
 
-The iptables rules that match the accounts running Transmission and the web proxy. Per-connection rules accept a fixed private source address only on its protected tunnel, while a source-address backstop drops any attempt to use another interface.
+The iptables rules that drop every new connection the container opens outside a VPN tunnel. Only loopback traffic other than DNS, replies to incoming connections, IPv6 neighbor discovery, and packets the VPN controller marks pass. Per-connection rules accept a fixed private source address only on its protected tunnel, while a source-address backstop drops it on every other interface, loopback included.
 
-The rules also preserve private RPC and replies to accepted proxy clients. They apply to IPv6 too when the container has IPv6.
+The rules don't match which account sends a packet, so they work on kernels without iptables' owner match, such as Synology's. They apply to IPv6 too when the container has IPv6.
 
 ## Firewall Backend
 

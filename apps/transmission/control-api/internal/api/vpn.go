@@ -1293,15 +1293,27 @@ func (server *Server) encryptVPNProfile(
 // Redirects may remain only on HTTPS and the original CDN host, preventing the fixed
 // adapter source from becoming a general server-side request primitive. The source
 // sets the size cap and time limit, so a large catalog can't loosen anyone else's.
-func downloadVPNCatalogSource(ctx context.Context, source provider.CatalogSource) ([]byte, error) {
+// Catalogs are how a first VPN connection gets set up, so they download outside the
+// VPN through dial.
+func downloadVPNCatalogSource(
+	ctx context.Context,
+	source provider.CatalogSource,
+	dial func(ctx context.Context, network string, address string) (net.Conn, error),
+) ([]byte, error) {
 	sourceURL, err := url.Parse(source.URL)
 	if err != nil {
 		return nil, fmt.Errorf("parse VPN catalog URL: %w", err)
 	}
 
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	if dial != nil {
+		transport.DialContext = dial
+	}
+
 	maximumBytes, timeout := source.DownloadLimits()
 	httpClient := &http.Client{
-		Timeout: timeout,
+		Transport: transport,
+		Timeout:   timeout,
 		CheckRedirect: func(request *http.Request, previousRequests []*http.Request) error {
 			if len(previousRequests) >= 3 || request.URL.Scheme != "https" ||
 				request.URL.Hostname() != sourceURL.Hostname() {

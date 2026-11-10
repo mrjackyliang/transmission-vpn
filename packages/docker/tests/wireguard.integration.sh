@@ -387,10 +387,14 @@ start_protected_container() {
     "$@" \
     "${image_name}" > /dev/null
 
+  # The console answers before the VPN controller listens, and every VPN request needs
+  # the controller, so both must be ready.
   local attempt
   for attempt in $(seq 1 30); do
     if docker exec "${container_name}" \
-      wget -q -O /dev/null http://127.0.0.1:22602/api/v1/health/live; then
+      wget -q -O /dev/null http://127.0.0.1:22602/api/v1/health/live \
+      && docker exec "${container_name}" \
+        test -f /run/transmission-vpn/services/vpn-controller.ready; then
       return 0
     fi
 
@@ -832,7 +836,7 @@ verify_protected_tunnel() {
   docker exec "${container_name}" "${ipv4_command}" -w 5 -C OUTPUT \
     -j TVPN_SOURCE_BACKSTOP
   docker exec "${container_name}" "${ipv4_command}" -w 5 \
-    -C TVPN_SOURCE_BACKSTOP -s 198.18.0.0/18 ! -o lo -j DROP
+    -C TVPN_SOURCE_BACKSTOP -s 198.18.0.0/18 -j DROP
   docker exec "${container_name}" "${ipv4_command}" -w 5 \
     -C TVPN_SOURCE_BACKSTOP -s "${local_address}/32" -o wg0 -j RETURN
   docker exec "${container_name}" "${ipv4_command}" -w 5 \
@@ -841,7 +845,7 @@ verify_protected_tunnel() {
     -C POSTROUTING -o wg0 -s "${local_address}/32" \
     -j SNAT --to-source "${address}"
   docker exec "${container_name}" "${ipv4_command}" -w 5 \
-    -C TVPN_TRANSMISSION -s "${local_address}/32" -o wg0 -j ACCEPT
+    -C TVPN_TUNNELS -s "${local_address}/32" -o wg0 -j ACCEPT
 
   local link_address
   link_address="$(docker exec "${container_name}" ip -o -4 address show dev wg0)"
@@ -1160,21 +1164,13 @@ verify_controller_crash_recovers() {
     | grep -Fxc -- "-A POSTROUTING -s ${local_address}/32 -o wg0 -j SNAT --to-source ${provider_address}" || true)"
   expect_count "${snat_count}" 1 'wg0 SNAT rule'
 
-  local transmission_rules
-  transmission_rules="$(docker exec "${container_name}" \
-    "${ipv4_command}" -w 5 -S TVPN_TRANSMISSION)"
-  local transmission_accept_count
-  transmission_accept_count="$(printf '%s\n' "${transmission_rules}" \
-    | grep -Fxc -- "-A TVPN_TRANSMISSION -s ${local_address}/32 -o wg0 -j ACCEPT" || true)"
-  expect_count "${transmission_accept_count}" 1 'wg0 Transmission owner-chain accept rule'
-
-  local web_proxy_rules
-  web_proxy_rules="$(docker exec "${container_name}" \
-    "${ipv4_command}" -w 5 -S TVPN_WEB_PROXY)"
-  local web_proxy_accept_count
-  web_proxy_accept_count="$(printf '%s\n' "${web_proxy_rules}" \
-    | grep -Fxc -- "-A TVPN_WEB_PROXY -s ${local_address}/32 -o wg0 -j ACCEPT" || true)"
-  expect_count "${web_proxy_accept_count}" 1 'wg0 web-proxy owner-chain accept rule'
+  local tunnel_rules
+  tunnel_rules="$(docker exec "${container_name}" \
+    "${ipv4_command}" -w 5 -S TVPN_TUNNELS)"
+  local tunnel_accept_count
+  tunnel_accept_count="$(printf '%s\n' "${tunnel_rules}" \
+    | grep -Fxc -- "-A TVPN_TUNNELS -s ${local_address}/32 -o wg0 -j ACCEPT" || true)"
+  expect_count "${tunnel_accept_count}" 1 'wg0 tunnel accept rule'
 
   docker exec "${container_name}" grep -Fq '"interface":"wg0"' /run/transmission-vpn/firewall.ready
   if ! transmission_reaches_bound "${container_name}" 198.18.0.1 1.1.1.1 443; then

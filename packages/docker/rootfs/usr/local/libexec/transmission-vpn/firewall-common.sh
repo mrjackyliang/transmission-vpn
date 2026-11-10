@@ -1,16 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-readonly transmission_firewall_chain="TVPN_TRANSMISSION"
-readonly web_proxy_firewall_chain="TVPN_WEB_PROXY"
+readonly egress_firewall_chain="TVPN_EGRESS"
+readonly tunnel_firewall_chain="TVPN_TUNNELS"
 readonly source_backstop_firewall_chain="TVPN_SOURCE_BACKSTOP"
-readonly web_proxy_user_id="65531"
+readonly firewall_probe_chain="TVPN_PROBE"
 readonly web_proxy_port="22605"
-
-# The console also runs as PUID, so it can own its files on hosts that ignore group
-# permissions. Its own group keeps its sockets out of Transmission's chain. Neither
-# unprivileged service can change its group, so Transmission can't leave the chain.
-readonly control_group_id="65532"
 readonly firewall_backend_path="/run/transmission-vpn/firewall.backend"
 readonly firewall_interfaces_path="/run/transmission-vpn/firewall.interfaces"
 readonly firewall_ipv6_path="/run/transmission-vpn/firewall.ipv6"
@@ -18,11 +13,46 @@ readonly firewall_lock_path="/run/transmission-vpn/firewall.lock"
 readonly firewall_ready_path="/run/transmission-vpn/firewall.ready"
 readonly slot_address_network="198.18.0.0/18"
 
-# Kernel WireGuard sends each encrypted packet with the sender's socket still attached,
-# so the owner match sees protected traffic again on eth0 after encryption. Only the
-# controller's WireGuard link marks packets, and neither unprivileged service can set a
-# mark, so marked UDP is already-encrypted tunnel traffic.
-readonly wireguard_firewall_mark="0xca6c"
+# The rules can't tell one process from another, because NAS kernels such as Synology's
+# leave out the owner match. Instead they drop every new connection the container opens
+# outside the VPN, except packets carrying this mark. The VPN controller puts it on
+# everything it sends directly: WireGuard and OpenVPN tunnel packets, its own DNS
+# lookups, and the connections it opens for the console. Marking a socket needs
+# CAP_NET_ADMIN, which no unprivileged service has.
+readonly controller_firewall_mark="0xca6c"
+
+# IPv6 finds its neighbors with ICMPv6 messages the kernel sends itself, which
+# connection tracking never treats as replies. Router solicitation, neighbor
+# solicitation and advertisement, and listener reports stay on the local link, so they
+# can't carry traffic outside the VPN.
+readonly ipv6_discovery_types=(
+  "133"
+  "135"
+  "136"
+  "143"
+)
+
+# The web proxy only serves clients on private networks, so its port answers nothing
+# else.
+readonly web_proxy_client_networks_ipv4=(
+  "10.0.0.0/8"
+  "172.16.0.0/12"
+  "192.168.0.0/16"
+)
+readonly web_proxy_client_networks_ipv6=(
+  "fc00::/7"
+  "fe80::/10"
+)
+
+# Kernels before 4.19, such as Synology's, keep IPv6 connection tracking in a module of
+# its own that may be missing, so the IPv6 rules don't use connection tracking. Docker's
+# resolver only answers on IPv4, so a plain port match stops loopback DNS. Replies are
+# matched by port instead: the console and compatible RPC listen on these fixed ports,
+# and the web proxy on its own.
+readonly ipv6_reply_ports=(
+  "22602"
+  "9091"
+)
 
 firewall_backend=""
 firewall_ipv4_command=""
@@ -159,282 +189,269 @@ load_firewall_backend() {
   load_firewall_ipv6
 }
 
-remove_firewall_family_rules() {
+remove_probe_chain() {
   local firewall_command="${1}"
-  local chain_name="${2}"
-  shift 2
 
-  local owner_match=("$@")
-
-  if ! "${firewall_command}" -w 5 -L "${chain_name}" > /dev/null 2>&1; then
-    return 0
+  if "${firewall_command}" -w 5 -L "${firewall_probe_chain}" > /dev/null 2>&1; then
+    "${firewall_command}" -w 5 -F "${firewall_probe_chain}"
+    "${firewall_command}" -w 5 -X "${firewall_probe_chain}"
   fi
-
-  while "${firewall_command}" -w 5 -C OUTPUT \
-    "${owner_match[@]}" \
-    -j "${chain_name}" > /dev/null 2>&1; do
-    "${firewall_command}" -w 5 -D OUTPUT \
-      "${owner_match[@]}" \
-      -j "${chain_name}"
-  done
-
-  "${firewall_command}" -w 5 -F "${chain_name}"
-  "${firewall_command}" -w 5 -X "${chain_name}"
 }
 
-remove_source_backstop_rules() {
-  if ! "${firewall_ipv4_command}" -w 5 -L "${source_backstop_firewall_chain}" > /dev/null 2>&1; then
-    return 0
+# Kernels ship different netfilter modules, so each match the rules use is tried in a
+# scratch chain first. A missing one is named, instead of the install failing halfway
+# with a bare iptables error.
+verify_firewall_family_matches() {
+  local firewall_command="${1}"
+
+  remove_probe_chain "${firewall_command}"
+  "${firewall_command}" -w 5 -N "${firewall_probe_chain}"
+
+  local missing_match=""
+  if ! "${firewall_command}" -w 5 -A "${firewall_probe_chain}" \
+    -m mark --mark "${controller_firewall_mark}" -j RETURN > /dev/null 2>&1; then
+    missing_match="packet mark (xt_mark)"
+  elif [[ "${firewall_command}" == "${firewall_ipv4_command}" ]]; then
+    if ! "${firewall_command}" -w 5 -A "${firewall_probe_chain}" \
+      -m conntrack --ctstate ESTABLISHED,RELATED -j RETURN > /dev/null 2>&1; then
+      missing_match="connection state (xt_conntrack)"
+    elif ! "${firewall_command}" -w 5 -A "${firewall_probe_chain}" \
+      -p udp -m conntrack --ctstate NEW --ctorigdstport 53 -j RETURN > /dev/null 2>&1; then
+      missing_match="original destination port (xt_conntrack)"
+    fi
   fi
 
-  while "${firewall_ipv4_command}" -w 5 -C OUTPUT \
-    -j "${source_backstop_firewall_chain}" > /dev/null 2>&1; do
-    "${firewall_ipv4_command}" -w 5 -D OUTPUT \
-      -j "${source_backstop_firewall_chain}"
+  remove_probe_chain "${firewall_command}"
+
+  if [[ -n "${missing_match}" ]]; then
+    printf 'firewall: the kernel has no %s match for %s, so egress outside the VPN cannot be blocked.\n' \
+      "${missing_match}" \
+      "${firewall_command}" >&2
+
+    return 1
+  fi
+}
+
+verify_firewall_kernel_support() {
+  verify_firewall_family_matches "${firewall_ipv4_command}"
+
+  if firewall_has_ipv6; then
+    verify_firewall_family_matches "${firewall_ipv6_command}"
+  fi
+}
+
+# Chains are unhooked and flushed before any is deleted, because the egress chain jumps
+# to the tunnel chain and a referenced chain can't be deleted.
+remove_firewall_family_chains() {
+  local firewall_command="${1}"
+  shift
+
+  local chain_names=("$@")
+  local chain_name
+
+  for chain_name in "${chain_names[@]}"; do
+    if ! "${firewall_command}" -w 5 -L "${chain_name}" > /dev/null 2>&1; then
+      continue
+    fi
+
+    while "${firewall_command}" -w 5 -C OUTPUT \
+      -j "${chain_name}" > /dev/null 2>&1; do
+      "${firewall_command}" -w 5 -D OUTPUT \
+        -j "${chain_name}"
+    done
+
+    "${firewall_command}" -w 5 -F "${chain_name}"
   done
 
-  "${firewall_ipv4_command}" -w 5 -F "${source_backstop_firewall_chain}"
-  "${firewall_ipv4_command}" -w 5 -X "${source_backstop_firewall_chain}"
+  for chain_name in "${chain_names[@]}"; do
+    if "${firewall_command}" -w 5 -L "${chain_name}" > /dev/null 2>&1; then
+      "${firewall_command}" -w 5 -X "${chain_name}"
+    fi
+  done
 }
 
 remove_firewall_rules() {
-  remove_source_backstop_rules
-  remove_firewall_family_rules \
+  remove_firewall_family_chains \
     "${firewall_ipv4_command}" \
-    "${transmission_firewall_chain}" \
-    -m owner --uid-owner "${PUID}" ! --gid-owner "${control_group_id}"
-  remove_firewall_family_rules \
-    "${firewall_ipv4_command}" \
-    "${web_proxy_firewall_chain}" \
-    -m owner --uid-owner "${web_proxy_user_id}"
+    "${source_backstop_firewall_chain}" \
+    "${egress_firewall_chain}" \
+    "${tunnel_firewall_chain}"
 
   if firewall_has_ipv6; then
-    remove_firewall_family_rules \
+    remove_firewall_family_chains \
       "${firewall_ipv6_command}" \
-      "${transmission_firewall_chain}" \
-      -m owner --uid-owner "${PUID}" ! --gid-owner "${control_group_id}"
-    remove_firewall_family_rules \
-      "${firewall_ipv6_command}" \
-      "${web_proxy_firewall_chain}" \
-      -m owner --uid-owner "${web_proxy_user_id}"
+      "${egress_firewall_chain}"
   fi
 }
 
-install_transmission_firewall_family_rules() {
+# Lists one family's egress rules, one per line without the chain name. Installing and
+# verifying both read this list, so they can't drift apart. Every process in the
+# container meets the same rules, in this order:
+# - The controller's marked packets leave.
+# - On IPv6, the kernel's neighbor discovery leaves.
+# - DNS on loopback is dropped, so a local resolver such as Docker's can't forward
+#   lookups outside the VPN. Docker rewrites its IPv4 resolver's port, so IPv4 matches
+#   the original destination port of new queries. The resolver's answers to the
+#   controller's lookups share that original port, so only new queries are matched.
+# - Other loopback traffic stays inside the container.
+# - The web proxy's port never answers through a tunnel, so a VPN provider's forwarded
+#   port can't open the proxy to the internet, and it answers only private networks.
+# - Replies leave. IPv4 tracks every connection that came in. IPv6 lets the console's
+#   and compatible RPC's ports answer.
+# - On IPv4, slot traffic leaves through its own tunnel, once that tunnel is protected.
+# - Everything else is dropped.
+egress_rule_specs() {
   local firewall_command="${1}"
-  local canonical_loopback_address="${2}"
-  local chain_name="${3}"
-  local user_id="${4}"
 
-  "${firewall_command}" -w 5 -N "${chain_name}"
-  "${firewall_command}" -w 5 -A "${chain_name}" \
-    -o lo -p udp --dport 53 -j DROP
-  "${firewall_command}" -w 5 -A "${chain_name}" \
-    -o lo -p tcp --dport 53 -j DROP
-  "${firewall_command}" -w 5 -A "${chain_name}" \
-    -o lo ! -d "${canonical_loopback_address}" -j DROP
-  "${firewall_command}" -w 5 -A "${chain_name}" -o lo -j ACCEPT
-  if [[ "${firewall_command}" == "${firewall_ipv4_command}" ]]; then
-    "${firewall_command}" -w 5 -A "${chain_name}" \
-      -p udp -m mark --mark "${wireguard_firewall_mark}" -j ACCEPT
+  local client_networks=("${web_proxy_client_networks_ipv4[@]}")
+  if [[ "${firewall_command}" == "${firewall_ipv6_command}" ]]; then
+    client_networks=("${web_proxy_client_networks_ipv6[@]}")
   fi
-  "${firewall_command}" -w 5 -A "${chain_name}" -j DROP
-  "${firewall_command}" -w 5 -I OUTPUT 1 \
-    -m owner --uid-owner "${user_id}" ! --gid-owner "${control_group_id}" \
-    -j "${chain_name}"
-}
 
-install_web_proxy_firewall_family_rules() {
-  local firewall_command="${1}"
-  local chain_name="${2}"
-  local user_id="${3}"
+  printf '%s\n' "-m mark --mark ${controller_firewall_mark} -j ACCEPT"
 
-  local client_networks=()
-  if [[ "${firewall_command}" == "${firewall_ipv4_command}" ]]; then
-    client_networks=(
-      "10.0.0.0/8"
-      "172.16.0.0/12"
-      "192.168.0.0/16"
-    )
+  if [[ "${firewall_command}" == "${firewall_ipv6_command}" ]]; then
+    local discovery_type
+    for discovery_type in "${ipv6_discovery_types[@]}"; do
+      printf '%s\n' "-p ipv6-icmp --icmpv6-type ${discovery_type} -j ACCEPT"
+    done
+    printf '%s\n' \
+      "-o lo -p udp --dport 53 -j DROP" \
+      "-o lo -p tcp --dport 53 -j DROP"
   else
-    client_networks=(
-      "fc00::/7"
-      "fe80::/10"
-    )
+    printf '%s\n' \
+      "-o lo -p udp -m conntrack --ctstate NEW --ctorigdstport 53 -j DROP" \
+      "-o lo -p tcp -m conntrack --ctstate NEW --ctorigdstport 53 -j DROP"
   fi
 
-  "${firewall_command}" -w 5 -N "${chain_name}"
-  "${firewall_command}" -w 5 -A "${chain_name}" -o lo -j DROP
-  "${firewall_command}" -w 5 -A "${chain_name}" \
-    -o tun+ -p tcp --sport "${web_proxy_port}" -j DROP
-  "${firewall_command}" -w 5 -A "${chain_name}" \
-    -o wg+ -p tcp --sport "${web_proxy_port}" -j DROP
+  printf '%s\n' \
+    "-o lo -j ACCEPT" \
+    "-o tun+ -p tcp --sport ${web_proxy_port} -j DROP" \
+    "-o wg+ -p tcp --sport ${web_proxy_port} -j DROP"
 
   local client_network
-
   for client_network in "${client_networks[@]}"; do
-    "${firewall_command}" -w 5 -A "${chain_name}" \
-      -p tcp --sport "${web_proxy_port}" -d "${client_network}" -j ACCEPT
+    printf '%s\n' "-p tcp --sport ${web_proxy_port} -d ${client_network} -j ACCEPT"
   done
+  printf '%s\n' "-p tcp --sport ${web_proxy_port} -j DROP"
 
-  if [[ "${firewall_command}" == "${firewall_ipv4_command}" ]]; then
-    "${firewall_command}" -w 5 -A "${chain_name}" \
-      -p udp -m mark --mark "${wireguard_firewall_mark}" -j ACCEPT
+  if [[ "${firewall_command}" == "${firewall_ipv6_command}" ]]; then
+    local reply_port
+    for reply_port in "${ipv6_reply_ports[@]}"; do
+      printf '%s\n' "-p tcp --sport ${reply_port} -j ACCEPT"
+    done
+  else
+    printf '%s\n' \
+      "-m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT" \
+      "-j ${tunnel_firewall_chain}"
   fi
-  "${firewall_command}" -w 5 -A "${chain_name}" -j DROP
-  "${firewall_command}" -w 5 -I OUTPUT 1 \
-    -m owner --uid-owner "${user_id}" \
-    -j "${chain_name}"
+
+  printf '%s\n' "-j DROP"
 }
 
+install_egress_family_rules() {
+  local firewall_command="${1}"
+  local rule_spec
+  local rule_fields=()
+
+  "${firewall_command}" -w 5 -N "${egress_firewall_chain}"
+  while IFS= read -r rule_spec; do
+    read -r -a rule_fields <<< "${rule_spec}"
+    "${firewall_command}" -w 5 -A "${egress_firewall_chain}" "${rule_fields[@]}"
+  done < <(egress_rule_specs "${firewall_command}")
+  "${firewall_command}" -w 5 -A OUTPUT -j "${egress_firewall_chain}"
+}
+
+# A slot address may only leave through its own tunnel. That also keeps it off
+# loopback, so a request the web proxy sends from a slot can't reach local services
+# such as Transmission's RPC.
 install_source_backstop_rules() {
   "${firewall_ipv4_command}" -w 5 -N "${source_backstop_firewall_chain}"
   "${firewall_ipv4_command}" -w 5 -A "${source_backstop_firewall_chain}" \
-    -s "${slot_address_network}" ! -o lo -j DROP
+    -s "${slot_address_network}" -j DROP
   "${firewall_ipv4_command}" -w 5 -I OUTPUT 1 \
     -j "${source_backstop_firewall_chain}"
 }
 
 install_firewall_rules() {
-  install_transmission_firewall_family_rules \
-    "${firewall_ipv4_command}" \
-    "127.0.0.1" \
-    "${transmission_firewall_chain}" \
-    "${PUID}"
-  install_web_proxy_firewall_family_rules \
-    "${firewall_ipv4_command}" \
-    "${web_proxy_firewall_chain}" \
-    "${web_proxy_user_id}"
+  "${firewall_ipv4_command}" -w 5 -N "${tunnel_firewall_chain}"
+  install_egress_family_rules "${firewall_ipv4_command}"
   install_source_backstop_rules
 
   if firewall_has_ipv6; then
-    install_transmission_firewall_family_rules \
-      "${firewall_ipv6_command}" \
-      "::1" \
-      "${transmission_firewall_chain}" \
-      "${PUID}"
-    install_web_proxy_firewall_family_rules \
-      "${firewall_ipv6_command}" \
-      "${web_proxy_firewall_chain}" \
-      "${web_proxy_user_id}"
+    install_egress_family_rules "${firewall_ipv6_command}"
   fi
 }
 
-verify_transmission_firewall_family_rules() {
+verify_egress_family_rules() {
   local firewall_command="${1}"
-  local canonical_loopback_address="${2}"
-  local chain_name="${3}"
-  local user_id="${4}"
+  local rule_spec
+  local rule_fields=()
+  local expected_rule_count=0
 
-  "${firewall_command}" -w 5 -C OUTPUT \
-    -m owner --uid-owner "${user_id}" ! --gid-owner "${control_group_id}" \
-    -j "${chain_name}" > /dev/null
-  "${firewall_command}" -w 5 -C "${chain_name}" -o lo -j ACCEPT > /dev/null
-  "${firewall_command}" -w 5 -C "${chain_name}" \
-    -o lo -p udp --dport 53 -j DROP > /dev/null
-  "${firewall_command}" -w 5 -C "${chain_name}" \
-    -o lo -p tcp --dport 53 -j DROP > /dev/null
-  "${firewall_command}" -w 5 -C "${chain_name}" \
-    -o lo ! -d "${canonical_loopback_address}" -j DROP > /dev/null
-  if [[ "${firewall_command}" == "${firewall_ipv4_command}" ]]; then
-    "${firewall_command}" -w 5 -C "${chain_name}" \
-      -p udp -m mark --mark "${wireguard_firewall_mark}" -j ACCEPT > /dev/null
-  fi
-  "${firewall_command}" -w 5 -C "${chain_name}" -j DROP > /dev/null
-}
+  "${firewall_command}" -w 5 -C OUTPUT -j "${egress_firewall_chain}" > /dev/null
+  while IFS= read -r rule_spec; do
+    read -r -a rule_fields <<< "${rule_spec}"
+    "${firewall_command}" -w 5 -C "${egress_firewall_chain}" "${rule_fields[@]}" > /dev/null
+    expected_rule_count=$((expected_rule_count + 1))
+  done < <(egress_rule_specs "${firewall_command}")
 
-verify_web_proxy_firewall_family_rules() {
-  local firewall_command="${1}"
-  local chain_name="${2}"
-  local user_id="${3}"
+  local installed_rule_count
+  installed_rule_count="$("${firewall_command}" -w 5 -S "${egress_firewall_chain}" | grep -c '^-A ')"
+  if [[ "${installed_rule_count}" -ne "${expected_rule_count}" ]]; then
+    printf 'firewall: %s has %s rules, expected %s.\n' \
+      "${egress_firewall_chain}" \
+      "${installed_rule_count}" \
+      "${expected_rule_count}" >&2
 
-  local client_networks=()
-  if [[ "${firewall_command}" == "${firewall_ipv4_command}" ]]; then
-    client_networks=(
-      "10.0.0.0/8"
-      "172.16.0.0/12"
-      "192.168.0.0/16"
-    )
-  else
-    client_networks=(
-      "fc00::/7"
-      "fe80::/10"
-    )
+    return 1
   fi
 
-  "${firewall_command}" -w 5 -C OUTPUT \
-    -m owner --uid-owner "${user_id}" \
-    -j "${chain_name}" > /dev/null
-  "${firewall_command}" -w 5 -C "${chain_name}" -o lo -j DROP > /dev/null
-  "${firewall_command}" -w 5 -C "${chain_name}" \
-    -o tun+ -p tcp --sport "${web_proxy_port}" -j DROP > /dev/null
-  "${firewall_command}" -w 5 -C "${chain_name}" \
-    -o wg+ -p tcp --sport "${web_proxy_port}" -j DROP > /dev/null
+  local last_rule
+  last_rule="$("${firewall_command}" -w 5 -S "${egress_firewall_chain}" | tail -n 1)"
+  if [[ "${last_rule}" != "-A ${egress_firewall_chain} -j DROP" ]]; then
+    printf 'firewall: %s does not end by dropping egress: %s\n' \
+      "${egress_firewall_chain}" \
+      "${last_rule}" >&2
 
-  local client_network
-
-  for client_network in "${client_networks[@]}"; do
-    "${firewall_command}" -w 5 -C "${chain_name}" \
-      -p tcp --sport "${web_proxy_port}" -d "${client_network}" -j ACCEPT > /dev/null
-  done
-
-  if [[ "${firewall_command}" == "${firewall_ipv4_command}" ]]; then
-    "${firewall_command}" -w 5 -C "${chain_name}" \
-      -p udp -m mark --mark "${wireguard_firewall_mark}" -j ACCEPT > /dev/null
+    return 1
   fi
-  "${firewall_command}" -w 5 -C "${chain_name}" -j DROP > /dev/null
 }
 
 verify_source_backstop_rules() {
   "${firewall_ipv4_command}" -w 5 -C OUTPUT \
     -j "${source_backstop_firewall_chain}" > /dev/null
   "${firewall_ipv4_command}" -w 5 -C "${source_backstop_firewall_chain}" \
-    -s "${slot_address_network}" ! -o lo -j DROP > /dev/null
+    -s "${slot_address_network}" -j DROP > /dev/null
 
   local output_rule
   local line_number=0
   local backstop_line=0
-  local first_owner_line=0
+  local egress_line=0
   while IFS= read -r output_rule; do
     line_number=$((line_number + 1))
     if [[ "${output_rule}" == *"-j ${source_backstop_firewall_chain}"* \
       && "${backstop_line}" -eq 0 ]]; then
       backstop_line="${line_number}"
     fi
-    if [[ "${output_rule}" == *'-m owner '* && "${first_owner_line}" -eq 0 ]]; then
-      first_owner_line="${line_number}"
+    if [[ "${output_rule}" == *"-j ${egress_firewall_chain}"* && "${egress_line}" -eq 0 ]]; then
+      egress_line="${line_number}"
     fi
   done < <("${firewall_ipv4_command}" -w 5 -S OUTPUT)
-  if [[ "${backstop_line}" -eq 0 || "${first_owner_line}" -eq 0 \
-    || "${backstop_line}" -ge "${first_owner_line}" ]]; then
-    printf 'firewall: the source backstop is not ahead of the owner chains.\n' >&2
+  if [[ "${backstop_line}" -eq 0 || "${egress_line}" -eq 0 \
+    || "${backstop_line}" -ge "${egress_line}" ]]; then
+    printf 'firewall: the source backstop is not ahead of the egress chain.\n' >&2
 
     return 1
   fi
 }
 
 verify_firewall_rules() {
-  verify_transmission_firewall_family_rules \
-    "${firewall_ipv4_command}" \
-    "127.0.0.1" \
-    "${transmission_firewall_chain}" \
-    "${PUID}"
-  verify_web_proxy_firewall_family_rules \
-    "${firewall_ipv4_command}" \
-    "${web_proxy_firewall_chain}" \
-    "${web_proxy_user_id}"
+  verify_egress_family_rules "${firewall_ipv4_command}"
   verify_source_backstop_rules
 
   if firewall_has_ipv6; then
-    verify_transmission_firewall_family_rules \
-      "${firewall_ipv6_command}" \
-      "::1" \
-      "${transmission_firewall_chain}" \
-      "${PUID}"
-    verify_web_proxy_firewall_family_rules \
-      "${firewall_ipv6_command}" \
-      "${web_proxy_firewall_chain}" \
-      "${web_proxy_user_id}"
+    verify_egress_family_rules "${firewall_ipv6_command}"
   fi
 
   verify_protected_interface_rules
@@ -509,14 +526,13 @@ validate_protected_triplet() {
   fi
 }
 
-remove_owner_accept_rule() {
-  local chain_name="${1}"
-  local interface_name="${2}"
-  local local_address="${3}"
+remove_tunnel_accept_rule() {
+  local interface_name="${1}"
+  local local_address="${2}"
 
-  while "${firewall_ipv4_command}" -w 5 -C "${chain_name}" \
+  while "${firewall_ipv4_command}" -w 5 -C "${tunnel_firewall_chain}" \
     -s "${local_address}/32" -o "${interface_name}" -j ACCEPT > /dev/null 2>&1; do
-    "${firewall_ipv4_command}" -w 5 -D "${chain_name}" \
+    "${firewall_ipv4_command}" -w 5 -D "${tunnel_firewall_chain}" \
       -s "${local_address}/32" -o "${interface_name}" -j ACCEPT || return 1
   done
 }
@@ -562,14 +578,7 @@ remove_protected_triplet() {
   local local_address="${2}"
   local provider_address="${3}"
 
-  remove_owner_accept_rule \
-    "${transmission_firewall_chain}" \
-    "${interface_name}" \
-    "${local_address}" || return 1
-  remove_owner_accept_rule \
-    "${web_proxy_firewall_chain}" \
-    "${interface_name}" \
-    "${local_address}" || return 1
+  remove_tunnel_accept_rule "${interface_name}" "${local_address}" || return 1
   remove_backstop_return_rule "${interface_name}" "${local_address}" || return 1
   remove_provider_drop_rule "${interface_name}" "${provider_address}" || return 1
   remove_snat_rule \
@@ -578,21 +587,20 @@ remove_protected_triplet() {
     "${provider_address}" || return 1
 }
 
-install_owner_accept_rule() {
-  local chain_name="${1}"
-  local interface_name="${2}"
-  local local_address="${3}"
+install_tunnel_accept_rule() {
+  local interface_name="${1}"
+  local local_address="${2}"
 
-  if "${firewall_ipv4_command}" -w 5 -C "${chain_name}" \
+  if "${firewall_ipv4_command}" -w 5 -C "${tunnel_firewall_chain}" \
     -s "${local_address}/32" -o "${interface_name}" -j ACCEPT > /dev/null 2>&1; then
     return 0
   fi
 
-  "${firewall_ipv4_command}" -w 5 -I "${chain_name}" 1 \
+  "${firewall_ipv4_command}" -w 5 -A "${tunnel_firewall_chain}" \
     -s "${local_address}/32" -o "${interface_name}" -j ACCEPT || return 1
-  if ! "${firewall_ipv4_command}" -w 5 -C "${chain_name}" \
+  if ! "${firewall_ipv4_command}" -w 5 -C "${tunnel_firewall_chain}" \
     -s "${local_address}/32" -o "${interface_name}" -j ACCEPT > /dev/null; then
-    remove_owner_accept_rule "${chain_name}" "${interface_name}" "${local_address}"
+    remove_tunnel_accept_rule "${interface_name}" "${local_address}"
 
     return 1
   fi
@@ -655,24 +663,7 @@ install_protected_triplet() {
 
     return 1
   fi
-  if ! install_owner_accept_rule \
-    "${transmission_firewall_chain}" \
-    "${interface_name}" \
-    "${local_address}"; then
-    remove_backstop_return_rule "${interface_name}" "${local_address}"
-    remove_provider_drop_rule "${interface_name}" "${provider_address}"
-    remove_snat_rule "${interface_name}" "${local_address}" "${provider_address}"
-
-    return 1
-  fi
-  if ! install_owner_accept_rule \
-    "${web_proxy_firewall_chain}" \
-    "${interface_name}" \
-    "${local_address}"; then
-    remove_owner_accept_rule \
-      "${transmission_firewall_chain}" \
-      "${interface_name}" \
-      "${local_address}"
+  if ! install_tunnel_accept_rule "${interface_name}" "${local_address}"; then
     remove_backstop_return_rule "${interface_name}" "${local_address}"
     remove_provider_drop_rule "${interface_name}" "${provider_address}"
     remove_snat_rule "${interface_name}" "${local_address}" "${provider_address}"
@@ -684,14 +675,7 @@ install_protected_triplet() {
     "${interface_name}" \
     "${local_address}" \
     "${provider_address}"; then
-    remove_owner_accept_rule \
-      "${transmission_firewall_chain}" \
-      "${interface_name}" \
-      "${local_address}"
-    remove_owner_accept_rule \
-      "${web_proxy_firewall_chain}" \
-      "${interface_name}" \
-      "${local_address}"
+    remove_tunnel_accept_rule "${interface_name}" "${local_address}"
     remove_backstop_return_rule "${interface_name}" "${local_address}"
     remove_provider_drop_rule "${interface_name}" "${provider_address}"
     remove_snat_rule "${interface_name}" "${local_address}" "${provider_address}"
@@ -705,10 +689,8 @@ verify_protected_triplet() {
   local local_address="${2}"
   local provider_address="${3}"
 
-  "${firewall_ipv4_command}" -w 5 -C "${transmission_firewall_chain}" \
+  "${firewall_ipv4_command}" -w 5 -C "${tunnel_firewall_chain}" \
     -s "${local_address}/32" -o "${interface_name}" -j ACCEPT > /dev/null && \
-    "${firewall_ipv4_command}" -w 5 -C "${web_proxy_firewall_chain}" \
-      -s "${local_address}/32" -o "${interface_name}" -j ACCEPT > /dev/null && \
     "${firewall_ipv4_command}" -w 5 -C "${source_backstop_firewall_chain}" \
       -s "${local_address}/32" -o "${interface_name}" -j RETURN > /dev/null && \
     "${firewall_ipv4_command}" -w 5 -C "${source_backstop_firewall_chain}" \
@@ -877,11 +859,7 @@ remove_protected_rules_by_pattern() {
 
   remove_chain_rules_by_pattern \
     "${firewall_ipv4_command}" \
-    "${transmission_firewall_chain}" \
-    "${requested_interface}"
-  remove_chain_rules_by_pattern \
-    "${firewall_ipv4_command}" \
-    "${web_proxy_firewall_chain}" \
+    "${tunnel_firewall_chain}" \
     "${requested_interface}"
   remove_chain_rules_by_pattern \
     "${firewall_ipv4_command}" \

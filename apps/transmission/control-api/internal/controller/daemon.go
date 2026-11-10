@@ -23,6 +23,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/directdial"
 	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/provider"
 )
 
@@ -50,6 +51,7 @@ var (
 // expanding the deployment configuration surface.
 type DaemonConfig struct {
 	SocketPath              string
+	DirectSocketPath        string
 	RuntimeDirectory        string
 	OpenVPNPath             string
 	WireGuardPath           string
@@ -114,6 +116,9 @@ func NewDaemon(config DaemonConfig) (*Daemon, error) {
 		return nil, errors.New("VPN controller paths and control group are required")
 	}
 
+	if config.DirectSocketPath == "" {
+		config.DirectSocketPath = filepath.Join(config.RuntimeDirectory, "direct.sock")
+	}
 	if config.WireGuardImplementation == "" {
 		config.WireGuardImplementation = "auto"
 	}
@@ -183,9 +188,34 @@ func (daemon *Daemon) Serve(ctx context.Context) error {
 	defer listener.Close()
 	defer os.Remove(daemon.config.SocketPath)
 
-	if err := daemon.setSocketPermissions(); err != nil {
+	if err := daemon.setSocketPermissions(daemon.config.SocketPath); err != nil {
 		return err
 	}
+
+	_ = os.Remove(daemon.config.DirectSocketPath)
+	directListener, err := net.ListenUnix("unix", &net.UnixAddr{
+		Name: daemon.config.DirectSocketPath,
+		Net:  "unix",
+	})
+	if err != nil {
+		return fmt.Errorf("listen on direct connection socket: %w", err)
+	}
+	defer directListener.Close()
+	defer os.Remove(daemon.config.DirectSocketPath)
+
+	if err := daemon.setSocketPermissions(daemon.config.DirectSocketPath); err != nil {
+		return err
+	}
+
+	directServer := &directdial.Server{
+		Dial:   daemon.directDial,
+		Logger: daemon.config.Logger,
+	}
+	go func() {
+		if err := directServer.Serve(directListener); err != nil {
+			daemon.config.Logger.Warn("direct connection socket stopped", "error", err)
+		}
+	}()
 
 	markerPath := filepath.Join(daemon.config.RuntimeDirectory, "services", "vpn-controller.ready")
 	if err := writeAtomicJSON(markerPath, 0o644, map[string]any{
@@ -1050,7 +1080,10 @@ func validBootstrapResolver(content []byte) bool {
 }
 
 // setSocketPermissions grants only root and the control API group access.
-func (daemon *Daemon) setSocketPermissions() error {
+//
+// Transmission runs as the same user as the console on hosts that need PUID to own
+// every file, so the group is what keeps it away from the controller's sockets.
+func (daemon *Daemon) setSocketPermissions(socketPath string) error {
 	controlGroup, err := user.LookupGroup(daemon.config.ControlGroup)
 	if err != nil {
 		return fmt.Errorf("find control group: %w", err)
@@ -1059,10 +1092,10 @@ func (daemon *Daemon) setSocketPermissions() error {
 	if err != nil {
 		return fmt.Errorf("parse control group identifier: %w", err)
 	}
-	if err := os.Chown(daemon.config.SocketPath, 0, groupID); err != nil {
+	if err := os.Chown(socketPath, 0, groupID); err != nil {
 		return fmt.Errorf("set VPN controller socket ownership: %w", err)
 	}
-	if err := os.Chmod(daemon.config.SocketPath, 0o660); err != nil {
+	if err := os.Chmod(socketPath, 0o660); err != nil {
 		return fmt.Errorf("set VPN controller socket permissions: %w", err)
 	}
 

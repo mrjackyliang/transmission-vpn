@@ -65,8 +65,8 @@ configure_identity() {
 
   # The console runs as PUID too, so it owns its state like every other service. Hosts
   # such as Synology shared folders ignore group permissions, so only the owner can
-  # always write. The console keeps its own group, which the firewall uses to tell its
-  # traffic apart from Transmission's, and which stops Transmission from tracing it.
+  # always write. The console keeps its own group, which opens the VPN controller's
+  # sockets to it and not to Transmission, and which stops Transmission from tracing it.
   local current_control_user_id
   current_control_user_id="$(id -u "${control_user}")"
 

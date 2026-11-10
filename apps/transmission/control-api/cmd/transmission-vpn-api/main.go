@@ -19,6 +19,7 @@ import (
 	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/api"
 	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/capacity"
 	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/controller"
+	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/directdial"
 	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/directorybrowser"
 	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/security"
 	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/settings"
@@ -38,6 +39,7 @@ type options struct {
 	InstallationKeyPath string
 	ListenAddress       string
 	ManagedConfigPath   string
+	ProbeDirectDial     string
 	RPCListenAddress    string
 	RuntimeDirectory    string
 	SetupClaimPath      string
@@ -70,6 +72,12 @@ func run(logger *slog.Logger) error {
 	configuredOptions := parseOptions()
 	ctx := context.Background()
 
+	directSocketPath := filepath.Join(configuredOptions.RuntimeDirectory, "direct.sock")
+	if configuredOptions.ProbeDirectDial != "" {
+		return probeDirectDial(ctx, directSocketPath, configuredOptions.ProbeDirectDial)
+	}
+	directDialer := directdial.NewClient(directSocketPath)
+
 	registry := settings.NewRegistry()
 	store, err := storage.Open(ctx, configuredOptions.DatabasePath)
 	if err != nil {
@@ -89,7 +97,7 @@ func run(logger *slog.Logger) error {
 			strings.Join(keyResult.Removed, ", "),
 		))
 	}
-	api.NotifySecretsRemoved(store, installationKey, logger, keyResult.Removed)
+	api.NotifySecretsRemoved(store, installationKey, logger, keyResult.Removed, directDialer.DialContext)
 
 	managedDocument, err := settings.ReadManagedDocument(
 		configuredOptions.ManagedConfigPath,
@@ -157,6 +165,7 @@ func run(logger *slog.Logger) error {
 		Logger:              logger,
 		Version:             version,
 		MountedSetupCode:    mountedSetupCode,
+		DirectDial:          directDialer.DialContext,
 	})
 	if err != nil {
 		return err
@@ -280,6 +289,25 @@ func keepVPNRestored(
 	}
 }
 
+// probeDirectDial opens one connection through the VPN controller and closes it.
+//
+// It never falls back to dialing on its own, so a success proves the controller's
+// socket, its mark, and the firewall's mark rule all work.
+func probeDirectDial(ctx context.Context, socketPath string, address string) error {
+	probeContext, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	connection, err := directdial.NewStrictClient(socketPath).DialContext(probeContext, "tcp", address)
+	if err != nil {
+		return fmt.Errorf("open a connection outside the VPN to %s: %w", address, err)
+	}
+	_ = connection.Close()
+
+	fmt.Printf("Opened a connection outside the VPN to %s.\n", address)
+
+	return nil
+}
+
 // parseOptions reads the intentionally internal process flags.
 //
 // Deployments use fixed container paths; the flags exist for test isolation and future
@@ -315,6 +343,12 @@ func parseOptions() options {
 		"managed-config",
 		"/config/managed.json",
 		"optional managed configuration document",
+	)
+	flag.StringVar(
+		&configuredOptions.ProbeDirectDial,
+		"probe-direct-dial",
+		"",
+		"open one connection outside the VPN through the VPN controller, report it, and exit",
 	)
 	flag.StringVar(
 		&configuredOptions.RPCListenAddress,

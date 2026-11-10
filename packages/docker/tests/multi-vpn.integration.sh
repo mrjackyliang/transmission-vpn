@@ -260,11 +260,15 @@ start_peers() {
   fail 'Both WireGuard peers did not become ready within 20 seconds.'
 }
 
+# The console answers before the VPN controller listens, and every VPN request needs the
+# controller, so both must be ready.
 wait_for_control_plane() {
   local attempt
   for attempt in $(seq 1 30); do
     if docker exec "${protected_container}" \
-      wget -q -O /dev/null "${api_url}/api/v1/health/live"; then
+      wget -q -O /dev/null "${api_url}/api/v1/health/live" \
+      && docker exec "${protected_container}" \
+        test -f /run/transmission-vpn/services/vpn-controller.ready; then
       return 0
     fi
     sleep 1
