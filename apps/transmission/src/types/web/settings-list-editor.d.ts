@@ -1,7 +1,7 @@
 /**
  * Settings List Editor - Get setting list empty state.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Web_SettingsListEditor_GetSettingListEmptyState_SettingKey = string;
 export type Web_SettingsListEditor_GetSettingListEmptyState_Returns = {
@@ -12,7 +12,7 @@ export type Web_SettingsListEditor_GetSettingListEmptyState_Returns = {
 /**
  * Settings List Editor - Normalize setting list values.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Web_SettingsListEditor_NormalizeSettingListValues_Values = string[];
 export type Web_SettingsListEditor_NormalizeSettingListValues_Returns = string[];

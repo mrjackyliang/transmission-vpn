@@ -59,7 +59,7 @@ import type {
  *
  * @returns {string}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const pathFromHistoryURL = (
   url: Web_Navigation_HistoryURL,
@@ -83,7 +83,7 @@ const pathFromHistoryURL = (
  *
  * @returns {Tests_Web_Navigation_HistoryFixture}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const createHistoryBrowser = (initialPath: string): Tests_Web_Navigation_HistoryFixture => {
   const entries: string[] = [initialPath];
@@ -96,7 +96,7 @@ const createHistoryBrowser = (initialPath: string): Tests_Web_Navigation_History
    *
    * @param {number} direction - Direction.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const move = (direction: number): void => {
     const nextPosition: number = position['value'] + direction;

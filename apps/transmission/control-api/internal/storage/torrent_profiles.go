@@ -20,14 +20,14 @@ var (
 	// The API points this conflict at the name field without exposing SQLite
 	// constraint details.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	ErrTorrentProfileNameTaken = errors.New("torrent profile name is already in use")
 
 	// ErrTorrentProfileLimit reports that the bounded profile collection is full.
 	//
 	// Keeping the limit in storage closes races between simultaneous create requests.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	ErrTorrentProfileLimit = errors.New("torrent profile limit reached")
 
 	// ErrTorrentProfileFolderTaken reports a case-insensitive folder collision.
@@ -35,7 +35,7 @@ var (
 	// Every completed-download folder has one profile owner so changing a profile is
 	// the only operation that can move a torrent between folders.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	ErrTorrentProfileFolderTaken = errors.New("torrent profile folder is already in use")
 )
 
@@ -44,7 +44,7 @@ var (
 // API write paths use the durable owner name to return the same actionable conflict
 // after a transaction-level race as they do during request preflight.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type TorrentProfileFolderConflict struct {
 	DownloadDirectory string
 	ProfileName       string
@@ -59,7 +59,7 @@ type TorrentProfileFolderConflict struct {
 // It returns "same", "inside" when candidate sits within owner, "contains" when
 // candidate holds owner, or an empty string when the folders are unrelated.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TorrentProfileFolderRelation(candidate string, owner string) string {
 	if strings.TrimSpace(candidate) == "" || strings.TrimSpace(owner) == "" {
 		return ""
@@ -93,7 +93,7 @@ func folderWithin(parent string, child string) bool {
 // The public API formats its own stable sentence while storage logs retain enough
 // context to identify the rejected folder and owner.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (conflict *TorrentProfileFolderConflict) Error() string {
 	return fmt.Sprintf(
 		"%s: %s belongs to %s",
@@ -107,7 +107,7 @@ func (conflict *TorrentProfileFolderConflict) Error() string {
 //
 // Callers can classify the conflict without comparing its contextual error text.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (conflict *TorrentProfileFolderConflict) Unwrap() error {
 	return ErrTorrentProfileFolderTaken
 }
@@ -117,7 +117,7 @@ func (conflict *TorrentProfileFolderConflict) Unwrap() error {
 // Ratio and IdleMinutes remain nil when that limit is disabled; Mode decides whether
 // the enabled values are applied or all seeding limits are disabled.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type TorrentProfileSeeding struct {
 	Mode        string   `json:"mode"`
 	Ratio       *float64 `json:"ratio"`
@@ -128,7 +128,7 @@ type TorrentProfileSeeding struct {
 //
 // Nil speed limits mean unlimited and never consult the global session settings.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type TorrentProfileOptions struct {
 	Seeding           TorrentProfileSeeding `json:"seeding"`
 	DownloadLimitKBps *int64                `json:"downloadLimitKBps"`
@@ -142,7 +142,7 @@ type TorrentProfileOptions struct {
 //
 // ConnectionID selects one durable VPN connection; nil follows the current default.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type TorrentProfile struct {
 	ID                string                `json:"id"`
 	Name              string                `json:"name"`
@@ -161,7 +161,7 @@ type TorrentProfile struct {
 // Its download folder remains the effective transmission.downloadDirectory setting,
 // while this row owns labels, paused state, and explicit per-torrent options.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type DefaultTorrentProfile struct {
 	Name        string                `json:"name"`
 	Labels      []string              `json:"labels"`
@@ -177,7 +177,7 @@ const torrentProfileColumns = `id, name, download_directory, labels_json,
 //
 // Name uniqueness and the 100-profile limit are checked inside the same transaction.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) CreateTorrentProfile(ctx context.Context, profile TorrentProfile) (TorrentProfile, error) {
 	transaction, err := store.databaseHandle().BeginTx(ctx, nil)
 	if err != nil {
@@ -257,7 +257,7 @@ func (store *Store) CreateTorrentProfile(ctx context.Context, profile TorrentPro
 // Callers receive empty arrays for unset labels and patterns so API payloads stay
 // stable even if an older row encoded a JSON null.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) ListTorrentProfiles(ctx context.Context) ([]TorrentProfile, error) {
 	rows, err := store.databaseHandle().QueryContext(
 		ctx,
@@ -299,7 +299,7 @@ func (store *Store) ListTorrentProfiles(ctx context.Context) ([]TorrentProfile, 
 // Profile options are decoded strictly so damaged application state never reaches a
 // Transmission mutation.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) FindTorrentProfile(ctx context.Context, id string) (TorrentProfile, error) {
 	profile, err := scanTorrentProfile(store.databaseHandle().QueryRowContext(
 		ctx,
@@ -318,7 +318,7 @@ func (store *Store) FindTorrentProfile(ctx context.Context, id string) (TorrentP
 // Migration 011 creates exactly one row, so a missing row is treated as corrupt
 // application state rather than silently recreating different defaults.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) DefaultTorrentProfile(ctx context.Context) (DefaultTorrentProfile, error) {
 	return scanDefaultTorrentProfile(store.databaseHandle().QueryRowContext(
 		ctx,
@@ -333,7 +333,7 @@ func (store *Store) DefaultTorrentProfile(ctx context.Context) (DefaultTorrentPr
 // Folder changes use the revisioned settings transaction independently; this method
 // keeps the remaining profile defaults in their one-row durable record.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) UpdateDefaultTorrentProfile(
 	ctx context.Context,
 	profile DefaultTorrentProfile,
@@ -403,7 +403,7 @@ func (store *Store) UpdateDefaultTorrentProfile(
 // Name uniqueness and the replacement share one transaction so conflicts cannot
 // produce a partial edit.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) UpdateTorrentProfile(
 	ctx context.Context,
 	id string,
@@ -487,7 +487,7 @@ func (store *Store) UpdateTorrentProfile(
 // SQLite's cascading foreign key makes assigned torrents become unassigned in the same
 // statement.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) DeleteTorrentProfile(ctx context.Context, id string) error {
 	transaction, err := store.databaseHandle().BeginTx(ctx, nil)
 	if err != nil {
@@ -576,7 +576,7 @@ func (store *Store) DeleteTorrentProfile(ctx context.Context, id string) error {
 //
 // The API loads this compact map into memory for every torrent-list enrichment.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) ListTorrentProfileAssignments(ctx context.Context) (map[string]string, error) {
 	rows, err := store.databaseHandle().QueryContext(
 		ctx,
@@ -607,7 +607,7 @@ func (store *Store) ListTorrentProfileAssignments(ctx context.Context) (map[stri
 // Empty ID arrays remain meaningful after every matching profile is deleted, so the
 // durable marker is not inferred from the number of available choices.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) ListTorrentNeedsProfiles(ctx context.Context) (map[string][]string, error) {
 	rows, err := store.databaseHandle().QueryContext(
 		ctx,
@@ -643,7 +643,7 @@ func (store *Store) ListTorrentNeedsProfiles(ctx context.Context) (map[string][]
 // The caller supplies profile IDs in display order. An empty array is accepted so a
 // torrent remains explicitly unresolved after all original choices are deleted.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) ReplaceTorrentNeedsProfile(
 	ctx context.Context,
 	hash string,
@@ -693,7 +693,7 @@ func (store *Store) ReplaceTorrentNeedsProfile(
 
 // DeleteTorrentNeedsProfiles clears explicit profile choices for torrent hashes.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) DeleteTorrentNeedsProfiles(ctx context.Context, hashes []string) error {
 	normalizedHashes, err := normalizeTorrentHashes(hashes)
 	if err != nil {
@@ -723,7 +723,7 @@ func (store *Store) DeleteTorrentNeedsProfiles(ctx context.Context, hashes []str
 
 // DeleteTorrentProfileRecords clears every control-plane record for torrent hashes.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) DeleteTorrentProfileRecords(ctx context.Context, hashes []string) error {
 	normalizedHashes, err := normalizeTorrentHashes(hashes)
 	if err != nil {
@@ -763,7 +763,7 @@ func (store *Store) DeleteTorrentProfileRecords(ctx context.Context, hashes []st
 // All requested torrents change together, and repeated hashes are rejected before the
 // transaction mutates any assignment.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) ReplaceTorrentProfileAssignments(
 	ctx context.Context,
 	hashes []string,
@@ -841,7 +841,7 @@ func (store *Store) ReplaceTorrentProfileAssignments(
 // The API rate-limits calls to this storage operation; comparison in Go avoids SQLite's
 // bound-parameter limit for large torrent libraries.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) DeleteStaleTorrentProfileAssignments(
 	ctx context.Context,
 	activeHashes map[string]struct{},

@@ -18,7 +18,7 @@ const (
 // API callers use the field key for validation issues without parsing messages or
 // exposing the submitted credential value.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type credentialValidationError struct {
 	field   string
 	message string
@@ -26,7 +26,7 @@ type credentialValidationError struct {
 
 // Error returns the safe credential validation message.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (validationError *credentialValidationError) Error() string {
 	return validationError.message
 }
@@ -36,7 +36,7 @@ func (validationError *credentialValidationError) Error() string {
 // HTTP boundaries use this metadata to place safe credential messages beside the
 // matching input while unrelated provider failures remain form-level errors.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func CredentialErrorField(err error) (string, bool) {
 	var validationError *credentialValidationError
 	if !errors.As(err, &validationError) {
@@ -51,7 +51,7 @@ func CredentialErrorField(err error) (string, bool) {
 // Unknown keys are rejected because JSON decoding can't, and error messages name the
 // field without ever repeating the value, which may be a password or private key.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func ValidateCredentials(tunnel TunnelDefinition, values map[string]string) error {
 	fields := make(map[string]CredentialField, len(tunnel.CredentialFields))
 	for _, field := range tunnel.CredentialFields {

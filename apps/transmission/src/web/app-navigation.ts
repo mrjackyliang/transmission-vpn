@@ -15,7 +15,7 @@ import type {
  * Owns every bookmarkable console address, including the reserved dynamic VPN
  * connection segment. Shared history code consumes routes produced here.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const appNavigationPaths: Web_AppNavigation_Paths = {
   account: '/account',
@@ -35,7 +35,7 @@ export const appNavigationPaths: Web_AppNavigation_Paths = {
  * Defines Transmission VPN navigation separately from the shared shell and
  * helpers. Desktop keeps this full order while phones derive their four tabs.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const appNavigationItems: Web_AppNavigation_Items = [
   {
@@ -118,7 +118,7 @@ export const appNavigationItems: Web_AppNavigation_Items = [
  *
  * @returns {Web_AppNavigation_Route}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const appRouteForView = (view: Web_Components_View): Web_AppNavigation_Route => {
   switch (view) {
@@ -177,7 +177,7 @@ export const appRouteForView = (view: Web_Components_View): Web_AppNavigation_Ro
  *
  * @returns {Web_AppNavigation_Route}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const appRouteForVPNTarget = (
   target: Web_Components_VpnView_NavigationTarget,
@@ -213,7 +213,7 @@ export const appRouteForVPNTarget = (
  *
  * @returns {Web_AppNavigation_PathMatch}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const resolveAppNavigationPath = (pathname: string): Web_AppNavigation_PathMatch => {
   if (pathname === appNavigationPaths['root']) {

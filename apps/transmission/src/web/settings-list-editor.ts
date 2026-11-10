@@ -15,7 +15,7 @@ import type {
  *
  * @returns {Web_SettingsListEditor_GetSettingListEmptyState_Returns}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const getSettingListEmptyState = (
   settingKey: Web_SettingsListEditor_GetSettingListEmptyState_SettingKey,
@@ -43,7 +43,7 @@ export const getSettingListEmptyState = (
  *
  * @returns {Web_SettingsListEditor_NormalizeSettingListValues_Returns}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const normalizeSettingListValues = (
   values: Web_SettingsListEditor_NormalizeSettingListValues_Values,

@@ -44,7 +44,7 @@ import type {
  * Keeps global torrent settings ahead of the dedicated network and blocklist rows.
  * They apply to every torrent regardless of profile selection.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const allTorrentKeys: string[] = [
   'transmission.incompleteDirectoryEnabled',
@@ -60,7 +60,7 @@ const allTorrentKeys: string[] = [
  * Preserves the peer port range order used by the server registry.
  * The range bounds stay directly below the random-port switch.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const networkKeys: string[] = [
   'transmission.peerPortRandomOnStart',
@@ -74,7 +74,7 @@ const networkKeys: string[] = [
  * Keeps the blocklist switch before its source list.
  * The two controls remain adjacent in the global group.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const blocklistKeys: string[] = [
   'transmission.blocklistEnabled',
@@ -88,7 +88,7 @@ const blocklistKeys: string[] = [
  * Limits this screen to global Transmission settings that are not owned by a
  * torrent profile.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const visibleSettingKeys: string[] = [
   ...allTorrentKeys,
@@ -102,7 +102,7 @@ const visibleSettingKeys: string[] = [
  * Returns settings in a requested key order while ignoring missing registry entries.
  * This lets older backends omit a definition without breaking the page.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const selectSettings = (settings: Web_Api_Setting[], keys: string[]): Web_Api_Setting[] => keys
   .map((key: string): Web_Api_Setting | undefined => settings.find(
@@ -182,7 +182,7 @@ export const SettingsView = ({
    *
    * @returns {Promise<void>}
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const refreshBlocklistStatus = useCallback(async (): Promise<void> => {
     if (blocklistStatusRequestRunningRef.current) {
@@ -369,7 +369,7 @@ export const SettingsView = ({
    *
    * @returns {Promise<void>}
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const updateBlocklists = async (): Promise<void> => {
     blocklistUpdateBaselineAttemptRef.current = blocklistStatus?.['lastAttemptAt'];
@@ -393,7 +393,7 @@ export const SettingsView = ({
    * Applies accepted restart-impact settings and refreshes the snapshot through the app.
    * A successful refresh clears the pending notice.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const restart = async (): Promise<void> => {
     setRestarting(true);
@@ -512,7 +512,7 @@ export const SettingsView = ({
    * Preserves each setting's key, restart note, source note, and lock state.
    * The row structure matches both approved setting groups.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const renderSetting = (setting: Web_Api_Setting): ReactElement => {
     const notes: string[] = [];

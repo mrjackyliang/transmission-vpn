@@ -246,3 +246,5 @@ firebase-debug.log
 /assets/
 !package-lock.json
 graphify-out/
+.integration-state.*/
+.openvpn-integration-state.*/

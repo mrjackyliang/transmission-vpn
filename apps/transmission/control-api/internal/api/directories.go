@@ -18,7 +18,7 @@ const (
 	// The default picker mode uses this value so existing callers keep the stricter
 	// completed-data rules when they omit an explicit purpose.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	storageDirectoryPurposeDownload = "download"
 
 	// storageDirectoryPurposeIncomplete selects incomplete-folder policy.
@@ -26,7 +26,7 @@ const (
 	// Settings uses this value when choosing the one folder reserved for unfinished
 	// data, which has different selection rules from completed downloads.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	storageDirectoryPurposeIncomplete = "incomplete"
 
 	// storageDirectoryPurposeProfile selects one profile-owned download folder.
@@ -37,7 +37,7 @@ const (
 	// Entries that do not match a higher-priority assignment use this stable text
 	// when torrent RPC results cannot prove that their folders are unassigned.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	torrentLocationsUnavailableMessage = "Torrent locations can't be checked right now, so folders can't be deleted. Try again in a moment."
 )
 
@@ -46,7 +46,7 @@ const (
 // Filesystem facts come from the Transmission-user controller while assignment,
 // selection, and purpose rules remain inside the authenticated control API.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type storageDirectoryEntry struct {
 	Name                    string   `json:"name"`
 	Path                    string   `json:"path"`
@@ -66,7 +66,7 @@ type storageDirectoryEntry struct {
 // The envelope retains the existing download-selection fields while every child is
 // decorated from one request-scoped assignment snapshot.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type storageDirectoryResponse struct {
 	Path                      string                  `json:"path"`
 	ParentPath                string                  `json:"parentPath,omitempty"`
@@ -80,7 +80,7 @@ type storageDirectoryResponse struct {
 // Reading these sources once per request keeps entry precedence deterministic and
 // prevents one directory listing from issuing a torrent RPC call per child.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type storageDirectoryRules struct {
 	downloadPolicy             downloadPathPolicy
 	defaultProfileName         string
@@ -96,14 +96,14 @@ type storageDirectoryRules struct {
 // DELETE requires this narrower controller capability so its policy preflight never
 // scans siblings through the broader listing operation.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type storageDirectoryInspector interface {
 	// Inspect returns controller metadata for one exact folder.
 	//
 	// Implementations walk to the parent and inspect only the named child so DELETE
 	// policy never depends on a potentially expensive sibling listing.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	Inspect(context.Context, string) (directorybrowser.DirectoryEntry, error)
 }
 
@@ -112,7 +112,7 @@ type storageDirectoryInspector interface {
 // The handler distinguishes assignment conflicts from nonempty folders while the
 // listing reduces both states to one advisory deletable flag and reason.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type storageDirectoryDeleteState int
 
 const (
@@ -121,7 +121,7 @@ const (
 	// The state is returned only after assignment, mount, readability, and emptiness
 	// rules prove that the API may ask the controller for non-recursive removal.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	storageDirectoryDeleteAllowed storageDirectoryDeleteState = iota
 
 	// storageDirectoryDeleteInUse rejects an assigned or inaccessible folder.
@@ -129,7 +129,7 @@ const (
 	// The public API maps this state to directory_in_use so the picker can present
 	// the first stable policy reason without attempting a filesystem mutation.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	storageDirectoryDeleteInUse
 
 	// storageDirectoryDeleteTorrentLocationsUnavailable rejects uncertain RPC state.
@@ -137,7 +137,7 @@ const (
 	// DELETE maps this fail-closed state to a retryable service-unavailable response
 	// while listings expose the same advisory reason as an ordinary disabled action.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	storageDirectoryDeleteTorrentLocationsUnavailable
 
 	// storageDirectoryDeleteNotEmpty rejects a readable folder with contents.
@@ -145,7 +145,7 @@ const (
 	// Keeping this state separate gives the public API its dedicated conflict code
 	// and the non-recursive cleanup guidance used by the first-party picker.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	storageDirectoryDeleteNotEmpty
 )
 
@@ -154,7 +154,7 @@ const (
 // The HTTP layer validates the public storage boundary before the dedicated
 // Transmission-user controller performs filesystem and symlink checks.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (server *Server) handleListStorageDirectories(
 	responseWriter http.ResponseWriter,
 	request *http.Request,
@@ -226,7 +226,7 @@ func (server *Server) handleListStorageDirectories(
 // CSRF and torrents:write authorization are applied by routing middleware before
 // this handler delegates to the Transmission-user controller.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (server *Server) handleCreateStorageDirectory(
 	responseWriter http.ResponseWriter,
 	request *http.Request,
@@ -306,7 +306,7 @@ func (server *Server) handleCreateStorageDirectory(
 // The listing is advisory: this handler reloads every assignment source, checks the
 // controller's current entry facts, and only then requests non-recursive deletion.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (server *Server) handleDeleteStorageDirectory(
 	responseWriter http.ResponseWriter,
 	request *http.Request,
@@ -414,7 +414,7 @@ func (server *Server) handleDeleteStorageDirectory(
 // The empty value preserves the download picker default, while explicit validation
 // keeps unknown modes from bypassing purpose-specific selection policy.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func storageDirectoryPurpose(value string) (string, bool) {
 	if value == "" {
 		return storageDirectoryPurposeDownload, true
@@ -433,7 +433,7 @@ func storageDirectoryPurpose(value string) (string, bool) {
 // The shared snapshot keeps one list or delete decision internally consistent and
 // avoids issuing torrent RPC work once for every visible directory entry.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (server *Server) readStorageDirectoryRules(
 	ctx context.Context,
 ) (storageDirectoryRules, error) {
@@ -495,7 +495,7 @@ func (server *Server) readStorageDirectoryRules(
 // Central decoration keeps purpose, assignment, and deletion precedence identical
 // for list, create, and delete responses returned by the folder picker API.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func decorateStorageDirectory(
 	directory directorybrowser.Directory,
 	purpose string,
@@ -540,7 +540,7 @@ func decorateStorageDirectory(
 // Download destinations exclude incomplete storage, while incomplete selection
 // rejects any folder that would contain an existing completed-data assignment.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (rules storageDirectoryRules) usableForPurpose(
 	path string,
 	purpose string,
@@ -605,7 +605,7 @@ func (rules storageDirectoryRules) usableForPurpose(
 // The incomplete marker leads the setting-backed Default profile, followed by named
 // profile labels, so callers never need to reconstruct assignment context.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (rules storageDirectoryRules) tags(path string) []string {
 	tags := make([]string, 0, 2+len(rules.profiles))
 	if path == rules.downloadPolicy.incompleteDirectory {
@@ -628,7 +628,7 @@ func (rules storageDirectoryRules) tags(path string) []string {
 // Assignment rules precede uncertain torrent state and filesystem facts so every
 // entry exposes the most specific stable reason that currently prevents deletion.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (rules storageDirectoryRules) deleteAvailability(
 	entry directorybrowser.DirectoryEntry,
 ) (storageDirectoryDeleteState, string) {
@@ -746,7 +746,7 @@ func torrentProfileFolderTakenMessage(path string, profileName string) string {
 // Lowercasing before the segment-aware shared helper protects descendants without
 // confusing similarly prefixed siblings such as incomplete and incomplete-old.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func dataPathContainsFold(parentPath string, candidatePath string) bool {
 	return settings.DataPathContains(
 		strings.ToLower(parentPath),
@@ -759,7 +759,7 @@ func dataPathContainsFold(parentPath string, candidatePath string) bool {
 // Rule nine uses this text when the controller reports that a child resides on a
 // different device from its already opened parent directory.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func separateMountDeleteMessage(name string) string {
 	return fmt.Sprintf("“%s” is a separate mount, so it can't be deleted.", name)
 }
@@ -769,7 +769,7 @@ func separateMountDeleteMessage(name string) string {
 // Policy checks and an EBUSY controller race share this wording because the public
 // DELETE contract classifies a busy removal as a torrent location still in use.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func torrentDirectoryDeleteMessage(name string) string {
 	return fmt.Sprintf("A torrent is saved in “%s”, so it can't be deleted.", name)
 }
@@ -779,7 +779,7 @@ func torrentDirectoryDeleteMessage(name string) string {
 // The guidance directs cleanup to the user's filesystem because this API never
 // removes contents or performs a recursive operation on Transmission data.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func notEmptyDeleteMessage(name string) string {
 	return fmt.Sprintf(
 		"Only empty folders can be deleted here. Remove what's inside “%s” from your file system first.",
@@ -792,7 +792,7 @@ func notEmptyDeleteMessage(name string) string {
 // Filesystem state can change after the advisory check, so stable controller codes
 // are translated into the same conflict messages returned by preflight policy.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (server *Server) writeDirectoryDeleteError(
 	responseWriter http.ResponseWriter,
 	name string,
@@ -840,7 +840,7 @@ func (server *Server) writeDirectoryDeleteError(
 // Transport and unexpected failures are logged internally and returned as a generic
 // service-unavailable response without leaking filesystem details.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (server *Server) writeDirectoryBrowserError(
 	responseWriter http.ResponseWriter,
 	err error,
@@ -867,7 +867,7 @@ func (server *Server) writeDirectoryBrowserError(
 // A shared response keeps nil clients, transport failures, and consistency races
 // indistinguishable to callers while detailed causes remain in internal logs.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func writeDirectoryBrowserUnavailable(responseWriter http.ResponseWriter) {
 	writeError(
 		responseWriter,

@@ -15,7 +15,7 @@ var (
 	// The API maps this conflict to the username field without exposing the database
 	// constraint that enforces it.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	ErrRPCLoginUsernameTaken = errors.New("RPC login username is already in use")
 )
 
@@ -24,7 +24,7 @@ var (
 // SecretDigest is available only to the authentication boundary. API handlers shape
 // separate responses that never serialize it.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type RPCLogin struct {
 	ID           string
 	Username     string
@@ -39,7 +39,7 @@ type RPCLogin struct {
 // A nil SecretDigest preserves the existing generated password, while a non-nil
 // digest replaces it after password regeneration.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type RPCLoginChanges struct {
 	Username     string
 	SecretDigest []byte
@@ -53,7 +53,7 @@ const rpcLoginColumns = "id, username, secret_digest, created_at, updated_at, la
 // Username uniqueness is checked without regard to case before insertion so callers
 // receive a stable conflict instead of a driver-specific constraint error.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) CreateRPCLogin(ctx context.Context, login RPCLogin) (RPCLogin, error) {
 	transaction, err := store.databaseHandle().BeginTx(ctx, nil)
 	if err != nil {
@@ -96,7 +96,7 @@ func (store *Store) CreateRPCLogin(ctx context.Context, login RPCLogin) (RPCLogi
 // The returned storage records include their digests for internal callers. HTTP
 // handlers must convert them to the safe response type before serialization.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) ListRPCLogins(ctx context.Context) ([]RPCLogin, error) {
 	rows, err := store.databaseHandle().QueryContext(
 		ctx,
@@ -128,7 +128,7 @@ func (store *Store) ListRPCLogins(ctx context.Context) ([]RPCLogin, error) {
 // Management handlers use this lookup to preserve omitted update fields without
 // accepting a reusable digest from the request.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) FindRPCLogin(ctx context.Context, id string) (RPCLogin, error) {
 	login, err := scanRPCLogin(store.databaseHandle().QueryRowContext(
 		ctx,
@@ -147,7 +147,7 @@ func (store *Store) FindRPCLogin(ctx context.Context, id string) (RPCLogin, erro
 // The RPC authentication boundary compares the returned digest in constant time and
 // never includes it in a response or log entry.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) FindRPCLoginByUsername(ctx context.Context, username string) (RPCLogin, error) {
 	login, err := scanRPCLogin(store.databaseHandle().QueryRowContext(
 		ctx,
@@ -166,7 +166,7 @@ func (store *Store) FindRPCLoginByUsername(ctx context.Context, username string)
 // Leaving SecretDigest nil keeps the generated password unchanged. A regenerated
 // password is supplied only as its digest and never reaches this method in plaintext.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) UpdateRPCLogin(
 	ctx context.Context,
 	id string,
@@ -224,7 +224,7 @@ func (store *Store) UpdateRPCLogin(
 // Its next request fails authentication because the username and digest no longer
 // exist, and the login disappears from the management list.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) DeleteRPCLogin(ctx context.Context, id string) error {
 	transaction, err := store.databaseHandle().BeginTx(ctx, nil)
 	if err != nil {
@@ -272,7 +272,7 @@ func (store *Store) DeleteRPCLogin(ctx context.Context, id string) error {
 // The read and conditional write share one transaction, so concurrent successful
 // requests cannot turn the bounded activity timestamp into a write per RPC call.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) RecordRPCLoginUsed(ctx context.Context, id string) error {
 	transaction, err := store.databaseHandle().BeginTx(ctx, nil)
 	if err != nil {

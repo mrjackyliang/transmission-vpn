@@ -615,7 +615,7 @@ func (server *Server) handleVPNConnectionCommand(
 // The global VPN mutation lock remains held through every attempted transfer so
 // no connection mutation can overlap the daemon ownership change.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (server *Server) handleSetDefaultVPNConnection(
 	responseWriter http.ResponseWriter,
 	request *http.Request,
@@ -1272,7 +1272,7 @@ func (server *Server) writeVPNCandidateError(
 // The typed error exposes only a known field key and safe message, never the submitted
 // credential value.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func writeVPNCredentialIssue(
 	responseWriter http.ResponseWriter,
 	credentialPrefix string,

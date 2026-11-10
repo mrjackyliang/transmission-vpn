@@ -77,7 +77,7 @@ func TestSettingsRuntimeApplyListsAreArrays(t *testing.T) {
 // Compatible RPC authentication must not query settings on each request, so a
 // successful settings transaction publishes its managed-aware value in memory.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestSettingsSaveRefreshesCompatibleRPCState(testingObject *testing.T) {
 	server, cookies, csrfToken := newClaimedTestServer(testingObject)
 	if server.rpcCompatibilityAllowed.Load() {
@@ -131,7 +131,7 @@ func TestSettingsSaveRefreshesCompatibleRPCState(testingObject *testing.T) {
 // Saving with no daemon returns an empty pending list, settings reads remove stale
 // process-local keys, and the restart route explains that the next start applies them.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestPendingRestartKeysClearWithoutTransmission(testingObject *testing.T) {
 	server, cookies, csrfToken := newClaimedTestServer(testingObject)
 

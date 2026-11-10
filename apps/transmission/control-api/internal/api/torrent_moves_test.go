@@ -137,7 +137,7 @@ func TestMoveTorrentRestoresMetainfoFilesAndOptions(testingObject *testing.T) {
 // A legacy torrent stays on its current connection until the user moves its data
 // into a child folder, preserving the rule without moving files implicitly.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestMoveTorrentRejectsDataRootSnapshot(testingObject *testing.T) {
 	const hash = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
 	sourceSnapshot := torrentMoveSnapshotResponse(hash, 1, 4)
@@ -184,7 +184,7 @@ func TestMoveTorrentRejectsDataRootSnapshot(testingObject *testing.T) {
 // A legacy torrent may already report a reserved location, but the move refuses it
 // before adding or removing anything on either daemon.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestMoveTorrentRejectsIncompleteDirectorySnapshot(testingObject *testing.T) {
 	const hash = "cccccccccccccccccccccccccccccccccccccccc"
 	sourceSnapshot := torrentMoveSnapshotResponse(hash, 1, 4)

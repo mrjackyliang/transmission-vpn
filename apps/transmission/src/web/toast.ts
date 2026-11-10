@@ -29,7 +29,7 @@ import type {
  *
  * @returns {Web_Toast_HideVisibleToasts_Returns}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const hideVisibleToasts = (): Web_Toast_HideVisibleToasts_Returns => {
   if (typeof document === 'undefined') {
@@ -61,7 +61,7 @@ let notyfInstance: Web_Toast_NotyfInstance = undefined;
  * Holds an application-specific error text hook when the dashboard provides one.
  * Success messages never pass through this formatter.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 let toastErrorFormatter: Web_Toast_ToastErrorFormatter = undefined;
 
@@ -106,7 +106,7 @@ const getNotyf = (): Web_Toast_GetNotyf_Returns => {
  *
  * @returns {Web_Toast_SetToastErrorFormatter_Returns}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const setToastErrorFormatter = (formatter: Web_Toast_SetToastErrorFormatter_Formatter): Web_Toast_SetToastErrorFormatter_Returns => {
   toastErrorFormatter = formatter;
@@ -120,7 +120,7 @@ export const setToastErrorFormatter = (formatter: Web_Toast_SetToastErrorFormatt
  * Replaces the visible toast with one result that closes on its own or when
  * clicked. Registered error formatting runs before messages are safely escaped.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const showToast = (message: Web_Toast_ShowToast_Message, success: Web_Toast_ShowToast_Success): Web_Toast_ShowToast_Returns => {
   const notyf: Web_Toast_GetNotyf_Returns = getNotyf();

@@ -13,21 +13,21 @@ import type {
 /**
  * Toast.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Tests_Web_Toast_ClickHandler = NotyfEventCallback;
 
 /**
  * Toast.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Tests_Web_Toast_ErrorNotification = NotyfNotification;
 
 /**
  * Toast.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Tests_Web_Toast_NotyfMocks_Dismiss = Mock<Notyf['dismiss']>;
 
@@ -47,35 +47,35 @@ export type Tests_Web_Toast_NotyfMocks = {
 /**
  * Toast.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Tests_Web_Toast_Notification = NotyfNotification;
 
 /**
  * Toast.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Tests_Web_Toast_NotificationCall = Parameters<NotyfNotification['on']> | undefined;
 
 /**
  * Toast.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Tests_Web_Toast_NotificationOn = MockInstance<NotyfNotification['on']>;
 
 /**
  * Toast.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Tests_Web_Toast_SuccessNotification = NotyfNotification;
 
 /**
  * Toast.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Tests_Web_Toast_VisibleToast = {
   hidden: boolean;

@@ -16,7 +16,7 @@ import type { Web_Components_SettingsDirectoryField_Props } from '@/types/web/co
  * Keeps the read-only path field and its purpose-aware picker together.
  * SettingsView can therefore retain its existing generic row rendering.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const SettingsDirectoryField = ({
   disabled,
@@ -36,7 +36,7 @@ export const SettingsDirectoryField = ({
    * Makes the path box behave like its adjacent Browse button.
    * Enter and Space remain available when a keyboard user focuses the field.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const openWithKeyboard = (event: ReactKeyboardEvent<HTMLInputElement>): void => {
     if (event.key === 'Enter' || event.key === ' ') {

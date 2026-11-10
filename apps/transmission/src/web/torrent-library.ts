@@ -73,7 +73,7 @@ export const torrentLibraryFilters: Web_Components_TorrentFilterItem[] = [
  * Distinguishes the explicit Default choice from an inactive profile filter.
  * Generated profile identifiers cannot collide with this internal sentinel.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const defaultProfileFilterValue: string = '__default-profile__';
 
@@ -87,7 +87,7 @@ export const defaultProfileFilterValue: string = '__default-profile__';
  *
  * @returns {boolean}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const torrentQueuePositionsAreComparable = (
   torrents: Web_Api_Torrent[],
@@ -101,7 +101,7 @@ export const torrentQueuePositionsAreComparable = (
  * Names a completed batch by its actual outcome and includes successful and failed
  * counts when the result is mixed.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const summarizeTorrentAddBatch = (
   statuses: ('added' | 'duplicate' | 'failed')[],
@@ -137,7 +137,7 @@ export const summarizeTorrentAddBatch = (
  * Missing relationships stay quiet so an internal hash or connection identifier
  * is never presented as a fallback label.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const duplicateTorrentNotices = (
   errors: string[],
@@ -304,7 +304,7 @@ export const torrentMatchesLibrarySelection = (
  * peer exchange, so the row shows a short note and keeps the tracker's own reply, such as
  * "torrent not found", for the tooltip instead of letting it read like the torrent's state.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const describeTrackerIssue = (torrent: Web_Api_Torrent): Web_Components_TrackerIssue | null => {
   if (torrent['error'] !== 1 && torrent['error'] !== 2) {

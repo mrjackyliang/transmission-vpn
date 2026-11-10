@@ -44,7 +44,7 @@ import type {
  *
  * @returns {Web_BlocklistStatus_FormatBlocklistCopyDate_Returns}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const formatBlocklistCopyDate = (
   value: Web_BlocklistStatus_FormatBlocklistCopyDate_Value,
@@ -71,7 +71,7 @@ const formatBlocklistCopyDate = (
  *
  * @returns {Web_BlocklistStatus_FormatBlocklistLastUpdated_Returns}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const formatBlocklistLastUpdated = (
   status: Web_BlocklistStatus_FormatBlocklistLastUpdated_Status,
@@ -100,7 +100,7 @@ export const formatBlocklistLastUpdated = (
  *
  * @returns {Web_BlocklistStatus_FormatBlocklistNextUpdate_Returns}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const formatBlocklistNextUpdate = (
   status: Web_BlocklistStatus_FormatBlocklistNextUpdate_Status,
@@ -131,7 +131,7 @@ export const formatBlocklistNextUpdate = (
  *
  * @returns {Web_BlocklistStatus_FormatBlocklistSourceLine_Returns}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const formatBlocklistSourceLine = (
   status: Web_BlocklistStatus_FormatBlocklistSourceLine_Status,
@@ -219,7 +219,7 @@ export const formatBlocklistSourceLine = (
  *
  * @returns {Web_BlocklistStatus_FormatBlocklistSummary_Returns}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const formatBlocklistSummary = (
   status: Web_BlocklistStatus_FormatBlocklistSummary_Status,

@@ -16,7 +16,7 @@ import (
 // First-party and compatible adds both discard caller folder preference after profile
 // selection so every torrent starts in its owning profile's folder.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func prepareTorrentAddDownloadDirectory(
 	arguments map[string]any,
 	profile storage.TorrentProfile,
@@ -62,7 +62,7 @@ func torrentAddDownloadDirectoryMatches(
 // URL adds preserve the caller's intended start behavior while magnets and uploaded
 // metainfo keep their original arguments and avoid the session lookup.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func prepareTorrentAddStart(
 	ctx context.Context,
 	client transmissionrpc.Caller,

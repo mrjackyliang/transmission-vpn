@@ -14,7 +14,7 @@ import (
 // PayloadNonce and PayloadCiphertext are populated only for resumable work. They are
 // cleared atomically when the job reaches a terminal state.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type BackupImportJob struct {
 	ID                string
 	Source            string
@@ -34,7 +34,7 @@ type BackupImportJob struct {
 
 // BackupImportItem is the durable, secret-free progress for one imported torrent.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type BackupImportItem struct {
 	Position    int
 	Hash        string
@@ -51,7 +51,7 @@ type BackupImportItem struct {
 //
 // This type is restricted to the authenticated backup boundary.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type BackupAPIToken struct {
 	APIToken
 	Digest []byte
@@ -62,7 +62,7 @@ type BackupAPIToken struct {
 // The active-job partial index prevents two imports from applying configuration at
 // once. Export plaintext is already encrypted before it crosses this boundary.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) CreateBackupImportJob(
 	ctx context.Context,
 	job BackupImportJob,
@@ -134,7 +134,7 @@ func (store *Store) CreateBackupImportJob(
 
 // BackupImportJobByID returns a job and its torrent rows in stable order.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) BackupImportJobByID(ctx context.Context, id string) (BackupImportJob, error) {
 	job, err := scanBackupImportJob(store.databaseHandle().QueryRowContext(
 		ctx,
@@ -162,7 +162,7 @@ func (store *Store) BackupImportJobByID(ctx context.Context, id string) (BackupI
 
 // ActiveBackupImportJob returns the queued or running import, if there is one.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) ActiveBackupImportJob(ctx context.Context) (BackupImportJob, error) {
 	job, err := scanBackupImportJob(store.databaseHandle().QueryRowContext(
 		ctx,
@@ -191,7 +191,7 @@ func (store *Store) ActiveBackupImportJob(ctx context.Context) (BackupImportJob,
 
 // ResumableBackupImportJobs lists jobs interrupted while queued or running.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) ResumableBackupImportJobs(ctx context.Context) ([]BackupImportJob, error) {
 	rows, err := store.databaseHandle().QueryContext(
 		ctx,
@@ -224,7 +224,7 @@ func (store *Store) ResumableBackupImportJobs(ctx context.Context) ([]BackupImpo
 
 // StartBackupImportJob marks a resumable job as running.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) StartBackupImportJob(ctx context.Context, id string) error {
 	now := formatTime(time.Now())
 	result, err := store.databaseHandle().ExecContext(
@@ -252,7 +252,7 @@ func (store *Store) StartBackupImportJob(ctx context.Context, id string) error {
 
 // UpdateBackupImportItem records one torrent stage and refreshes the completed count.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) UpdateBackupImportItem(
 	ctx context.Context,
 	jobID string,
@@ -316,7 +316,7 @@ func (store *Store) UpdateBackupImportItem(
 
 // FinishBackupImportJob stores terminal state and destroys the encrypted payload.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) FinishBackupImportJob(
 	ctx context.Context,
 	id string,
@@ -353,7 +353,7 @@ func (store *Store) FinishBackupImportJob(
 
 // ListAPITokensForBackup returns token metadata together with restorable digests.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) ListAPITokensForBackup(ctx context.Context) ([]BackupAPIToken, error) {
 	rows, err := store.databaseHandle().QueryContext(
 		ctx,

@@ -19,7 +19,7 @@ import type { Web_Api_TorrentProfile } from '../src/types/web/api.d.ts';
  *
  * Supplies stable defaults so each matcher example highlights only its patterns.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const createProfile = (
   id: string,

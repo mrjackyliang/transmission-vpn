@@ -133,7 +133,7 @@ const isIdentifier = (value: string): boolean => {
  * Accepts Transmission's 40-character SHA-1 and 64-character SHA-256 forms.
  * The API normalizes accepted values to lowercase before routing them.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const isTorrentHash = (value: string): boolean => {
   const hexadecimalCharacters: string = '0123456789abcdefABCDEF';
@@ -249,7 +249,7 @@ const parseInput = <Value>(
  * Maps internal configuration keys to the labels people see in the console.
  * Error messages use these labels so implementation details never leak into the UI.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const settingTitles: Record<string, string> = {
   'rpc.compatibilityEnabled': 'Transmission-compatible RPC',
@@ -274,7 +274,7 @@ const settingTitles: Record<string, string> = {
  * Replaces low-level validation and process details with user-facing wording while
  * preserving server messages that are already suitable for the console.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const formatConsoleError = (message: string): string => {
   let formattedMessage: string = message;
@@ -322,7 +322,7 @@ const dataPathSchema = z.string().refine(
  * Keeps the destination-specific guidance identical across every console form.
  * API and compatible RPC responses use the same text.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const downloadDataPathRootMessage: string = 'Choose a folder inside /data, not /data itself.';
 
@@ -332,7 +332,7 @@ const downloadDataPathRootMessage: string = 'Choose a folder inside /data, not /
  * Requires torrent destinations below the mount root while the directory browser
  * and free-space lookup continue to accept /data itself.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const downloadDataPathSchema = dataPathSchema.refine(
   (value: string): boolean => value !== '/data',
@@ -345,7 +345,7 @@ const downloadDataPathSchema = dataPathSchema.refine(
  * A slash boundary keeps similarly prefixed siblings, such as incomplete-old,
  * distinct while still reserving every descendant of the effective folder.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const validateOutsideIncompleteDirectory = (
   value: string,
@@ -403,7 +403,7 @@ const identifierSchema = z.string()
  * Keeps the provider select's inline issue identical to schema validation.
  * The connection editor reuses it before provider-specific checks run.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const providerRequiredMessage: string = 'Choose a provider.';
 
@@ -413,7 +413,7 @@ export const providerRequiredMessage: string = 'Choose a provider.';
  * Gives an empty provider selection its field-specific message before applying
  * the shared identifier length and character rules to nonempty values.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const providerIdentifierSchema = z.string()
   .min(1, providerRequiredMessage)
@@ -425,7 +425,7 @@ const providerIdentifierSchema = z.string()
  * Keeps names readable in list rows and aligned with the profile-name limit.
  * Trimming here also makes case-insensitive duplicate checks predictable.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const connectionNameSchema = z.string()
   .transform((name: string): string => name.trim())
@@ -440,7 +440,7 @@ const connectionNameSchema = z.string()
  * Reuses the valid non-privileged port range for create and update requests.
  * The shared wording matches the current connection form.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const peerPortSchema = z.number({ error: 'Enter a number from 1,024 to 65,535.' })
   .int('Enter a whole number from 1,024 to 65,535.')
@@ -453,7 +453,7 @@ const peerPortSchema = z.number({ error: 'Enter a number from 1,024 to 65,535.' 
  * Stores the shared username rules used by the RPC and web proxies.
  * Both backend routes accept the same character set and length.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const remoteLoginUsernameSchema = z.string()
   .trim()
@@ -467,7 +467,7 @@ const remoteLoginUsernameSchema = z.string()
  * Accepts up to eight IPv4 addresses, matching the VPN API contract.
  * Duplicate addresses are rejected before a connect request is sent.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const dnsServersSchema = z.array(
   z.ipv4('Enter one IPv4 address per line.'),
@@ -484,7 +484,7 @@ const dnsServersSchema = z.array(
  * Stores the range shared by the VPN form and connect request.
  * Explicit messages keep raw Zod wording out of the console.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const retryIntervalSchema = z.number({ error: 'Enter a number from 3 to 600.' })
   .int('Enter a whole number from 3 to 600.')
@@ -666,7 +666,7 @@ const addTorrentInputSchema: Web_Api_Schema<Web_Api_AddTorrentInput> = z.object(
  * Keeps profile validation aligned with the control API before a request is sent.
  * The editor and API client share this single set of server-compatible limits.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const torrentProfileOptionsSchema = z.object({
   bandwidthPriority: z.union([
@@ -728,7 +728,7 @@ const torrentProfileOptionsSchema = z.object({
  * Validates the editable fields shared with a named profile while omitting
  * name matching and VPN selection, which the Default profile does not expose.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const defaultTorrentProfileInputSchema = z.object({
   downloadDirectory: downloadDataPathSchema,
@@ -754,7 +754,7 @@ const defaultTorrentProfileInputSchema = z.object({
  * Adds the identity, connection, and filename-matching fields available only
  * to named profiles.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const torrentProfileInputSchema = defaultTorrentProfileInputSchema.extend({
   connectionId: identifierSchema.nullable(),
@@ -770,7 +770,7 @@ const torrentProfileInputSchema = defaultTorrentProfileInputSchema.extend({
  * Adds the explicit move confirmation accepted only by the update route.
  * A false flag is omitted so the wire payload follows the API contract.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const updateTorrentProfileInputSchema: Web_Api_Schema<Web_Api_UpdateTorrentProfileInput> = torrentProfileInputSchema.extend({
   moveTorrents: z.literal(true).optional(),
@@ -782,7 +782,7 @@ const updateTorrentProfileInputSchema: Web_Api_Schema<Web_Api_UpdateTorrentProfi
  * Adds the explicit move confirmation used when the Default profile folder
  * changes while torrents are assigned to it.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const updateDefaultTorrentProfileInputSchema: Web_Api_Schema<Web_Api_UpdateDefaultTorrentProfileInput> = defaultTorrentProfileInputSchema.extend({
   moveTorrents: z.literal(true).optional(),
@@ -837,7 +837,7 @@ const customProfileInputSchema: Web_Api_Schema<Web_Api_CustomProfileInput> = z.o
  * Stores the RPC login form contract in one reusable schema.
  * The backend generates the corresponding password.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const rpcLoginInputSchema: Web_Api_Schema<Web_Api_RPCLoginInput> = z.object({
   username: remoteLoginUsernameSchema,
@@ -849,7 +849,7 @@ const rpcLoginInputSchema: Web_Api_Schema<Web_Api_RPCLoginInput> = z.object({
  * Allows either an editable username or an explicit password regeneration request.
  * Omitted fields retain their current values.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const updateRPCLoginInputSchema: Web_Api_Schema<Web_Api_UpdateRPCLoginInput> = z.object({
   regeneratePassword: z.boolean().optional(),
@@ -862,7 +862,7 @@ const updateRPCLoginInputSchema: Web_Api_Schema<Web_Api_UpdateRPCLoginInput> = z
  * Stores the web proxy login form contract in one reusable schema.
  * The backend generates the corresponding password.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const webProxyLoginInputSchema: Web_Api_Schema<Web_Api_WebProxyLoginInput> = z.object({
   connectionId: identifierSchema.nullable(),
@@ -875,7 +875,7 @@ const webProxyLoginInputSchema: Web_Api_Schema<Web_Api_WebProxyLoginInput> = z.o
  * Allows either editable metadata or an explicit password regeneration request.
  * Omitted fields retain their current values.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const updateWebProxyLoginInputSchema: Web_Api_Schema<Web_Api_UpdateWebProxyLoginInput> = z.object({
   connectionId: identifierSchema.nullable().optional(),
@@ -889,7 +889,7 @@ const updateWebProxyLoginInputSchema: Web_Api_Schema<Web_Api_UpdateWebProxyLogin
  * Validates the connection controls independently from provider credentials.
  * The full connect schema reuses the same limits.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const vpnConnectionInputSchema: Web_Api_Schema<Web_Api_VpnConnectionInput> = z.object({
   dnsServers: dnsServersSchema,
@@ -902,7 +902,7 @@ const vpnConnectionInputSchema: Web_Api_Schema<Web_Api_VpnConnectionInput> = z.o
  * Validates the test-and-connect portion shared by create and update routes.
  * Connection identity fields remain outside this nested configuration body.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const vpnConfigurationInputSchema = z.object({
   providerId: providerIdentifierSchema,
@@ -943,7 +943,7 @@ const vpnConfigurationInputSchema = z.object({
  * Combines one named connection and its tested VPN configuration.
  * Peer port is optional because the server can allocate its default.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const createVpnConnectionInputSchema: Web_Api_Schema<Web_Api_CreateVpnConnectionInput> = vpnConfigurationInputSchema.extend({
   name: connectionNameSchema,
@@ -956,7 +956,7 @@ const createVpnConnectionInputSchema: Web_Api_Schema<Web_Api_CreateVpnConnection
  * Allows a reconnect-free name or peer-port update and an optional tested
  * configuration. The expected revision is mandatory for every update.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const updateVpnConnectionInputSchema: Web_Api_Schema<Web_Api_UpdateVpnConnectionInput> = z.object({
   expectedRevision: z.number().int().min(1, 'The connection revision is invalid.'),
@@ -976,7 +976,7 @@ const updateVpnConnectionInputSchema: Web_Api_Schema<Web_Api_UpdateVpnConnection
  * Validates the global default-switch request before it reaches the API client.
  * The connection identifier uses the same contract as every related request.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const setDefaultVpnConnectionInputSchema: Web_Api_Schema<Web_Api_SetDefaultVpnConnectionInput> = z.object({
   connectionId: identifierSchema,
@@ -989,7 +989,7 @@ const setDefaultVpnConnectionInputSchema: Web_Api_Schema<Web_Api_SetDefaultVpnCo
  * Accepts no destination for the dependency probe and one destination when the
  * owner confirms moving dependants before removal.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const deleteVpnConnectionInputSchema: Web_Api_Schema<Web_Api_DeleteVpnConnectionInput> = z.object({
   moveTo: identifierSchema.optional(),
@@ -1170,7 +1170,7 @@ const updateSettingsInputSchema: Web_Api_Schema<Web_Api_UpdateSettingsInput> = z
  * Validates profile assignment requests before the details drawer submits them.
  * A null profile identifier deliberately represents the Default profile.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const setTorrentProfileInputSchema: Web_Api_Schema<Web_Api_SetTorrentProfileInput> = z.object({
   applyOptions: z.boolean(),
@@ -1284,7 +1284,7 @@ export const parseClaimInput = (input: Web_Api_ClaimInput): Web_Api_ClaimInput =
  * Normalizes the name and validates the complete test-and-connect request.
  * The result can be sent directly to the collection route.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const parseCreateVpnConnectionInput = (
   input: Web_Api_CreateVpnConnectionInput,
@@ -1299,7 +1299,7 @@ export const parseCreateVpnConnectionInput = (
  * Validates an optional move destination used by the removal dialog.
  * An empty object performs the dependency probe defined by the API.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const parseDeleteVpnConnectionInput = (
   input: Web_Api_DeleteVpnConnectionInput,
@@ -1311,7 +1311,7 @@ export const parseDeleteVpnConnectionInput = (
  * Validates the target identifier for the global default switch.
  * Keeping this parser shared prevents route-specific identifier drift.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const parseSetDefaultVpnConnectionInput = (
   input: Web_Api_SetDefaultVpnConnectionInput,
@@ -1348,7 +1348,7 @@ export const parseCustomProfileInput = (
  * Centralizes validation for creating a remote RPC login.
  * The normalized username is returned to the caller.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const parseRPCLoginInput = (input: Web_Api_RPCLoginInput): Web_Api_RPCLoginInput => parseInput(
   rpcLoginInputSchema,
@@ -1361,7 +1361,7 @@ export const parseRPCLoginInput = (input: Web_Api_RPCLoginInput): Web_Api_RPCLog
  * Centralizes validation for editing a remote RPC login.
  * Password regeneration is represented by an explicit boolean.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const parseUpdateRPCLoginInput = (
   input: Web_Api_UpdateRPCLoginInput,
@@ -1373,7 +1373,7 @@ export const parseUpdateRPCLoginInput = (
  * Centralizes validation for creating a web proxy login.
  * The result is safe to send directly to the API.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const parseWebProxyLoginInput = (
   input: Web_Api_WebProxyLoginInput,
@@ -1385,7 +1385,7 @@ export const parseWebProxyLoginInput = (
  * Centralizes validation for editing a web proxy login.
  * Password regeneration is represented by an explicit boolean.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const parseUpdateWebProxyLoginInput = (
   input: Web_Api_UpdateWebProxyLoginInput,
@@ -1397,7 +1397,7 @@ export const parseUpdateWebProxyLoginInput = (
  * Validates DNS and retry controls before combining them with provider fields.
  * It returns a normalized connection payload for the VPN request.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const parseVPNConnectionInput = (
   input: Web_Api_VpnConnectionInput,
@@ -1466,7 +1466,7 @@ export const parseRenameTorrentPathInput = (
  * Returns a validated profile assignment payload for the API client.
  * Invalid identifiers never reach the profile mutation route.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const parseSetTorrentProfileInput = (
   input: Web_Api_SetTorrentProfileInput,
@@ -1478,7 +1478,7 @@ export const parseSetTorrentProfileInput = (
  * Normalizes and validates every profile editor value against server limits.
  * Callers can send the returned payload without additional field conversion.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const parseTorrentProfileInput = (
   input: Web_Api_TorrentProfileInput,
@@ -1502,7 +1502,7 @@ export const parseTorrentProfileInput = (
  * Validates the editable Default profile fields before creating its request.
  * Named-only identity, VPN, and matching values cannot enter this payload.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const parseDefaultTorrentProfileInput = (
   input: Web_Api_DefaultTorrentProfileInput,
@@ -1523,7 +1523,7 @@ export const parseDefaultTorrentProfileInput = (
  * Validates the profile editor payload and its optional move confirmation.
  * Only the literal true is accepted when torrent movement is authorized.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const parseUpdateTorrentProfileInput = (
   input: Web_Api_UpdateTorrentProfileInput,
@@ -1547,7 +1547,7 @@ export const parseUpdateTorrentProfileInput = (
  * Accepts the same optional move confirmation as named profile updates.
  * The saved fields otherwise use the reduced Default profile input contract.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const parseUpdateDefaultTorrentProfileInput = (
   input: Web_Api_UpdateDefaultTorrentProfileInput,
@@ -1568,7 +1568,7 @@ export const parseUpdateDefaultTorrentProfileInput = (
  * Enforces revision control and preserves rename-only requests without a
  * configuration field, so those updates do not reconnect the tunnel.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const parseUpdateVpnConnectionInput = (
   input: Web_Api_UpdateVpnConnectionInput,

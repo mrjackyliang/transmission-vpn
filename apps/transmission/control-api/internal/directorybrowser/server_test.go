@@ -20,7 +20,7 @@ import (
 // The test covers sorted directory-only responses, Transmission-compatible folder
 // modes, duplicate handling, traversal rejection, and symlink rejection.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestServerBrowsesAndCreatesDirectories(testingObject *testing.T) {
 	temporaryDirectory := testingObject.TempDir()
 	rootPath := filepath.Join(temporaryDirectory, "data")
@@ -238,7 +238,7 @@ func TestServerBrowsesAndCreatesDirectories(testingObject *testing.T) {
 // Files, hidden files, child folders, and symbolic links all make a folder nonempty,
 // while one genuinely empty child can be removed through its resolved parent.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestServerDeletesOnlyEmptyDirectories(testingObject *testing.T) {
 	server, rootPath := newDirectoryFilesystemTestServer(testingObject)
 	emptyPath := filepath.Join(rootPath, "empty")
@@ -293,7 +293,7 @@ func TestServerDeletesOnlyEmptyDirectories(testingObject *testing.T) {
 // The controller refuses roots, files, missing targets, traversal, unnormalized
 // paths, and symbolic links without unlinking anything outside the directory contract.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestServerRejectsUnsafeDeletePaths(testingObject *testing.T) {
 	server, rootPath := newDirectoryFilesystemTestServer(testingObject)
 	regularFilePath := filepath.Join(rootPath, "regular-file")
@@ -347,7 +347,7 @@ func TestServerRejectsUnsafeDeletePaths(testingObject *testing.T) {
 // Empty means no entry of any kind, and only a real child directory sets
 // HasSubfolders; a symbolic link to a directory never counts as one.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestServerListsBoundedDirectoryMetadata(testingObject *testing.T) {
 	server, rootPath := newDirectoryFilesystemTestServer(testingObject)
 	emptyPath := filepath.Join(rootPath, "empty")
@@ -402,7 +402,7 @@ func TestServerListsBoundedDirectoryMetadata(testingObject *testing.T) {
 // An unrelated absolute path and a similarly prefixed sibling are rejected for
 // list, create, and delete without creating or removing anything at either path.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestServerRefusesPathsOutsideTheStorageRoot(testingObject *testing.T) {
 	server, rootPath := newDirectoryFilesystemTestServer(testingObject)
 	temporaryDirectory := filepath.Dir(rootPath)
@@ -447,7 +447,7 @@ func TestServerRefusesPathsOutsideTheStorageRoot(testingObject *testing.T) {
 // A parent link into an outside directory cannot be listed, created beneath, or
 // deleted through, and the outside target remains byte-for-byte untouched.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestServerRefusesSymbolicLinkParentComponents(testingObject *testing.T) {
 	server, rootPath := newDirectoryFilesystemTestServer(testingObject)
 	outsidePath := filepath.Join(filepath.Dir(rootPath), "outside")
@@ -481,7 +481,7 @@ func TestServerRefusesSymbolicLinkParentComponents(testingObject *testing.T) {
 // Each operation validates a real parent, then the hook swaps it for an outside
 // symlink before the descriptor walk; no operation reaches the outside directory.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestServerRejectsParentSymlinkSwapsAfterResolution(testingObject *testing.T) {
 	operations := []struct {
 		name string
@@ -559,7 +559,7 @@ func TestServerRejectsParentSymlinkSwapsAfterResolution(testingObject *testing.T
 // Reaching the configurable per-child entry cap leaves the presence of a real
 // subfolder unknown, so the response keeps the expand chevron available.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestServerMarksCappedChildScansAsHavingSubfolders(testingObject *testing.T) {
 	previousLimit := maximumDirectoryEntriesScanned
 	maximumDirectoryEntriesScanned = 2
@@ -594,7 +594,7 @@ func TestServerMarksCappedChildScansAsHavingSubfolders(testingObject *testing.T)
 // The first child consumes the total scan budget; the later nonempty child receives
 // one probe and conservatively reports possible subfolders without a full scan.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestServerUsesEmptinessProbeAfterAggregateBudget(testingObject *testing.T) {
 	previousLimit := maximumListingEntriesScanned
 	maximumListingEntriesScanned = 1
@@ -632,7 +632,7 @@ func TestServerUsesEmptinessProbeAfterAggregateBudget(testingObject *testing.T) 
 // A zero test limit deterministically expires before child inspection, leaving the
 // folder visible with conservative metadata and Checked false.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestServerMarksChildrenUncheckedAfterTimeBudget(testingObject *testing.T) {
 	previousDuration := maximumDirectoryListingDuration
 	maximumDirectoryListingDuration = 0
@@ -660,7 +660,7 @@ func TestServerMarksChildrenUncheckedAfterTimeBudget(testingObject *testing.T) {
 // A real child whose byte name is not valid UTF-8 remains on disk but never enters
 // the controller response that the API must encode as JSON.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestServerOmitsNonUTF8DirectoryNames(testingObject *testing.T) {
 	server, rootPath := newDirectoryFilesystemTestServer(testingObject)
 	invalidName := string([]byte{'i', 'n', 'v', 'a', 'l', 'i', 'd', 0xff})
@@ -692,7 +692,7 @@ func TestServerOmitsNonUTF8DirectoryNames(testingObject *testing.T) {
 // Existing folders with trailing spaces remain listable and deletable even though the
 // stricter folder-creation validator would refuse creating that name through the API.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestServerListsAndDeletesTrailingSpaceDirectoryNames(testingObject *testing.T) {
 	server, rootPath := newDirectoryFilesystemTestServer(testingObject)
 	name := "Season 1 "
@@ -722,7 +722,7 @@ func TestServerListsAndDeletesTrailingSpaceDirectoryNames(testingObject *testing
 // EROFS remains distinguishable from ordinary permission errors so the API can
 // provide the storage-specific 403 guidance required by the public contract.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestDeleteDirectoryErrorMapsReadOnlyStorage(testingObject *testing.T) {
 	err := deleteDirectoryError(unix.EROFS)
 	if CodeOf(err) != ErrorCodeReadOnly {
@@ -735,7 +735,7 @@ func TestDeleteDirectoryErrorMapsReadOnlyStorage(testingObject *testing.T) {
 // Listing-cost tests use this helper so their assertions stay independent from
 // unrelated siblings and retain stable failure output.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func directoryEntryByName(
 	testingObject *testing.T,
 	directory Directory,
@@ -787,7 +787,7 @@ func newDirectoryFilesystemTestServer(testingObject *testing.T) (*Server, string
 // Ordinary fixtures must be readable and checked in addition to matching the expected
 // emptiness and real-subfolder values.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func assertDirectoryMetadata(
 	testingObject *testing.T,
 	entry DirectoryEntry,

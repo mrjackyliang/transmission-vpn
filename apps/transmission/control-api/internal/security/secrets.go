@@ -47,20 +47,28 @@ func GenerateInstallationKey() ([]byte, error) {
 
 // SaveInstallationKey writes a new installation key beside application state.
 //
-// The file is created with mode 0600 and never replaces an existing key, so a key that
-// appeared in the meantime stops startup instead of being overwritten.
+// The file is created with mode 0660 for the PUID:PGID group the console shares, and it
+// never replaces an existing key, so a key that appeared in the meantime stops startup
+// instead of being overwritten.
 func SaveInstallationKey(path string, key []byte) error {
 	if _, err := validateInstallationKey(key); err != nil {
 		return err
 	}
 
-	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+	if err := os.MkdirAll(filepath.Dir(path), 0o770); err != nil {
 		return fmt.Errorf("create installation key directory: %w", err)
 	}
 
-	keyFile, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
+	keyFile, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o660)
 	if err != nil {
 		return fmt.Errorf("create installation key: %w", err)
+	}
+
+	if err := keyFile.Chmod(0o660); err != nil {
+		_ = keyFile.Close()
+		_ = os.Remove(path)
+
+		return fmt.Errorf("set installation key permissions: %w", err)
 	}
 
 	writeSucceeded := false

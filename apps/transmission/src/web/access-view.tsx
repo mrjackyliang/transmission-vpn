@@ -59,7 +59,7 @@ import type {
  * Lets an address wrap after its "://" and each path slash without splitting
  * its host, port, or a path segment.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const breakAddressAtBoundaries = (address: string): ReactNode => {
   const schemeIndex: number = address.indexOf('://');
@@ -248,7 +248,7 @@ export const AccessView = ({
      *
      * @returns {boolean}
      *
-     * @since UNRELEASED
+     * @since 2.0.0
      */
     const finishWebProxyTransition = (reportedState: Web_Api_WebProxyState): boolean => {
       if (transitionSequence !== webProxyTransitionSequenceRef.current) {
@@ -288,7 +288,7 @@ export const AccessView = ({
      *
      * @returns {Promise<void>}
      *
-     * @since UNRELEASED
+     * @since 2.0.0
      */
     const pollWebProxyTransition = async (): Promise<void> => {
       if (!effectActive || finishWebProxyTransition(webProxyStateRef.current)) {
@@ -354,7 +354,7 @@ export const AccessView = ({
    * Resets form state before adding or editing a remote login.
    * The selected login supplies the edit form's initial username.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const openLoginDialog = (
     dialog: Web_Components_AccessView_LoginDialog,
@@ -409,7 +409,7 @@ export const AccessView = ({
    * Saves the desired proxy state independently from its login collection.
    * Any VPN prerequisite rejection is shown in an error toast.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const toggleWebProxy = async (): Promise<void> => {
     if (webProxyRequestedEnabled !== null) {
@@ -447,7 +447,7 @@ export const AccessView = ({
    * Creates an RPC or web proxy login, or saves either kind of edited login.
    * Generated passwords move directly into the one-time result dialog.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const submitLogin = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
@@ -510,7 +510,7 @@ export const AccessView = ({
    * Revokes the selected RPC or web proxy credential after confirmation.
    * A failed deletion remains open so it can be retried.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const deleteLogin = async (login: Web_Components_AccessView_DeletingLogin): Promise<void> => {
     setBusy(true);
@@ -631,7 +631,7 @@ export const AccessView = ({
    * Distinguishes an explicit connection from the current default while still
    * naming the effective route used by the login.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const connectionLabel = (login: Web_Api_WebProxyLogin): string => {
     const storedConnection = connections.find((candidate): boolean => candidate['id'] === login['connectionId']);

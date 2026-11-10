@@ -19,7 +19,7 @@ import type { Web_UseDragReorder_Result } from '@/types/web/use-drag-reorder.d.t
  * @param {string}                           id               - Id.
  * @param {number}                           destinationIndex - Destination index.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const placeListedID = (
   ids: string[],
@@ -54,7 +54,7 @@ export const placeListedID = (
  * @param {(id: string, destinationIndex: number) => void} onMove  - On move.
  * @param {() => void}                                     onDrop  - On drop.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const useDragReorder = (
   listRef: RefObject<HTMLElement | null>,
@@ -91,7 +91,7 @@ export const useDragReorder = (
      *
      * @param {PointerEvent} event - Event.
      *
-     * @since UNRELEASED
+     * @since 2.0.0
      */
     const followDrag = (event: PointerEvent): void => {
       const rows: HTMLElement[] = Array.from(listRef.current?.querySelectorAll<HTMLElement>('[data-reorder-id]') ?? []);
@@ -110,7 +110,7 @@ export const useDragReorder = (
      * Drops the held row where it is when the pointer is released or cancelled.
      * The list's owner saves the new order from its drop handler.
      *
-     * @since UNRELEASED
+     * @since 2.0.0
      */
     const finishDrag = (): void => {
       setDraggingID(null);

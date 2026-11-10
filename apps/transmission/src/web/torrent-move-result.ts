@@ -6,7 +6,7 @@ import type { Web_Api_MovedTorrent } from '@/types/web/api.d.ts';
  * Names each profile move outcome consistently in single, batch, and profile
  * editor result lists. Failed moves prefer the backend's actionable error.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const torrentMoveResultLabel = (result: Web_Api_MovedTorrent): string => {
   if (result['result'] === 'moved') {

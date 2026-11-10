@@ -211,7 +211,7 @@ func (server *Server) handleTransmissionFreeSpace(
 // s6 restarts the unprivileged runner automatically. Requiring an explicit confirmation
 // keeps settings transactions from interrupting active work without administrator intent.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (server *Server) handleTransmissionRestart(
 	responseWriter http.ResponseWriter,
 	request *http.Request,

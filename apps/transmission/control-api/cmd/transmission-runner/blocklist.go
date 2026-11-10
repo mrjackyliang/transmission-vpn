@@ -34,7 +34,7 @@ const (
 	// The per-source deadline remains longer so slow but progressing HTTPS bodies can
 	// finish without weakening the fail-closed route selection.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	blocklistConnectTimeout = 30 * time.Second
 
 	// blocklistSourceTimeout bounds one source including redirects and decompression.
@@ -42,7 +42,7 @@ const (
 	// Sources are processed sequentially so this also bounds how long one bad endpoint
 	// can delay the remaining saved list.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	blocklistSourceTimeout = 5 * time.Minute
 
 	// blocklistMaximumDownloadBytes bounds one compressed or plain HTTP response.
@@ -50,7 +50,7 @@ const (
 	// The runner reads one sentinel byte past this value so an exact-limit response is
 	// accepted while every larger response is rejected.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	blocklistMaximumDownloadBytes = 64 << 20
 
 	// blocklistMaximumUnpackedBytes bounds the validated source text.
@@ -58,7 +58,7 @@ const (
 	// This separate limit prevents a small gzip or zip response from expanding without
 	// bound inside the long-running runner process.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	blocklistMaximumUnpackedBytes = 512 << 20
 
 	// blocklistMaximumNormalizedBytes bounds one source's canonical output.
@@ -66,7 +66,7 @@ const (
 	// Normalized IPv6 ranges can be much longer than their input CIDRs, so this disk
 	// limit is enforced independently while each accepted line is streamed.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	blocklistMaximumNormalizedBytes = 128 << 20
 
 	// blocklistMaximumRanges bounds the accepted lines in one source.
@@ -74,7 +74,7 @@ const (
 	// The count limit complements the byte limit for very short IPv4 ranges and keeps
 	// Transmission's later index construction within a predictable workload.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	blocklistMaximumRanges = 2_000_000
 
 	// blocklistMaximumTotalBytes bounds all normalized sources in one merged set.
@@ -82,7 +82,7 @@ const (
 	// The logical set is capped before it is streamed into daemon folders, preventing
 	// many individually valid sources from exhausting persistent storage together.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	blocklistMaximumTotalBytes = 256 << 20
 
 	// blocklistMaximumTotalRanges bounds all accepted ranges in one merged set.
@@ -90,7 +90,7 @@ const (
 	// The aggregate limit constrains the per-daemon in-memory index even when several
 	// individually valid sources are configured together.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	blocklistMaximumTotalRanges = 3_000_000
 
 	// blocklistMaximumZipEntries bounds archive metadata before archive/zip runs.
@@ -98,7 +98,7 @@ const (
 	// The central directory is inspected from fixed-size end records so an entry bomb
 	// is rejected before Go allocates one File value per member.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	blocklistMaximumZipEntries = 1_000
 
 	// blocklistMaximumZipDirectoryBytes bounds archive metadata read by archive/zip.
@@ -106,7 +106,7 @@ const (
 	// Eight MiB leaves ample room for one thousand descriptive filenames while keeping
 	// a small downloaded archive from expanding into an unbounded directory table.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	blocklistMaximumZipDirectoryBytes = 8 << 20
 
 	// blocklistSynchronizationRetryDelay backs off failed daemon installations.
@@ -114,7 +114,7 @@ const (
 	// The configured source interval may shorten this delay, while ordinary one-second
 	// runner polls never redownload immediately after a persistent filesystem failure.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	blocklistSynchronizationRetryDelay = 15 * time.Minute
 )
 
@@ -124,7 +124,7 @@ var (
 	// It is a state transition rather than a source failure, so existing copies stay in
 	// use and the manager retries immediately after protection returns.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	errBlocklistWaitingForVPN = errors.New("default VPN connection is not protected")
 
 	// errBlocklistDownloadTooLarge identifies a response above the compressed cap.
@@ -132,14 +132,14 @@ var (
 	// The stable error keeps status display-safe and lets focused tests distinguish the
 	// downloaded and unpacked boundaries.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	errBlocklistDownloadTooLarge = errors.New("The downloaded list is larger than 64 MiB.")
 
 	// errBlocklistUnpackedTooLarge identifies content above the decompressed cap.
 	//
 	// It applies to gzip, zip, and plain data through the same bounded reader helper.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	errBlocklistUnpackedTooLarge = errors.New("The unpacked list is larger than 512 MiB.")
 
 	// errBlocklistTooLarge is the approved normalized, range, aggregate, and zip error.
@@ -147,7 +147,7 @@ var (
 	// One stable display-safe message prevents implementation-specific size details
 	// from leaking through per-source status or the compatible RPC facade.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	errBlocklistTooLarge = errors.New("This list is too large.")
 
 	// errBlocklistDaemonNotPrepared marks a config directory not yet owned by a child.
@@ -155,7 +155,7 @@ var (
 	// Periodic synchronization skips this transient state so the merger never creates
 	// a directory ahead of legacy migration or normal daemon preparation.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	errBlocklistDaemonNotPrepared = errors.New("daemon configuration is not prepared")
 
 	// errBlocklistDirectoryUnsafe identifies a linked or non-directory blocklists path.
@@ -163,7 +163,7 @@ var (
 	// The stable message is safe to publish with the daemon identifier and guarantees
 	// no cleanup is attempted through an attacker-controlled filesystem entry.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	errBlocklistDirectoryUnsafe = errors.New("the blocklists path is not a directory")
 
 	// blocklistURLPattern locates URL-shaped text in otherwise untyped errors.
@@ -171,7 +171,7 @@ var (
 	// url.Error values are unwrapped first; this fallback scrubs third-party or system
 	// errors that embed an address despite not exposing url.Error themselves.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	blocklistURLPattern = regexp.MustCompile(`(?i)\b[a-z][a-z0-9+.-]*://[^\s"'<>]+`)
 
 	// blocklistQueryPattern locates query fragments left outside a complete URL.
@@ -179,7 +179,7 @@ var (
 	// Replacing the fragment rather than parsing it keeps malformed error text from
 	// exposing token values after a question mark.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	blocklistQueryPattern = regexp.MustCompile(`\?[^\s"'<>]*`)
 )
 
@@ -188,7 +188,7 @@ var (
 // The alias keeps runner call sites readable while both blocklists and torrent
 // previews share vpnhttp's source-bound transport contract.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type blocklistRoute = vpnhttp.Route
 
 // blocklistVPNStatus is the persisted controller projection used by runner tests.
@@ -196,7 +196,7 @@ type blocklistRoute = vpnhttp.Route
 // Route validation now lives in vpnhttp, but retaining this local JSON contract
 // keeps the blocklist fixture aligned with the status file that package consumes.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type blocklistVPNStatus struct {
 	ConnectionID string   `json:"connectionId"`
 	Slot         int      `json:"slot"`
@@ -209,7 +209,7 @@ type blocklistVPNStatus struct {
 // File remains open and unlinked for stable streaming into later daemon folders;
 // metadata records its bounded size, ranges, and last successful download.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type blocklistCopy struct {
 	File      *os.File
 	Ranges    int
@@ -222,7 +222,7 @@ type blocklistCopy struct {
 // Its reconcile mutex keeps scheduled decisions ordered, while the ownership
 // mutex protects cache swaps and synchronization without covering downloads.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type blocklistMerger struct {
 	runner                    *runner
 	logger                    *slog.Logger
@@ -262,7 +262,7 @@ type blocklistMerger struct {
 // Network and certificate seams default to production behavior but remain directly
 // injectable by TLS tests without environment variables.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func newBlocklistMerger(owner *runner, logger *slog.Logger) *blocklistMerger {
 	return &blocklistMerger{
 		runner:             owner,
@@ -297,7 +297,7 @@ func newBlocklistMerger(owner *runner, logger *slog.Logger) *blocklistMerger {
 // Individual read or update failures are logged and retried; they never terminate
 // healthy Transmission supervisors or weaken their existing bind addresses.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (merger *blocklistMerger) run(ctx context.Context, interval time.Duration) {
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
@@ -327,7 +327,7 @@ func (merger *blocklistMerger) run(ctx context.Context, interval time.Duration) 
 // A due update proves the default VPN is protected, then releases the ownership
 // lock for downloads while keeping disabled and empty-source work local.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (merger *blocklistMerger) reconcile(ctx context.Context) error {
 	merger.reconcileMutex.Lock()
 	defer merger.reconcileMutex.Unlock()
@@ -522,7 +522,7 @@ func (merger *blocklistMerger) reconcile(ctx context.Context) error {
 // Network and normalization work run without the ownership mutex; completed
 // files are swapped under it before ready children rebuild their indexes.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (merger *blocklistMerger) update(
 	ctx context.Context,
 	configuration blocklist.Configuration,
@@ -716,7 +716,7 @@ func (merger *blocklistMerger) update(
 // Downloaded copies remain installed during backoff, so a transient session-get
 // failure never causes every protected source to be fetched again.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (merger *blocklistMerger) retryDaemonReload(
 	ctx context.Context,
 	configuration blocklist.Configuration,
@@ -759,7 +759,7 @@ func (merger *blocklistMerger) retryDaemonReload(
 // The due attempt remains waiting and retries on protection recovery, while source
 // statuses continue to describe copies that are actually present on disk.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (merger *blocklistMerger) finishInterruptedUpdate(
 	configuration blocklist.Configuration,
 	copies map[string]*blocklistCopy,
@@ -779,7 +779,7 @@ func (merger *blocklistMerger) finishInterruptedUpdate(
 // The attempt timestamp prevents tight retries, while the earlier of fifteen minutes
 // and the configured interval becomes the durable retry schedule.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (merger *blocklistMerger) finishSynchronizationFailure(
 	configuration blocklist.Configuration,
 	copies map[string]*blocklistCopy,
@@ -812,7 +812,7 @@ func (merger *blocklistMerger) finishSynchronizationFailure(
 // LastAttemptAt continues to describe the completed source pass, while
 // NextUpdateAt records a retry for only the remaining live reload work.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (merger *blocklistMerger) finishReloadFailure(
 	configuration blocklist.Configuration,
 	now time.Time,
@@ -840,7 +840,7 @@ func (merger *blocklistMerger) finishReloadFailure(
 // Existing cached copies are installed without network access or sibling signaling.
 // The scheduled merger remains the only owner of source downloads and update timing.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (merger *blocklistMerger) prepareDaemon(
 	ctx context.Context,
 	entry daemonEntry,
@@ -887,7 +887,7 @@ func (merger *blocklistMerger) prepareDaemon(
 // It derives the local address from the fixed daemon slot instead of the provider
 // address and accepts DNS servers only from the matching controller status file.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (merger *blocklistMerger) protectedDefaultRoute(
 	entries []daemonEntry,
 ) (blocklistRoute, error) {
@@ -921,7 +921,7 @@ func (merger *blocklistMerger) protectedDefaultRoute(
 // Download, unpacked, normalized-byte, and range caps are enforced independently;
 // only the small HTTP body buffer and one bounded source line reside in memory.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (merger *blocklistMerger) downloadAndNormalize(
 	ctx context.Context,
 	sourceURL string,
@@ -989,7 +989,7 @@ func (merger *blocklistMerger) downloadAndNormalize(
 // Context checks complement the request cancellation and prevent a custom or stalled
 // reader in tests from bypassing the source deadline between fixed-size writes.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func copyBlocklistDownload(
 	ctx context.Context,
 	destination io.Writer,
@@ -1027,7 +1027,7 @@ func copyBlocklistDownload(
 // The transport never invokes the host resolver: hostnames are resolved by a Go
 // resolver whose UDP and TCP sockets use the same protected slot address.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (merger *blocklistMerger) httpClient(route blocklistRoute) *http.Client {
 	return vpnhttp.NewClient(vpnhttp.ClientOptions{
 		Route:                 route,
@@ -1050,7 +1050,7 @@ func (merger *blocklistMerger) httpClient(route blocklistRoute) *http.Client {
 // Both UDP fallback and TCP retries bind the slot source address, matching the web
 // proxy route selection and preventing resolver traffic from using container eth0.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (merger *blocklistMerger) connectionResolver(route blocklistRoute) *net.Resolver {
 	return vpnhttp.NewResolver(
 		route,
@@ -1065,7 +1065,7 @@ func (merger *blocklistMerger) connectionResolver(route blocklistRoute) *net.Res
 // Zip end records are bounded and validated before archive/zip reads the central
 // directory, while actual expansion stays streaming for the normalizer.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (merger *blocklistMerger) openDownloadedBlocklist(
 	downloaded *os.File,
 	downloadedBytes int64,
@@ -1135,7 +1135,7 @@ func (merger *blocklistMerger) openDownloadedBlocklist(
 // The returned descriptor is rewound and retained by the merger cache, allowing every
 // daemon copy to use io.Copy without materializing any normalized source in memory.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (merger *blocklistMerger) normalizeToTemporary(
 	ctx context.Context,
 	reader io.Reader,
@@ -1182,7 +1182,7 @@ func (merger *blocklistMerger) normalizeToTemporary(
 // Each folder is independently atomic at the file level; stale native indexes and
 // former source files are removed only inside the runner-owned blocklists directory.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (merger *blocklistMerger) synchronizeDaemons(
 	entries []daemonEntry,
 	sources []string,
@@ -1206,7 +1206,7 @@ func (merger *blocklistMerger) synchronizeDaemons(
 // Temporary files are renamed only after syncing, and cleanup includes stale .bin
 // indexes plus the legacy primary blocklist.bin file.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (merger *blocklistMerger) synchronizeDaemon(
 	entry daemonEntry,
 	sources []string,
@@ -1249,7 +1249,7 @@ func (merger *blocklistMerger) synchronizeDaemon(
 // The cache is deferred until a prepared config directory exists, preventing the
 // blocklist loop from creating paths before slot-zero legacy migration completes.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (merger *blocklistMerger) ensureCopiesLoaded(
 	ctx context.Context,
 	entries []daemonEntry,
@@ -1324,7 +1324,7 @@ func (merger *blocklistMerger) ensureCopiesLoaded(
 // The returned map shares immutable copy descriptors; replacement closes only entries
 // that are no longer referenced by the merger's next complete set.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (merger *blocklistMerger) copiesForSources(
 	sources []string,
 ) map[string]*blocklistCopy {
@@ -1343,7 +1343,7 @@ func (merger *blocklistMerger) copiesForSources(
 // Retained last-good pointers survive individual source failures, while removed or
 // superseded temp files release their disk space immediately.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (merger *blocklistMerger) replaceCopies(copies map[string]*blocklistCopy) {
 	closeBlocklistCopies(merger.copies, copies)
 	merger.copies = copies
@@ -1355,7 +1355,7 @@ func (merger *blocklistMerger) replaceCopies(copies map[string]*blocklistCopy) {
 // Pointer de-duplication handles repeated source values without closing a shared file
 // twice, and a nil retained map closes the complete supplied set.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func closeBlocklistCopies(
 	copies map[string]*blocklistCopy,
 	retained map[string]*blocklistCopy,
@@ -1385,7 +1385,7 @@ func closeBlocklistCopies(
 // This runner-side ordering mirrors the API translation and keeps the persisted status
 // useful for compatible RPC callers that do not pass through the versioned endpoint.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (merger *blocklistMerger) statusesForSources(sources []string) []blocklist.SourceStatus {
 	byURL := make(map[string]blocklist.SourceStatus, len(merger.status.Sources))
 	for _, sourceStatus := range merger.status.Sources {
@@ -1408,7 +1408,7 @@ func (merger *blocklistMerger) statusesForSources(sources []string) []blocklist.
 // A restored pre-merger status may have only a success timestamp; later failed source
 // attempts still schedule normally without a tight polling loop.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (merger *blocklistMerger) setNextUpdate(configuration blocklist.Configuration) {
 	lastScheduledAt := merger.status.LastAttemptAt
 	if lastScheduledAt == nil {
@@ -1430,7 +1430,7 @@ func (merger *blocklistMerger) setNextUpdate(configuration blocklist.Configurati
 // Missing or invalid state is treated as a fresh merger so desired configuration can
 // still trigger a safe protected update and replace the artifact.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (merger *blocklistMerger) loadStatus() {
 	if merger.loadedStatus {
 		return
@@ -1451,7 +1451,7 @@ func (merger *blocklistMerger) loadStatus() {
 // and group-read mode gives the control API access without making status public;
 // identical snapshots skip replacement and its file sync entirely.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (merger *blocklistMerger) writeStatus() error {
 	if merger.hasPublishedStatus && reflect.DeepEqual(merger.status, merger.publishedStatus) {
 		return nil
@@ -1470,7 +1470,7 @@ func (merger *blocklistMerger) writeStatus() error {
 // Timestamp pointers are immutable UTC values, while source ordering may be replaced
 // on every reconcile and therefore receives its own backing array.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func cloneBlocklistStatus(status blocklist.Status) blocklist.Status {
 	cloned := status
 	cloned.Sources = append([]blocklist.SourceStatus(nil), status.Sources...)
@@ -1483,7 +1483,7 @@ func cloneBlocklistStatus(status blocklist.Status) blocklist.Status {
 // It stays beside settings-base.json and daemons.json under the existing setgid
 // hand-off directory.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (merger *blocklistMerger) configurationPath() string {
 	return filepath.Join(
 		merger.runner.options.RuntimeDirectory,
@@ -1497,7 +1497,7 @@ func (merger *blocklistMerger) configurationPath() string {
 // Reading the published list avoids racing the supervisor's mutable map and preserves
 // the API's stable slot order for file synchronization.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (merger *blocklistMerger) daemonConfigurationPath() string {
 	return filepath.Join(
 		merger.runner.options.RuntimeDirectory,
@@ -1511,7 +1511,7 @@ func (merger *blocklistMerger) daemonConfigurationPath() string {
 // It uses the existing Transmission-owned state directory, so the Docker runtime tree
 // needs no new ownership boundary.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (merger *blocklistMerger) statusPath() string {
 	return filepath.Join(
 		merger.runner.options.RuntimeDirectory,
@@ -1525,7 +1525,7 @@ func (merger *blocklistMerger) statusPath() string {
 // The same validation runs on initial requests and every redirect, closing the common
 // HTTPS-to-HTTP downgrade path before a transport dial occurs.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func validateBlocklistURL(rawURL string) (*url.URL, error) {
 	parsedURL, err := url.Parse(rawURL)
 	if err != nil || parsedURL.Scheme != "https" || parsedURL.Host == "" {
@@ -1543,7 +1543,7 @@ func validateBlocklistURL(rawURL string) (*url.URL, error) {
 // IPv6 destinations are deliberately excluded because runner source policy and the
 // permanent daemon slot addresses are IPv4-only.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func resolveBlocklistHost(
 	ctx context.Context,
 	host string,
@@ -1557,7 +1557,7 @@ func resolveBlocklistHost(
 // CIDR is attempted first, followed by comma-delimited DAT and colon-delimited P2P;
 // address parsing supplies the final family and ordering validation.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func parseBlocklistLine(line string) (netip.Addr, netip.Addr, bool) {
 	if line == "" || strings.HasPrefix(line, "#") {
 		return netip.Addr{}, netip.Addr{}, false
@@ -1594,7 +1594,7 @@ func parseBlocklistLine(line string) (netip.Addr, netip.Addr, bool) {
 // Whitespace around DAT separators is ignored, while address comparison rejects
 // reversed ranges before they can reach Transmission's parser.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func parseAddressRange(value string) (netip.Addr, netip.Addr, bool) {
 	parts := strings.SplitN(value, "-", 2)
 	if len(parts) != 2 {
@@ -1619,7 +1619,7 @@ func parseAddressRange(value string) (netip.Addr, netip.Addr, bool) {
 // Byte-wise host-bit filling works for both address families without integer
 // conversions that could truncate IPv6 values.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func lastPrefixAddress(prefix netip.Prefix) netip.Addr {
 	address := prefix.Masked().Addr()
 	bits := address.BitLen()
@@ -1637,7 +1637,7 @@ func lastPrefixAddress(prefix netip.Prefix) netip.Addr {
 // The source URL is already a separate field, so only the concise failure reason is
 // retained for console display and compatible RPC results.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func displaySafeBlocklistError(err error) string {
 	for err != nil {
 		var urlError *url.Error
@@ -1671,7 +1671,7 @@ func displaySafeBlocklistError(err error) string {
 // Sources without a copy remain pending; usable copies retain their range count and
 // successful timestamp without being mislabeled as a fresh update.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func statusesFromCopies(
 	sources []string,
 	copies map[string]*blocklistCopy,
@@ -1698,7 +1698,7 @@ func statusesFromCopies(
 // The source-order iteration intentionally ignores stale map entries that may belong
 // to a source removed by the same configuration change.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func totalBlocklistRanges(sources []string, copies map[string]*blocklistCopy) int {
 	total := 0
 	counted := make(map[string]struct{}, len(sources))
@@ -1720,7 +1720,7 @@ func totalBlocklistRanges(sources []string, copies map[string]*blocklistCopy) in
 // It distinguishes the first manual request from no request while avoiding pointer
 // identity differences after every JSON decode.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func sameOptionalTime(left *time.Time, right *time.Time) bool {
 	if left == nil || right == nil {
 		return left == nil && right == nil
@@ -1734,7 +1734,7 @@ func sameOptionalTime(left *time.Time, right *time.Time) bool {
 // Centralizing this small conversion avoids storing pointers to mutable loop values in
 // per-source and aggregate merger state.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func timePointer(value time.Time) *time.Time {
 	utc := value.UTC()
 

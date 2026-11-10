@@ -66,7 +66,7 @@ func TestHTTPAuthenticationRequiresValidCredentials(testingObject *testing.T) {
 // An enabled proxy with no configured logins returns the same challenge as a bad
 // password, so no supplied username and password can reach a destination.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestZeroLoginHTTPAuthenticationMatchesWrongPassword(testingObject *testing.T) {
 	service := newProtocolTestService(testingObject)
 	requestPrefix := "GET http://1.1.1.1/ HTTP/1.1\r\nHost: 1.1.1.1\r\nConnection: close\r\nProxy-Authorization: "
@@ -1056,7 +1056,7 @@ func TestSuccessfulLoginCache(testingObject *testing.T) {
 // Enabling opens the listener even with no logins so authentication can refuse every
 // attempt, while disabling still closes the listener and its active connections.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestConfigReloadOpensAndClosesListener(testingObject *testing.T) {
 	service := newProtocolTestService(testingObject)
 	service.vpnProtected = func() bool { return false }

@@ -17,7 +17,7 @@ import (
 // A converter is present only when Transmission exposes a different value format
 // through session-get than it persists in its native configuration file.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type liveDaemonSettingMapping struct {
 	settingsKey string
 	convert     func(json.RawMessage) (json.RawMessage, error)
@@ -29,7 +29,7 @@ var (
 	// The keys mirror the API registry and compatible RPC facade, while deliberately
 	// excluding derived status, listener, script, and other appliance-owned fields.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	liveDaemonSettingMappings = map[string]liveDaemonSettingMapping{
 		"alt-speed-down":               {settingsKey: "alt-speed-down"},
 		"alt-speed-enabled":            {settingsKey: "alt-speed-enabled"},
@@ -72,7 +72,7 @@ var (
 // Daemon preparation captures this value so a later process registration can detect
 // whether blocklist files changed before the RPC socket became ready.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (runner *runner) currentReloadRevision() uint64 {
 	runner.processMutex.Lock()
 	defer runner.processMutex.Unlock()
@@ -85,7 +85,7 @@ func (runner *runner) currentReloadRevision() uint64 {
 // One generation covers the complete synchronized daemon set; errors are joined only
 // after all ready siblings have received their independent reload attempt.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (runner *runner) requestDaemonReloads(
 	ctx context.Context,
 	entries []daemonEntry,
@@ -101,7 +101,7 @@ func (runner *runner) requestDaemonReloads(
 // Callers keep file synchronization and revision publication atomic, then perform
 // slower RPC snapshots after releasing their filesystem ownership lock.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (runner *runner) scheduleDaemonReloads(
 	entries []daemonEntry,
 	blocklistEnabled bool,
@@ -144,7 +144,7 @@ func (runner *runner) scheduleDaemonReloads(
 // Failures mark only the matching process pending so a later generation can retry
 // without losing successful reloads delivered to sibling daemons.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (runner *runner) reloadDaemons(
 	ctx context.Context,
 	readyProcesses []daemonProcess,
@@ -165,7 +165,7 @@ func (runner *runner) reloadDaemons(
 // A pending generation is consumed under the process lock and reloaded once outside
 // it, preventing an early SIGHUP from terminating a handlerless daemon.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (runner *runner) markDaemonReady(
 	ctx context.Context,
 	connectionID string,
@@ -202,7 +202,7 @@ func (runner *runner) markDaemonReady(
 // The identity guard prevents an old process failure from marking a rapidly restarted
 // replacement that has already prepared the latest files.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (runner *runner) markReloadPending(connectionID string, processID int) {
 	runner.processMutex.Lock()
 	process := runner.processes[connectionID]
@@ -217,7 +217,7 @@ func (runner *runner) markReloadPending(connectionID string, processID int) {
 // The shared path covers every runner reload reason so RPC session changes survive
 // blocklist replacement and the slot bind, peer port, and RPC socket remain fixed.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (runner *runner) reloadDaemon(ctx context.Context, process daemonProcess) error {
 	settingsPath := filepath.Join(
 		runner.options.ConfigDirectory,
@@ -288,7 +288,7 @@ func (runner *runner) reloadDaemon(ctx context.Context, process daemonProcess) e
 // Legacy session-get returns required, preferred, or tolerated strings, while the
 // 4.1 settings file persists the corresponding enum value from zero through two.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func convertLiveEncryptionSetting(value json.RawMessage) (json.RawMessage, error) {
 	var name string
 	if err := json.Unmarshal(value, &name); err == nil {
@@ -321,7 +321,7 @@ func convertLiveEncryptionSetting(value json.RawMessage) (json.RawMessage, error
 // No RPC merge is needed before Start; prepareDaemonSettings has already combined the
 // saved file and application base, and this pass supplies current blocklist ownership.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (runner *runner) writePreparedDaemonSettings(
 	entry daemonEntry,
 	peerPort int,
@@ -354,7 +354,7 @@ func (runner *runner) writePreparedDaemonSettings(
 // Owned values are deliberately assigned after any live merge so remote session-set
 // calls cannot move a daemon off its protected slot or restore Transmission URL fetches.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (runner *runner) writeOwnedDaemonSettings(
 	settingsPath string,
 	settings map[string]json.RawMessage,

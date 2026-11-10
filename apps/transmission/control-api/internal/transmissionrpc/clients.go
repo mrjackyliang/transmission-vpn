@@ -20,7 +20,7 @@ const (
 // The interface belongs to the API consumer so focused tests can substitute a
 // loopback fake without weakening Client's endpoint validation.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type Caller interface {
 	Call(context.Context, string, any, any) error
 }
@@ -30,7 +30,7 @@ type Caller interface {
 // Endpoint is normally empty and derived from Slot. Tests may provide another
 // loopback URL so several fake daemons can use operating-system-assigned ports.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type DaemonConfig struct {
 	ConnectionID string
 	Slot         int
@@ -44,7 +44,7 @@ type DaemonConfig struct {
 // Callers can fan out without holding the set's lock while replacements reuse
 // unchanged clients and their negotiated Transmission session identifiers.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type Daemon struct {
 	ConnectionID string
 	Slot         int
@@ -59,7 +59,7 @@ type Daemon struct {
 // Replacing the complete set is atomic, so API requests observe either the old
 // connection list or the new one and never a partially updated routing table.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type ClientSet struct {
 	mutex   sync.RWMutex
 	timeout time.Duration
@@ -71,7 +71,7 @@ type ClientSet struct {
 // The caller publishes a complete connection snapshot with Replace after the
 // database transaction that changed it has committed.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func NewClientSet(timeout time.Duration) *ClientSet {
 	if timeout <= 0 {
 		timeout = 30 * time.Second
@@ -88,7 +88,7 @@ func NewClientSet(timeout time.Duration) *ClientSet {
 // Existing clients are retained when their connection and endpoint are unchanged,
 // preserving negotiated RPC session identifiers across unrelated connection edits.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (clients *ClientSet) Replace(configurations []DaemonConfig) error {
 	clients.mutex.RLock()
 	current := make(map[string]Daemon, len(clients.byID))
@@ -165,7 +165,7 @@ func (clients *ClientSet) Replace(configurations []DaemonConfig) error {
 // The copied descriptors remain safe to use while another goroutine publishes a
 // connection change because each Client is independently concurrency-safe.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (clients *ClientSet) Snapshot() []Daemon {
 	clients.mutex.RLock()
 	daemons := make([]Daemon, 0, len(clients.byID))
@@ -185,7 +185,7 @@ func (clients *ClientSet) Snapshot() []Daemon {
 //
 // A missing default is possible only before the first VPN connection is created.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (clients *ClientSet) Default() (Daemon, bool) {
 	clients.mutex.RLock()
 	defer clients.mutex.RUnlock()
@@ -203,7 +203,7 @@ func (clients *ClientSet) Default() (Daemon, bool) {
 //
 // Profile routing uses this lookup after resolving null to the default connection.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (clients *ClientSet) ByConnectionID(connectionID string) (Daemon, bool) {
 	clients.mutex.RLock()
 	defer clients.mutex.RUnlock()
@@ -218,7 +218,7 @@ func (clients *ClientSet) ByConnectionID(connectionID string) (Daemon, bool) {
 // Slots are never reused while a connection exists, making them the routing bits in
 // every application-facing torrent identifier.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (clients *ClientSet) BySlot(slot int) (Daemon, bool) {
 	clients.mutex.RLock()
 	defer clients.mutex.RUnlock()
@@ -237,7 +237,7 @@ func (clients *ClientSet) BySlot(slot int) (Daemon, bool) {
 // This preserves the single-client consumer contract for session-get, free-space,
 // and the E3-compatible RPC proxy while torrent operations use explicit fan-out.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (clients *ClientSet) Call(
 	ctx context.Context,
 	method string,
@@ -257,7 +257,7 @@ func (clients *ClientSet) Call(
 // Slot zero intentionally leaves identifiers unchanged for existing single-connection
 // installations. IDs at or above 2^24 are refused to prevent slot collisions.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func FacadeID(slot int, daemonID int64) (int64, error) {
 	if slot < 0 || slot > maximumConnectionSlot {
 		return 0, fmt.Errorf("Transmission slot must be between 0 and %d", maximumConnectionSlot)
@@ -274,7 +274,7 @@ func FacadeID(slot int, daemonID int64) (int64, error) {
 // Only identifiers that FacadeID could have produced are accepted, keeping malformed
 // high bits from being routed to an unrelated daemon.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func SplitFacadeID(facadeID int64) (int, int64, error) {
 	if facadeID <= 0 {
 		return 0, 0, errors.New("Transmission facade ID must be positive")

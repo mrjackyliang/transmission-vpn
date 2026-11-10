@@ -35,7 +35,7 @@ func TestSlotBindAddressIPv4(testingObject *testing.T) {
 // Slot addresses and ports remain per daemon, while the native blocklist URL stays
 // empty so Transmission cannot bypass the application merger.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestRenderOmitsPerDaemonKeys(testingObject *testing.T) {
 	store, err := storage.Open(
 		context.Background(),
@@ -94,7 +94,7 @@ func TestRenderOmitsPerDaemonKeys(testingObject *testing.T) {
 // A saved folder reaches session-set immediately while the incomplete folder keeps
 // its controlled-restart boundary.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestLiveSessionArgumentsMapsDownloadDirectory(testingObject *testing.T) {
 	arguments, pendingKeys, err := LiveSessionArguments(
 		settings.NewRegistry(),
@@ -119,7 +119,7 @@ func TestLiveSessionArgumentsMapsDownloadDirectory(testingObject *testing.T) {
 // Runner peer ports remain absent and blocklist-url remains empty during controlled
 // restarts, preventing native fetching from escaping merger policy.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestRuntimeSessionArgumentsOmitRunnerPeerPorts(testingObject *testing.T) {
 	store, err := storage.Open(
 		context.Background(),
@@ -161,7 +161,7 @@ func TestRuntimeSessionArgumentsOmitRunnerPeerPorts(testingObject *testing.T) {
 // Both generated settings.json and restart-time session arguments must keep native
 // Transmission from downloading the first source outside the runner merger.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestBlocklistURLStaysEmptyWithConfiguredSources(testingObject *testing.T) {
 	store, err := storage.Open(
 		context.Background(),

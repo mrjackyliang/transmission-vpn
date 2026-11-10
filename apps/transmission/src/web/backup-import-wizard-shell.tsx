@@ -23,7 +23,7 @@ import type {
  * Supplies the full-size dialog, step pills and predictable Back/Next controls while
  * app code owns the source-specific pages.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const BackupImportWizardShell = ({
   backDisabled = false,

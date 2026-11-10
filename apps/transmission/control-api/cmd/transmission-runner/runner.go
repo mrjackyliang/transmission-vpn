@@ -56,7 +56,7 @@ type managedDaemon struct {
 // A process remains unsignalable until its client answers; a blocklist replacement in
 // that window sets ReloadPending so readiness delivers exactly one deferred SIGHUP.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type daemonProcess struct {
 	Entry            daemonEntry
 	ProcessID        int
@@ -72,7 +72,7 @@ type daemonProcess struct {
 // It also owns the blocklist merger and child process identities needed to reload all
 // running daemons after one atomic merged update.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type runner struct {
 	options options
 	logger  *slog.Logger
@@ -107,7 +107,7 @@ type runner struct {
 // Child signaling and the merger's network seams remain replaceable by focused tests,
 // while production uses direct SIGHUP delivery to each supervised process.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func newRunner(configuredOptions options, logger *slog.Logger) *runner {
 	configuredRunner := &runner{
 		options:       configuredOptions,
@@ -135,7 +135,7 @@ func newRunner(configuredOptions options, logger *slog.Logger) *runner {
 // The blocklist manager shares this lifecycle and must finish cancellation before
 // the runner returns, preventing background writes after supervisor shutdown.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (runner *runner) run(ctx context.Context) error {
 	configurationPath := filepath.Join(
 		runner.options.RuntimeDirectory,
@@ -326,7 +326,7 @@ func (runner *runner) stopAll() {
 // It installs current merger files before each child starts and registers the live
 // process identity only for the interval in which SIGHUP delivery is safe.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (runner *runner) superviseDaemon(ctx context.Context, entry daemonEntry) {
 	restartDelay := runner.options.RestartBackoff
 	for ctx.Err() == nil {
@@ -560,7 +560,7 @@ func (runner *runner) superviseDaemon(ctx context.Context, entry daemonEntry) {
 // The prepared revision detects a sync between preparation and Start; that race marks
 // the child for one deferred reload after its RPC readiness handshake.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (runner *runner) setDaemonProcess(
 	entry daemonEntry,
 	processID int,
@@ -585,7 +585,7 @@ func (runner *runner) setDaemonProcess(
 // The process identity guard prevents a delayed cleanup from erasing a rapidly
 // restarted replacement for the same connection.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (runner *runner) clearDaemonProcess(connectionID string, processID int) {
 	runner.processMutex.Lock()
 	process := runner.processes[connectionID]
@@ -693,7 +693,7 @@ func (runner *runner) publishExitedState(entry daemonEntry, bindAddress string, 
 // Memory and the readiness marker change before the state file, all under stateMutex, so
 // a reader that sees a ready state file never races a default switch that removes the marker.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (runner *runner) publishDaemonState(state daemonState) {
 	state.UpdatedAt = time.Now().UTC()
 

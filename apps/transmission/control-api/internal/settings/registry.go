@@ -58,7 +58,7 @@ type Registry struct {
 // The first contract covers settings needed to replace the user's current
 // environment-heavy deployment, including runner-owned blocklist scheduling.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func NewRegistry() Registry {
 	definitions := []Definition{
 		newStringDefinition(
@@ -249,7 +249,7 @@ func (registry Registry) Validate(key string, value json.RawMessage) (json.RawMe
 
 // IntegerBounds reports the accepted range of an integer setting.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (registry Registry) IntegerBounds(key string) (int64, int64, bool) {
 	definition, found := registry.Definition(key)
 	if !found || definition.integerRange == nil {
@@ -264,7 +264,7 @@ func (registry Registry) IntegerBounds(key string) (int64, int64, bool) {
 // Existing storage paths keep the original /data boundary during reads so a
 // newly stricter write rule cannot prevent the appliance from starting.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (registry Registry) ValidateStored(key string, value json.RawMessage) (json.RawMessage, error) {
 	if key != "transmission.downloadDirectory" && key != "transmission.incompleteDirectory" {
 		return registry.Validate(key, value)
@@ -530,7 +530,7 @@ func ValidateDataPath(value string) error {
 // API, RPC, and console validation use this wording so every client reports the
 // same corrective action when the mount root is selected.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 const DownloadDataPathRootMessage = "Choose a folder inside /data, not /data itself."
 
 // IncompleteDownloadPathMessage explains why a torrent destination is reserved.
@@ -538,7 +538,7 @@ const DownloadDataPathRootMessage = "Choose a folder inside /data, not /data its
 // The effective incomplete path is included because it may be renamed through
 // Settings and must never be inferred from a conventional folder name.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func IncompleteDownloadPathMessage(incompleteDirectory string) string {
 	return fmt.Sprintf(
 		"Choose a folder outside the incomplete folder, %s.",
@@ -557,7 +557,7 @@ type IncompleteDirectoryDestination struct {
 // Settings and compatible RPC validation use this wording to point at the
 // concrete folder that would become trapped beneath the incomplete directory.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func IncompleteDirectoryClashMessage(
 	incompleteDirectory string,
 	destination IncompleteDirectoryDestination,
@@ -584,7 +584,7 @@ func IncompleteDirectoryClashMessage(
 // Browsing, folder creation, and free-space checks retain ValidateDataPath while
 // every operation that writes torrent data uses this stricter boundary.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func ValidateDownloadDataPath(value string) error {
 	if err := ValidateDataPath(value); err != nil {
 		return err
@@ -601,7 +601,7 @@ func ValidateDownloadDataPath(value string) error {
 // filepath.Rel compares path segments, so similarly prefixed siblings such as
 // /data/incomplete and /data/incomplete-old remain distinct.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func DataPathContains(parentPath string, candidatePath string) bool {
 	cleanedParentPath := filepath.Clean(parentPath)
 	cleanedCandidatePath := filepath.Clean(candidatePath)
@@ -619,7 +619,7 @@ func DataPathContains(parentPath string, candidatePath string) bool {
 // Every torrent destination uses this check after the caller resolves the
 // effective incomplete-directory setting.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func ValidateDownloadDataPathOutsideIncomplete(
 	value string,
 	incompleteDirectory string,
@@ -639,7 +639,7 @@ func ValidateDownloadDataPathOutsideIncomplete(
 // Callers order downloadPaths by precedence so the returned error consistently
 // names the first Download setting, profile, or saved-location clash.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func ValidateIncompleteDataPath(
 	value string,
 	destinations []IncompleteDirectoryDestination,

@@ -1,5 +1,10 @@
 # transmission-vpn-app-transmission
 
+## 2.0.1 - 2026-11-10
+
+### FIXED
+- Startup no longer stops with `/config/app is not writable by control` when the host gives every file in `/config` to the `PUID:PGID` account, for example through a scheduled `chown -R`. Everything in `/config` now belongs to `PUID:PGID`, and the control plane reaches its database and installation key through that group while keeping its own user for the firewall.
+
 ## 2.0.0 - 2026-11-01
 
 ### UPDATED

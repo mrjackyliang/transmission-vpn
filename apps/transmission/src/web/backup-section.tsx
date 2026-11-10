@@ -10,7 +10,7 @@ import type { Web_BackupComponents_Section_Props } from '@/types/web/backup-comp
  * Presents the portable export/import actions and reopens durable background work.
  * Its panel remains outside the Settings save bar because each action is immediate.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const BackupSection = ({
   description,

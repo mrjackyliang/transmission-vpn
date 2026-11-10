@@ -50,7 +50,7 @@ func TestRegistryRetiresPerTorrentSessionDefaults(testingObject *testing.T) {
 // The setting is live, defaults to one day, and is presented with the exact source
 // descriptions used by API and mock clients.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestBlocklistIntervalMetadata(testingObject *testing.T) {
 	registry := NewRegistry()
 	interval, found := registry.Definition("transmission.blocklistUpdateIntervalHours")
@@ -72,7 +72,7 @@ func TestBlocklistIntervalMetadata(testingObject *testing.T) {
 // These cases ensure UI configuration cannot escape the data mount or add an
 // insecure blocklist source, and that merger intervals remain within their bounds.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestRegistryRejectsUnsafeValues(testingObject *testing.T) {
 	registry := NewRegistry()
 	testCases := []struct {
@@ -116,7 +116,7 @@ func TestRegistryRejectsUnsafeValues(testingObject *testing.T) {
 // The mount root remains valid for lenient operations and persisted reads while
 // destination writes reject it with the shared client-facing message.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestDownloadDataPathRequiresAChildFolder(testingObject *testing.T) {
 	if err := ValidateDataPath("/data"); err != nil {
 		testingObject.Fatalf("lenient /data validation error = %v", err)
@@ -148,7 +148,7 @@ func TestDownloadDataPathRequiresAChildFolder(testingObject *testing.T) {
 // Descendants of the incomplete folder are reserved, similarly prefixed siblings
 // remain valid, and an incomplete folder may sit beneath a download folder.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestIncompleteDirectoryPathRelationships(testingObject *testing.T) {
 	incompleteDirectory := "/data/incomplete"
 	for _, rejectedPath := range []string{
@@ -192,7 +192,7 @@ func TestIncompleteDirectoryPathRelationships(testingObject *testing.T) {
 // Empty writes and both managed modes use the registry's path contract, while the
 // setting default remains the concrete folder restored by a reset.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestDownloadDirectoryAlwaysHasAValue(testingObject *testing.T) {
 	registry := NewRegistry()
 	if _, err := registry.Validate(

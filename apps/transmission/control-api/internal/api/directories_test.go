@@ -20,7 +20,7 @@ import (
 // It embeds the shared create and metainfo behavior while recording every requested
 // list, inspect, and delete operation against its deterministic in-memory entries.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type folderPickerTestBrowser struct {
 	testDirectoryBrowser
 	directories map[string]directorybrowser.Directory
@@ -35,7 +35,7 @@ type folderPickerTestBrowser struct {
 // Delete tests assert this broader operation is never used for a one-folder
 // preflight after the inspect action becomes available.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (browser *folderPickerTestBrowser) List(
 	_ context.Context,
 	path string,
@@ -58,7 +58,7 @@ func (browser *folderPickerTestBrowser) List(
 // The fake records the exact target so handler tests can distinguish the narrow
 // controller action from a parent listing or target re-list.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (browser *folderPickerTestBrowser) Inspect(
 	_ context.Context,
 	path string,
@@ -84,7 +84,7 @@ func (browser *folderPickerTestBrowser) Inspect(
 // A configured controller error leaves every in-memory entry intact so response
 // mapping tests can exercise races after a successful inspect.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (browser *folderPickerTestBrowser) Delete(_ context.Context, path string) error {
 	browser.deleted = append(browser.deleted, path)
 	if browser.deleteError != nil {
@@ -111,7 +111,7 @@ func (browser *folderPickerTestBrowser) Delete(_ context.Context, path string) e
 // Reserved folders remain browsable, but the API tells the console exactly when
 // the current folder cannot be selected as a completed-download destination.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestStorageDirectoryDownloadSelectionDecoratesEveryListing(testingObject *testing.T) {
 	server, cookies, _ := newClaimedTestServer(testingObject)
 	testCases := []struct {
@@ -171,7 +171,7 @@ func TestStorageDirectoryDownloadSelectionDecoratesEveryListing(testingObject *t
 // Each case also satisfies every lower-priority rule so a precedence regression
 // changes the exact message and fails at the first incorrect branch.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestStorageDirectoryDeleteRulesUseContractPriority(testingObject *testing.T) {
 	baseEntry := directorybrowser.DirectoryEntry{
 		Name:       "folder",
@@ -294,7 +294,7 @@ func TestStorageDirectoryDeleteRulesUseContractPriority(testingObject *testing.T
 // The incomplete folder is hidden from browsing in either mode, selectable and usable
 // only for incomplete selection, and completed-download destinations clash there.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestStorageDirectoryPurposesControlSelectionAndUse(testingObject *testing.T) {
 	rules := storageDirectoryRules{
 		downloadPolicy: downloadPathPolicy{
@@ -428,7 +428,7 @@ func TestStorageDirectoryProfilePurposeRequiresAProfile(testingObject *testing.T
 // Incomplete leads the setting-backed Default profile and exact named-profile matches,
 // while an untagged entry keeps an empty array.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestStorageDirectoryTagsKeepContractOrder(testingObject *testing.T) {
 	rules := storageDirectoryRules{
 		downloadPolicy: downloadPathPolicy{
@@ -461,7 +461,7 @@ func TestStorageDirectoryTagsKeepContractOrder(testingObject *testing.T) {
 // Assigned paths protect case variants on case-insensitive storage, while profile
 // order and each rule's existing message remain unchanged.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestStorageDirectoryDeleteProtectionIgnoresAssignedPathCase(testingObject *testing.T) {
 	testCases := []struct {
 		name       string
@@ -557,7 +557,7 @@ func TestStorageDirectoryDeleteProtectionIgnoresAssignedPathCase(testingObject *
 // A successful delete inspects only its target, never lists either sibling, and
 // returns the empty 204 response that lets the console refresh the parent itself.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestDeleteStorageDirectoryUsesInspectAndReturnsNoContent(testingObject *testing.T) {
 	server, cookies, csrfToken := newClaimedTestServer(testingObject)
 	browser := newFolderPickerTestBrowser(
@@ -615,7 +615,7 @@ func TestDeleteStorageDirectoryUsesInspectAndReturnsNoContent(testingObject *tes
 // Nonempty metadata maps to the dedicated conflict before the controller mutation,
 // and browser sessions cannot reach that check without their CSRF token.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestDeleteStorageDirectoryRejectsNonemptyAndRequiresCSRF(testingObject *testing.T) {
 	server, cookies, csrfToken := newClaimedTestServer(testingObject)
 	browser := newFolderPickerTestBrowser(
@@ -659,7 +659,7 @@ func TestDeleteStorageDirectoryRejectsNonemptyAndRequiresCSRF(testingObject *tes
 // An incomplete cross-daemon torrent snapshot fails closed with the contract's
 // retryable 503 response before the controller receives a delete request.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestDeleteStorageDirectoryReportsUnavailableTorrentLocations(testingObject *testing.T) {
 	server, cookies, csrfToken := newClaimedTestServer(testingObject)
 	_, client := newFakeTransmissionDaemon(testingObject, func(recordedTransmissionCall) any {
@@ -701,7 +701,7 @@ func TestDeleteStorageDirectoryReportsUnavailableTorrentLocations(testingObject 
 // The fake controller returns the stable read_only code after a successful inspect,
 // and the API supplies the folder-specific permission message required by DELETE.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestDeleteStorageDirectoryMapsReadOnlyControllerError(testingObject *testing.T) {
 	server, cookies, csrfToken := newClaimedTestServer(testingObject)
 	browser := newFolderPickerTestBrowser(
@@ -743,7 +743,7 @@ func TestDeleteStorageDirectoryMapsReadOnlyControllerError(testingObject *testin
 // GET forwards a trailing-space path unchanged, and DELETE uses the minimal existing
 // name validation so the same empty folder remains removable through inspect.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestStorageDirectoryPreservesTrailingSpaceNames(testingObject *testing.T) {
 	server, cookies, csrfToken := newClaimedTestServer(testingObject)
 	path := "/data/Season 1 "
@@ -807,7 +807,7 @@ func TestStorageDirectoryPreservesTrailingSpaceNames(testingObject *testing.T) {
 // The controller remains authoritative after the advisory check, so its stable codes
 // must retain the DELETE route's public statuses and assignment-aware messages.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestStorageDirectoryDeleteControllerErrorsUsePublicContract(testingObject *testing.T) {
 	server, _, _ := newClaimedTestServer(testingObject)
 	testCases := []struct {
@@ -900,7 +900,7 @@ func TestStorageDirectoryDeleteControllerErrorsUsePublicContract(testingObject *
 //
 // Invalid values keep the same field issue across listing and mutation routes.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestStorageDirectoryPurposeValidationReturnsFieldIssues(testingObject *testing.T) {
 	server, cookies, csrfToken := newClaimedTestServer(testingObject)
 	for _, method := range []string{http.MethodGet, http.MethodDelete} {
@@ -926,7 +926,7 @@ func TestStorageDirectoryPurposeValidationReturnsFieldIssues(testingObject *test
 // The API requests only facade-required fields; durable rules one through five keep
 // their own reasons while every lower-priority entry fails closed uniformly.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestStorageDirectoryTorrentReadFailureDisablesEveryDelete(testingObject *testing.T) {
 	server, cookies, _ := newClaimedTestServer(testingObject)
 	if _, err := server.store.CreateTorrentProfile(
@@ -1030,7 +1030,7 @@ func TestStorageDirectoryTorrentReadFailureDisablesEveryDelete(testingObject *te
 // A harmless trailing slash still protects the exact picker folder, while a path
 // outside /data is skipped without making every torrent location unavailable.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestStorageDirectoryNormalizesLiveTorrentDirectories(testingObject *testing.T) {
 	server, cookies, _ := newClaimedTestServer(testingObject)
 	_, client := newFakeTransmissionDaemon(testingObject, func(call recordedTransmissionCall) any {
@@ -1077,7 +1077,7 @@ func TestStorageDirectoryNormalizesLiveTorrentDirectories(testingObject *testing
 // One request asks each configured daemon once, then the shared result protects torrent
 // folders from both instances without issuing another RPC for each listed entry.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestStorageDirectoryReadsTorrentLocationsAcrossEveryInstance(testingObject *testing.T) {
 	fixture := newMultiTransmissionFixture(
 		testingObject,
@@ -1145,7 +1145,7 @@ func TestStorageDirectoryReadsTorrentLocationsAcrossEveryInstance(testingObject 
 // Controller listings mark ordinary inspected entries checked; tests that exercise
 // the explicit time-budget state construct an unchecked entry directly instead.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func newFolderPickerTestBrowser(
 	entries ...directorybrowser.DirectoryEntry,
 ) *folderPickerTestBrowser {
@@ -1173,7 +1173,7 @@ func newFolderPickerTestBrowser(
 // The helper normalizes its simulated torrent-set key exactly as production does so
 // case-insensitive lookups remain representative of request-loaded rule snapshots.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func deletionRulesForPath(
 	path string,
 	profile bool,

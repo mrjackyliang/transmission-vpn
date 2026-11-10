@@ -132,7 +132,7 @@ func (store *Store) EffectiveConfiguration(
 // checked again inside the transaction to close races with startup policy updates.
 // Enabling compatible RPC requires a protected route before the switch is saved.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) UpdateSettings(
 	ctx context.Context,
 	registry settings.Registry,
@@ -289,7 +289,7 @@ func (store *Store) UpdateSettings(
 // Locks overlay rather than replace persisted UI values, and seeds initialize only a
 // truly unset key. Removing the document releases locks on the next startup.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) ApplyManagedConfiguration(
 	ctx context.Context,
 	registry settings.Registry,
@@ -507,7 +507,7 @@ func (store *Store) ApplyManagedConfiguration(
 // The effective managed-aware switch is checked inside the caller's transaction so
 // every settings write path requires a configured VPN before enabling the proxy.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func requireVPNConnectionForEnabledRPCCompatibility(
 	ctx context.Context,
 	querySource queryInterface,

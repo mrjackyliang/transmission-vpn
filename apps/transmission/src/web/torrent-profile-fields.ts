@@ -6,7 +6,7 @@ import type { Web_Components_TorrentProfileDialog_Mode } from '@/types/web/compo
  * Names every input that can be rendered by the shared profile editor.
  * Default and named modes select ordered subsets of this vocabulary.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type TorrentProfileField
   = | 'bandwidthPriority'
@@ -28,7 +28,7 @@ export type TorrentProfileField
  * Keeps the Default profile's reduced field set explicit and shared with the
  * editor render conditions. Named profiles add identity, VPN, and matching.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const torrentProfileDialogFields = (
   mode: Web_Components_TorrentProfileDialog_Mode,

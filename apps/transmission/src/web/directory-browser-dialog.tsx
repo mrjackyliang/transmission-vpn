@@ -55,7 +55,7 @@ import type {
  * Returns the containing folder for a normalized path below /data.
  * Keeping the calculation here prevents mutations from targeting the wrong level.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const parentPathFor = (path: string): string => path.slice(0, path.lastIndexOf('/')) || '/data';
 
@@ -65,7 +65,7 @@ const parentPathFor = (path: string): string => path.slice(0, path.lastIndexOf('
  * Preserves server messages and supplies a stable fallback for non-Error failures.
  * Inline actions use the same conversion so their error treatment stays consistent.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const messageFor = (caughtError: unknown, fallback: string): string => (
   (caughtError instanceof Error) ? caughtError.message : fallback
@@ -276,7 +276,7 @@ export const DirectoryBrowserDialog = ({
      * Loads each ancestor in order before revealing the initial folder.
      * The opening sequence prevents an older dialog state from winning a race.
      *
-     * @since UNRELEASED
+     * @since 2.0.0
      */
     const initialize = async (): Promise<void> => {
       for (const ancestorPath of directoryAncestorPaths(approvedInitialPath)) {
@@ -347,7 +347,7 @@ export const DirectoryBrowserDialog = ({
    * Restores the tree viewport and the row that held roving focus before the
    * name step opened. Prevented focus scrolling keeps the viewport unchanged.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const returnToTree = (): void => {
     const previousFocusedPath: string | null = treeFocusBeforeCreateRef.current;
@@ -375,7 +375,7 @@ export const DirectoryBrowserDialog = ({
    * Returns from the name step or dismisses delete confirmation before closing.
    * Layered handling preserves the tree state beneath the active dialog content.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const handleEscape = (): void => {
     if (createParentPath !== null) {
@@ -438,7 +438,7 @@ export const DirectoryBrowserDialog = ({
    * Returns child state from a loaded level when one is available.
    * A refreshed cache corrects an older parent row after create or delete.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const entryHasSubfolders = (entry: Web_Api_DirectoryEntry): boolean => {
     const loadedLevel: Web_Api_Directory | undefined = levels[entry['path']];
@@ -453,7 +453,7 @@ export const DirectoryBrowserDialog = ({
    * Flattens expanded levels into the visual order used by roving focus.
    * Recursive traversal keeps keyboard movement aligned with the rendered tree.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const appendVisibleItems = (parentPath: string, depth: number): void => {
     const directory: Web_Api_Directory | undefined = levels[parentPath];
@@ -489,7 +489,7 @@ export const DirectoryBrowserDialog = ({
    * Selects a row, or clears it when the same row is selected again.
    * Confirmation state is tied to one selection and is discarded on change.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const toggleSelection = (entry: Web_Api_DirectoryEntry): void => {
     if (!entry['selectable'] || !entry['usable']) {
@@ -511,7 +511,7 @@ export const DirectoryBrowserDialog = ({
    * Unbrowsable entries never issue child requests. Purpose-unusable folders
    * remain navigable so a usable descendant can still be chosen.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const toggleExpanded = async (entry: Web_Api_DirectoryEntry): Promise<void> => {
     if (!entry['browsable'] || !entryHasSubfolders(entry)) {
@@ -539,7 +539,7 @@ export const DirectoryBrowserDialog = ({
    * Applies the WAI-ARIA tree keyboard pattern to one row.
    * Pure movement decisions are shared with the focused helper tests.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const handleTreeKeyDown = (
     event: ReactKeyboardEvent<HTMLDivElement>,
@@ -595,7 +595,7 @@ export const DirectoryBrowserDialog = ({
    * Captures the tree viewport before opening the folder-name step.
    * The target follows selection and browsability without changing tree state.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const beginCreate = (): void => {
     let selectionPath: string | null = null;
@@ -623,7 +623,7 @@ export const DirectoryBrowserDialog = ({
    * Creates the folder, refreshes its parent, then selects and reveals it.
    * Keeping the name step open on refresh failure leaves a visible recovery message.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const createFolder = async (): Promise<void> => {
     if (createParentPath === null || folderName.trim() === '') {
@@ -678,7 +678,7 @@ export const DirectoryBrowserDialog = ({
    * Deletes the selected folder and refreshes its parent level.
    * The follow-up request remains authoritative after the no-content response.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const deleteSelectedFolder = async (): Promise<void> => {
     if (selectedEntry === undefined || !selectedEntry['deletable']) {
@@ -708,7 +708,7 @@ export const DirectoryBrowserDialog = ({
    * Renders loading and retry rows immediately below a level.
    * Cached rows remain present while a refreshed request is in flight.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const renderLevelStatus = (path: string, depth: number): ReactElement[] => {
     const rows: ReactElement[] = [];
@@ -741,7 +741,7 @@ export const DirectoryBrowserDialog = ({
    * Renders one cached level and its expanded descendants.
    * Indentation stays inside every full-width hover and selection tint.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const renderLevel = (parentPath: string, depth: number): ReactElement[] => {
     const rows: ReactElement[] = [];

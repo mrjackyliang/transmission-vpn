@@ -30,7 +30,7 @@ const tunnelLabels: Record<Web_Api_VpnTunnel, string> = {
  * that data keeps the in-progress draft, while opening another connection starts a
  * fresh session.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const shouldInitializeConnectionEditor = (
   initializedSessionID: string | null,

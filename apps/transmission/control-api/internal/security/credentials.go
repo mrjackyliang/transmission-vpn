@@ -151,7 +151,7 @@ func HashPassword(password string) (string, error) {
 // Callers without a cancellation boundary still share the process-wide verification
 // limit. Request handlers should use VerifyPasswordContext while they wait for a slot.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func VerifyPassword(password string, encodedHash string) (bool, error) {
 	return VerifyPasswordContext(context.Background(), password, encodedHash)
 }
@@ -161,7 +161,7 @@ func VerifyPassword(password string, encodedHash string) (bool, error) {
 // A canceled request stops waiting before it allocates the verifier's working memory,
 // while an admitted derivation runs to completion and releases its slot.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func VerifyPasswordContext(
 	ctx context.Context,
 	password string,

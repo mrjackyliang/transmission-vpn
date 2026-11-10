@@ -17,7 +17,7 @@ const ipv6LimitPrefixLength = 56
 // IPv4-mapped addresses become plain IPv4, IPv6 zones are removed, and native IPv6
 // addresses are grouped by /56. Unparseable input is returned unchanged.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func LimitKey(address string) string {
 	parsed, err := netip.ParseAddr(address)
 	if err != nil {

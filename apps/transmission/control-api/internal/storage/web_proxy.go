@@ -16,7 +16,7 @@ var (
 	// The API maps this conflict to the username field without exposing the unique
 	// database index that enforces it.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	ErrWebProxyUsernameTaken = errors.New("web proxy username is already in use")
 )
 
@@ -25,7 +25,7 @@ var (
 // The API combines this durable setting with runtime status written by the separate
 // proxy process, keeping desired and observed state distinct.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type WebProxy struct {
 	Enabled   bool
 	UpdatedAt time.Time
@@ -36,7 +36,7 @@ type WebProxy struct {
 // PasswordHash is passed only to the permission-restricted runtime configuration file;
 // read APIs shape a separate response that never contains it.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type WebProxyLogin struct {
 	ID           string
 	Username     string
@@ -51,7 +51,7 @@ type WebProxyLogin struct {
 // Nil PasswordHash preserves the verifier. ConnectionIDSet distinguishes an omitted
 // edit from an explicit null that returns the login to the default connection.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type WebProxyLoginChanges struct {
 	Username        string
 	PasswordHash    *string
@@ -66,7 +66,7 @@ const webProxyLoginColumns = `id, username, password_hash, connection_id, create
 // One read transaction provides a consistent hand-off snapshot for the proxy process,
 // so a concurrent mutation cannot mix an old switch with a new login list.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) WebProxyConfiguration(ctx context.Context) (WebProxy, []WebProxyLogin, error) {
 	transaction, err := store.databaseHandle().BeginTx(ctx, &sql.TxOptions{ReadOnly: true})
 	if err != nil {
@@ -120,7 +120,7 @@ func (store *Store) WebProxyConfiguration(ctx context.Context) (WebProxy, []WebP
 // Enabling is rejected inside the transaction when no VPN connection exists.
 // Login changes remain independent from the desired proxy state.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) SetWebProxyEnabled(ctx context.Context, enabled bool) (WebProxy, error) {
 	transaction, err := store.databaseHandle().BeginTx(ctx, nil)
 	if err != nil {
@@ -156,7 +156,7 @@ func (store *Store) SetWebProxyEnabled(ctx context.Context, enabled bool) (WebPr
 // Username uniqueness is checked without regard to case before insertion so callers
 // receive a stable conflict instead of a driver-specific constraint error.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) CreateWebProxyLogin(
 	ctx context.Context,
 	login WebProxyLogin,
@@ -205,7 +205,7 @@ func (store *Store) CreateWebProxyLogin(
 // Internal callers receive the complete stored verifier; API responses always shape a
 // separate safe view without this field.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) FindWebProxyLogin(ctx context.Context, id string) (WebProxyLogin, error) {
 	login, err := scanWebProxyLogin(store.databaseHandle().QueryRowContext(
 		ctx,
@@ -224,7 +224,7 @@ func (store *Store) FindWebProxyLogin(ctx context.Context, id string) (WebProxyL
 // Leaving PasswordHash nil keeps the current password, which lets the API distinguish
 // an omitted password from an explicitly invalid empty value.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) UpdateWebProxyLogin(
 	ctx context.Context,
 	id string,
@@ -298,7 +298,7 @@ func (store *Store) UpdateWebProxyLogin(
 // The credential is independently revocable regardless of the proxy switch.
 // Removing the final login leaves an enabled proxy unable to authenticate anyone.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) DeleteWebProxyLogin(ctx context.Context, id string) error {
 	transaction, err := store.databaseHandle().BeginTx(ctx, nil)
 	if err != nil {

@@ -527,7 +527,7 @@ func TestWebProxyRoutes(testingObject *testing.T) {
 //
 // The same prerequisite blocks enabling but never blocks turning the proxy off.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestWebProxyLoginRequiresVPNConnection(t *testing.T) {
 	server, cookies, csrfToken := newClaimedTestServer(t)
 	legacyLogin, err := server.store.CreateWebProxyLogin(

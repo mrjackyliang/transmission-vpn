@@ -59,7 +59,7 @@ const principalContextKey contextKey = "principal"
 // Production crosses a permission-restricted Unix socket, while the interface keeps
 // API tests independent from host filesystem permissions.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type DirectoryBrowser interface {
 	List(context.Context, string) (directorybrowser.Directory, error)
 	Create(context.Context, string, string) (directorybrowser.Directory, error)
@@ -72,7 +72,7 @@ type DirectoryBrowser interface {
 // Production supplies the cgroup detector while tests may provide fixed fixture
 // snapshots without depending on the host that runs the API suite.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type CapacityReader interface {
 	// Current returns the cached environmental snapshot.
 	Current() (capacity.Snapshot, error)
@@ -143,7 +143,7 @@ type Config struct {
 // It owns authentication, request validation, and safe response shaping while durable
 // transactions remain in storage and privileged networking remains out of process.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type Server struct {
 	store                       *storage.Store
 	registry                    settings.Registry
@@ -241,7 +241,7 @@ type principal struct {
 // A precomputed dummy password verifier keeps unknown-user login attempts comparable
 // to real password checks; blocklist timing defaults remain injectable for API tests.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func NewServer(config Config) (*Server, error) {
 	if config.Store == nil {
 		return nil, errors.New("control API store is required")
@@ -408,7 +408,7 @@ func (server *Server) RPCHandler() http.Handler {
 // Go's method-aware standard ServeMux keeps routing explicit without adding a web
 // framework dependency, including the merger's read and CSRF-protected update routes.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (server *Server) routes() http.Handler {
 	multiplexer := http.NewServeMux()
 

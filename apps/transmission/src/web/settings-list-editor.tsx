@@ -26,7 +26,7 @@ import type { Web_SettingsListEditor_GetSettingListEmptyState_Returns } from '@/
  * Keeps blank editing rows local while publishing only normalized values.
  * This lets Discard and accepted snapshots reset the editor without losing drafts.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const SettingsListEditor = ({
   blocklistStatus,
@@ -75,7 +75,7 @@ export const SettingsListEditor = ({
    * Stores exact editor text locally before normalizing the Settings draft.
    * Empty and whitespace-only rows therefore remain visible without being saved.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const updateRows = (nextRows: string[], nextSavedRows: Array<string | null> = savedRows): void => {
     setRows(nextRows);

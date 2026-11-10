@@ -75,7 +75,7 @@ type MockNotificationInput = Pick<MockNotification, 'events' | 'name' | 'secrets
  * Stores safe RPC login metadata without retaining generated plaintext passwords.
  * Matches the public fields returned by the control API.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 type MockRPCLogin = {
   createdAt: string
@@ -90,7 +90,7 @@ type MockRPCLogin = {
  * Mirrors the runner-owned per-source observation exposed by the versioned API.
  * Failed sources may retain ranges and identify the last-good copy still in use.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 type MockBlocklistSourceStatus = {
   copyFrom?: string
@@ -107,7 +107,7 @@ type MockBlocklistSourceStatus = {
  * Provides realistic aggregate scheduling data for the backend contract without
  * describing or implementing the console presentation that still awaits approval.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 type MockBlocklistStatus = {
   lastAttemptAt?: string
@@ -124,7 +124,7 @@ type MockBlocklistStatus = {
  * Mirrors the safe login view returned by the control API.
  * Generated passwords appear only in create and regenerate responses.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 type MockWebProxyLogin = {
   connectionId: string | null
@@ -139,7 +139,7 @@ type MockWebProxyLogin = {
  * Keeps the saved torrent intent needed to derive changing public job progress.
  * The source document itself is not retained after the mock job is created.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 type MockBackupImportSourceItem = {
   complete: boolean
@@ -158,7 +158,7 @@ type MockBackupImportSourceItem = {
  * Stores the minimum durable-job simulation state for the standalone console mock.
  * Public responses are recomputed from elapsed time so polling visibly advances.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 type MockBackupImport = {
   actions: string[]
@@ -178,7 +178,7 @@ type MockBackupImport = {
  * Keeps preview and apply counts in one shape so both surfaces use identical copy.
  * Capacity and duplicate skips remain separate because they explain different causes.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 type MockBackupMergeResult = {
   apiTokenAdditions: number
@@ -198,7 +198,7 @@ type MockBackupMergeResult = {
  * Stores one durable connection and its controller and daemon state.
  * The shape follows the multi-connection API contract used by the console.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 type MockVPNConnection = {
   changeRunning: boolean
@@ -234,7 +234,7 @@ type MockVPNConnection = {
  * Keeps the provider metadata needed to validate required mock sign-in fields.
  * Credential values remain in a separate private map and never enter responses.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 type MockVPNCredentialField = {
   key: string
@@ -308,7 +308,7 @@ type MockTorrent = {
  * Mirrors the application-owned profile returned by the control API.
  * The in-memory collection supports CRUD, overlaps, and torrent assignment.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 type MockTorrentProfile = {
   connectionId: string | null
@@ -346,7 +346,7 @@ type MockTorrentProfile = {
  * Stores the editable Default profile fields and its managed-folder state.
  * Named-profile identity and matching fields are intentionally absent.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 type MockDefaultTorrentProfile = Pick<MockTorrentProfile, 'downloadDirectory' | 'labels' | 'name' | 'options' | 'startPaused'> & {
   downloadDirectoryLocked: boolean
@@ -358,7 +358,7 @@ type MockDefaultTorrentProfile = Pick<MockTorrentProfile, 'downloadDirectory' | 
  * Records the controller facts that are not derivable from the folder path alone.
  * Child relationships remain implicit in the keyed in-memory tree.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 type MockDirectoryMetadata = {
   files: number
@@ -372,7 +372,7 @@ type MockDirectoryMetadata = {
  * Keeps purpose validation and policy evaluation on the contract's closed vocabulary.
  * Both GET and DELETE share this exact type.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 type MockDirectoryPurpose = 'download' | 'incomplete' | 'profile';
 
@@ -382,7 +382,7 @@ type MockDirectoryPurpose = 'download' | 'incomplete' | 'profile';
  * Carries the first matching advisory rule into listing and delete responses.
  * The code distinguishes assigned-folder conflicts from non-empty folders.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 type MockDirectoryDeletionPolicy = {
   code: 'directory_browser_unavailable' | 'directory_in_use' | 'directory_not_empty' | 'torrent_locations_unavailable' | ''
@@ -395,7 +395,7 @@ type MockDirectoryDeletionPolicy = {
  * Mirrors the protected preview route fields used by the Add torrent dialog.
  * Magnet links omit total size in the same way as the control API.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 type MockTorrentLinkPreview = {
   hash: string
@@ -440,7 +440,7 @@ const gibibyte: number = 1024 * 1024 * 1024;
  * Keeps mock destination failures aligned with the control API and console.
  * Every affected mock route reuses this exact corrective guidance.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const downloadDataPathRootMessage: string = 'Choose a folder inside /data, not /data itself.';
 
@@ -450,7 +450,7 @@ const downloadDataPathRootMessage: string = 'Choose a folder inside /data, not /
  * Treats trailing slashes like the control API's path normalization does.
  * Non-string values remain available to the mock's existing validation flow.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const isDownloadDataRoot = (value: unknown): boolean => (
   typeof value === 'string' && value.replace(/\/+$/u, '') === '/data'
@@ -462,7 +462,7 @@ const isDownloadDataRoot = (value: unknown): boolean => (
  * A slash boundary mirrors the control API's path-segment comparison and keeps
  * similarly prefixed sibling folders independent.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const dataPathContains = (parentPath: string, candidatePath: string): boolean => {
   const parent: string = parentPath.replace(/\/+$/u, '');
@@ -477,7 +477,7 @@ const dataPathContains = (parentPath: string, candidatePath: string): boolean =>
  * Deletion protects assigned paths on case-insensitive storage without changing
  * the case-sensitive navigation behavior of the in-memory directory map.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const dataPathContainsIgnoringCase = (parentPath: string, candidatePath: string): boolean => dataPathContains(
   parentPath.toLocaleLowerCase('en-US'),
@@ -490,7 +490,7 @@ const dataPathContainsIgnoringCase = (parentPath: string, candidatePath: string)
  * The first seven deletion rules share the production contract's case-folded
  * comparisons while later controller facts continue to use exact paths.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const dataPathsEqualIgnoringCase = (firstPath: string, secondPath: string): boolean => (
   firstPath.toLocaleLowerCase('en-US') === secondPath.toLocaleLowerCase('en-US')
@@ -502,7 +502,7 @@ const dataPathsEqualIgnoringCase = (firstPath: string, secondPath: string): bool
  * Adds the same hash on two VPN connections so the console's quiet duplicate
  * notice can be exercised without changing the normal screenshot fixtures.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const duplicateTorrentEnabled: boolean = process.env['MOCK_DUPLICATE_TORRENT'] === 'true';
 
@@ -512,7 +512,7 @@ const duplicateTorrentEnabled: boolean = process.env['MOCK_DUPLICATE_TORRENT'] =
  * Produces the first-run torrent and web-proxy states without changing the normal
  * screenshot fixture.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const noVPNConnections: boolean = process.env['MOCK_NO_VPN_CONNECTIONS'] === 'true';
 
@@ -522,7 +522,7 @@ const noVPNConnections: boolean = process.env['MOCK_NO_VPN_CONNECTIONS'] === 'tr
  * Supports failed and alternating mixed batches for dialog result checks. The normal
  * fixture continues to add every valid source.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const torrentAddOutcome: string = process.env['MOCK_TORRENT_ADD_OUTCOME'] ?? 'success';
 
@@ -532,7 +532,7 @@ const torrentAddOutcome: string = process.env['MOCK_TORRENT_ADD_OUTCOME'] ?? 'su
  * Counts requests so the mixed outcome alternates deterministically.
  * The counter starts fresh with each mock process.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 let torrentAddAttempt: number = 0;
 
@@ -542,7 +542,7 @@ let torrentAddAttempt: number = 0;
  * Produces a refused connection with safe wording and expandable raw diagnostics.
  * The normal fixture keeps its existing HTTP failure.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const notificationTransportError: boolean = process.env['MOCK_NOTIFICATION_TRANSPORT_ERROR'] === 'true';
 
@@ -552,7 +552,7 @@ const notificationTransportError: boolean = process.env['MOCK_NOTIFICATION_TRANS
  * Matches the diagnostic returned by a refused local TCP connection.
  * The public fixture keeps it separate from the plain-language message.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const rawNotificationTransportError: string = 'dial tcp 127.0.0.1:9: connect: connection refused';
 
@@ -562,7 +562,7 @@ const rawNotificationTransportError: string = 'dial tcp 127.0.0.1:9: connect: co
  * Mirrors the control API's secret-free fallback for an unclassified failure.
  * The mock never returns its internal controller diagnostic to the console.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const mockVPNTestFailureMessage: string = 'The VPN connection couldn\'t be verified. Check its endpoints and credentials, then try again.';
 
@@ -572,7 +572,7 @@ const mockVPNTestFailureMessage: string = 'The VPN connection couldn\'t be verif
  * Mirrors the control API's host-specific wording for common delivery errors.
  * It falls back to the original already-public sender message when unclassified.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const mockNotificationTransportFailure = (raw: string): string => {
   const lookupHost: string | undefined = raw.match(/lookup\s+([^\s:]+)/iu)?.[1];
@@ -600,7 +600,7 @@ const mockNotificationTransportFailure = (raw: string): string => {
  * Keeps fixture relationships stable across torrents, profiles, and logins.
  * The hexadecimal suffix follows the production identifier format.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const northwindConnectionId: string = 'vpc-0000000000000000';
 
@@ -610,7 +610,7 @@ const northwindConnectionId: string = 'vpc-0000000000000000';
  * Keeps fixture relationships stable across torrents, profiles, and logins.
  * The hexadecimal suffix follows the production identifier format.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const fabrikamConnectionId: string = 'vpc-0000000000000001';
 
@@ -620,7 +620,7 @@ const fabrikamConnectionId: string = 'vpc-0000000000000001';
  * Keeps fixture relationships stable across torrents, profiles, and logins.
  * The hexadecimal suffix follows the production identifier format.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const contosoConnectionId: string = 'vpc-0000000000000002';
 
@@ -630,7 +630,7 @@ const contosoConnectionId: string = 'vpc-0000000000000002';
  * Lets browser checks reproduce the stable conflict while targeting Fabrikam.
  * The normal mock remains fully mutable when the environment flag is absent.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const connectionBeingRemovedId: string | null = (process.env['MOCK_CONNECTION_BEING_REMOVED'] === 'true') ? fabrikamConnectionId : null;
 
@@ -640,7 +640,7 @@ const connectionBeingRemovedId: string | null = (process.env['MOCK_CONNECTION_BE
  * Adds a successful post-move warning to every move result for browser checks.
  * The result remains moved, matching the backend's final-placement contract.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const torrentMoveWarnings: string[] = (process.env['MOCK_VPN_MOVE_WARNING'] === 'true') ? ['The torrent moved, but the mock restart check could not confirm that it resumed.'] : [];
 
@@ -650,7 +650,7 @@ const torrentMoveWarnings: string[] = (process.env['MOCK_VPN_MOVE_WARNING'] === 
  * Reproduces a durable login whose former explicit connection was removed.
  * The public response safely resolves it through the current default.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const missingWebProxyConnectionId: string = 'vpc-ffffffffffffffff';
 
@@ -860,7 +860,7 @@ const createTorrents = (): MockTorrent[] => torrentSeeds.map((seed: MockTorrentS
  * Builds the piece map for a torrent's details from its progress. Pieces arrive in runs,
  * and the stalled torrent keeps a stretch near the end that no connected peer has.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const mockPieces = (torrent: MockTorrent): Record<string, unknown> => {
   const pieceSize: number = (torrent['sizeWhenDone'] > 8 * gibibyte) ? 8 * 1024 * 1024 : 2 * 1024 * 1024;
@@ -876,7 +876,7 @@ const mockPieces = (torrent: MockTorrent): Record<string, unknown> => {
    * Repeats the same pieces for a torrent every time the mock starts.
    * A plain linear congruential generator is enough for sample data.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const random = (): number => {
     seed = ((seed * 1103515245) + 12345) % 2147483648;
@@ -924,7 +924,7 @@ const mockPieces = (torrent: MockTorrent): Record<string, unknown> => {
  * Provides representative automatic matching and profile-assignment state.
  * Named profiles are returned alphabetically and overlapping patterns are allowed.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const torrentProfiles: MockTorrentProfile[] = [
   {
@@ -1099,7 +1099,7 @@ if (process.env['MOCK_NESTED_PROFILE'] === 'true') {
  * Mirrors the control API's memoized product walk for `*`, `?`, and literal
  * characters so mock overlap notes follow the production language exactly.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const torrentPatternsOverlap = (leftPattern: string, rightPattern: string): boolean => {
   const leftCharacters: string[] = [...leftPattern];
@@ -1173,7 +1173,7 @@ const torrentPatternsOverlap = (leftPattern: string, rightPattern: string): bool
  * Keeps named profiles alphabetized and rebuilds informational overlap pairs after
  * every in-memory create, edit, or delete.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const refreshTorrentProfilePresentation = (): void => {
   torrentProfiles.sort((leftProfile: MockTorrentProfile, rightProfile: MockTorrentProfile): number => (
@@ -1208,7 +1208,7 @@ refreshTorrentProfilePresentation();
  * Mirrors the real Default profile that owns the Download directory and always
  * follows the default VPN connection.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const defaultTorrentProfile: MockDefaultTorrentProfile = {
   downloadDirectory: '/data/downloads',
@@ -1236,7 +1236,7 @@ const defaultTorrentProfile: MockDefaultTorrentProfile = {
  * Finds the Default or named profile that owns a case-insensitively equal
  * folder, excluding the profile currently being edited.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const profileFolderOwner = (
   directoryPath: string,
@@ -1252,7 +1252,7 @@ const profileFolderOwner = (
    * Compares the requested folder with one owner folder, ignoring case.
    * Returns same, inside, contains, or undefined when they are unrelated.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const relationTo = (ownerPath: string): 'contains' | 'inside' | 'same' | undefined => {
     if (dataPathsEqualIgnoringCase(ownerPath, directoryPath)) {
@@ -1304,7 +1304,7 @@ const profileFolderOwner = (
  * Lists every saved profile whose folder sits inside or around another profile's
  * folder, matching the control API's folderOverlaps list.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const profileFolderOverlaps = (): {
   message: string
@@ -1344,7 +1344,7 @@ const profileFolderOverlaps = (): {
  * Matches the backend's field error and curly-quoted folder name exactly.
  * Profile editors render this actionable text beside the folder field.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const profileFolderTakenMessage = (
   directoryPath: string,
@@ -1368,7 +1368,7 @@ const profileFolderTakenMessage = (
  * Mirrors the database's cross-table, case-insensitive uniqueness rule.
  * The excluded identity lets either editor retain its current spelling.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const torrentProfileNameTaken = (name: string, excludedProfileID: string = ''): boolean => (
   (excludedProfileID !== 'default' && defaultTorrentProfile['name'].toLowerCase() === name.toLowerCase())
@@ -1383,7 +1383,7 @@ const torrentProfileNameTaken = (name: string, excludedProfileID: string = ''): 
  * Returns a detached response so move results can be added without mutating the
  * stored profile.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const defaultTorrentProfileResponse = (): MockDefaultTorrentProfile => ({
   ...defaultTorrentProfile,
@@ -1400,7 +1400,7 @@ const defaultTorrentProfileResponse = (): MockDefaultTorrentProfile => ({
  * Produces stable server-shaped identifiers for newly-created profiles.
  * The hexadecimal suffix matches the production identifier validator.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 let torrentProfileSequence: number = torrentProfiles.length;
 
@@ -1410,7 +1410,7 @@ let torrentProfileSequence: number = torrentProfiles.length;
  * Converts profile stop rules to Transmission's per-torrent mode values.
  * Seed fixtures and option assignment share this exact mapping.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const applyTorrentProfileSeeding = (
   torrent: MockTorrent,
@@ -1433,7 +1433,7 @@ const applyTorrentProfileSeeding = (
  * Preserves remote-app labels and appends profile labels once, ignoring case.
  * Profile resolution and automatic add behavior share this rule.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const mergeTorrentLabels = (existing: string[], profileLabels: string[]): string[] => {
   const merged: string[] = [...existing];
@@ -1454,7 +1454,7 @@ const mergeTorrentLabels = (existing: string[], profileLabels: string[]): string
  * Copies the labels and per-torrent Transmission limits used by add and profile
  * assignment. Folder, VPN, paused state, and queue order are handled by callers.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const applyTorrentProfileOptions = (
   torrent: MockTorrent,
@@ -1510,7 +1510,7 @@ for (const torrent of torrents) {
  * Selects the seeded pattern tie so the banner, filter, tag, and resolver are
  * available immediately in the standalone mock.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const needsProfileTorrent: MockTorrent | undefined = torrents.find(
   (torrent: MockTorrent): boolean => torrent['name'] === 'Example.Show.S01E04.2160p',
@@ -1536,7 +1536,7 @@ if (needsProfileTorrent !== undefined) {
  * Preserves the selected torrents' relative order and compacts every queue
  * position. Profile assignment uses it when requested options choose Top.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const moveTorrentsToQueueTop = (selectedTorrents: MockTorrent[]): void => {
   const selectedIDs: Set<number> = new Set(selectedTorrents.map(
@@ -2344,7 +2344,7 @@ if (process.env['MOCK_NESTED_PROFILE'] === 'true') {
  * Keeps the label presets that an organization save replaces.
  * The dialogs and the sidebar then show what was saved.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const savedLabels: string[] = [
   'arm',
@@ -2360,7 +2360,7 @@ const savedLabels: string[] = [
  * Counts organization saves, like the API's stored revision.
  * A save from a dialog opened on an older revision gets the API's conflict.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 let organizationRevision: number = 1;
 
@@ -2370,7 +2370,7 @@ let organizationRevision: number = 1;
  * Preserves the first case-insensitive spelling and advances the organization
  * revision once when a write introduces one or more new labels.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const saveUsedLabels = (
   labels: string[],
@@ -2411,7 +2411,7 @@ const saveUsedLabels = (
  * Uses the same case-insensitive deletion, rename, and de-duplication behavior for
  * torrents and profiles.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const applySavedLabelEdits = (
   labels: string[],
@@ -2625,7 +2625,7 @@ const settings: Record<string, unknown>[] = [
  * Resolves mutable mock settings for Default-profile and storage-policy responses.
  * Route handlers therefore observe Settings changes without duplicated state.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const effectiveStringSetting = (key: string): string => String(
   settings.find((setting: Record<string, unknown>): boolean => setting['key'] === key)?.['value'] ?? '',
@@ -2637,7 +2637,7 @@ const effectiveStringSetting = (key: string): string => String(
  * Adds every missing parent beneath /data so the in-memory folder browser follows
  * the control API's controller-backed creation behavior.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const ensureDirectory = (directoryPath: string): void => {
   if (!directoryPath.startsWith('/data/') || directoryPath.includes('/../')) {
@@ -2663,7 +2663,7 @@ const ensureDirectory = (directoryPath: string): void => {
  * Keeps the Default profile and enabled incomplete folder visible after Settings
  * changes, matching the production startup and save behavior.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const ensureConfiguredDirectories = (): void => {
   ensureDirectory(effectiveStringSetting('transmission.downloadDirectory'));
@@ -2686,7 +2686,7 @@ for (const profile of torrentProfiles) {
  * Returns the listing fields supplied by the real storage-directory endpoint.
  * Navigation remains available even when final selection is unavailable.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const downloadSelection = (directoryPath: string): {
   allowed: boolean
@@ -2718,7 +2718,7 @@ const downloadSelection = (directoryPath: string): {
  * Lists immediate real subfolders in the same lexical order as the controller.
  * Deeper descendants are excluded until their own level is requested.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const directoryChildren = (directoryPath: string): string[] => [...directories.keys()].filter(
   (candidate: string): boolean => (
@@ -2733,7 +2733,7 @@ const directoryChildren = (directoryPath: string): string[] => [...directories.k
  * Applies the reverse-containment policy used by the Incomplete directory field.
  * The current incomplete folder remains usable even when assignments sit elsewhere.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const incompleteSelection = (directoryPath: string): {
   allowed: boolean
@@ -2783,7 +2783,7 @@ const incompleteSelection = (directoryPath: string): {
  * Applies ordinary download-folder safety and reserves every other profile's
  * folder for its current owner.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const profileSelection = (directoryPath: string, profileID: string): {
   allowed: boolean
@@ -2814,7 +2814,7 @@ const profileSelection = (directoryPath: string, profileID: string): {
  * Builds the contract's stable tag order from effective Settings and profile state.
  * The Download directory leads named profile tags as the setting-backed Default.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const directoryTags = (directoryPath: string): string[] => {
   const tags: string[] = [];
@@ -2839,7 +2839,7 @@ const directoryTags = (directoryPath: string): string[] => {
  * Evaluates the contract's ordered advisory rules and returns the first match.
  * DELETE repeats this function so a listing never authorizes a stale mutation.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const directoryDeletionPolicy = (directoryPath: string): MockDirectoryDeletionPolicy => {
   const folderName: string = directoryPath.slice(directoryPath.lastIndexOf('/') + 1);
@@ -2938,7 +2938,7 @@ const directoryDeletionPolicy = (directoryPath: string): MockDirectoryDeletionPo
  * Selects the purpose-specific usability rule for one directory. Profile
  * checks also receive the current owner identifier so its folder stays usable.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const directorySelection = (
   directoryPath: string,
@@ -3025,7 +3025,7 @@ const listDirectory = (
  * Reuses effective incomplete-folder state across every mock destination route.
  * An empty result means the candidate passes both reserved-folder checks.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const downloadFolderIssue = (value: unknown): string => {
   if (isDownloadDataRoot(value)) {
@@ -3058,7 +3058,7 @@ let settingsRevision: number = 3;
  * Starts with the approved screenshot state and changes as settings are saved or applied.
  * Lets the restart notice exercise both its initial and cleared states.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 let pendingRestartKeys: string[] = (noVPNConnections) ? [] : ['transmission.peerPortRandomOnStart'];
 
@@ -3068,7 +3068,7 @@ let pendingRestartKeys: string[] = (noVPNConnections) ? [] : ['transmission.peer
  * Starts with three representative source outcomes and changes briefly to updating
  * when the mock Update now endpoint is called.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 let blocklistStatus: MockBlocklistStatus = {
   state: 'idle',
@@ -4399,7 +4399,7 @@ const tokenValues: Map<string, string> = new Map([
  * Retains the non-reusable digest needed to model backup duplicate detection.
  * Ordinary token routes continue returning only the safe metadata in `tokens`.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const tokenDigests: Map<string, string> = new Map(tokens.map(
   (token: Record<string, unknown>): [string, string] => {
@@ -4428,7 +4428,7 @@ let tokenSequence: number = tokens.length;
  * Provides the stateful compatible-client credentials used by the Remote apps page.
  * Seed data covers both used and never-used timestamps.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const rpcLogins: MockRPCLogin[] = (noVPNConnections) ? [] : [
   {
@@ -4451,7 +4451,7 @@ const rpcLogins: MockRPCLogin[] = (noVPNConnections) ? [] : [
  * Retains the non-reusable digest exported and restored with each compatible-client
  * login while the ordinary management routes continue returning safe metadata.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const rpcLoginDigests: Map<string, string> = new Map(rpcLogins.map(
   (login: MockRPCLogin): [string, string] => [
@@ -4466,7 +4466,7 @@ const rpcLoginDigests: Map<string, string> = new Map(rpcLogins.map(
  * Generates stable identifiers for newly added mock credentials.
  * The sequence advances with every successful create request.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 let rpcLoginSequence: number = rpcLogins.length;
 
@@ -4476,7 +4476,7 @@ let rpcLoginSequence: number = rpcLogins.length;
  * Provides independently editable and revocable proxy credentials.
  * Seed data keeps the list state visible in documentation screenshots.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const webProxyLogins: MockWebProxyLogin[] = (noVPNConnections) ? [] : [
   {
@@ -4499,7 +4499,7 @@ const webProxyLogins: MockWebProxyLogin[] = (noVPNConnections) ? [] : [
  * Tracks the desired switch independently from observed VPN readiness.
  * This mirrors the control API's enabled and runtime state split.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 let webProxyEnabled: boolean = !noVPNConnections;
 
@@ -4509,7 +4509,7 @@ let webProxyEnabled: boolean = !noVPNConnections;
  * Lags behind the desired switch so the Remote apps transition state can be
  * exercised against the same delayed observation as the real proxy process.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 let webProxyRuntimeEnabled: boolean = !noVPNConnections;
 
@@ -4519,7 +4519,7 @@ let webProxyRuntimeEnabled: boolean = !noVPNConnections;
  * Invalidates older delayed writes when the desired switch changes again.
  * Only the most recent mock transition may update observed runtime state.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 let webProxyTransitionSequence: number = 0;
 
@@ -4529,7 +4529,7 @@ let webProxyTransitionSequence: number = 0;
  * Generates stable identifiers for newly added web proxy credentials.
  * The sequence advances after each successful create request.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 let webProxyLoginSequence: number = webProxyLogins.length;
 
@@ -4539,7 +4539,7 @@ let webProxyLoginSequence: number = webProxyLogins.length;
  * The environment flag reproduces the reload-during-change state for click tests.
  * The value is shared by snapshots and the VPN status response.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const vpnChangeRunning: boolean = process.env['MOCK_VPN_CHANGE_RUNNING'] === 'true';
 
@@ -4549,7 +4549,7 @@ const vpnChangeRunning: boolean = process.env['MOCK_VPN_CHANGE_RUNNING'] === 'tr
  * The fallback mode mirrors containers whose memory files cannot be read.
  * Other values retain the representative cgroup-v2 fixture.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const vpnCapacitySource: 'cgroup-v2' | 'fallback' = (process.env['MOCK_CAPACITY_SOURCE'] === 'fallback') ? 'fallback' : 'cgroup-v2';
 
@@ -4559,7 +4559,7 @@ const vpnCapacitySource: 'cgroup-v2' | 'fallback' = (process.env['MOCK_CAPACITY_
  * Starts with the three connections approved for the documentation mockups.
  * Mutating routes update this collection for the lifetime of the mock server.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const vpnConnections: MockVPNConnection[] = [
   {
@@ -4711,7 +4711,7 @@ const vpnConnections: MockVPNConnection[] = [
  * Mirrors sealed server state without placing credential values on connection rows.
  * Public mock responses therefore expose only the corresponding saved field keys.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const vpnCredentialValues: Map<string, Record<string, string>> = new Map([
   [
@@ -4743,7 +4743,7 @@ const vpnCredentialValues: Map<string, Record<string, string>> = new Map([
  * Reads the chosen provider tunnel's field metadata from the same mock payload the
  * console consumes, keeping required-field behavior aligned with the real API.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const mockVPNCredentialFields = (
   providerId: string,
@@ -4770,7 +4770,7 @@ const mockVPNCredentialFields = (
  * Keeps only non-empty string fields, matching the console and server treatment of an
  * omitted or blank saved credential.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const submittedMockVPNCredentials = (value: unknown): Record<string, string> => {
   const credentials: Record<string, string> = {};
@@ -4795,7 +4795,7 @@ const submittedMockVPNCredentials = (value: unknown): Record<string, string> => 
  * Preserves saved values only while provider and tunnel still match, then overlays
  * every non-empty submitted replacement.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const mergedMockVPNCredentials = (
   connection: MockVPNConnection,
@@ -4821,7 +4821,7 @@ const mergedMockVPNCredentials = (
  * Projects configured fields in provider order so mock reads expose stable metadata
  * without returning their values.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const savedMockVPNCredentialKeys = (
   providerId: string,
@@ -4837,7 +4837,7 @@ const savedMockVPNCredentialKeys = (
  * Returns the first required provider field that the candidate cannot satisfy.
  * The caller uses its safe label and key in the shared field-error envelope.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const missingMockVPNCredential = (
   providerId: string,
@@ -4853,7 +4853,7 @@ const missingMockVPNCredential = (
  * Mirrors the real API's dotted field name and segmented path for a missing sign-in
  * value while keeping the message free of credential contents.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const sendMockVPNCredentialError = (
   response: ServerResponse,
@@ -4882,7 +4882,7 @@ const sendMockVPNCredentialError = (
  * Produces stable server-shaped identifiers for connections added in the UI.
  * The counter advances only after a successful create request.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 let vpnConnectionSequence: number = vpnConnections.length;
 
@@ -4953,7 +4953,7 @@ const tick = (): void => {
  * Mirrors the exact field inventory requested by the control API for lists and
  * live snapshots. Detail-only fixture fields stay private until the detail route.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const torrentSummaryFields: (keyof MockTorrent)[] = [
   'activityDate',
@@ -4996,7 +4996,7 @@ const torrentSummaryFields: (keyof MockTorrent)[] = [
  * Projects one stateful mock row into the public summary contract.
  * The projection prevents detail-only fields from leaking into list events.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const torrentSummary = (torrent: MockTorrent): Record<string, unknown> => Object.fromEntries(
   torrentSummaryFields.map((field: keyof MockTorrent): [string, MockTorrent[keyof MockTorrent]] => [
@@ -5012,7 +5012,7 @@ const torrentSummary = (torrent: MockTorrent): Record<string, unknown> => Object
  * The Arch release fixture reproduces the directory-style URL that prompted the
  * protected preview workflow.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const previewTorrentLink = (link: string, index: number): MockTorrentLinkPreview | null => {
   let parsedLink: URL | undefined = undefined;
@@ -5078,7 +5078,7 @@ const previewTorrentLink = (link: string, index: number): MockTorrentLinkPreview
  * Resolves the one slot used by the legacy-compatible snapshot vpn field.
  * Mutating the default only changes flags, so callers always resolve it fresh.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const defaultVPNConnection = (): MockVPNConnection => vpnConnections.find(
   (connection: MockVPNConnection): boolean => connection['default'],
@@ -5090,7 +5090,7 @@ const defaultVPNConnection = (): MockVPNConnection => vpnConnections.find(
  * Reports whether a mutation targets the environment-selected removal marker.
  * Nullable default relationships do not name the marked non-default connection.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const isConnectionBeingRemoved = (connectionId: string | null | undefined): boolean => (
   connectionId !== null
@@ -5104,7 +5104,7 @@ const isConnectionBeingRemoved = (connectionId: string | null | undefined): bool
  * Counts enabled connections only and derives the aggregate protection state.
  * This matches the sidebar and mobile chip contract.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const vpnProtection = (): Record<string, unknown> => {
   const enabled: MockVPNConnection[] = (noVPNConnections) ? [] : vpnConnections.filter((connection: MockVPNConnection): boolean => connection['enabled']);
@@ -5131,7 +5131,7 @@ const vpnProtection = (): Record<string, unknown> => {
  * Combines durable identity with runtime and daemon state for event snapshots.
  * The list remains in stable slot order.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const liveVPNConnections = (): Record<string, unknown>[] => ((noVPNConnections) ? [] : [...vpnConnections])
   .sort((left: MockVPNConnection, right: MockVPNConnection): number => left['slot'] - right['slot'])
@@ -5162,7 +5162,7 @@ const liveVPNConnections = (): Record<string, unknown>[] => ((noVPNConnections) 
  *
  * @returns {Record<string, unknown>}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const vpnConnectionResponse = (connection: MockVPNConnection): Record<string, unknown> => ({
   ...connection,
@@ -5175,7 +5175,7 @@ const vpnConnectionResponse = (connection: MockVPNConnection): Record<string, un
  * Returns the stateful list with the capacity facts shown by the console.
  * A fresh object keeps route mutations visible to later requests.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const vpnConnectionsResponse = (): Record<string, unknown> => ({
   capacity: {
@@ -5197,7 +5197,7 @@ const vpnConnectionsResponse = (): Record<string, unknown> => ({
  * Builds controller state from the first selected endpoint after a successful test.
  * This keeps create, update, and reconnect responses consistent.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const protectedVPNRuntime = (
   providerId: string,
@@ -5238,7 +5238,7 @@ const protectedVPNRuntime = (
  * Expands the default connection's stored runtime into the controller status
  * embedded by live events.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const defaultVPNStatus = (): Record<string, unknown> => {
   const connection: MockVPNConnection = defaultVPNConnection();
@@ -5264,7 +5264,7 @@ const defaultVPNStatus = (): Record<string, unknown> => {
  * Matches the authenticated status route and the optional status object in a
  * live snapshot.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const applianceStatus = (): Record<string, unknown> => {
   const protection: Record<string, unknown> = vpnProtection();
@@ -5311,7 +5311,7 @@ const applianceStatus = (): Record<string, unknown> => {
  * Emits one stable duplicate code even though both rows remain in the list.
  * Normal fixtures return an empty error collection.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const torrentErrors = (): string[] => {
   if (!duplicateTorrentEnabled || torrents[0] === undefined) {
@@ -5412,7 +5412,7 @@ const sendError = (
  * Reuses the backend's status, code, and intentionally generic message.
  * The console supplies the visible connection name at the mutation surface.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const sendConnectionBeingRemoved = (response: ServerResponse): void => {
   sendError(response, 409, 'connection_being_removed', 'The selected VPN connection is being removed.');
@@ -5486,7 +5486,7 @@ const usernameIssue = (username: string): string => {
  * Validates the broader username contract shared by the RPC and web proxies.
  * Returns an empty string when the candidate is valid.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const remoteUsernameIssue = (username: string): string => {
   if (username === '') {
@@ -5502,7 +5502,7 @@ const remoteUsernameIssue = (username: string): string => {
  * Keeps a stored explicit relationship when its connection still exists.
  * Missing and nullable relationships safely resolve through the default.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const effectiveWebProxyConnectionId = (login: MockWebProxyLogin): string => {
   if (noVPNConnections) {
@@ -5523,7 +5523,7 @@ const effectiveWebProxyConnectionId = (login: MockWebProxyLogin): string => {
  * Combines the desired switch, VPN readiness, and safe login metadata.
  * Every web proxy route uses this canonical response shape.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const webProxyResponse = (): Record<string, unknown> => {
   if (noVPNConnections) {
@@ -5561,7 +5561,7 @@ const webProxyResponse = (): Record<string, unknown> => {
  * Adds the resolved default identifier without changing the stored nullable choice.
  * Mutation responses and list responses share this exact public shape.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const effectiveWebProxyLogin = (login: MockWebProxyLogin): Record<string, unknown> => ({
   ...login,
@@ -5758,7 +5758,7 @@ const readIDs = (body: Record<string, unknown>): number[] => {
  * Retains the response field selected by the request while resolving every
  * matching mock row, including the same hash on multiple connections.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 type MockTorrentSelection = {
   field: 'hashes' | 'ids'
@@ -5773,7 +5773,7 @@ type MockTorrentSelection = {
  * Gives a present hash array precedence over facade IDs, just like the Go
  * mutation handlers. Missing hashes return the stable not-found error.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const readTorrentSelection = (
   body: Record<string, unknown>,
@@ -5858,7 +5858,7 @@ const readTorrentSelection = (
  * Mirrors the backend's selection-key echo without exposing both identifier
  * systems in one response.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const torrentMutationResponse = (selection: MockTorrentSelection): Record<string, unknown> => (
   (selection['field'] === 'hashes') ? { hashes: selection['hashes'] } : { ids: selection['ids'] }
@@ -5870,7 +5870,7 @@ const torrentMutationResponse = (selection: MockTorrentSelection): Record<string
  * Converts one already client-validated profile body into durable mock state.
  * Existing identity and creation metadata are supplied by the route handler.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const readTorrentProfile = (
   body: Record<string, unknown>,
@@ -5913,7 +5913,7 @@ const readTorrentProfile = (
  * Reuses named-profile option normalization while omitting fields the Default
  * editor cannot change.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const readDefaultTorrentProfile = (body: Record<string, unknown>): MockDefaultTorrentProfile => {
   const normalizedProfile: MockTorrentProfile = readTorrentProfile(
@@ -5986,7 +5986,7 @@ const applyAction = (action: string, ids: number[]): void => {
  * Derives a useful name from magnet display names and remote URL paths.
  * Metainfo bytes have no filename in the request, so they use a stable fallback.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const addedTorrentName = (filename: unknown, fallbackId: number): string => {
   if (typeof filename !== 'string') {
@@ -6012,7 +6012,7 @@ const addedTorrentName = (filename: unknown, fallbackId: number): string => {
  * Models purpose-bound, short-lived and single-use confirmation grants in memory.
  * The mock stores only opaque values and never stores submitted passwords or codes.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const backupGrants: Map<string, {
   expiresAt: number
@@ -6025,7 +6025,7 @@ const backupGrants: Map<string, {
  * Retains the active simulated job while Vite remains running.
  * Poll responses derive progress from its original start time.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 let backupImportJob: MockBackupImport | null = null;
 
@@ -6035,7 +6035,7 @@ let backupImportJob: MockBackupImport | null = null;
  * Mirrors the control API cap used when an import adds destinations.
  * Replacements remain available when the list is full.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const maximumBackupNotificationDestinations: number = 256;
 
@@ -6045,7 +6045,7 @@ const maximumBackupNotificationDestinations: number = 256;
  * Mirrors the control API cap used when an import adds compatible-client logins.
  * Replacements remain available when the list is full.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const maximumBackupRPCLogins: number = 256;
 
@@ -6055,7 +6055,7 @@ const maximumBackupRPCLogins: number = 256;
  * Mirrors the control API cap used after duplicate imported tokens are skipped.
  * Existing and duplicate token records never consume new capacity.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const maximumBackupAPITokens: number = 256;
 
@@ -6069,7 +6069,7 @@ const maximumBackupAPITokens: number = 256;
  *
  * @returns {Record<string, string>}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const issueMockBackupGrant = (purpose: 'export' | 'import'): Record<string, string> => {
   const grant: string = randomBytes(24).toString('base64url');
@@ -6096,7 +6096,7 @@ const issueMockBackupGrant = (purpose: 'export' | 'import'): Record<string, stri
  *
  * @returns {boolean}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const consumeMockBackupGrant = (value: unknown, purpose: 'export' | 'import'): boolean => {
   const grant: string = String(value ?? '');
@@ -6117,7 +6117,7 @@ const consumeMockBackupGrant = (value: unknown, purpose: 'export' | 'import'): b
  *
  * @returns {{ hash: string, metainfo: string }}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const mockBackupMetainfo = (): {
   hash: string
@@ -6150,7 +6150,7 @@ const mockBackupMetainfo = (): {
  *
  * @returns {Record<string, unknown>}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const mockBackupDocument = (selected: Record<string, unknown>): Record<string, unknown> => {
   const document: Record<string, unknown> = {
@@ -6312,7 +6312,7 @@ const mockBackupDocument = (selected: Record<string, unknown>): Record<string, u
  *
  * @returns {string}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const mockBackupCountLabel = (count: number, singular: string, plural: string): string => (
   `${count} ${(count === 1) ? singular : plural}`
@@ -6328,7 +6328,7 @@ const mockBackupCountLabel = (count: number, singular: string, plural: string): 
  *
  * @returns {string[]}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const mockBackupActionLines = (result: MockBackupMergeResult): string[] => {
   const actions: string[] = [];
@@ -6375,7 +6375,7 @@ const mockBackupActionLines = (result: MockBackupMergeResult): string[] => {
  *
  * @returns {Record<string, string>}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const mockBackupStringMap = (value: unknown): Record<string, string> => {
   const values: Record<string, string> = {};
@@ -6404,7 +6404,7 @@ const mockBackupStringMap = (value: unknown): Record<string, string> => {
  *
  * @returns {boolean}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const mockBackupIDIsUsed = (
   items: readonly {
@@ -6429,7 +6429,7 @@ const mockBackupIDIsUsed = (
  *
  * @returns {string[]}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const mergeMockBackupAccess = (document: Record<string, unknown>, apply: boolean): string[] => {
   const mergedNotifications: MockNotification[] = notifications.map(
@@ -6623,7 +6623,7 @@ const mergeMockBackupAccess = (document: Record<string, unknown>, apply: boolean
  *
  * @returns {Record<string, unknown>}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const mockBackupPreview = (document: Record<string, unknown>): Record<string, unknown> => {
   const settingsAndProfiles: Record<string, unknown> | undefined = (
@@ -6750,7 +6750,7 @@ const mockBackupPreview = (document: Record<string, unknown>): Record<string, un
  *
  * @returns {Record<string, unknown>}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const mockAnotherTransmissionPreview = (folderMappings: Record<string, unknown>): Record<string, unknown> => {
   const folderFixtures: Array<{
@@ -7062,7 +7062,7 @@ const mockAnotherTransmissionPreview = (folderMappings: Record<string, unknown>)
  *
  * @returns {MockBackupImport}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const startMockBackupImport = (
   document: Record<string, unknown>,
@@ -7109,7 +7109,7 @@ const startMockBackupImport = (
  *
  * @returns {MockBackupImport}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const startMockAnotherTransmissionImport = (body: Record<string, unknown>): MockBackupImport => {
   const folderMappings: Record<string, unknown> = (
@@ -7188,7 +7188,7 @@ const startMockAnotherTransmissionImport = (body: Record<string, unknown>): Mock
  *
  * @returns {Record<string, unknown>}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const mockBackupImportResponse = (job: MockBackupImport): Record<string, unknown> => {
   const elapsedSeconds: number = Math.max(0, (Date.now() - job['startedAtMilliseconds']) / 1000);
@@ -7280,7 +7280,7 @@ const mockBackupImportResponse = (job: MockBackupImport): Record<string, unknown
  *
  * @returns {Record<string, unknown> | null}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const mockImportSourceDirectory = (path: string): Record<string, unknown> | null => {
   const tree: Record<string, string[]> = {

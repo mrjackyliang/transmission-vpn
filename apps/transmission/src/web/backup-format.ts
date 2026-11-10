@@ -9,7 +9,7 @@ import type { Web_Backup_Document } from '@/types/web/backup.d.ts';
  * Restricts portable settings and secrets to their string-keyed API representation.
  * Rejecting nested values keeps the browser contract aligned with the Go decoder.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const stringMapSchema = z.record(z.string(), z.string());
 
@@ -19,7 +19,7 @@ const stringMapSchema = z.record(z.string(), z.string());
  * Describes every behavior that travels with a torrent profile.
  * Strict nested objects prevent unsupported settings from being silently accepted.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const profileOptionsSchema = z.object({
   seeding: z.object({
@@ -40,7 +40,7 @@ const profileOptionsSchema = z.object({
  * Validates portable custom profiles before conflict choices are shown.
  * Folder paths are constrained to the data volume expected by the importer.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const profileSchema = z.object({
   id: z.string().min(1),
@@ -61,7 +61,7 @@ const profileSchema = z.object({
  * Preserves Transmission's complete per-torrent limit representation.
  * Integer and boolean constraints prevent coercion during restore.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const torrentLimitsSchema = z.object({
   bandwidthPriority: z.number().int(),
@@ -83,7 +83,7 @@ const torrentLimitsSchema = z.object({
  * Carries provider endpoint configuration needed to recreate saved connections.
  * Bounds and enums reject configurations the control API cannot own.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const vpnProfileSchema = z.object({
   id: z.string().min(1),
@@ -111,7 +111,7 @@ const vpnProfileSchema = z.object({
  * Captures connection slots, credentials and routing choices as one strict unit.
  * Slot and port limits mirror the server-side import validator.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const vpnConnectionSchema = z.object({
   id: z.string().min(1),
@@ -142,7 +142,7 @@ const vpnConnectionSchema = z.object({
  * Mirrors the API's version-one schema and rejects unknown keys at every object level
  * before an uploaded file enters the wizard.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const backupDocumentSchema: Web_Api_Schema<Web_Backup_Document> = z.object({
   format: z.literal('transmission-vpn-export'),
@@ -228,6 +228,6 @@ export const backupDocumentSchema: Web_Api_Schema<Web_Backup_Document> = z.objec
  *
  * @returns {Web_Backup_Document}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const parseBackupDocument = (value: unknown): Web_Backup_Document => backupDocumentSchema.parse(value);

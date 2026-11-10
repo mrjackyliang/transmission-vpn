@@ -4,7 +4,7 @@ import type { Web_Navigation_Browser } from '@/types/web/navigation.d.ts';
 /**
  * Navigation.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Tests_Web_Navigation_HistoryFixture = {
   back: () => void;
@@ -16,7 +16,7 @@ export type Tests_Web_Navigation_HistoryFixture = {
 /**
  * Navigation.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Tests_Web_Navigation_HistoryPosition = {
   value: number;
@@ -25,7 +25,7 @@ export type Tests_Web_Navigation_HistoryPosition = {
 /**
  * Navigation.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Tests_Web_Navigation_RouteState = {
   value: Web_AppNavigation_Route;

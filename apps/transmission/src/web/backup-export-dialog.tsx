@@ -26,7 +26,7 @@ import type {
  * Collects portable sections before requiring a fresh, single-use identity grant.
  * Keeps secret-bearing export data out of browser application state.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const BackupExportDialog = ({
   authenticatorEnabled,

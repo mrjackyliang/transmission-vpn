@@ -34,7 +34,7 @@ import type {
  * Records each toast operation without creating browser DOM elements.
  * The real toast module still owns replacement and click behavior.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const notyfMocks: Tests_Web_Toast_NotyfMocks = vi.hoisted(() => ({
   dismiss: vi.fn(),
@@ -64,7 +64,7 @@ vi.mock('notyf', () => ({
  * Verifies the dashboard keeps only its latest result visible.
  * The suite also preserves the existing click-to-dismiss behavior.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 describe('toast', () => {
   beforeEach(() => {

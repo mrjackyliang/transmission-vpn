@@ -48,7 +48,7 @@ import type { TorrentProfileField } from '@/web/torrent-profile-fields.ts';
  * Converts comma-separated labels into the API's string array.
  * Whitespace-only entries are discarded before validation.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const parseLabelList = (value: string): string[] => value
   .split(',')
@@ -61,7 +61,7 @@ const parseLabelList = (value: string): string[] => value
  * Treats every non-empty row as one automatic-match pattern.
  * Trimming rows avoids invisible trailing characters in a glob.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const parsePatterns = (rows: string[]): string[] => rows
   .map((pattern: string): string => pattern.trim())
@@ -73,7 +73,7 @@ const parsePatterns = (rows: string[]): string[] => rows
  * Creates named profiles and edits named or Default profile-owned folder,
  * label, and Transmission option bundles.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const TorrentProfileDialog = ({
   connections,
@@ -237,7 +237,7 @@ export const TorrentProfileDialog = ({
    * Resolves a nullable named-profile choice through the current default VPN.
    * Missing relationships use neutral wording in the save confirmation.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const connectionName = (targetId: string): string => {
     const connection = (targetId === '') ? connections.find((candidate): boolean => candidate['default']) : connections.find((candidate): boolean => candidate['id'] === targetId);
@@ -251,7 +251,7 @@ export const TorrentProfileDialog = ({
    * Normalizes the shared controls and selects the matching Default or named
    * profile parser before a request leaves the dialog.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const buildInput = (): Web_Api_DefaultTorrentProfileInput | Web_Api_TorrentProfileInput => {
     const sharedInput: Web_Api_DefaultTorrentProfileInput = {
@@ -290,7 +290,7 @@ export const TorrentProfileDialog = ({
    * Opens the move confirmation when the API reports that an existing folder
    * or VPN change must move assigned torrents.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const saveProfile = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();

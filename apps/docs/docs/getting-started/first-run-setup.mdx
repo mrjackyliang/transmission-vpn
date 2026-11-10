@@ -75,7 +75,7 @@ A <Terminology title="Mounted file used instead of a generated claim code" to="/
 - **Location** — Mount the file at `/run/secrets/transmission-vpn-claim`.
 - **Length** — It must hold 12 to 256 characters after surrounding spaces and line breaks are removed.
 - **Lifetime** — It works for 24 hours after the container starts, and each restart while unclaimed starts a new 24-hour window.
-- **Permissions** — The built-in `control` user (UID 65532) must be able to read it, or the web interface doesn't start.
+- **Permissions** — The built-in `control` user (UID 65532) must be able to read it, or the web interface doesn't start. A file owned by `PUID:PGID` with group read access works.
 - **Logging** — The logs note `No administrator account exists yet. Open the web interface to create it with the mounted setup code.` but never print the secret.
 - **Exact match** — Unlike a generated code, a claim secret has to be typed exactly as it is in the file.
 - **After claiming** — The file is no longer read once the installation is claimed.

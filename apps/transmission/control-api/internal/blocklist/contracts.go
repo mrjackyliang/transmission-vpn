@@ -20,7 +20,7 @@ const (
 	// It lives in the existing group-readable Transmission hand-off directory and is
 	// replaced atomically with every relevant settings change or manual request.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	ConfigurationFileName = "blocklists.json"
 
 	// StatusFileName is the runner-to-API observed-state artifact.
@@ -28,7 +28,7 @@ const (
 	// It lives in the existing Transmission-owned state directory and is replaced
 	// atomically whenever the merger's externally visible state changes.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	StatusFileName = "blocklists.json"
 )
 
@@ -37,7 +37,7 @@ const (
 // UpdateRequestedAt is preserved across ordinary settings publication and changes
 // only when an API or compatible RPC caller explicitly requests an update.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type Configuration struct {
 	Enabled             bool       `json:"enabled"`
 	Sources             []string   `json:"sources"`
@@ -50,7 +50,7 @@ type Configuration struct {
 // A failed refresh can retain ranges and UpdatedAt from the last good copy while
 // CopyFrom makes that fallback explicit to API clients.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type SourceStatus struct {
 	URL       string     `json:"url"`
 	State     string     `json:"state"`
@@ -65,7 +65,7 @@ type SourceStatus struct {
 // Its timestamps describe attempts and successful merged copies, while TotalRanges
 // counts exactly the normalized ranges left in use across configured sources.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type Status struct {
 	State             string         `json:"state"`
 	LastAttemptAt     *time.Time     `json:"lastAttemptAt,omitempty"`
@@ -82,7 +82,7 @@ type Status struct {
 // A missing or malformed file is returned as an error so the runner cannot act on a
 // partial desired state.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func ReadConfiguration(path string) (Configuration, error) {
 	var configuration Configuration
 	if err := readJSON(path, &configuration); err != nil {
@@ -103,7 +103,7 @@ func ReadConfiguration(path string) (Configuration, error) {
 // Callers receive the original filesystem error when no first status exists, allowing
 // the API to translate that startup window into pending sources.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func ReadStatus(path string) (Status, error) {
 	var status Status
 	if err := readJSON(path, &status); err != nil {
@@ -121,7 +121,7 @@ func ReadStatus(path string) (Status, error) {
 // Hashing avoids leaking path syntax into daemon directories while preserving the
 // same last-good copy across restarts and source reordering.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func SourceFileName(sourceURL string) string {
 	digest := sha256.Sum256([]byte(sourceURL))
 
@@ -133,7 +133,7 @@ func SourceFileName(sourceURL string) string {
 // The temporary file is created beside its destination so rename never crosses a
 // filesystem boundary, and incomplete content is removed on every failure.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func WriteJSON(path string, value any, mode os.FileMode) error {
 	content, err := json.MarshalIndent(value, "", "  ")
 	if err != nil {
@@ -180,7 +180,7 @@ func WriteJSON(path string, value any, mode os.FileMode) error {
 // File contracts are replaced atomically, so any decode failure represents an invalid
 // complete artifact rather than an in-progress writer.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func readJSON(path string, destination any) error {
 	content, err := os.ReadFile(path)
 	if err != nil {

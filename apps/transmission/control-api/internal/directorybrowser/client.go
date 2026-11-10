@@ -20,7 +20,7 @@ const (
 // The unprivileged control API owns this client without receiving the Transmission
 // user's filesystem permissions or a generic filesystem primitive.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type Client struct {
 	socketPath string
 	timeout    time.Duration
@@ -85,7 +85,7 @@ func (client *Client) Create(
 // Delete preflight uses this narrow action so it never scans or opens the target's
 // siblings merely to decide whether one named folder may be removed.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (client *Client) Inspect(ctx context.Context, path string) (DirectoryEntry, error) {
 	response, err := client.send(ctx, Request{
 		Version: ProtocolVersion,
@@ -107,7 +107,7 @@ func (client *Client) Inspect(ctx context.Context, path string) (DirectoryEntry,
 // The controller performs descriptor-relative removal without following links or
 // exposing recursive deletion to the unprivileged control API.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (client *Client) Delete(ctx context.Context, path string) error {
 	_, err := client.send(ctx, Request{
 		Version: ProtocolVersion,
@@ -123,7 +123,7 @@ func (client *Client) Delete(ctx context.Context, path string) error {
 // The controller validates the complete fixed path and performs the read as the
 // Transmission user, so the control API never receives broad filesystem access.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (client *Client) ReadTorrent(ctx context.Context, path string) ([]byte, error) {
 	response, err := client.send(ctx, Request{
 		Version: ProtocolVersion,

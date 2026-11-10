@@ -150,7 +150,7 @@ func TestRPCLogins(testingObject *testing.T) {
 // Every enable path requires a protected route, while logins can be added or removed
 // independently and remain stored when the proxy is turned off.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestRPCCompatibilityRequiresVPNConnection(testingObject *testing.T) {
 	ctx := context.Background()
 	store, err := Open(ctx, filepath.Join(testingObject.TempDir(), "state.sqlite3"))

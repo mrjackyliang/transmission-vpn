@@ -28,7 +28,7 @@ var (
 	// The bound keeps listings responsive when a child contains many entries and
 	// makes capped results conservative instead of implying the folder is empty.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	maximumDirectoryEntriesScanned = 1_000
 
 	// maximumListingEntriesScanned caps aggregate child inspection work.
@@ -36,7 +36,7 @@ var (
 	// Once a listing consumes this budget, later children receive only a one-entry
 	// emptiness probe so large sibling sets cannot multiply the per-child limit.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	maximumListingEntriesScanned = 20_000
 
 	// maximumDirectoryListingDuration bounds one listing's child inspections.
@@ -44,7 +44,7 @@ var (
 	// Children reached after this deadline remain visible but are marked unchecked
 	// so the API can refuse deletion without opening more filesystem descriptors.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	maximumDirectoryListingDuration = 3 * time.Second
 )
 
@@ -55,7 +55,7 @@ const (
 	// Small batches let the server stop after finding a real subfolder without
 	// materializing the child's complete directory listing in memory.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	directoryEntryScanBatchSize = 128
 
 	// maximumTorrentMetainfoBytes caps one torrent metainfo read.
@@ -63,7 +63,7 @@ const (
 	// The fixed budget lets the controller serve daemon state without exposing an
 	// unbounded local-protocol response to the control API process.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	maximumTorrentMetainfoBytes int64 = 16 * 1024 * 1024
 )
 
@@ -84,7 +84,7 @@ type ServerConfig struct {
 // It runs as the Transmission user, giving created folders the same ownership as
 // downloaded data without exposing recursive removal to the HTTP control process.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type Server struct {
 	config                       ServerConfig
 	resolvedRootPath             string
@@ -95,7 +95,7 @@ type Server struct {
 	// Production leaves this hook nil; operations invoke it immediately before the
 	// descriptor walk that must reject the deterministic symbolic-link swap.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	afterDirectoryResolution func(string)
 }
 
@@ -202,7 +202,7 @@ func (server *Server) Serve(ctx context.Context) error {
 // Each connection carries one operation, keeping protocol framing and permission
 // lifetime small and predictable.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (server *Server) handleConnection(connection net.Conn) {
 	defer connection.Close()
 	_ = connection.SetDeadline(time.Now().Add(10 * time.Second))
@@ -415,7 +415,7 @@ func isHexadecimal(value string) bool {
 // Folder names cannot contain separators or control characters, and the validated
 // parent is walked from the root descriptor before descriptor-relative creation.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (server *Server) createDirectory(parentPath string, name string) (Directory, error) {
 	if _, err := server.resolveDirectory(parentPath); err != nil {
 		return Directory{}, err
@@ -469,7 +469,7 @@ func (server *Server) createDirectory(parentPath string, name string) (Directory
 // Creation failures retain their stable category while a failed cleanup is joined
 // for local logging instead of falling back to path-based removal.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func cleanupCreatedDirectory(parentDescriptor int, name string, operationError error) error {
 	if err := unix.Unlinkat(parentDescriptor, name, unix.AT_REMOVEDIR); err != nil {
 		return errors.Join(
@@ -486,7 +486,7 @@ func cleanupCreatedDirectory(parentDescriptor int, name string, operationError e
 // Descriptor-relative removal and AT_REMOVEDIR prevent file unlinking, traversal,
 // symlink following, and recursion while still allowing one deliberate cleanup.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (server *Server) deleteDirectory(path string) error {
 	parentPath, name, err := server.resolveDirectoryTarget(path)
 	if err != nil {
@@ -514,7 +514,7 @@ func (server *Server) deleteDirectory(path string) error {
 // The delete preflight walks only the resolved parent, then opens the child through
 // that descriptor so a large sibling set contributes no additional scan work.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (server *Server) inspectDirectory(path string) (DirectoryEntry, error) {
 	parentPath, name, err := server.resolveDirectoryTarget(path)
 	if err != nil {
@@ -570,7 +570,7 @@ func (server *Server) inspectDirectory(path string) (DirectoryEntry, error) {
 // Existing folder names receive only the minimal component checks needed by
 // unlinkat, preserving leading, trailing, and otherwise unusual valid characters.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (server *Server) resolveDirectoryTarget(path string) (string, string, error) {
 	if path == server.config.RootPath {
 		return "", "", newOperationError(
@@ -602,7 +602,7 @@ func (server *Server) resolveDirectoryTarget(path string) (string, string, error
 // Only real immediate child directories are returned; regular files and symbolic
 // links remain invisible and cannot be selected through the browser.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (server *Server) listDirectory(path string) (Directory, error) {
 	listingStarted := time.Now()
 	if _, err := server.resolveDirectory(path); err != nil {
@@ -712,7 +712,7 @@ func (server *Server) listDirectory(path string) (Directory, error) {
 // Every component is opened with no-follow semantics and the previous descriptor is
 // closed as the walk advances, preventing parent-link swaps from escaping the root.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (server *Server) walkResolvedDirectory(path string) (int, error) {
 	directoryDescriptor, err := unix.Open(
 		server.resolvedRootPath,
@@ -756,7 +756,7 @@ func (server *Server) walkResolvedDirectory(path string) (int, error) {
 // Go's ReadDir resolves an unknown directory type before returning the entry, so a
 // zero Type is a regular file and requires no additional per-file system call.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func directoryEntryIsDirectory(entry fs.DirEntry) bool {
 	return entry.Type().IsDir()
 }
@@ -766,7 +766,7 @@ func directoryEntryIsDirectory(entry fs.DirEntry) bool {
 // The listing aggregates entriesScanned across children, while inspect callers use
 // the same facts without exposing this accounting field over the local protocol.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type childDirectoryInspection struct {
 	empty          bool
 	hasSubfolders  bool
@@ -779,7 +779,7 @@ type childDirectoryInspection struct {
 // Callers decide whether an open failure rejects one inspect request or becomes an
 // unreadable listing entry. Reaching scanLimit leaves subfolder presence unknown.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func inspectChildDirectory(
 	parentDescriptor int,
 	parentInformation unix.Stat_t,
@@ -848,7 +848,7 @@ func inspectChildDirectory(
 // Linux may report either ELOOP or ENOTDIR when O_NOFOLLOW meets a symbolic link;
 // both receive the same safe path rejection required by the picker contract.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func directoryWalkError(err error) error {
 	switch {
 	case errors.Is(err, unix.ELOOP), errors.Is(err, unix.ENOTDIR):
@@ -985,7 +985,7 @@ func filesystemOperationError(err error, fallbackMessage string) error {
 // The HTTP boundary depends on these categories for stable status codes and supplies
 // its own assignment-aware messages without exposing operating-system details.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func deleteDirectoryError(err error) error {
 	switch {
 	case errors.Is(err, unix.ENOTEMPTY), errors.Is(err, unix.EEXIST):
@@ -1056,7 +1056,7 @@ func validateDirectoryName(name string) error {
 // Deletion deliberately keeps names that creation would reject, including leading
 // or trailing spaces, while refusing traversal, separators, and NUL bytes.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func validateDirectoryDeletionName(name string) error {
 	if name == "" || name == "." || name == ".." ||
 		strings.ContainsRune(name, '/') || strings.ContainsRune(name, '\x00') {

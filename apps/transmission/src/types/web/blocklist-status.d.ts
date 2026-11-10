@@ -3,7 +3,7 @@ import type { Web_Api_BlocklistStatus } from '@/types/web/api.d.ts';
 /**
  * Blocklist Status - Format blocklist copy date.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Web_BlocklistStatus_FormatBlocklistCopyDate_Value = string;
 export type Web_BlocklistStatus_FormatBlocklistCopyDate_Returns = string;
@@ -11,7 +11,7 @@ export type Web_BlocklistStatus_FormatBlocklistCopyDate_Returns = string;
 /**
  * Blocklist Status - Format blocklist last updated.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Web_BlocklistStatus_FormatBlocklistLastUpdated_Status = Web_Api_BlocklistStatus;
 export type Web_BlocklistStatus_FormatBlocklistLastUpdated_Now = number;
@@ -20,7 +20,7 @@ export type Web_BlocklistStatus_FormatBlocklistLastUpdated_Returns = string | nu
 /**
  * Blocklist Status - Format blocklist next update.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Web_BlocklistStatus_FormatBlocklistNextUpdate_Status = Web_Api_BlocklistStatus;
 export type Web_BlocklistStatus_FormatBlocklistNextUpdate_Now = number;
@@ -29,7 +29,7 @@ export type Web_BlocklistStatus_FormatBlocklistNextUpdate_Returns = string | nul
 /**
  * Blocklist Status - Format blocklist source line.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Web_BlocklistStatus_FormatBlocklistSourceLine_Status = Web_Api_BlocklistStatus;
 export type Web_BlocklistStatus_FormatBlocklistSourceLine_SourceUrl = string;
@@ -49,7 +49,7 @@ export type Web_BlocklistStatus_FormatBlocklistSourceLine_SeparatedErrorText = s
 /**
  * Blocklist Status - Format blocklist summary.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Web_BlocklistStatus_FormatBlocklistSummary_Status = Web_Api_BlocklistStatus;
 export type Web_BlocklistStatus_FormatBlocklistSummary_Returns = string;
@@ -62,7 +62,7 @@ export type Web_BlocklistStatus_FormatBlocklistSummary_SourceLabel = string;
 /**
  * Blocklist Status - Source line.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Web_BlocklistStatus_SourceLine_Tone = 'default' | 'danger' | 'active' | 'muted';
 export type Web_BlocklistStatus_SourceLine = {

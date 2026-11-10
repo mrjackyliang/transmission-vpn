@@ -10,7 +10,7 @@ import type { Web_BackupComponents_FileSource_Props } from '@/types/web/backup-c
  * Presents the common selected radio card, file button, and chosen filename.
  * App-specific copy and parsing stay with the backup view that supplies it.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const BackupFileSource = ({
   busy,

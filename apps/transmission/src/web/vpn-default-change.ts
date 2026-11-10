@@ -4,7 +4,7 @@
  * Names the profile groups represented by the backend's torrent counts.
  * The dialog stays accurate when either group or both groups must move.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const defaultVPNMoveConfirmation = (
   connectionName: string,

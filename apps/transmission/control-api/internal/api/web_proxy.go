@@ -112,7 +112,7 @@ func (server *Server) handleGetWebProxy(responseWriter http.ResponseWriter, requ
 
 // handleUpdateWebProxy enables or disables the proxy after validating its VPN route.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (server *Server) handleUpdateWebProxy(responseWriter http.ResponseWriter, request *http.Request) {
 	var body webProxyBody
 	if err := decodeJSONBody(responseWriter, request, &body); err != nil {
@@ -192,7 +192,7 @@ func (server *Server) handleUpdateWebProxy(responseWriter http.ResponseWriter, r
 // The plaintext is returned only in this response. Storage and the runtime hand-off
 // receive only the existing Argon2id verifier.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (server *Server) handleCreateWebProxyLogin(responseWriter http.ResponseWriter, request *http.Request) {
 	var body webProxyLoginCreateBody
 	if err := decodeJSONBody(responseWriter, request, &body); err != nil {
@@ -321,7 +321,7 @@ func (server *Server) handleCreateWebProxyLogin(responseWriter http.ResponseWrit
 // Omitted fields retain their existing values. A generated password appears only when
 // regeneration was explicitly requested and the complete update succeeds.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (server *Server) handleUpdateWebProxyLogin(responseWriter http.ResponseWriter, request *http.Request) {
 	id := request.PathValue("loginID")
 	if !validWebProxyLoginID(id) {
@@ -751,7 +751,7 @@ func newWebProxyLoginResponse(
 // Legacy logins can predate the first VPN connection. They remain manageable with an
 // empty effective route, which keeps the disabled proxy fail-closed until setup.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (server *Server) effectiveWebProxyLoginConnectionIDs(
 	ctx context.Context,
 	logins []storage.WebProxyLogin,

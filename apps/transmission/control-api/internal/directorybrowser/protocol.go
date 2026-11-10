@@ -10,7 +10,7 @@ import (
 // Both processes ship together, but explicit versioning makes a mismatched local
 // component fail closed instead of interpreting filesystem requests incorrectly.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 const ProtocolVersion = 3
 
 const (
@@ -22,7 +22,7 @@ const (
 	// The deletion contract uses this code for mount points and other folders whose
 	// filesystem refuses removal even when their contents appear empty.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	ErrorCodeBusy = "busy"
 
 	// ErrorCodeInternal identifies an unexpected controller failure.
@@ -45,7 +45,7 @@ const (
 	// Callers map this rejection to the non-recursive picker message instead of
 	// exposing the operating system's unlink error to the browser.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	ErrorCodeNotEmpty = "not_empty"
 
 	// ErrorCodeNotFound identifies a directory that does not exist.
@@ -59,7 +59,7 @@ const (
 	// Delete callers use this distinct code to explain that the mounted data
 	// storage must be made writable before the folder can be removed.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	ErrorCodeReadOnly = "read_only"
 )
 
@@ -69,7 +69,7 @@ const (
 // operation, or caller-controlled root path. Its only file read is torrent metainfo,
 // and its only deletion removes one empty folder.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type Request struct {
 	Version int    `json:"version"`
 	Action  string `json:"action"`
@@ -82,7 +82,7 @@ type Request struct {
 // Files and symbolic links never enter this response, keeping the UI focused on safe
 // destination selection beneath the configured storage root.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type DirectoryEntry struct {
 	Name          string `json:"name"`
 	Path          string `json:"path"`
@@ -96,7 +96,7 @@ type DirectoryEntry struct {
 	// False keeps timed-out children visible with conservative facts while letting
 	// the API apply the dedicated unchecked deletion rule.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	Checked bool `json:"checked"`
 }
 
@@ -114,7 +114,7 @@ type Directory struct {
 // Error codes remain stable for HTTP mapping while messages are safe to show in the
 // first-party interface.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type Response struct {
 	OK        bool       `json:"ok"`
 	Directory *Directory `json:"directory,omitempty"`
@@ -124,7 +124,7 @@ type Response struct {
 	// Keeping it separate from Directory prevents DELETE preflight from requiring a
 	// synthetic parent listing or scanning unrelated siblings.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	Entry     *DirectoryEntry `json:"entry,omitempty"`
 	Torrent   []byte          `json:"torrent,omitempty"`
 	ErrorCode string          `json:"errorCode,omitempty"`

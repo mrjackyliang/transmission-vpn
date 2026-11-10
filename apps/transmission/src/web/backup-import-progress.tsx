@@ -16,7 +16,7 @@ import type {
  * Renders persisted item progress and every final outcome.
  * Offers the same background and completion actions after a page reload.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const BackupImportProgress = ({
   applyingLabel,

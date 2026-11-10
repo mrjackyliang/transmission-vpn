@@ -21,7 +21,7 @@ const (
 	// The console batches larger pastes so one authenticated request cannot open an
 	// unbounded number of remote connections or retain an unbounded response.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	maximumTorrentPreviewLinks = 20
 
 	// maximumTorrentPreviewBytes bounds one downloaded metainfo response.
@@ -29,7 +29,7 @@ const (
 	// A sentinel byte distinguishes an exact-limit torrent from an oversized body
 	// before the bencode parser receives the in-memory content.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	maximumTorrentPreviewBytes = 10 << 20
 
 	// torrentPreviewTimeout bounds DNS, redirects, headers, and body reads.
@@ -37,7 +37,7 @@ const (
 	// Every URL in a batch shares the request deadline, keeping a pasted list from
 	// multiplying the maximum wait by its number of links.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	torrentPreviewTimeout = 15 * time.Second
 )
 
@@ -83,7 +83,7 @@ type torrentLinkPreviewResponse struct {
 // Remote failures are intentionally omitted from the result. The route never logs a
 // submitted URL, so query strings cannot escape through routine diagnostics.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (server *Server) handlePreviewTorrentLinks(
 	responseWriter http.ResponseWriter,
 	request *http.Request,

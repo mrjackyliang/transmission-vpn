@@ -1064,7 +1064,7 @@ func (server *Server) connectStoredVPN(
 // Callers clear the returned map after deriving safe metadata, merging a submitted
 // candidate, or constructing the controller request.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (server *Server) decryptVPNConnectionCredentials(
 	configuration storage.EncryptedVPNConnection,
 ) (map[string]string, error) {
@@ -1102,7 +1102,7 @@ func (server *Server) decryptVPNConnectionCredentials(
 // A provider or tunnel change deliberately skips the merge so its candidate must
 // supply every required credential before validation reaches the controller.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (server *Server) mergeSavedVPNConnectionCredentials(
 	configuration storage.EncryptedVPNConnection,
 	providerID string,
@@ -1141,7 +1141,7 @@ func (server *Server) mergeSavedVPNConnectionCredentials(
 // Provider order keeps the payload deterministic, and plaintext values are cleared
 // without crossing the response boundary.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (server *Server) savedVPNConnectionCredentialKeys(
 	configuration storage.EncryptedVPNConnection,
 ) ([]string, error) {

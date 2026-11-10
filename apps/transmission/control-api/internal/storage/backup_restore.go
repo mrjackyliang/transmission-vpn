@@ -14,21 +14,21 @@ import (
 //
 // Matching destinations can still be replaced when the installation is at capacity.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 const MaximumBackupNotificationDestinations = 256
 
 // MaximumBackupRPCLogins caps compatible-RPC logins retained after an import.
 //
 // Matching usernames can still be replaced when the installation is at capacity.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 const MaximumBackupRPCLogins = 256
 
 // MaximumBackupAPITokens caps scoped API tokens retained after an import.
 //
 // Duplicate tokens are skipped before the capacity check so they consume no space.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 const MaximumBackupAPITokens = 256
 
 // BackupMergeResult reports every merge action and capacity skip.
@@ -36,7 +36,7 @@ const MaximumBackupAPITokens = 256
 // Preview and apply callers use the same counts so user-facing review copy matches
 // the rows the storage transaction changes.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type BackupMergeResult struct {
 	NotificationReplacements int
 	NotificationAdditions    int
@@ -51,7 +51,7 @@ type BackupMergeResult struct {
 
 // BackupRemoteAccess is the digest-bearing remote credential set restored together.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type BackupRemoteAccess struct {
 	RPCLogins []RPCLogin
 	APITokens []BackupAPIToken
@@ -86,7 +86,7 @@ type backupRestoreQueryer interface {
 //
 // The preview reads digest-bearing token records internally but returns only counts.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) PlanBackupRemoteAccess(
 	ctx context.Context,
 	backup BackupRemoteAccess,
@@ -108,7 +108,7 @@ func (store *Store) PlanBackupRemoteAccess(
 // Matching usernames replace RPC logins, duplicate tokens stay untouched, and rows
 // absent from the backup remain. Browser sessions and the administrator are untouched.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) MergeBackupRemoteAccess(
 	ctx context.Context,
 	administratorID int64,
@@ -192,7 +192,7 @@ func (store *Store) MergeBackupRemoteAccess(
 // Names are matched without regard to case, and replacements remain possible at the
 // destination cap because they do not increase the stored row count.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) PlanBackupNotifications(
 	ctx context.Context,
 	targets []NotificationTarget,
@@ -210,7 +210,7 @@ func (store *Store) PlanBackupNotifications(
 // Matching rows are replaced, new rows are added up to the cap, and destinations not
 // named by the backup remain. Callers seal secrets with each incoming destination ID.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) MergeBackupNotifications(
 	ctx context.Context,
 	targets []NotificationTarget,
@@ -513,7 +513,7 @@ func listBackupAPITokens(
 
 // UpsertBackupVPNProfiles restores endpoint records without activating a connection.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) UpsertBackupVPNProfiles(
 	ctx context.Context,
 	profiles []EncryptedVPNProfile,

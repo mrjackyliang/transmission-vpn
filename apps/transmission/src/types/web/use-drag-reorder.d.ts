@@ -6,7 +6,7 @@ import type {
 /**
  * Use Drag Reorder.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Web_UseDragReorder_Result = {
   announcement: string;

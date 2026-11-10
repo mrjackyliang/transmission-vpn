@@ -98,7 +98,7 @@ const compareTorrents = (
  * Converts facade identifiers used by row selection into stable hashes only at
  * the mutation boundary. Duplicate hashes collapse to one backend selection.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const hashesForTorrentIdentifiers = (
   torrents: Web_Api_Torrent[],
@@ -369,7 +369,7 @@ export const TorrentWorkspace = ({
    * Updates the shared sidebar and the active-filter pills.
    * An empty string disables this independent filter dimension.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const setProfileFilter = (profile: string): void => onFiltersChange({
     ...filters,
@@ -382,7 +382,7 @@ export const TorrentWorkspace = ({
    * Clears or selects the VPN dimension independently from library filters.
    * The VPN connection list uses this handler through shared filter state.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const setConnectionFilter = (connection: string): void => onFiltersChange({
     ...filters,

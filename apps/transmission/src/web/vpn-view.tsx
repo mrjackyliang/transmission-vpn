@@ -84,7 +84,7 @@ import type {
  * Names the resources reported by a connection-in-use response.
  * The dialog renders each group as a separate one-item-per-line list.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 type RemoveDependencies = {
   torrents: number
@@ -104,7 +104,7 @@ type RemoveDependencies = {
  * Keeps the selected row together with its server-reported dependencies.
  * This prevents stale list data from replacing the conflict response.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 type RemoveState = {
   connection: Web_Api_VpnConnection
@@ -117,7 +117,7 @@ type RemoveState = {
  * Keeps the selected target with the server-counted profile-group totals.
  * The conflict identifies Default-profile and following-profile torrents.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 type DefaultChangeState = {
   connection: Web_Api_VpnConnection
@@ -132,7 +132,7 @@ type DefaultChangeState = {
  * Reuses the stored connection union for the editor state.
  * The form and API therefore cannot drift between strategy spellings.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 type EndpointStrategy = Web_Api_VpnConnection['endpointStrategy'];
 
@@ -142,7 +142,7 @@ type EndpointStrategy = Web_Api_VpnConnection['endpointStrategy'];
  * Keeps custom uploads within the same bound as the original VPN page.
  * The browser rejects oversized files before reading them into memory.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const maximumCustomProfileBytes: number = 900_000;
 
@@ -152,7 +152,7 @@ const maximumCustomProfileBytes: number = 900_000;
  * Explains how the ordered pool is used after an endpoint fails.
  * The selected strategy updates the approved helper copy in place.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const endpointStrategyDescriptions: Record<EndpointStrategy, string> = {
   ordered: 'Move to the next endpoint after a connection fails.',
@@ -166,7 +166,7 @@ const endpointStrategyDescriptions: Record<EndpointStrategy, string> = {
  * Gives controller states the approved sentence-case chip text.
  * Unknown future states still fall back to their server value.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const stateLabels: Record<string, string> = {
   'blocked': 'Blocked',
@@ -184,7 +184,7 @@ const stateLabels: Record<string, string> = {
  * Prefers the newest event snapshot while the durable list refresh catches up.
  * Stored runtime remains available before the first event arrives.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const connectionState = (
   connection: Web_Api_VpnConnection,
@@ -199,7 +199,7 @@ const connectionState = (
  * Provides the second line beneath each state chip.
  * Controller errors take precedence over generated activity text.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const statusReason = (runtime: Web_Api_VpnRuntime): string => {
   if (runtime['lastError'] !== undefined && runtime['lastError'] !== '') {
@@ -225,7 +225,7 @@ const statusReason = (runtime: Web_Api_VpnRuntime): string => {
  * Maps all non-protected terminal states to the blocked visual treatment.
  * Connecting states retain their progress treatment instead.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const statusTone = (state: string): string => {
   if (state === 'protected') {
@@ -244,7 +244,7 @@ const statusTone = (state: string): string => {
  * Safely narrows optional error details before the remove dialog uses them.
  * Missing groups become empty lists so partial responses remain renderable.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const parseDependencies = (details: Record<string, unknown>): RemoveDependencies => ({
   logins: (Array.isArray(details['logins'])) ? details['logins'] as RemoveDependencies['logins'] : [],
@@ -258,7 +258,7 @@ const parseDependencies = (details: Record<string, unknown>): RemoveDependencies
  * Extracts partial move results from a move-failed error response.
  * An absent result list is represented as an empty list.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const movedTorrents = (details: Record<string, unknown>): Web_Api_MovedTorrent[] => (
   (Array.isArray(details['moved'])) ? details['moved'] as Web_Api_MovedTorrent[] : []
@@ -270,7 +270,7 @@ const movedTorrents = (details: Record<string, unknown>): Web_Api_MovedTorrent[]
  * Creates a connection or updates one existing slot. Configuration changes are
  * tested and connected; name-only and peer-port-only changes save in place.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const ConnectionEditor = ({
   connection,
@@ -574,7 +574,7 @@ const ConnectionEditor = ({
    * Clears endpoint-specific state after a provider or tunnel change.
    * Filters and credentials cannot carry across different catalogs.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const resetSelection = (): void => {
     setProfileIDs([]);
@@ -597,7 +597,7 @@ const ConnectionEditor = ({
    *
    * @param {string} profileID - Profile i d.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const toggleProfile = (profileID: string): void => {
     if (!profileIDs.includes(profileID) && profileIDs.length >= 128) {
@@ -620,7 +620,7 @@ const ConnectionEditor = ({
    * Normalizes the form into the exact create/update configuration body.
    * Metadata remains outside this object for rename-only saves.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const buildConfiguration = (): Web_Api_VpnConfigurationInput => ({
     credentials: submittedCredentials(credentialFields, credentials),
@@ -640,7 +640,7 @@ const ConnectionEditor = ({
    * Omits configuration for metadata-only saves so the VPN stays connected.
    * New and configuration-changing submissions retain the test workflow.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const submit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
@@ -704,7 +704,7 @@ const ConnectionEditor = ({
    * Shares busy and error handling across the three row-level mutations.
    * Each action remains scoped to the open connection identifier.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const runConnectionAction = async (action: 'default' | 'disconnect' | 'reconnect'): Promise<void> => {
     if (connection === null) {
@@ -738,7 +738,7 @@ const ConnectionEditor = ({
    *
    * @param {ChangeEvent<HTMLInputElement>} event - Event.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const handleCustomFile = (event: ChangeEvent<HTMLInputElement>): void => {
     setCustomFile(event.currentTarget.files?.[0] ?? null);
@@ -750,7 +750,7 @@ const ConnectionEditor = ({
    * Validates the browser-side size bound before reading the file.
    * A successful upload becomes the only selected custom endpoint.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const uploadProfile = async (): Promise<void> => {
     if (customFile === null) {
@@ -1267,7 +1267,7 @@ const ConnectionEditor = ({
  * Shows every isolated connection, opens its editor, and coordinates safe
  * dependency moves before a non-default connection is removed.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const VpnView = ({
   connections: response,
@@ -1347,7 +1347,7 @@ export const VpnView = ({
      *
      * @param {PointerEvent} event - Event.
      *
-     * @since UNRELEASED
+     * @since 2.0.0
      */
     const closeMenusOutside = (event: PointerEvent): void => {
       document.querySelectorAll<HTMLDetailsElement>('details.vpn-row-menu[open]').forEach((menu): void => {
@@ -1365,7 +1365,7 @@ export const VpnView = ({
      *
      * @param {KeyboardEvent} event - Event.
      *
-     * @since UNRELEASED
+     * @since 2.0.0
      */
     const closeMenusOnEscape = (event: KeyboardEvent): void => {
       if (event.key === 'Escape') {
@@ -1405,7 +1405,7 @@ export const VpnView = ({
    * @param {Web_Components_VpnView_NavigationTarget} target    - Target.
    * @param {boolean}                                 [replace] - Replace.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const openNavigationTarget = (
     target: Web_Components_VpnView_NavigationTarget,
@@ -1471,7 +1471,7 @@ export const VpnView = ({
    * Removes an unused row immediately or opens dependency migration on conflict.
    * Other server errors stay visible through the global toast.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const requestRemove = async (connection: Web_Api_VpnConnection): Promise<void> => {
     setRemoveError('');
@@ -1500,7 +1500,7 @@ export const VpnView = ({
    * Submits the selected destination and preserves partial results on failure.
    * The dialog stays open so failed torrents can be inspected and retried.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const moveAndRemove = async (): Promise<void> => {
     if (removeState === null || moveTo === '') {
@@ -1539,7 +1539,7 @@ export const VpnView = ({
    * Applies a move-free switch immediately and opens confirmation only when the
    * backend reports that Default-profile torrents would change daemon ownership.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const requestDefaultChange = async (connectionId: string): Promise<Web_Api_MovedTorrent[]> => {
     const connection: Web_Api_VpnConnection | undefined = connections.find(
@@ -1598,7 +1598,7 @@ export const VpnView = ({
    * Repeats the switch with explicit move consent and keeps every per-torrent
    * outcome visible even when one source remains unchanged after a failure.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const confirmDefaultChange = async (): Promise<void> => {
     if (defaultChangeState === null) {
@@ -1633,7 +1633,7 @@ export const VpnView = ({
    * Clears confirmation and result state before another connection is selected.
    * A later conflict therefore always opens with a clean confirmation dialog.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const closeDefaultChange = (): void => {
     setDefaultChangeState(null);

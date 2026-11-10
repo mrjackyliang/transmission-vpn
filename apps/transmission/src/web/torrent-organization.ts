@@ -10,7 +10,7 @@ import type { Web_Components_TorrentOrganizationLabelDraft } from '@/types/web/c
  * Keeps label lists in a stable case-insensitive order.
  * The backend remains free to preserve each label's entered casing.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const sortTorrentOrganizationValues = (values: string[]): string[] => [...values].sort(
   (leftValue: string, rightValue: string): number => leftValue.localeCompare(
@@ -26,7 +26,7 @@ export const sortTorrentOrganizationValues = (values: string[]): string[] => [..
  * Produces the comparison key used by case-insensitive removal, rename, and
  * conflict merging. Display values keep their original casing.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const normalizeTorrentOrganizationValue = (value: string): string => value.toLocaleLowerCase();
 
@@ -36,7 +36,7 @@ const normalizeTorrentOrganizationValue = (value: string): string => value.toLoc
  * Preserves each opened label's identity so deletions and renames are sent as
  * explicit operations for the backend to apply to torrents.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const buildTorrentOrganizationUpdate = (
   expectedRevision: number,
@@ -73,7 +73,7 @@ export const buildTorrentOrganizationUpdate = (
  * Replays explicit label removals, renames, and additions over a newer server
  * revision so one automatic conflict retry keeps concurrent labels intact.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const mergeTorrentOrganizationUpdate = (
   openedOrganization: Web_Api_TorrentOrganization,

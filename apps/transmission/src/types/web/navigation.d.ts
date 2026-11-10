@@ -6,14 +6,14 @@ import type {
 /**
  * Navigation - Browser history URL.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Web_Navigation_HistoryURL = string | URL | null | undefined;
 
 /**
  * Navigation - Browser history.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Web_Navigation_History = {
   pushState: (data: unknown, unused: string, url?: Web_Navigation_HistoryURL) => void;
@@ -23,7 +23,7 @@ export type Web_Navigation_History = {
 /**
  * Navigation - Browser location.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Web_Navigation_Location = {
   pathname: string;
@@ -32,14 +32,14 @@ export type Web_Navigation_Location = {
 /**
  * Navigation - Pop state listener.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Web_Navigation_PopStateListener = () => void;
 
 /**
  * Navigation - Browser.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Web_Navigation_Browser = {
   addEventListener: (type: 'popstate', listener: Web_Navigation_PopStateListener) => void;
@@ -51,7 +51,7 @@ export type Web_Navigation_Browser = {
 /**
  * Navigation - Path match.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Web_Navigation_PathMatch<Route> = {
   path: string;
@@ -62,28 +62,28 @@ export type Web_Navigation_PathMatch<Route> = {
 /**
  * Navigation - Path resolver.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Web_Navigation_PathResolver<Route> = (pathname: string) => Web_Navigation_PathMatch<Route>;
 
 /**
  * Navigation - Route listener.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Web_Navigation_RouteListener<Route> = (route: Route) => void;
 
 /**
  * Navigation - Permission check.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Web_Navigation_CanOpen = (permission: string) => boolean;
 
 /**
  * Navigation - Page.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Web_Navigation_Page = {
   activeViews?: Web_Components_View[];
@@ -98,7 +98,7 @@ export type Web_Navigation_Page = {
 /**
  * Navigation - Group.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Web_Navigation_Group = {
   id: string;
@@ -109,7 +109,7 @@ export type Web_Navigation_Group = {
 /**
  * Navigation - Item.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Web_Navigation_Item = {
   description?: string;
@@ -127,7 +127,7 @@ export type Web_Navigation_Items = Web_Navigation_Item[];
 /**
  * Navigation - Phone tabs.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Web_Navigation_Tabs = {
   more: Web_Navigation_Items;
@@ -137,7 +137,7 @@ export type Web_Navigation_Tabs = {
 /**
  * Navigation - Sheet row.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Web_Navigation_SheetRow = {
   count?: number;
@@ -153,7 +153,7 @@ export type Web_Navigation_SheetRow = {
 /**
  * Navigation - Sheet group.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Web_Navigation_SheetGroup = {
   id: string;
@@ -164,7 +164,7 @@ export type Web_Navigation_SheetGroup = {
 /**
  * Navigation - Sheet level.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Web_Navigation_SheetLevel = {
   groups: Web_Navigation_SheetGroup[];
@@ -178,7 +178,7 @@ export type Web_Navigation_SheetStack = Web_Navigation_SheetLevel[];
 /**
  * Navigation - Phone tab action.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Web_Navigation_PhoneTabAction =
   | {

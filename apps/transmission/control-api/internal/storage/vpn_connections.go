@@ -20,7 +20,7 @@ const (
 	// Startup rendering and the existing single-daemon API share this value so a fresh
 	// appliance keeps Transmission's established default.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	DefaultVPNPeerPort = 51413
 
 	maximumVPNConnections = 64
@@ -32,7 +32,7 @@ var (
 	// Connection names are user-facing identifiers, so callers receive a stable
 	// conflict instead of a SQLite constraint error.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	ErrVPNConnectionNameTaken = errors.New("VPN connection name is already in use")
 
 	// ErrVPNConnectionLimit reports that all connection slots are occupied.
@@ -40,7 +40,7 @@ var (
 	// Slot allocation happens in the creation transaction, closing races between
 	// simultaneous requests for the lowest free slot.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	ErrVPNConnectionLimit = errors.New("VPN connection limit reached")
 
 	// ErrDefaultVPNConnection reports an attempt to remove the default connection.
@@ -48,7 +48,7 @@ var (
 	// Later phases move dependent torrents before deletion, but the default itself must
 	// always be changed explicitly before it can be removed.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	ErrDefaultVPNConnection = errors.New("the default VPN connection cannot be deleted")
 
 	// ErrVPNConnectionReference reports a relationship to a missing connection.
@@ -56,7 +56,7 @@ var (
 	// Profile and proxy-login writers validate the relationship in their own
 	// transaction so a concurrent deletion cannot leave a dangling reference.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	ErrVPNConnectionReference = errors.New("the referenced VPN connection does not exist")
 
 	// ErrVPNConnectionRequired prevents dependent features from being enabled or created
@@ -65,7 +65,7 @@ var (
 	// The shared transactional check keeps API and managed-configuration writes from
 	// creating proxy state that cannot be routed through a VPN connection.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	ErrVPNConnectionRequired = errors.New("a VPN connection is required")
 )
 
@@ -74,7 +74,7 @@ var (
 // Safe metadata remains readable for status and daemon rendering, while credential
 // plaintext exists only during a controller command.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type EncryptedVPNConnection struct {
 	ID                         string
 	Slot                       int
@@ -106,7 +106,7 @@ const vpnConnectionColumns = `id, slot, name, is_default, enabled, provider_id,
 // Callers pass their current transaction so the invariant is checked in the same
 // SQL scope as the dependent write.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func requireVPNConnection(ctx context.Context, querySource queryInterface) error {
 	var count int
 	if err := querySource.QueryRowContext(
@@ -127,7 +127,7 @@ func requireVPNConnection(ctx context.Context, querySource queryInterface) error
 // The API needs the identifier before sealing credentials because connection identity
 // is authenticated as associated data.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func NewVPNConnectionID() (string, error) {
 	value := make([]byte, 8)
 	if _, err := rand.Read(value); err != nil {
@@ -142,7 +142,7 @@ func NewVPNConnectionID() (string, error) {
 // Endpoint order is loaded after the base rows are closed so the store's single SQLite
 // connection never needs a nested active result set.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) ListVPNConnections(ctx context.Context) ([]EncryptedVPNConnection, error) {
 	rows, err := store.databaseHandle().QueryContext(
 		ctx,
@@ -189,7 +189,7 @@ func (store *Store) ListVPNConnections(ctx context.Context) ([]EncryptedVPNConne
 // Callers use this lookup for future per-connection routes without depending on a
 // mutable slot or display name.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) VPNConnectionByID(
 	ctx context.Context,
 	connectionID string,
@@ -207,7 +207,7 @@ func (store *Store) VPNConnectionByID(
 // E1 keeps all existing VPN commands on this row; later phases use the same flag for
 // DNS, unprofiled torrents, and default proxy routing.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) DefaultVPNConnection(ctx context.Context) (EncryptedVPNConnection, error) {
 	return readVPNConnection(
 		ctx,
@@ -221,7 +221,7 @@ func (store *Store) DefaultVPNConnection(ctx context.Context) (EncryptedVPNConne
 // The first row becomes the default in the same transaction. Name uniqueness and slot
 // allocation are checked before any endpoint rows are published.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) CreateVPNConnection(
 	ctx context.Context,
 	connection EncryptedVPNConnection,
@@ -234,7 +234,7 @@ func (store *Store) CreateVPNConnection(
 // The API's global command gate selects the lowest free slot before asking the
 // controller to test it. The transaction verifies that the same slot is still free.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) CreateVPNConnectionInSlot(
 	ctx context.Context,
 	connection EncryptedVPNConnection,
@@ -383,7 +383,7 @@ func (store *Store) createVPNConnection(
 // Name, peer port, endpoint policy, endpoints, and sealed credentials move together so
 // a tested controller candidate can never be mixed with stale persisted fields.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) UpdateVPNConnection(
 	ctx context.Context,
 	connectionID string,
@@ -483,7 +483,7 @@ func (store *Store) UpdateVPNConnection(
 // Disconnect and reconnect routes do not require a configuration form revision, so
 // this flag intentionally leaves the row revision unchanged.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) SetVPNConnectionEnabled(
 	ctx context.Context,
 	connectionID string,
@@ -516,7 +516,7 @@ func (store *Store) SetVPNConnectionEnabled(
 // Clearing the old flag and setting the new one happen in one transaction, so readers
 // observe either complete default selection and the partial unique index stays valid.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) SetDefaultVPNConnection(ctx context.Context, connectionID string) error {
 	transaction, err := store.databaseHandle().BeginTx(ctx, nil)
 	if err != nil {
@@ -560,7 +560,7 @@ func (store *Store) SetDefaultVPNConnection(ctx context.Context, connectionID st
 // The API moves torrents and reassigns references explicitly before calling this
 // method; storage never silently reroutes them.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) DeleteVPNConnection(ctx context.Context, connectionID string) error {
 	transaction, err := store.databaseHandle().BeginTx(ctx, nil)
 	if err != nil {
@@ -602,7 +602,7 @@ func (store *Store) DeleteVPNConnection(ctx context.Context, connectionID string
 // A nil target stores the dynamic default selection. Connection removal stages this
 // reassignment before draining the daemon, then repeats it in the delete transaction.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) ReassignVPNConnectionDependents(
 	ctx context.Context,
 	sourceConnectionID string,
@@ -688,7 +688,7 @@ func reassignVPNConnectionDependents(
 // Connection deletion uses this after daemon-owned torrents have moved. Repeating
 // the dependent reassignment in the delete transaction closes the final save race.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) DeleteVPNConnectionAndReassignDependents(
 	ctx context.Context,
 	sourceConnectionID string,
@@ -750,7 +750,7 @@ func (store *Store) DeleteVPNConnectionAndReassignDependents(
 // A callback keeps cryptography outside storage. Authentication failures clear only the
 // affected credentials, disable that row, and create the existing VPN secret notice.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) ResealLegacyVPNCredentials(
 	ctx context.Context,
 	reseal func(string, string, []byte, []byte) ([]byte, []byte, error),

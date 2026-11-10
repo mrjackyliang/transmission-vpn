@@ -24,13 +24,13 @@ Plan the `/config` and `/data` folders so the container can start, keep its stat
 
 ```text title="Container paths"
 /config
-|-- app/                  # Control plane state, owned by control (0750)
+|-- app/                  # Control plane state, owned by PUID:PGID (2770)
 |   |-- state.sqlite3     # Database, with -wal and -shm files beside it
-|   `-- keys/             # Owned by control (0700)
+|   `-- keys/             # Owned by PUID:PGID (2770)
 |       `-- installation.key
 |-- transmission/         # Transmission's configuration folder, owned by PUID:PGID (0750)
 |   `-- settings.json     # Rebuilt at every start
-|-- vpn/                  # Created at start, currently unused
+|-- vpn/                  # Owned by PUID:PGID (2770), currently unused
 `-- managed.json          # Optional managed configuration
 /data
 |-- downloads/            # Default profile's download folder
@@ -46,7 +46,7 @@ Plan the `/config` and `/data` folders so the container can start, keep its stat
 | Account        | IDs                                                                                                                                                                                                                                                                                                        | Runs                                                                                                                                                                                                   |
 |----------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `transmission` | <Terminology title="User and group IDs that own Transmission's files" to="/docs/reference/terminology#puid-and-pgid">`PUID`</Terminology> and <Terminology title="User and group IDs that own Transmission's files" to="/docs/reference/terminology#puid-and-pgid">`PGID`</Terminology>, `1000` by default | Transmission and the <Terminology title="Helper that lists, creates, and deletes empty folders under /data" to="/docs/reference/terminology#directory-controller">directory controller</Terminology>   |
-| `control`      | UID and GID 65532                                                                                                                                                                                                                                                                                          | The <Terminology title="The service that runs the web interface and API" to="/docs/reference/terminology#control-plane">control plane</Terminology>                                                    |
+| `control`      | UID and GID 65532, and a member of the `PGID` group                                                                                                                                                                                                                                                        | The <Terminology title="The service that runs the web interface and API" to="/docs/reference/terminology#control-plane">control plane</Terminology>                                                    |
 | `root`         | 0                                                                                                                                                                                                                                                                                                          | Startup checks, the firewall, and the <Terminology title="Privileged service that runs tunnels and switches the firewall" to="/docs/reference/terminology#vpn-controller">VPN controller</Terminology> |
 
 - <Terminology title="User and group IDs that own Transmission's files" to="/docs/reference/terminology#puid-and-pgid">`PUID`</Terminology> and <Terminology title="User and group IDs that own Transmission's files" to="/docs/reference/terminology#puid-and-pgid">`PGID`</Terminology> must be integers from 1000 to 60000, and they can't already belong to another account in the image.
@@ -57,10 +57,13 @@ Plan the `/config` and `/data` folders so the container can start, keep its stat
 
 At every start, the container prepares its folders before any service runs:
 
-1. It changes the owner of `/config` and `/data` themselves to the Transmission account, but only when they're owned by `root:root`, and never for anything inside them.
-2. It creates `/config/app` and `/config/app/keys` for `control`, `/config/transmission` for the Transmission account, and `/config/vpn` for `root`.
-3. It checks that `control` can write to `/config/app`, and that the Transmission account can write to `/config/transmission` and `/data`.
-4. It installs Transmission's settings file with mode `0600`, owned by the Transmission account.
+1. It changes the owner of `/config` and `/data` themselves to the Transmission account, but only when they're owned by `root:root`.
+2. It gives `/config/app` and `/config/vpn`, with everything inside them, to `PUID:PGID`. Folders get mode `2770` and files `0660`, so `control` reaches its state through the shared group.
+3. It creates `/config/transmission` for the Transmission account.
+4. It checks that `control` can write to `/config/app` and `/config/app/keys`, and that the Transmission account can write to `/config/transmission` and `/data`.
+5. It installs Transmission's settings file with mode `0600`, owned by the Transmission account.
+
+Every file in `/config` belongs to `PUID:PGID`, so a host tool that gives a whole folder tree to one account, such as a scheduled `chown -R`, keeps working as long as it uses the same IDs. New files that the control plane writes stay group-writable until that tool runs again.
 
 When a check fails, the container stops with a message such as `config-init: /data is not writable by transmission.` It is recommended to give the host folder to the <Terminology title="User and group IDs that own Transmission's files" to="/docs/reference/terminology#puid-and-pgid">`PUID`</Terminology> and <Terminology title="User and group IDs that own Transmission's files" to="/docs/reference/terminology#puid-and-pgid">`PGID`</Terminology> account, or to set those IDs to the folder's current owner.
 

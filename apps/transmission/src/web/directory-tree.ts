@@ -28,7 +28,7 @@ import type {
  *
  * @returns {Web_DirectoryTree_DirectoryAncestorPaths_Returns}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const directoryAncestorPaths = (
   path: Web_DirectoryTree_DirectoryAncestorPaths_Path,
@@ -62,7 +62,7 @@ export const directoryAncestorPaths = (
  *
  * @returns {Web_DirectoryTree_DirectoryCreationParentPath_Returns}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const directoryCreationParentPath = (
   path: Web_DirectoryTree_DirectoryCreationParentPath_Path,
@@ -89,7 +89,7 @@ export const directoryCreationParentPath = (
  *
  * @returns {Web_DirectoryTree_DirectoryExpandedPaths_Returns}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const directoryExpandedPaths = (
   path: Web_DirectoryTree_DirectoryExpandedPaths_Path,
@@ -110,7 +110,7 @@ export const directoryExpandedPaths = (
  *
  * @returns {Web_DirectoryTree_RowClickAction_Returns}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const directoryRowClickAction = (
   selectable: Web_DirectoryTree_RowClickAction_Selectable,
@@ -141,7 +141,7 @@ export const directoryRowClickAction = (
  *
  * @returns {Web_DirectoryTree_MoveDirectoryTreeFocus_Returns}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const moveDirectoryTreeFocus = (
   items: Web_DirectoryTree_MoveDirectoryTreeFocus_Items,

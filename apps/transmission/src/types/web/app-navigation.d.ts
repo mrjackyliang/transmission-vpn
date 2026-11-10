@@ -11,14 +11,14 @@ import type {
 /**
  * App Navigation.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Web_AppNavigation_Items = Web_Navigation_Items;
 
 /**
  * App Navigation - Paths.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Web_AppNavigation_Paths = {
   account: string;
@@ -35,7 +35,7 @@ export type Web_AppNavigation_Paths = {
 /**
  * App Navigation - Route.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Web_AppNavigation_Route = {
   path: string;
@@ -46,6 +46,6 @@ export type Web_AppNavigation_Route = {
 /**
  * App Navigation - Path match.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Web_AppNavigation_PathMatch = Web_Navigation_PathMatch<Web_AppNavigation_Route>;

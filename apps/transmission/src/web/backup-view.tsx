@@ -75,7 +75,7 @@ import type {
  * Keeps app-specific copy and section identifiers outside the reusable dialog.
  * Every option starts selected when the export dialog opens.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const exportOptions: Web_BackupComponents_ExportOption[] = [
   {
@@ -116,7 +116,7 @@ const exportOptions: Web_BackupComponents_ExportOption[] = [
  * Keeps singular and plural review copy correct for every imported count.
  * Callers may provide an irregular plural when appending “s” is not enough.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const countLabel = (count: number, singular: string, plural: string = `${singular}s`): string => (
   `${count.toLocaleString()} ${(count === 1) ? singular : plural}`
@@ -128,7 +128,7 @@ const countLabel = (count: number, singular: string, plural: string = `${singula
  * Narrows one unknown preview value before compound setting presentation.
  * Scalars intentionally become an empty record instead of being coerced.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const valueRecord = (value: unknown): Record<string, unknown> => (
   (typeof value === 'object' && value !== null && !Array.isArray(value)) ? value as Record<string, unknown> : {}
@@ -140,7 +140,7 @@ const valueRecord = (value: unknown): Record<string, unknown> => (
  * Converts storage values into the same human language used by Settings.
  * Compound source mappings remain one easy-to-scan row.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const settingValueLabel = (settingKey: string, value: unknown): string => {
   if (typeof value === 'boolean') {
@@ -220,7 +220,7 @@ const settingValueLabel = (settingKey: string, value: unknown): string => {
  * Compares JSON-shaped preview values without converting booleans into strings.
  * The result drives the visual emphasis in the Settings comparison.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const valuesDiffer = (left: unknown, right: unknown): boolean => JSON.stringify(left) !== JSON.stringify(right);
 
@@ -230,7 +230,7 @@ const valuesDiffer = (left: unknown, right: unknown): boolean => JSON.stringify(
  * Produces a compact binary-unit label for the amount that will be re-checked.
  * One decimal is retained only when it helps a value below ten stay meaningful.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const formatBytes = (bytes: number): string => {
   if (bytes <= 0) {
@@ -259,7 +259,7 @@ const formatBytes = (bytes: number): string => {
  * Gives the review and live progress screens a deliberately approximate time.
  * This avoids implying disk-speed precision that the browser cannot know.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const formatDuration = (seconds: number): string => {
   if (seconds < 60) {
@@ -281,7 +281,7 @@ const formatDuration = (seconds: number): string => {
  * Uses a conservative disk-throughput baseline plus per-torrent startup time.
  * The estimate is guidance only and is always described as approximate.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const estimatedRecheckDuration = (torrentCount: number, totalSizeBytes: number): string => {
   const seconds: number = Math.max(30, (totalSizeBytes / (80 * 1024 * 1024)) + (torrentCount * 2));
@@ -295,7 +295,7 @@ const estimatedRecheckDuration = (torrentCount: number, totalSizeBytes: number):
  * Translates durable torrent states into the shared progress row and state pills.
  * Missing-data context remains a second line so the red pill stays easy to scan.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const presentImportItem = (item: Web_Backup_ImportItem): Web_BackupComponents_ImportProgressItem => {
   let status: string = item['state'];
@@ -362,7 +362,7 @@ const presentImportItem = (item: Web_Backup_ImportItem): Web_BackupComponents_Im
  * Reads one numeric persisted-job summary field with a stable zero fallback.
  * This keeps jobs created by an earlier build compatible with the new header.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const summaryNumber = (summary: Record<string, unknown>, key: string): number => (
   (typeof summary[key] === 'number') ? summary[key] : 0
@@ -374,7 +374,7 @@ const summaryNumber = (summary: Record<string, unknown>, key: string): number =>
  * Reads one string-list job summary field while ignoring older or malformed values.
  * Import jobs created before merge summaries therefore remain safe to display.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const summaryStrings = (summary: Record<string, unknown>, key: string): string[] => {
   const value: unknown = summary[key];
@@ -391,7 +391,7 @@ const summaryStrings = (summary: Record<string, unknown>, key: string): string[]
  * Selects the app's destination-folder policy for one imported folder role.
  * Default, incomplete, and named-profile ownership retain their normal rules.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const folderPurpose = (folder: Web_Backup_ImportFolderPreview): 'download' | 'incomplete' | 'profile' => {
   if (folder['kind'] === 'incomplete') {
@@ -410,7 +410,7 @@ const folderPurpose = (folder: Web_Backup_ImportFolderPreview): 'download' | 'in
  * Owns the app's export sections and both import sources while reusable backup
  * foundations supply the section, shell, confirmation, and progress structure.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const BackupView = (): ReactElement => {
   const [
@@ -541,7 +541,7 @@ export const BackupView = (): ReactElement => {
    *
    * @returns {Promise<void>}
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const openExport = async (): Promise<void> => {
     try {
@@ -558,7 +558,7 @@ export const BackupView = (): ReactElement => {
    * Releases local source material and every decision from a previous attempt.
    * Persisted server progress remains independent in the import-job state.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const resetWizard = (): void => {
     setStep('source');
@@ -582,7 +582,7 @@ export const BackupView = (): ReactElement => {
    * Restores a durable running job or starts a clean source selection.
    * Background work therefore stays reachable after leaving Settings.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const openImport = (): void => {
     if (importJob !== null) {
@@ -601,7 +601,7 @@ export const BackupView = (): ReactElement => {
    * Dismisses local dialogs without cancelling a persisted import job.
    * Source documents are released whenever no job progress is being shown.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const closeWizard = (): void => {
     setWizardOpen(false);
@@ -621,7 +621,7 @@ export const BackupView = (): ReactElement => {
    *
    * @param {Web_Backup_ImportPreview} nextPreview - Next preview.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const initializePreviewChoices = (nextPreview: Web_Backup_ImportPreview): void => {
     const actions: Record<string, 'replace' | 'keep'> = {};
@@ -654,7 +654,7 @@ export const BackupView = (): ReactElement => {
    *
    * @returns {Promise<void>}
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const inspectAnotherTransmission = async (
     path: string,
@@ -695,7 +695,7 @@ export const BackupView = (): ReactElement => {
    *
    * @returns {Promise<void>}
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const chooseFile = async (event: ChangeEvent<HTMLInputElement>): Promise<void> => {
     const input: HTMLInputElement = event.currentTarget;
@@ -734,7 +734,7 @@ export const BackupView = (): ReactElement => {
    *
    * @param {Web_BackupView_Source} source - Source.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const selectSource = (source: Web_BackupView_Source): void => {
     if (source === importSource) {
@@ -806,7 +806,7 @@ export const BackupView = (): ReactElement => {
    *
    * @param {number} offset - Offset.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const moveStep = (offset: number): void => {
     const index: number = orderedStepIDs.indexOf(step);
@@ -869,7 +869,7 @@ export const BackupView = (): ReactElement => {
    * The review boundary refreshes identity-confirmation capabilities first.
    * Earlier steps move immediately through the currently available pages.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const next = (): void => {
     if (step === 'review') {
@@ -892,7 +892,7 @@ export const BackupView = (): ReactElement => {
    *
    * @returns {Promise<void>}
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const startImport = async (grant: string): Promise<void> => {
     let plan: Web_Backup_ImportPlan | undefined = undefined;
@@ -1145,7 +1145,7 @@ export const BackupView = (): ReactElement => {
    * @param {string} sourcePath - Source path.
    * @param {string} path       - Path.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const refreshMappedFolder = (sourcePath: string, path: string): void => {
     const nextMappings: Record<string, string> = {
@@ -1166,7 +1166,7 @@ export const BackupView = (): ReactElement => {
    * Re-checks an export file's profile folders after a folder or Replace/Keep choice
    * changes, so folders that would overlap stay listed until each has its own.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const refreshExportPreview = async (
     nextMappings: Record<string, string>,

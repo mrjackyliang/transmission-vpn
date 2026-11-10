@@ -198,7 +198,7 @@ export type Web_Components_TotpDialog_Props = {
 /**
  * Components - App Shell phone sheet.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Web_Components_AppShell_PhoneSheet = {
   content: ReactNode;
@@ -528,7 +528,7 @@ export type Web_Components_TorrentProfileDialog_Props = {
  * Distinguishes ordinary VPN page navigation from setup actions that should
  * open the new-connection form when capacity remains available.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Web_Components_VpnView_NavigationTarget =
   | {

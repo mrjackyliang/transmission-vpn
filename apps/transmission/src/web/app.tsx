@@ -183,7 +183,7 @@ const describeRemovedSecret = (removedSecret: Web_Api_RemovedSecret): Web_App_Re
  * Supplies a complete loading and signed-out fallback until configuration is read.
  * The first profile response replaces it before the editor can be opened.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const initialDefaultTorrentProfile: Web_Api_DefaultTorrentProfile = {
   downloadDirectory: '/data/downloads',
@@ -370,7 +370,7 @@ export const App = (): ReactElement => {
    *
    * @param {Web_AppNavigation_Route} route - Route.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const applyAppRoute = (route: Web_AppNavigation_Route): void => {
     setSettingsDirty(false);
@@ -394,7 +394,7 @@ export const App = (): ReactElement => {
    * @param {Web_AppNavigation_Route} route     - Route.
    * @param {boolean}                 [replace] - Replace.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const openRoute = (
     route: Web_AppNavigation_Route,
@@ -427,7 +427,7 @@ export const App = (): ReactElement => {
    *
    * @param {Web_Components_View} view - View.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const openView = (view: Web_Components_View): void => {
     openRoute(appRouteForView(view));
@@ -444,7 +444,7 @@ export const App = (): ReactElement => {
    * @param {Web_Components_VpnView_NavigationTarget} target    - Target.
    * @param {boolean}                                 [replace] - Replace.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const openVPN = (
     target: Web_Components_VpnView_NavigationTarget,
@@ -629,7 +629,7 @@ export const App = (): ReactElement => {
      * Profile, compatible RPC, and other-console writes surface through the live
      * snapshot, then this request replaces every saved-label picker without reload.
      *
-     * @since UNRELEASED
+     * @since 2.0.0
      */
     const refreshOrganization = async (): Promise<void> => {
       try {
@@ -666,7 +666,7 @@ export const App = (): ReactElement => {
      * Makes changes from another browser tab visible in the sidebar without
      * replacing an open dialog's local draft.
      *
-     * @since UNRELEASED
+     * @since 2.0.0
      */
     const refreshOrganization = async (): Promise<void> => {
       try {
@@ -712,7 +712,7 @@ export const App = (): ReactElement => {
      * Reads observed proxy state and token last-use times without replacing any
      * local dialog state. Slow requests never overlap or update after this view closes.
      *
-     * @since UNRELEASED
+     * @since 2.0.0
      */
     const refreshAccessData = async (): Promise<void> => {
       if (refreshRunning || document.visibilityState !== 'visible') {
@@ -747,7 +747,7 @@ export const App = (): ReactElement => {
      * Clears the active timer while the page is hidden or another view is open.
      * The next visible start performs an immediate read before scheduling more.
      *
-     * @since UNRELEASED
+     * @since 2.0.0
      */
     const stopWebProxyRefresh = (): void => {
       if (refreshIntervalID === undefined) {
@@ -764,7 +764,7 @@ export const App = (): ReactElement => {
      * Refreshes immediately and then every three seconds while the page is visible.
      * Repeated visibility events cannot create duplicate timers.
      *
-     * @since UNRELEASED
+     * @since 2.0.0
      */
     const startWebProxyRefresh = (): void => {
       if (document.visibilityState !== 'visible' || refreshIntervalID !== undefined) {
@@ -783,7 +783,7 @@ export const App = (): ReactElement => {
      * Pauses network reads in hidden tabs and resumes them when visible again.
      * Keeping the component mounted preserves open dialogs and one-time passwords.
      *
-     * @since UNRELEASED
+     * @since 2.0.0
      */
     const handleWebProxyVisibilityChange = (): void => {
       if (document.visibilityState === 'visible') {
@@ -959,7 +959,7 @@ export const App = (): ReactElement => {
    * Label-using mutations remain successful if this follow-up request is briefly
    * unavailable; the live revision and focus refresh will retry automatically.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const refreshTorrentOrganization = async (): Promise<void> => {
     try {
@@ -997,7 +997,7 @@ export const App = (): ReactElement => {
      * Refreshes the torrent list immediately so server-applied label removals
      * and renames appear without waiting for the next live snapshot.
      *
-     * @since UNRELEASED
+     * @since 2.0.0
      */
     const acceptUpdate = async (nextOrganization: Web_Api_TorrentOrganization): Promise<void> => {
       setOrganization(nextOrganization);
@@ -1047,7 +1047,7 @@ export const App = (): ReactElement => {
    * Clears any prior edit before showing the shared profile editor.
    * Default profile values are supplied by the dialog itself.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const openNewTorrentProfile = (): void => {
     setEditingTorrentProfile(null);
@@ -1060,7 +1060,7 @@ export const App = (): ReactElement => {
    * Selects the dedicated field set while leaving named profile edit state empty.
    * The dialog then saves through the Default profile endpoint.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const openDefaultTorrentProfile = (): void => {
     setEditingTorrentProfile(null);
@@ -1073,7 +1073,7 @@ export const App = (): ReactElement => {
    * Supplies one existing profile to the shared editor.
    * Saving replaces only the editable profile values.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const openTorrentProfile = (profile: Web_Api_TorrentProfile): void => {
     setEditingTorrentProfile(profile);
@@ -1086,7 +1086,7 @@ export const App = (): ReactElement => {
    * Reconciles create and edit responses into the alphabetical local profile list.
    * The server response remains authoritative for identity and overlaps.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const saveTorrentProfile = async (
     input: Web_Api_DefaultTorrentProfileInput | Web_Api_TorrentProfileInput,
@@ -1152,7 +1152,7 @@ export const App = (): ReactElement => {
    * Typed labels and labels inherited from the chosen profile become picker choices
    * as soon as the successful add returns.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const addTorrentAndRefreshLabels = async (
     input: Web_Api_AddTorrentInput,
@@ -1169,7 +1169,7 @@ export const App = (): ReactElement => {
    * The follow-up runs only when labels were part of the successful mutation.
    * Other detail changes keep the same request behavior without another fetch.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const updateTorrentsAndRefreshLabels = async (
     hashes: string[],
@@ -1187,7 +1187,7 @@ export const App = (): ReactElement => {
    * Applying a profile, including resolving Needs a profile, can write its labels to
    * torrents and therefore advances the saved-label organization.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const setTorrentProfileAndRefreshLabels = async (
     input: Web_Api_SetTorrentProfileInput,
@@ -1206,7 +1206,7 @@ export const App = (): ReactElement => {
    * Removes the profile, moves its torrents to Default, and keeps results open.
    * A failed move stays on its source while the deleted assignment still clears.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const confirmTorrentProfileDeletion = async (): Promise<void> => {
     if (deletingTorrentProfile === null) {
@@ -1583,7 +1583,7 @@ export const App = (): ReactElement => {
    *
    * @returns {ReactElement}
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const renderLibraryNavigation = (onSheetClose?: () => void): ReactElement => (
     <LibraryNavigation

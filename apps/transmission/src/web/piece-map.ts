@@ -6,7 +6,7 @@ import type { Web_PieceMap_Square } from '@/types/web/piece-map.d.ts';
  * Reads Transmission's base64 bitfield of the pieces this daemon has. The first piece is
  * the highest bit of the first byte, and a damaged field reads as nothing downloaded.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const decodePieces = (bitfield: string, pieceCount: number): boolean[] => {
   let bytes: string = '';
@@ -30,7 +30,7 @@ export const decodePieces = (bitfield: string, pieceCount: number): boolean[] =>
  * Groups pieces so the map stays within its row limit at the width it has.
  * Small torrents keep one piece per square.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const piecesPerSquare = (pieceCount: number, columns: number, maximumRows: number = 10): number => Math.max(
   1,
@@ -43,7 +43,7 @@ export const piecesPerSquare = (pieceCount: number, columns: number, maximumRows
  * Folds each run of pieces into one square: how many are here, how many peers have its
  * rarest missing piece, and how many missing pieces no connected peer has.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const summarizeSquares = (
   have: boolean[],
@@ -105,7 +105,7 @@ export const summarizeSquares = (
  * Words for one square's tooltip: which pieces it holds, how many are here, and where the
  * rest can come from.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const describeSquare = (square: Web_PieceMap_Square): [string, string] => {
   const title: string = (square['total'] === 1) ? `Piece ${square['first'].toLocaleString()}` : `Pieces ${square['first'].toLocaleString()}–${square['last'].toLocaleString()}`;

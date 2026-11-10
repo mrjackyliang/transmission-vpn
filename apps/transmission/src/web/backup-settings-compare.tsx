@@ -13,7 +13,7 @@ import type {
  * Imported items that need a fix, then values left out, are listed below it with
  * their reasons.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const BackupSettingsCompare = ({
   attentionItems = [],

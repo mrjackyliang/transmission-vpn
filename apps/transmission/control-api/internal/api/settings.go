@@ -28,7 +28,7 @@ type settingsSnapshotResponse struct {
 // Defaults and managed provenance are resolved server-side so every client observes
 // identical precedence and lock behavior.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (server *Server) handleGetSettings(
 	responseWriter http.ResponseWriter,
 	request *http.Request,
@@ -72,7 +72,7 @@ type settingsConnectionApply struct {
 // Runner-owned blocklist keys count as applied even when they produce no native RPC
 // arguments, because publication has already handed them to the merger.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (server *Server) applyLiveTransmissionSettings(
 	request *http.Request,
 	changes storage.SettingChanges,
@@ -226,7 +226,7 @@ func sortedSettingKeys(changes storage.SettingChanges) []string {
 // A conflicting revision or host-managed lock returns a recoverable conflict instead
 // of silently overwriting another configuration source.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (server *Server) handleUpdateSettings(
 	responseWriter http.ResponseWriter,
 	request *http.Request,
@@ -433,7 +433,7 @@ func rpcCompatibilitySetting(snapshot storage.ConfigurationSnapshot) (bool, erro
 // With no running daemon, the published configuration is sufficient for the next
 // start and there is no restart action to offer.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (server *Server) rememberTransmissionRestartKeys(
 	ctx context.Context,
 	changes storage.SettingChanges,
@@ -457,7 +457,7 @@ func (server *Server) rememberTransmissionRestartKeys(
 
 // addTransmissionPendingKeys retains live keys that one or more daemons missed.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (server *Server) addTransmissionPendingKeys(ctx context.Context, keys []string) {
 	if len(server.transmissionDaemons(ctx)) == 0 {
 		server.clearAllTransmissionRestartKeys()
@@ -477,7 +477,7 @@ func (server *Server) addTransmissionPendingKeys(ctx context.Context, keys []str
 // An empty daemon set also clears stale process-local state so later reads cannot
 // offer a restart that has no running target.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (server *Server) transmissionRestartKeys(ctx context.Context) []string {
 	if len(server.transmissionDaemons(ctx)) == 0 {
 		server.clearAllTransmissionRestartKeys()
@@ -499,7 +499,7 @@ func (server *Server) transmissionRestartKeys(ctx context.Context) []string {
 
 // clearTransmissionRestartKeys records the pending keys included in one restart.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (server *Server) clearTransmissionRestartKeys(keys []string) {
 	server.pendingRestartMutex.Lock()
 	for _, key := range keys {
@@ -513,7 +513,7 @@ func (server *Server) clearTransmissionRestartKeys(keys []string) {
 // Saved configuration remains authoritative for daemons that start later, so these
 // process-local keys no longer represent pending administrator action.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (server *Server) clearAllTransmissionRestartKeys() {
 	server.pendingRestartMutex.Lock()
 	for key := range server.pendingRestartKeys {

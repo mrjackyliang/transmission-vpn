@@ -75,7 +75,7 @@ const expiryDate = (expiry: Web_Components_TokenDialog_Expiry): string | null | 
  *
  * @returns {Web_Api_Scope | undefined}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const includingScope = (scopes: Web_Api_Scope[], scope: Web_Api_Scope): Web_Api_Scope | undefined => scopeOptions.find(
   (option: Web_Components_ScopeOption): boolean => option['includes'] === scope && scopes.includes(option['id']),

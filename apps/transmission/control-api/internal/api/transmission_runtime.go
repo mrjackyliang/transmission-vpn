@@ -34,7 +34,7 @@ type transmissionDaemonConfiguration struct {
 // Initialization and the serving API share this function so first boot, settings
 // saves, restarts, and connection changes render byte-for-byte equivalent files.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func PublishTransmissionConfiguration(
 	ctx context.Context,
 	store *storage.Store,

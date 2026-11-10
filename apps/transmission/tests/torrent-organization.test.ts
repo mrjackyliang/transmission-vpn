@@ -16,7 +16,7 @@ import type { Web_Api_TorrentOrganization } from '../src/types/web/api.d.ts';
  *
  * Supplies a compact labels-only server revision for update and conflict tests.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const organization = (
   revision: number,

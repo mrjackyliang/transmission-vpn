@@ -24,7 +24,7 @@ import type { Web_Backup_SourceDirectory } from '@/types/web/backup.d.ts';
  * Reuses the console's folder-dialog treatment for read-only source mounts.
  * The server filters virtual system trees and symlinks before anything is shown.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const BackupSourceDirectoryDialog = ({
   initialPath,
@@ -61,7 +61,7 @@ export const BackupSourceDirectoryDialog = ({
    *
    * @returns {Promise<void>}
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const openDirectory = async (path: string): Promise<void> => {
     setBusy(true);

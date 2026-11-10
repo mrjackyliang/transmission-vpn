@@ -9,7 +9,7 @@ import type {
  * Explains the target folder for every profile change and adds the VPN target
  * only when the effective connection changes.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const describeTorrentProfileChange = (
   downloadDirectory: string,
@@ -32,7 +32,7 @@ export const describeTorrentProfileChange = (
  * move follows that new identity; failed or same-connection outcomes keep the
  * currently open identifier.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const torrentProfileRefreshID = (
   currentID: number,
@@ -52,7 +52,7 @@ export const torrentProfileRefreshID = (
  * Keeps bulk selections attached to their stable hashes when a cross-connection
  * move gives one or more torrents new facade identifiers.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const remapSelectedTorrentIDs = (
   selectedIDs: number[],

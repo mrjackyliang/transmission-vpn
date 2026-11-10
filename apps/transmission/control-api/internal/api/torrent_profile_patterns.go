@@ -17,7 +17,7 @@ type globState struct {
 // Asterisks consume any number of runes, question marks consume exactly one rune,
 // and every other rune is literal.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func torrentNameMatchesPattern(name string, pattern string) bool {
 	nameRunes := []rune(name)
 	patternRunes := []rune(pattern)
@@ -61,7 +61,7 @@ func torrentNameMatchesPattern(name string, pattern string) bool {
 // finite automata. Memoizing position pairs makes the decision finite even for two
 // asterisks and avoids constructing an example torrent name.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func torrentPatternLanguagesOverlap(leftPattern string, rightPattern string) bool {
 	leftRunes := []rune(leftPattern)
 	rightRunes := []rune(rightPattern)

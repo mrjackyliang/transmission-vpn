@@ -35,7 +35,7 @@ type TorrentOrganization struct {
 //
 // Profile labels follow the same rename while the organization list is replaced.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type TorrentLabelRename struct {
 	From string `json:"from"`
 	To   string `json:"to"`
@@ -54,7 +54,7 @@ func (store *Store) TorrentOrganization(ctx context.Context) (TorrentOrganizatio
 // The case-insensitive primary key keeps the first saved spelling. The revision
 // advances once only when this call inserts at least one label.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (store *Store) EnsureTorrentLabels(
 	ctx context.Context,
 	labels []string,

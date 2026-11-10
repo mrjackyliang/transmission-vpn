@@ -23,7 +23,7 @@ import type {
  * Gives every phone sheet trigger the same stable accessibility target.
  * The rendered dialog uses this value for its matching element ID.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const PHONE_NAV_SHEET_ID = 'phone-navigation-sheet';
 
@@ -33,7 +33,7 @@ export const PHONE_NAV_SHEET_ID = 'phone-navigation-sheet';
  * The fourth and final target becomes More whenever destinations overflow.
  * The helper and shell share this value so their target counts cannot drift.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const PHONE_TABS = 4;
 
@@ -50,7 +50,7 @@ export const PHONE_TABS = 4;
  *
  * @returns {Route}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const applyNavigationPath = <Route>(
   browser: Web_Navigation_Browser,
@@ -77,7 +77,7 @@ export const applyNavigationPath = <Route>(
  * @param {Web_Navigation_Browser} browser - Browser.
  * @param {string}                 path    - Path.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const pushNavigationPath = (
   browser: Web_Navigation_Browser,
@@ -101,7 +101,7 @@ export const pushNavigationPath = (
  * @param {Web_Navigation_Browser} browser - Browser.
  * @param {string}                 path    - Path.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const replaceNavigationPath = (
   browser: Web_Navigation_Browser,
@@ -124,7 +124,7 @@ export const replaceNavigationPath = (
  *
  * @returns {() => void}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const startNavigationHistory = <Route>(
   browser: Web_Navigation_Browser,
@@ -137,7 +137,7 @@ export const startNavigationHistory = <Route>(
    * Resolves the address reached by browser history navigation.
    * Back and Forward therefore share the initial path application behavior.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const handlePopState = (): void => {
     applyNavigationPath(browser, resolve, onRoute);
@@ -165,7 +165,7 @@ export const startNavigationHistory = <Route>(
  *
  * @returns {Web_Components_View[]}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const navigationPageViews = (page: Web_Navigation_Page): Web_Components_View[] => [
   page['id'],
@@ -183,7 +183,7 @@ export const navigationPageViews = (page: Web_Navigation_Page): Web_Components_V
  *
  * @returns {Web_Navigation_Items}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const visibleNavigationItems = (
   items: Web_Navigation_Items,
@@ -222,7 +222,7 @@ export const visibleNavigationItems = (
  *
  * @returns {Web_Navigation_Page[]}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const navigationItemPages = (item: Web_Navigation_Item): Web_Navigation_Page[] => item['groups'].flatMap(
   (group: Web_Navigation_Group): Web_Navigation_Page[] => group['pages'],
@@ -238,7 +238,7 @@ export const navigationItemPages = (item: Web_Navigation_Item): Web_Navigation_P
  *
  * @returns {Web_Components_View}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const firstNavigationView = (item: Web_Navigation_Item): Web_Components_View => {
   const firstPage: Web_Navigation_Page | undefined = navigationItemPages(item).at(0);
@@ -261,7 +261,7 @@ export const firstNavigationView = (item: Web_Navigation_Item): Web_Components_V
  *
  * @returns {Web_Navigation_Group | undefined}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const findNavigationGroup = (
   items: Web_Navigation_Items,
@@ -292,7 +292,7 @@ export const findNavigationGroup = (
  *
  * @returns {boolean}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const navigationItemHasSheet = (item: Web_Navigation_Item): boolean => (
   item['isGroup'] === true
@@ -309,7 +309,7 @@ export const navigationItemHasSheet = (item: Web_Navigation_Item): boolean => (
  *
  * @returns {boolean}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const navigationItemHoldsView = (
   item: Web_Navigation_Item,
@@ -328,7 +328,7 @@ export const navigationItemHoldsView = (
  *
  * @returns {string}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const phoneNavigationLabel = (item: Web_Navigation_Item): string => item['shortLabel'] ?? item['label'];
 
@@ -342,7 +342,7 @@ export const phoneNavigationLabel = (item: Web_Navigation_Item): string => item[
  *
  * @returns {Web_Navigation_Tabs}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const phoneTabs = (items: Web_Navigation_Items): Web_Navigation_Tabs => {
   if (items.length <= PHONE_TABS) {
@@ -369,7 +369,7 @@ export const phoneTabs = (items: Web_Navigation_Items): Web_Navigation_Tabs => {
  *
  * @returns {Web_Navigation_SheetLevel}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const createNavSheetLevel = (
   item: Web_Navigation_Item,
@@ -418,7 +418,7 @@ export const createNavSheetLevel = (
  *
  * @returns {Web_Navigation_PhoneTabAction}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const phoneTabAction = (
   item: Web_Navigation_Item,
@@ -456,7 +456,7 @@ export const phoneTabAction = (
  *
  * @returns {Web_Navigation_SheetLevel}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const createMoreNavSheetLevel = (items: Web_Navigation_Items): Web_Navigation_SheetLevel => {
   const rows: Web_Navigation_SheetRow[] = items.map(
@@ -510,7 +510,7 @@ export const createMoreNavSheetLevel = (items: Web_Navigation_Items): Web_Naviga
  *
  * @returns {Web_Navigation_SheetStack}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const openNavSheetStack = (level: Web_Navigation_SheetLevel): Web_Navigation_SheetStack => [level];
 
@@ -525,7 +525,7 @@ export const openNavSheetStack = (level: Web_Navigation_SheetLevel): Web_Navigat
  *
  * @returns {Web_Navigation_SheetStack}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const pushNavSheetStack = (
   stack: Web_Navigation_SheetStack,
@@ -545,7 +545,7 @@ export const pushNavSheetStack = (
  *
  * @returns {Web_Navigation_SheetStack}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const popNavSheetStack = (stack: Web_Navigation_SheetStack): Web_Navigation_SheetStack => (
   (stack.length <= 1) ? stack : stack.slice(0, -1)
@@ -559,6 +559,6 @@ export const popNavSheetStack = (stack: Web_Navigation_SheetStack): Web_Navigati
  *
  * @returns {Web_Navigation_SheetStack}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const closeNavSheetStack = (): Web_Navigation_SheetStack => [];

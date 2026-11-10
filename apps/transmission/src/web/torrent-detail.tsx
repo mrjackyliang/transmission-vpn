@@ -422,7 +422,7 @@ export const TorrentDetail = ({
    * Assigns or clears the profile and optionally copies its labels and limits.
    * The refreshed detail becomes the source of truth after the mutation.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const applyTorrentProfile = async (): Promise<void> => {
     if (detail === null) {
@@ -466,7 +466,7 @@ export const TorrentDetail = ({
    * Applies the selected profile's labels and limits, then leaves move outcomes in
    * the dialog using the same result rows as an ordinary profile change.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const resolveTorrentProfile = async (selectedProfileId: string | null): Promise<void> => {
     if (detail === null) {

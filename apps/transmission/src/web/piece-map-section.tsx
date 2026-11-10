@@ -27,7 +27,7 @@ import type {
  * Matches --piece-size in detail.css, since the column count is worked out from it.
  * Changing one without the other leaves the map's last column half empty.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const squareSize: number = 9;
 
@@ -37,7 +37,7 @@ const squareSize: number = 9;
  * Matches --piece-gap in detail.css, since the column count is worked out from it.
  * Changing one without the other leaves the map's last column half empty.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const squareGap: number = 2;
 
@@ -47,7 +47,7 @@ const squareGap: number = 2;
  * Shows which pieces of a torrent are here as a grid of squares, greener the more of a
  * square is downloaded, with an outline where no connected peer has a missing piece.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const PieceMapSection = ({
   availability,
@@ -103,7 +103,7 @@ export const PieceMapSection = ({
      * Fits as many squares per row as the panel's width allows.
      * The map then groups pieces so it stays within ten rows.
      *
-     * @since UNRELEASED
+     * @since 2.0.0
      */
     const measure = (): void => {
       setColumns(Math.max(1, Math.floor((grid.clientWidth + squareGap) / (squareSize + squareGap))));

@@ -309,7 +309,7 @@ export const findNotificationService = (service: Web_Notifications_Service): Web
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const defaultValues = (service: Web_Notifications_Service): Record<string, string> => Object.fromEntries(
   findNotificationService(service)['fields'].map((field: Web_Notifications_Field): [string, string] => [
@@ -328,7 +328,7 @@ const defaultValues = (service: Web_Notifications_Service): Record<string, strin
  *
  * @returns {Record<string, string>}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const notificationServiceValues = (
   service: Web_Notifications_Service | '',
@@ -345,7 +345,7 @@ export const notificationServiceValues = (
  *
  * @returns {string}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const notificationServiceIssue = (
   service: Web_Notifications_Service | '',

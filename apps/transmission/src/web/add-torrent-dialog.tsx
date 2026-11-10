@@ -66,7 +66,7 @@ const maximumTorrentFileBytes: number = 700 * 1024;
  * Matches the server route's per-request limit while allowing larger pasted lists
  * to be split into independently bounded requests.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const maximumTorrentPreviewLinks: number = 20;
 
@@ -76,7 +76,7 @@ const maximumTorrentPreviewLinks: number = 20;
  * Avoids starting protected downloads for every keystroke while keeping pasted
  * links responsive.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const torrentPreviewDebounceMilliseconds: number = 300;
 
@@ -86,7 +86,7 @@ const torrentPreviewDebounceMilliseconds: number = 300;
  * Keeps the explicit Default choice distinct from an unresolved empty selection.
  * The sentinel never leaves the browser request builder.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const defaultProfileSelectionValue: string = '__default__';
 
@@ -96,7 +96,7 @@ const defaultProfileSelectionValue: string = '__default__';
  * Selects one match, Default for no matches, and nothing for an ambiguous match.
  * An explicit row override always takes precedence over this value.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const automaticProfileSelectionValue = (source: Web_Components_AddTorrentSource): string => {
   if (source['matchedProfileIds'].length === 1) {
@@ -134,7 +134,7 @@ const fileAsBase64 = async (file: File): Promise<string> => new Promise<string>(
  * Names the existing torrent and its durable profile and VPN owners without
  * treating Transmission's duplicate result as a failed add.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const duplicateNotice = (result: Web_Api_TorrentAddResult): string => (
   `Already added: ${result['name']}, in ${result['profileName']} on ${result['connectionName']}.`
@@ -159,7 +159,7 @@ const isTorrentFile = (file: File): boolean => (
  * Converts the editable comma-separated field into an API label list.
  * Empty segments are ignored in the same way as the organization controls.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const parseLabels = (value: string): string[] => value
   .split(',')
@@ -172,7 +172,7 @@ const parseLabels = (value: string): string[] => value
  * Lists the server-applied options that are not individually editable here, one per line
  * with the profile editor's labels. Folder, labels, and paused state stay explicit fields.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const profileOptionRows = (profile: Web_Api_DefaultTorrentProfile | Web_Api_TorrentProfile): [string, string][] => {
   const options = profile['options'];
@@ -527,7 +527,7 @@ export const AddTorrentDialog = ({
    * Adds every valid dropped or selected file while reporting rejected entries.
    * Repeated file selections append so a person can build one ordered batch.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const acceptFiles = (nextFiles: File[]): void => {
     const validFiles: File[] = nextFiles.filter((file: File): boolean => (
@@ -551,7 +551,7 @@ export const AddTorrentDialog = ({
    * Stores an explicit choice separately from an automatic match.
    * This also removes the Matched tag after a person changes the selection.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const selectProfile = (sourceKey: string, profileId: string): void => {
     setProfileOverrides((currentOverrides: Record<string, string>): Record<string, string> => ({
@@ -572,7 +572,7 @@ export const AddTorrentDialog = ({
    *
    * @returns {string}
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const sourceConnectionName = (source: Web_Components_AddTorrentSource): string => {
     const profileId: string = profileOverrides[source['key']]
@@ -594,7 +594,7 @@ export const AddTorrentDialog = ({
    * Names an explicit connection or the current default used by profiles whose
    * connection follows the container default.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const profileConnectionLabel = (profile: Web_Api_DefaultTorrentProfile | Web_Api_TorrentProfile): string => {
     const defaultConnection = connections.find((connection): boolean => connection['default']);
@@ -611,7 +611,7 @@ export const AddTorrentDialog = ({
    * Applies editable values for one source and profile defaults for a batch.
    * Source content is converted only when its request is ready to run.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const buildInput = async (
     source: Web_Components_AddTorrentSource,
@@ -646,7 +646,7 @@ export const AddTorrentDialog = ({
    * Recurses after each settled request to preserve the visible source order.
    * Every source gets an independent success, duplicate, or failure result.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const addBatchSource = async (index: number): Promise<void> => {
     const source: Web_Components_AddTorrentSource | undefined = sources[index];
@@ -694,7 +694,7 @@ export const AddTorrentDialog = ({
    * Closes after one successful source and retains multi-source result rows.
    * This makes partial batch failures visible without losing their reasons.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const handleSubmit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();

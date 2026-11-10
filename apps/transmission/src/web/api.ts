@@ -147,7 +147,7 @@ import type {
  * Treats a legacy or unexpected null response list as empty while retaining the
  * element schema. Request parsers remain strict in form-validation.ts.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const responseArraySchema = <Value>(
   elementSchema: Web_Api_Schema<Value>,
@@ -205,7 +205,7 @@ const vpnTunnelSchema = z.enum([
  * Matches every controller transition exposed by stored and live connection
  * responses.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const vpnRuntimeStateSchema = z.enum([
   'blocked',
@@ -220,7 +220,7 @@ const vpnRuntimeStateSchema = z.enum([
  * Shares the controller's closed endpoint selection vocabulary.
  * Stored configuration and runtime state use the same three values.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const vpnEndpointStrategySchema = z.enum([
   'sticky',
@@ -234,7 +234,7 @@ const vpnEndpointStrategySchema = z.enum([
  * WireGuard reports whether the kernel or userspace engine is active.
  * OpenVPN omits this field.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const vpnImplementationSchema = z.enum([
   'kernel',
@@ -247,7 +247,7 @@ const vpnImplementationSchema = z.enum([
  * Validates the per-connection Transmission process state returned with every
  * stored connection and live snapshot entry.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const vpnDaemonSchema = z.object({
   state: z.enum([
@@ -267,7 +267,7 @@ const vpnDaemonSchema = z.object({
  * Keeps the aggregate protection contract shared by status and live events in
  * one schema.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const vpnProtectionSchema = z.object({
   state: z.enum([
@@ -288,7 +288,7 @@ const vpnProtectionSchema = z.object({
  * unavailable controller values. Only implementation and handshake time are
  * omitted by the Go response type.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const vpnConnectionRuntimeSchema = z.object({
   state: vpnRuntimeStateSchema,
@@ -315,7 +315,7 @@ const vpnConnectionRuntimeSchema = z.object({
  * Status and event snapshots omit unavailable controller details but always
  * include durable identity, address, timing, and daemon state.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const liveVpnConnectionSchema = z.object({
   connectionId: z.string(),
@@ -462,7 +462,7 @@ const torrentSchema = z.object({
  * Validates the complete application-owned profile returned by the control API.
  * The same schema is reused for list, create, and update responses.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const torrentProfileOptionsResponseSchema = z.object({
   bandwidthPriority: z.union([
@@ -493,7 +493,7 @@ const torrentProfileOptionsResponseSchema = z.object({
  * Validates the complete application-owned named profile returned by the API.
  * Profile list, create, and update responses reuse this contract.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const torrentProfileSchema: Web_Api_Schema<Web_Api_TorrentProfile> = z.object({
   connectionId: z.string().nullable(),
@@ -520,7 +520,7 @@ const torrentProfileSchema: Web_Api_Schema<Web_Api_TorrentProfile> = z.object({
  * Validates the complete Default profile returned with profile configuration.
  * Its folder lock and option defaults remain available to every profile screen.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const defaultTorrentProfileSchema: Web_Api_Schema<Web_Api_DefaultTorrentProfile> = z.object({
   downloadDirectory: z.string().min(1),
@@ -537,7 +537,7 @@ const defaultTorrentProfileSchema: Web_Api_Schema<Web_Api_DefaultTorrentProfile>
  * Validates the profile list envelope.
  * Nested profiles reuse the full response schemas above.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const torrentProfilesResponseSchema = z.object({
   defaultProfile: defaultTorrentProfileSchema,
@@ -555,7 +555,7 @@ const torrentProfilesResponseSchema = z.object({
  * Captures both newly-added and duplicate results from Transmission.
  * Callers use the duplicate flag to label each processed source.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const torrentAddResultSchema: Web_Api_Schema<Web_Api_TorrentAddResult> = z.object({
   connectionName: z.string(),
@@ -572,7 +572,7 @@ const torrentAddResultSchema: Web_Api_Schema<Web_Api_TorrentAddResult> = z.objec
  * Validates the metainfo fields resolved through the protected default route.
  * Magnet previews omit total size because their URI does not carry it.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const torrentLinkPreviewSchema: Web_Api_Schema<Web_Api_TorrentLinkPreview> = z.object({
   hash: z.string().regex(/^[0-9a-f]{40}$/u),
@@ -587,7 +587,7 @@ const torrentLinkPreviewSchema: Web_Api_Schema<Web_Api_TorrentLinkPreview> = z.o
  * Missing indexes intentionally represent quiet preview failures and retain the
  * console's URL-derived fallback name.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const torrentLinkPreviewResponseSchema: Web_Api_Schema<Web_Api_TorrentLinkPreviewResponse> = z.object({
   items: responseArraySchema(torrentLinkPreviewSchema),
@@ -599,7 +599,7 @@ const torrentLinkPreviewResponseSchema: Web_Api_Schema<Web_Api_TorrentLinkPrevie
  * Validates an explicit torrent refresh used after organization-wide label
  * mutations.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const torrentListResponseSchema: Web_Api_Schema<Web_Api_TorrentListResponse> = z.object({
   errors: responseArraySchema(z.string()),
@@ -612,7 +612,7 @@ const torrentListResponseSchema: Web_Api_Schema<Web_Api_TorrentListResponse> = z
  * Mirrors Transmission's free-space response without renaming its stable key.
  * The wrapper converts the byte value for display after parsing.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const transmissionFreeSpaceSchema: Web_Api_Schema<Web_Api_TransmissionFreeSpace> = z.object({
   'size-bytes': z.number().nonnegative(),
@@ -816,7 +816,7 @@ const statisticsSchema = z.object({
  * Validates one saved source's current result and optional last-good copy.
  * The parent status schema preserves the saved source order for the console.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const blocklistSourceStatusSchema: Web_Api_Schema<Web_Api_BlocklistSourceStatus> = z.object({
   copyFrom: z.string().nullable().optional(),
@@ -837,7 +837,7 @@ const blocklistSourceStatusSchema: Web_Api_Schema<Web_Api_BlocklistSourceStatus>
  * Validates the merger state displayed beside the global blocklist settings.
  * Null source lists are normalized like every other API response collection.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const blocklistStatusSchema: Web_Api_Schema<Web_Api_BlocklistStatus> = z.object({
   lastAttemptAt: z.string().nullable().optional(),
@@ -932,7 +932,7 @@ const torrentOrganizationSchema = z.object({
  * Retains the changed-torrent count returned after label removals and renames.
  * The saved revision and normalized labels share the ordinary organization shape.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const updateTorrentOrganizationResponseSchema: Web_Api_Schema<Web_Api_UpdateTorrentOrganizationResponse> = torrentOrganizationSchema.extend({
   changedTorrents: z.number().int().nonnegative(),
@@ -982,7 +982,7 @@ const directorySchema: Web_Api_Schema<Web_Api_Directory> = z.object({
  * Covers the complete stored, runtime, daemon, and usage contract for one
  * independently managed connection.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const vpnConnectionSchema: Web_Api_Schema<Web_Api_VpnConnection> = z.object({
   id: z.string(),
@@ -1014,7 +1014,7 @@ const vpnConnectionSchema: Web_Api_Schema<Web_Api_VpnConnection> = z.object({
  * Validates the sorted collection and its resource-derived capacity metadata.
  * The global change flag gates create, delete, and default actions.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const vpnConnectionsResponseSchema: Web_Api_Schema<Web_Api_VpnConnectionsResponse> = z.object({
   connections: responseArraySchema(vpnConnectionSchema),
@@ -1039,7 +1039,7 @@ const vpnConnectionsResponseSchema: Web_Api_Schema<Web_Api_VpnConnectionsRespons
  * Wraps create, read, update, reconnect, and disconnect responses exactly as
  * the connection routes return them.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const vpnConnectionResponseSchema: Web_Api_Schema<Web_Api_VpnConnectionResponse> = z.object({
   connection: vpnConnectionSchema,
@@ -1051,7 +1051,7 @@ const vpnConnectionResponseSchema: Web_Api_Schema<Web_Api_VpnConnectionResponse>
  * Describes both successful and failed moves shared by connection removal,
  * profile updates, and torrent reassignment responses.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const movedTorrentSchema: Web_Api_Schema<Web_Api_MovedTorrent> = z.object({
   hash: z.string(),
@@ -1072,7 +1072,7 @@ const movedTorrentSchema: Web_Api_Schema<Web_Api_MovedTorrent> = z.object({
  * Validates the updated connection list and every attempted Default-profile
  * torrent move returned after the default changes.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const vpnDefaultResponseSchema: Web_Api_Schema<Web_Api_VpnDefaultResponse> = z.object({
   connections: responseArraySchema(vpnConnectionSchema),
@@ -1085,7 +1085,7 @@ const vpnDefaultResponseSchema: Web_Api_Schema<Web_Api_VpnDefaultResponse> = z.o
  * Validates each move attempted after a named profile becomes Default.
  * Failed moves remain visible without treating the completed deletion as failed.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const deleteTorrentProfileResponseSchema: Web_Api_Schema<Web_Api_DeleteTorrentProfileResponse> = z.object({
   moved: responseArraySchema(movedTorrentSchema),
@@ -1097,7 +1097,7 @@ const deleteTorrentProfileResponseSchema: Web_Api_Schema<Web_Api_DeleteTorrentPr
  * Validates the move results and the profile/login totals returned when a
  * non-default connection is removed.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const deleteVpnConnectionResponseSchema: Web_Api_Schema<Web_Api_DeleteVpnConnectionResponse> = z.object({
   moved: responseArraySchema(movedTorrentSchema),
@@ -1111,7 +1111,7 @@ const deleteVpnConnectionResponseSchema: Web_Api_Schema<Web_Api_DeleteVpnConnect
  * Keeps the regular profile response while validating move results returned
  * after an owner confirms a cross-connection profile change.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const torrentProfileUpdateResponseSchema: Web_Api_Schema<Web_Api_UpdateTorrentProfileResponse> = z.intersection(
   torrentProfileSchema,
@@ -1124,7 +1124,7 @@ const torrentProfileUpdateResponseSchema: Web_Api_Schema<Web_Api_UpdateTorrentPr
  * Adds per-torrent move results to the saved Default profile fields.
  * Callers can refresh profile state and render movement outcomes from one reply.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const defaultTorrentProfileUpdateResponseSchema: Web_Api_Schema<Web_Api_UpdateDefaultTorrentProfileResponse> = z.intersection(
   defaultTorrentProfileSchema,
@@ -1137,7 +1137,7 @@ const defaultTorrentProfileUpdateResponseSchema: Web_Api_Schema<Web_Api_UpdateDe
  * Validates identifiers and any cross-connection torrent moves produced by the
  * detail drawer's profile assignment action.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const torrentProfileAssignmentResponseSchema: Web_Api_Schema<Web_Api_SetTorrentProfileResponse> = z.object({
   hashes: responseArraySchema(z.string()).optional(),
@@ -1153,7 +1153,7 @@ const torrentProfileAssignmentResponseSchema: Web_Api_Schema<Web_Api_SetTorrentP
  * A restart is accepted per daemon, so the aggregate status and every
  * connection result are retained even when only part of the fleet restarts.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const transmissionRestartResponseSchema: Web_Api_Schema<Web_Api_TransmissionRestartResponse> = z.object({
   status: z.enum([
@@ -1223,7 +1223,7 @@ const providerTunnelSchema = z.object({
  * Reads a provider's note about which servers allow P2P traffic.
  * Only HTTPS links pass, since the console renders them as links.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const providerP2PSchema = z.object({
   restricted: z.boolean(),
@@ -1280,7 +1280,7 @@ const vpnProfileSchema = z.object({
  * Keeps the first endpoint flattened for compatibility and validates the full
  * ordered pool selected by the current console.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const customProfileResponseSchema: Web_Api_Schema<Web_Api_CustomProfileResponse> = vpnProfileSchema.extend({
   profiles: responseArraySchema(vpnProfileSchema),
@@ -1577,7 +1577,7 @@ const createdTokenSchema: Web_Api_Schema<Web_Api_CreatedToken> = z.object({
  * Describes one independently revocable Transmission-compatible RPC login.
  * Password material is intentionally absent from list responses.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const rpcLoginSchema: Web_Api_Schema<Web_Api_RPCLogin> = z.object({
   id: z.string(),
@@ -1592,7 +1592,7 @@ const rpcLoginSchema: Web_Api_Schema<Web_Api_RPCLogin> = z.object({
  * A generated password is present only in the create or regenerate response.
  * The surrounding login metadata always uses the safe schema above.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const rpcCredentialSchema: Web_Api_Schema<Web_Api_RPCCredential> = z.object({
   login: rpcLoginSchema,
@@ -1605,7 +1605,7 @@ const rpcCredentialSchema: Web_Api_Schema<Web_Api_RPCCredential> = z.object({
  * Wraps the login list using the backend response contract.
  * Keeping the wrapper explicit prevents response-shape drift.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const rpcLoginsResponseSchema = z.object({
   logins: responseArraySchema(rpcLoginSchema),
@@ -1617,7 +1617,7 @@ const rpcLoginsResponseSchema = z.object({
  * Describes a login without returning its stored password verifier.
  * PasswordSet communicates usability without exposing a secret.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const webProxyLoginSchema: Web_Api_Schema<Web_Api_WebProxyLogin> = z.object({
   id: z.string(),
@@ -1633,7 +1633,7 @@ const webProxyLoginSchema: Web_Api_Schema<Web_Api_WebProxyLogin> = z.object({
  * A generated password is present only in the create or regenerate response.
  * The surrounding login metadata always uses the safe schema above.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const webProxyCredentialSchema: Web_Api_Schema<Web_Api_WebProxyCredential> = z.object({
   login: webProxyLoginSchema,
@@ -1646,7 +1646,7 @@ const webProxyCredentialSchema: Web_Api_Schema<Web_Api_WebProxyCredential> = z.o
  * Combines desired state, observed runtime state, and login metadata.
  * The state enum matches every value emitted by the proxy process.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const webProxySchema: Web_Api_Schema<Web_Api_WebProxy> = z.object({
   enabled: z.boolean(),
@@ -1874,7 +1874,7 @@ export class ApiError extends Error {
    * Preserves route-specific conflict metadata used by move confirmations and
    * partial-failure summaries without weakening the stable error envelope.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   public readonly details: Record<string, unknown>;
 
@@ -1908,7 +1908,7 @@ export class ApiError extends Error {
  * Lets add surfaces pair first-run guidance with navigation to the VPN page.
  * Other API failures remain ordinary errors.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const isVPNConnectionRequiredError = (caughtError: unknown): boolean => (
   caughtError instanceof ApiError && caughtError['code'] === 'vpn_connection_required'
@@ -1975,7 +1975,7 @@ export const summaryFor = (caughtError: unknown, shownFields: string[], fallback
  * choice the owner can correct. Controller diagnostics and resource IDs never
  * become user-visible text.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const messageForAPIError = (
   code: string,
@@ -2065,7 +2065,7 @@ export const messageForAPIError = (
  *
  * @returns {string | null}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const connectionBeingRemovedMessage = (
   caughtError: unknown,
@@ -2247,7 +2247,7 @@ export const dismissRemovedSecrets = async (): Promise<void> => requestVoid(
  *
  * @returns {Promise<Web_Api_BlocklistStatus>}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const getBlocklistStatus = async (): Promise<Web_Api_BlocklistStatus> => requestJSON(
   '/api/v1/blocklists',
@@ -2262,7 +2262,7 @@ export const getBlocklistStatus = async (): Promise<Web_Api_BlocklistStatus> => 
  *
  * @returns {Promise<void>}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const requestBlocklistUpdate = async (): Promise<void> => requestVoid(
   '/api/v1/blocklists/update',
@@ -2315,7 +2315,7 @@ export const updateSettings = async (
  * Applies pending restart settings after an explicit confirmation from the settings view.
  * The caller refreshes settings after the accepted restart request.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const restartTransmission = async (): Promise<void> => {
   await requestJSON(
@@ -2370,7 +2370,7 @@ export const updateTorrentOrganization = async (
  * Returns the effective Default profile and alphabetically sorted named profiles.
  * Pattern matching can therefore report every match without using display order.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const getTorrentProfiles = async (): Promise<Web_Api_TorrentProfilesResponse> => requestJSON(
   '/api/v1/torrent-profiles',
@@ -2383,7 +2383,7 @@ export const getTorrentProfiles = async (): Promise<Web_Api_TorrentProfilesRespo
  * Validates editor values before creating a server-owned profile.
  * The returned profile includes its generated identity and pattern overlaps.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const createTorrentProfile = async (
   input: Web_Api_TorrentProfileInput,
@@ -2410,7 +2410,7 @@ export const createTorrentProfile = async (
  * Replaces the editable values of one existing profile.
  * Identity remains controlled by the server; named profiles display alphabetically.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const updateTorrentProfile = async (
   profileId: string,
@@ -2443,7 +2443,7 @@ export const updateTorrentProfile = async (
  * Saves the Default profile fields and optionally confirms moving its assigned
  * torrents when the download directory changes.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const updateDefaultTorrentProfile = async (
   input: Web_Api_DefaultTorrentProfileInput,
@@ -2475,7 +2475,7 @@ export const updateDefaultTorrentProfile = async (
  * Confirms moving assigned torrents through the Default profile's existing
  * folder and connection path without applying its labels or limits.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const deleteTorrentProfile = async (
   profileId: string,
@@ -2537,7 +2537,7 @@ export const getDirectory = async (
  *
  * @returns {Promise<void>}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const deleteDirectory = async (
   path: string,
@@ -2566,7 +2566,7 @@ export const deleteDirectory = async (
  * Returns the available byte count for one validated data path.
  * A caller may hide this optional information if the request fails.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const getTransmissionFreeSpace = async (path: string): Promise<number> => {
   const validatedPath: string = parseDataPath(path);
@@ -2628,7 +2628,7 @@ export const getProviders = async (): Promise<Web_Api_Provider[]> => {
  * Reads every stored connection with runtime, daemon, usage, and capacity state.
  * The server returns rows in slot order for a stable list.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const getVPNConnections = async (): Promise<Web_Api_VpnConnectionsResponse> => requestJSON(
   '/api/v1/vpn/connections',
@@ -2641,7 +2641,7 @@ export const getVPNConnections = async (): Promise<Web_Api_VpnConnectionsRespons
  * Reads one connection when a direct editor refresh needs the latest revision.
  * The collection remains the source for capacity and list ordering.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const getVPNConnection = async (connectionId: string): Promise<Web_Api_VpnConnection> => {
   const validatedConnectionID: string = parseProviderID(connectionId);
@@ -2725,7 +2725,7 @@ export const refreshVPNCatalog = async (providerId: string, tunnel: Web_Api_VpnT
  * Tests and connects a named candidate before the server commits it.
  * The returned connection includes its assigned slot and initial revision.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const createVPNConnection = async (
   input: Web_Api_CreateVpnConnectionInput,
@@ -2749,7 +2749,7 @@ export const createVPNConnection = async (
  * Sends rename-only fields without configuration so the tunnel stays up.
  * Configuration changes use the server's test-and-connect transaction.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const updateVPNConnection = async (
   connectionId: string,
@@ -2775,7 +2775,7 @@ export const updateVPNConnection = async (
  * Restarts only the named connection and returns its latest runtime state.
  * Other tunnels and Transmission daemons remain untouched.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const reconnectVPNConnection = async (connectionId: string): Promise<Web_Api_VpnConnection> => {
   const validatedConnectionID: string = parseProviderID(connectionId);
@@ -2794,7 +2794,7 @@ export const reconnectVPNConnection = async (connectionId: string): Promise<Web_
  * Blocks only the named connection while preserving its torrent list.
  * The returned row supplies the new disabled and runtime state.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const disconnectVPNConnection = async (connectionId: string): Promise<Web_Api_VpnConnection> => {
   const validatedConnectionID: string = parseProviderID(connectionId);
@@ -2813,7 +2813,7 @@ export const disconnectVPNConnection = async (connectionId: string): Promise<Web
  * Switches DNS and Default-profile ownership after any required confirmation.
  * The response includes both changed rows and one result per attempted move.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const setDefaultVPNConnection = async (
   input: Web_Api_SetDefaultVpnConnectionInput,
@@ -2836,7 +2836,7 @@ export const setDefaultVPNConnection = async (
  * An omitted destination probes dependency usage; a supplied destination moves
  * torrents, profiles, and logins before removing the connection.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const deleteVPNConnection = async (
   connectionId: string,
@@ -2874,7 +2874,7 @@ export const getTorrentDetail = async (torrentId: number): Promise<Web_Api_Torre
  * Refreshes the complete torrent list outside the live-event cadence.
  * Organization saves use it to display renamed or removed labels immediately.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const getTorrents = async (): Promise<Web_Api_TorrentListResponse> => requestJSON(
   '/api/v1/torrents',
@@ -2910,7 +2910,7 @@ export const addTorrent = async (
  * Resolves up to twenty links through the server's fail-closed protected route.
  * The console batches larger pastes and treats omitted items as quiet fallbacks.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const previewTorrentLinks = async (
   links: string[],
@@ -3012,7 +3012,7 @@ export const updateTorrents = async (
  * Assigns or clears a profile and optionally applies its labels and limits.
  * The selected torrent identifiers are returned only as mutation confirmation.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const setTorrentProfile = async (
   input: Web_Api_SetTorrentProfileInput,
@@ -3058,7 +3058,7 @@ export const renameTorrentPath = async (
  * Returns login metadata without reusable passwords.
  * The response is safe to retain in application state.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const getRPCLogins = async (): Promise<Web_Api_RPCLogin[]> => {
   const response = await requestJSON('/api/v1/rpc/logins', rpcLoginsResponseSchema);
@@ -3072,7 +3072,7 @@ export const getRPCLogins = async (): Promise<Web_Api_RPCLogin[]> => {
  * Returns the generated password exactly once with the created login.
  * Later list responses contain only login metadata.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const createRPCLogin = async (
   input: Web_Api_RPCLoginInput,
@@ -3095,7 +3095,7 @@ export const createRPCLogin = async (
  * Edits its username and optionally returns one regenerated password.
  * Omitting regeneration retains the saved verifier.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const updateRPCLogin = async (
   loginId: string,
@@ -3120,7 +3120,7 @@ export const updateRPCLogin = async (
  * Revokes one compatible-RPC login immediately.
  * Remote clients using it stop authenticating at once.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const deleteRPCLogin = async (loginId: string): Promise<void> => {
   const validatedLoginID: string = parseTokenID(loginId);
@@ -3137,7 +3137,7 @@ export const deleteRPCLogin = async (loginId: string): Promise<void> => {
  * Returns its desired state, observed state, and safe login metadata.
  * Runtime errors remain human-readable for the state card.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const getWebProxy = async (): Promise<Web_Api_WebProxy> => requestJSON(
   '/api/v1/web-proxy',
@@ -3150,7 +3150,7 @@ export const getWebProxy = async (): Promise<Web_Api_WebProxy> => requestJSON(
  * Enables or disables the proxy while preserving its login collection.
  * An enabled proxy with no logins refuses every authentication attempt.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const updateWebProxy = async (enabled: boolean): Promise<Web_Api_WebProxy> => requestJSON(
   '/api/v1/web-proxy',
@@ -3167,7 +3167,7 @@ export const updateWebProxy = async (enabled: boolean): Promise<Web_Api_WebProxy
  * Returns the generated password exactly once with the created login.
  * Later web proxy reads contain only login metadata.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const createWebProxyLogin = async (
   input: Web_Api_WebProxyLoginInput,
@@ -3190,7 +3190,7 @@ export const createWebProxyLogin = async (
  * Edits its metadata and optionally returns one regenerated password.
  * Omitting regeneration retains the saved verifier.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const updateWebProxyLogin = async (
   loginId: string,
@@ -3215,7 +3215,7 @@ export const updateWebProxyLogin = async (
  * Revokes one login and returns after the proxy configuration is republished.
  * Removing the final login leaves the proxy switch unchanged.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const deleteWebProxyLogin = async (loginId: string): Promise<void> => {
   const validatedLoginID: string = parseTokenID(loginId);
@@ -3654,7 +3654,7 @@ export const removePasskey = async (passkeyId: string, password: string): Promis
  * Validates the short-lived confirmation returned by either ceremony.
  * The plaintext grant exists only until its matching mutation consumes it.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const backupGrantSchema: Web_Api_Schema<Web_Backup_Grant> = z.object({
   grant: z.string(),
@@ -3667,7 +3667,7 @@ const backupGrantSchema: Web_Api_Schema<Web_Backup_Grant> = z.object({
  * Validates persisted torrent progress used by both the dialog and Settings panel.
  * Stable state names keep reloads consistent with the running server job.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const backupImportItemSchema = z.object({
   hash: z.string(),
@@ -3694,7 +3694,7 @@ const backupImportItemSchema = z.object({
  * Validates the durable progress envelope returned on create and subsequent polls.
  * Secret source material is intentionally absent from this response.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const backupImportJobSchema: Web_Api_Schema<Web_Backup_ImportJob> = z.object({
   id: z.string(),
@@ -3725,7 +3725,7 @@ const backupImportJobSchema: Web_Api_Schema<Web_Backup_ImportJob> = z.object({
  * Validates every mapping choice prepared before re-authentication is requested.
  * The console uses this safe projection instead of interpreting server state itself.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const backupImportPreviewSchema: Web_Api_Schema<Web_Backup_ImportPreview> = z.object({
   exportedAt: z.string(),
@@ -3802,7 +3802,7 @@ const backupImportPreviewSchema: Web_Api_Schema<Web_Backup_ImportPreview> = z.ob
  * Validates the read-only directory listing used by the mounted-source picker.
  * Only directory metadata crosses this boundary; source file contents never do.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const backupSourceDirectorySchema: Web_Api_Schema<Web_Backup_SourceDirectory> = z.object({
   path: z.string(),
@@ -3826,7 +3826,7 @@ const backupSourceDirectorySchema: Web_Api_Schema<Web_Backup_SourceDirectory> = 
  *
  * @returns {Promise<string>}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const confirmBackupOperation = async (
   purpose: Web_Backup_Purpose,
@@ -3860,7 +3860,7 @@ export const confirmBackupOperation = async (
  *
  * @returns {Promise<string>}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const confirmBackupOperationWithPasskey = async (
   purpose: Web_Backup_Purpose,
@@ -3903,7 +3903,7 @@ export const confirmBackupOperationWithPasskey = async (
  *
  * @returns {Promise<void>}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const downloadBackupExport = async (
   sections: Web_Backup_ExportSections,
@@ -3947,7 +3947,7 @@ export const downloadBackupExport = async (
  *
  * @returns {Promise<Web_Backup_ImportPreview>}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const previewBackupImport = async (
   document: Web_Backup_Document,
@@ -3985,7 +3985,7 @@ export const previewBackupImport = async (
  *
  * @returns {Promise<Web_Backup_ImportPreview>}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const previewAnotherTransmissionImport = async (
   configPath: string,
@@ -4020,7 +4020,7 @@ export const previewAnotherTransmissionImport = async (
  *
  * @returns {Promise<Web_Backup_SourceDirectory>}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const getBackupSourceDirectory = async (path: string): Promise<Web_Backup_SourceDirectory> => {
   const response: {
@@ -4045,7 +4045,7 @@ export const getBackupSourceDirectory = async (path: string): Promise<Web_Backup
  *
  * @returns {Promise<Web_Backup_ImportJob>}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const createBackupImport = async (
   plan: Web_Backup_ImportPlan,
@@ -4077,7 +4077,7 @@ export const createBackupImport = async (
  *
  * @returns {Promise<Web_Backup_ImportJob | null>}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const getCurrentBackupImport = async (): Promise<Web_Backup_ImportJob | null> => {
   const response: {
@@ -4101,7 +4101,7 @@ export const getCurrentBackupImport = async (): Promise<Web_Backup_ImportJob | n
  *
  * @returns {Promise<Web_Backup_ImportJob>}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const getBackupImport = async (importId: string): Promise<Web_Backup_ImportJob> => {
   const response: {

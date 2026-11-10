@@ -5,7 +5,7 @@
       "slug": "transmission-vpn"
     },
     "description": {
-      "short": "A secure Transmission container routed through a VPN with a modern, familiar web interface.",
+      "short": "A secure Transmission container routed through a VPN with a modern, familiar web interface",
       "long": "A ground-up Transmission and VPN container focused on dependable networking, straightforward operation, and a modern web experience that preserves the familiar workflows of Transmission Web Control without its accumulated feature weight."
     },
     "keywords": [
@@ -277,7 +277,9 @@
       "patterns": [
         "/assets/",
         "!package-lock.json",
-        "graphify-out/"
+        "graphify-out/",
+        ".integration-state.*/",
+        ".openvpn-integration-state.*/"
       ]
     },
     "./.dockerignore": {
@@ -289,7 +291,9 @@
         "apps/docs",
         "assets",
         "conventions",
-        "graphify-out"
+        "graphify-out",
+        ".integration-state.*",
+        ".openvpn-integration-state.*"
       ]
     }
   },

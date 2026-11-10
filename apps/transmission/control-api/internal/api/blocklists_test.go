@@ -18,7 +18,7 @@ import (
 // Disabled and empty-source updates return their distinct conflicts, valid updates
 // return 202, and status output follows saved source order with unseen sources pending.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestBlocklistEndpointsEnforceAuthCSRFConflictsAndOrdering(testingObject *testing.T) {
 	server, cookies, csrfToken := newClaimedTestServer(testingObject)
 	unauthenticated := performRequest(
@@ -189,7 +189,7 @@ func TestBlocklistEndpointsEnforceAuthCSRFConflictsAndOrdering(testingObject *te
 // A waiting status carrying the current manual marker must return a Transmission result
 // error and no zero blocklist-size success payload to compatible remote applications.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestRPCFacadeReportsInterruptedBlocklistUpdate(testingObject *testing.T) {
 	server, _, _ := newClaimedTestServer(testingObject)
 	source := "https://blocklist.example/list"
@@ -250,7 +250,7 @@ func TestRPCFacadeReportsInterruptedBlocklistUpdate(testingObject *testing.T) {
 // Direct storage mutation keeps endpoint tests focused while still exercising the
 // production publisher that hands desired state to the runner.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func setBlocklistSettingsForTest(
 	testingObject *testing.T,
 	server *Server,

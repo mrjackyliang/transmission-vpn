@@ -11,7 +11,7 @@ import type {
  * Bounds how long a switch can remain locked while runtime state catches up.
  * Both proxy cards use the same recovery window and timeout wording.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const proxyTransitionTimeoutMilliseconds: number = 15_000;
 
@@ -27,7 +27,7 @@ export const proxyTransitionTimeoutMilliseconds: number = 15_000;
  *
  * @returns {Web_ProxyTransition_Status_Returns}
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const proxyTransitionStatus = (
   requestedEnabled: Web_ProxyTransition_Status_RequestedEnabled,

@@ -167,7 +167,7 @@ func TestManagedSeedDoesNotOverwrite(testingObject *testing.T) {
 // A stored value written by an older release remains readable even though every
 // new settings transaction must choose a child folder.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestEffectiveConfigurationReadsLegacyDataRootSetting(testingObject *testing.T) {
 	ctx := context.Background()
 	store, err := Open(ctx, filepath.Join(testingObject.TempDir(), "state.sqlite3"))
@@ -203,7 +203,7 @@ func TestEffectiveConfigurationReadsLegacyDataRootSetting(testingObject *testing
 // Relationship rules apply to new writes only; an old clash can never prevent
 // startup or the Settings API from exposing the value for cleanup.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestEffectiveConfigurationReadsStoredIncompleteClash(testingObject *testing.T) {
 	ctx := context.Background()
 	store, err := Open(ctx, filepath.Join(testingObject.TempDir(), "state.sqlite3"))
@@ -239,7 +239,7 @@ func TestEffectiveConfigurationReadsStoredIncompleteClash(testingObject *testing
 // Seeds and locks may differ in precedence, but neither can introduce a Download
 // destination inside the incomplete folder or make it contain the default folder.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestManagedStoragePathsUseRelationshipRules(testingObject *testing.T) {
 	for _, mode := range []settings.ManagedMode{
 		settings.ManagedModeSeed,

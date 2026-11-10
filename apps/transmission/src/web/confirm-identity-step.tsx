@@ -19,7 +19,7 @@ import type { Web_BackupComponents_ConfirmIdentityStep_Props } from '@/types/web
  * Reuses the same password, authenticator and passkey choices for every sensitive
  * workflow without retaining credentials after the confirmation request finishes.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const ConfirmIdentityStep = ({
   authenticatorEnabled,

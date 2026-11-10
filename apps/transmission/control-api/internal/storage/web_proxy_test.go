@@ -12,7 +12,7 @@ import (
 // The storage boundary requires a VPN before enabling, then keeps the switch and
 // credentials independent while preserving hashes, routes, and username uniqueness.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestWebProxyLogins(testingObject *testing.T) {
 	ctx := context.Background()
 	store, err := Open(ctx, filepath.Join(testingObject.TempDir(), "state.sqlite3"))

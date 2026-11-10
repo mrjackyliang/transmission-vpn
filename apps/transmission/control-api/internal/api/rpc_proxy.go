@@ -190,7 +190,7 @@ func (server *Server) writeRPCFacadeResponse(
 // Torrent methods retain connection routing, while blocklist-update is intercepted
 // for the merger and never reaches a native daemon.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (server *Server) callRPCFacade(
 	ctx context.Context,
 	method string,
@@ -389,7 +389,7 @@ func normalizeRPCFacadeArguments(method string, arguments map[string]any) (map[s
 // Comparing legacy and current Transmission spellings in one namespace keeps
 // alternate separators and casing from bypassing allowlists or path checks.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func canonicalRPCFacadeArgumentKey(key string) string {
 	var canonical strings.Builder
 	canonical.Grow(len(key))
@@ -426,7 +426,7 @@ func canonicalRPCFacadeArgumentKey(key string) string {
 // Remote applications receive only user-owned tuning settings; process,
 // scripting, listener, and port-forwarding controls remain appliance-owned.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func rpcFacadeSessionSetArgumentKey(canonicalKey string) (string, bool) {
 	switch canonicalKey {
 	case "alt-speed-down", "alt-speed-enabled", "alt-speed-time-begin",
@@ -748,7 +748,7 @@ func (server *Server) rpcFacadeDefaultCall(
 // Results are checked per connection, while application-owned blocklist updates use
 // their dedicated runner-backed facade path instead.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (server *Server) rpcFacadeEveryCall(
 	ctx context.Context,
 	method string,
@@ -785,7 +785,7 @@ func (server *Server) rpcFacadeEveryCall(
 // No native daemon receives the call; the facade waits for one complete merged
 // attempt and reports the same in-use range count across every daemon.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (server *Server) rpcFacadeBlocklistUpdate(ctx context.Context) (any, string) {
 	requestedAt, err := server.requestBlocklistUpdate(ctx)
 	if err != nil {

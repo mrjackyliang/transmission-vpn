@@ -54,7 +54,7 @@ type ServiceState struct {
 // Missing files resolve to State "missing" so live status remains available while
 // the runner reconciles a newly published connection list.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type TransmissionDaemonState struct {
 	ConnectionID string    `json:"connectionId"`
 	State        string    `json:"state"`
@@ -161,7 +161,7 @@ func readServiceState(runtimeDirectory string, serviceName string) (ServiceState
 // The caller supplies the durable connection ID, which is also checked against the
 // document so a stale or misplaced state file cannot be attributed incorrectly.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func ReadTransmissionDaemonState(
 	runtimeDirectory string,
 	connectionID string,
@@ -197,7 +197,7 @@ func ReadTransmissionDaemonState(
 // Atomic writers make each file independently safe to decode; the stable slot order
 // matches storage and daemon list ordering in live API snapshots.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func ReadVPNStatuses(runtimeDirectory string) ([]controller.Status, error) {
 	directory := filepath.Join(runtimeDirectory, "vpn.status.d")
 	entries, err := os.ReadDir(directory)

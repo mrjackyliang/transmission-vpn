@@ -32,7 +32,7 @@ import (
 // Reload tests use it to verify settings preservation without opening a native
 // Transmission listener or weakening the production loopback client validation.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type blocklistTestRPC struct {
 	LiveSettings map[string]json.RawMessage
 	Error        error
@@ -44,7 +44,7 @@ type blocklistTestRPC struct {
 // Only session-get is accepted, making an accidental native blocklist-update or other
 // method visible as a focused test failure.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (client *blocklistTestRPC) Call(
 	_ context.Context,
 	method string,
@@ -71,7 +71,7 @@ func (client *blocklistTestRPC) Call(
 // Plain, gzip, and zip responses exercise P2P, DAT, CIDR, IPv4, IPv6, and invalid-line
 // filtering while the bound dial seam proves the tunnel source address is selected.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestBlocklistMergerDownloadsFormatsAndArchives(testingObject *testing.T) {
 	plain := []byte(strings.Join([]string{
 		"p2p:1.2.3.4-1.2.3.5",
@@ -185,7 +185,7 @@ func TestBlocklistMergerDownloadsFormatsAndArchives(testingObject *testing.T) {
 // A second response with no valid ranges must report an error and CopyFrom while the
 // exact normalized bytes from the successful first attempt remain installed.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestBlocklistMergerKeepsLastGoodCopy(testingObject *testing.T) {
 	var invalid atomic.Bool
 	server := newBlocklistTLSServer(testingObject, http.HandlerFunc(func(
@@ -253,7 +253,7 @@ func TestBlocklistMergerKeepsLastGoodCopy(testingObject *testing.T) {
 // Small injected caps avoid allocating production-sized fixtures while exercising the
 // same sentinel-byte readers used for the 64 MiB and 512 MiB limits.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestBlocklistMergerEnforcesDownloadAndUnpackedCaps(testingObject *testing.T) {
 	var body atomic.Value
 	body.Store([]byte("12345678901"))
@@ -290,7 +290,7 @@ func TestBlocklistMergerEnforcesDownloadAndUnpackedCaps(testingObject *testing.T
 // Small boundaries prove canonical bytes and accepted ranges fail with the
 // approved message per source and across the complete merged set.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestBlocklistMergerEnforcesNormalizedRangeAndAggregateCaps(testingObject *testing.T) {
 	server := newBlocklistTLSServer(testingObject, http.HandlerFunc(func(
 		responseWriter http.ResponseWriter,
@@ -364,7 +364,7 @@ func TestBlocklistMergerEnforcesNormalizedRangeAndAggregateCaps(testingObject *t
 // Entry and central-directory limits are checked before archive/zip can materialize
 // member objects, while ordinary source download and TLS validation remain exercised.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestBlocklistMergerRejectsOversizedZipMetadata(testingObject *testing.T) {
 	body := zipTestEntries(testingObject, 3)
 	endRecordOffset := len(body) - 22
@@ -408,7 +408,7 @@ func TestBlocklistMergerRejectsOversizedZipMetadata(testingObject *testing.T) {
 // A visible one-entry directory must not hide a zip64 directory that archive/zip
 // would select and allocate before the runner's metadata cap can run.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestBlocklistMergerRejectsAmbiguousZipEndRecords(testingObject *testing.T) {
 	const hiddenEntries = 200_000
 	putUint16 := func(destination []byte, value uint16) {
@@ -508,7 +508,7 @@ func TestBlocklistMergerRejectsAmbiguousZipEndRecords(testingObject *testing.T) 
 // Even one ordinary end record is unsupported when its variable comment would let
 // archive parsers search a different suffix than the runner's fixed preflight.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestBlocklistMergerRejectsZipComments(testingObject *testing.T) {
 	var archive bytes.Buffer
 	writer := zip.NewWriter(&archive)
@@ -542,7 +542,7 @@ func TestBlocklistMergerRejectsZipComments(testingObject *testing.T) {
 // Initial HTTP sources fail before a request is built, and an HTTPS response cannot
 // redirect the pinned client to a cleartext destination.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestBlocklistMergerRejectsInsecureURLsAndRedirects(testingObject *testing.T) {
 	merger, _, _, _ := prepareBlocklistMergerTest(testingObject, []string{}, "protected")
 	route := blocklistRoute{SourceIP: net.ParseIP("127.0.0.1").To4()}
@@ -578,7 +578,7 @@ func TestBlocklistMergerRejectsInsecureURLsAndRedirects(testingObject *testing.T
 // default controller status is anything other than protected. Stale removed-source
 // files are still cleaned without opening a network socket.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestBlocklistMergerWaitsForProtectedVPN(testingObject *testing.T) {
 	var requests atomic.Int32
 	server := newBlocklistTLSServer(testingObject, http.HandlerFunc(func(
@@ -627,7 +627,7 @@ func TestBlocklistMergerWaitsForProtectedVPN(testingObject *testing.T) {
 // The first due poll loads and installs one saved copy; later VPN-down polls keep the
 // in-memory descriptor and leave the atomically published status inode untouched.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestBlocklistMergerCachesWaitingCopiesAndSkipsUnchangedStatusWrites(testingObject *testing.T) {
 	source := "https://127.0.0.1/list"
 	merger, _, configRoot, entry := prepareBlocklistMergerTest(
@@ -694,7 +694,7 @@ func TestBlocklistMergerCachesWaitingCopiesAndSkipsUnchangedStatusWrites(testing
 // A source response drops protection during the request; the old attempt timestamps
 // remain unchanged and the next poll stays waiting without claiming success or retrying.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestBlocklistMergerKeepsInterruptedAttemptsWaiting(testingObject *testing.T) {
 	var runtimeDirectory string
 	var entry daemonEntry
@@ -757,7 +757,7 @@ func TestBlocklistMergerKeepsInterruptedAttemptsWaiting(testingObject *testing.T
 // A session-get timeout makes the SIGHUP path fail after downloading; status records
 // the attempt and retries only that reload after a durable fifteen-minute backoff.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestBlocklistMergerBacksOffAfterReloadFailure(testingObject *testing.T) {
 	var requests atomic.Int32
 	server := newBlocklistTLSServer(testingObject, http.HandlerFunc(func(
@@ -840,7 +840,7 @@ func TestBlocklistMergerBacksOffAfterReloadFailure(testingObject *testing.T) {
 // A symlinked blocklists path is rejected without touching its target, non-regular
 // entries survive cleanup, and a missing daemon config directory is never created.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestBlocklistMergerConfinesDaemonFilesystemWork(testingObject *testing.T) {
 	source := "https://127.0.0.1/list"
 	merger, _, configRoot, entry := prepareBlocklistMergerTest(
@@ -925,7 +925,7 @@ func TestBlocklistMergerConfinesDaemonFilesystemWork(testingObject *testing.T) {
 // A scheduled update populates the disk-backed cache once; preparing a later daemon
 // streams that copy without another request or signaling a running sibling.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestBlocklistMergerPreparesDaemonFromCache(testingObject *testing.T) {
 	var requests atomic.Int32
 	server := newBlocklistTLSServer(testingObject, http.HandlerFunc(func(
@@ -982,7 +982,7 @@ func TestBlocklistMergerPreparesDaemonFromCache(testingObject *testing.T) {
 // A hanging source keeps the pass active while daemon preparation uses the last
 // complete cache immediately instead of waiting for the source deadline.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestBlocklistMergerAllowsDaemonPreparationDuringDownload(testingObject *testing.T) {
 	downloadStarted := make(chan struct{})
 	releaseDownload := make(chan struct{})
@@ -1040,7 +1040,7 @@ func TestBlocklistMergerAllowsDaemonPreparationDuringDownload(testingObject *tes
 // Removed-source files, native .bin indexes, and the legacy primary file are deleted;
 // a fake signal seam observes one SIGHUP request for every registered child.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestBlocklistMergerCleansOwnedFoldersAndSignalsEveryDaemon(testingObject *testing.T) {
 	server := newBlocklistTLSServer(testingObject, http.HandlerFunc(func(
 		responseWriter http.ResponseWriter,
@@ -1116,7 +1116,7 @@ func TestBlocklistMergerCleansOwnedFoldersAndSignalsEveryDaemon(testingObject *t
 // A fake session-get supplies a live RPC change; the saved file keeps that value while
 // runner-owned network, peer, RPC, and blocklist keys override conflicting live data.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestBlocklistMergerPreservesLiveSettingsBeforeSIGHUP(testingObject *testing.T) {
 	merger, _, configRoot, entry := prepareBlocklistMergerTest(
 		testingObject,
@@ -1183,7 +1183,7 @@ func TestBlocklistMergerPreservesLiveSettingsBeforeSIGHUP(testingObject *testing
 // Encryption strings are written through the native settings.json format before
 // each SIGHUP.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestBlocklistMergerMapsRenamedAndConvertedLiveSettings(testingObject *testing.T) {
 	tests := []struct {
 		name        string
@@ -1278,7 +1278,7 @@ func TestBlocklistMergerMapsRenamedAndConvertedLiveSettings(testingObject *testi
 // Read-only and unknown session-get fields cannot replace an existing native
 // value or add a new settings.json key during a runner-owned reload.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestBlocklistMergerDoesNotPersistUnmappedLiveSettings(testingObject *testing.T) {
 	merger, _, configRoot, entry := prepareBlocklistMergerTest(
 		testingObject,
@@ -1336,7 +1336,7 @@ func TestBlocklistMergerDoesNotPersistUnmappedLiveSettings(testingObject *testin
 // Synchronization marks a starting child pending without signaling it; the first RPC
 // readiness transition consumes one reload, and repeated readiness does not signal again.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestBlocklistMergerDefersSignalsUntilRPCReadiness(testingObject *testing.T) {
 	merger, _, _, entry := prepareBlocklistMergerTest(
 		testingObject,
@@ -1401,7 +1401,7 @@ func TestBlocklistMergerDefersSignalsUntilRPCReadiness(testingObject *testing.T)
 // The fixture observes its keep-alive connection close before server cleanup, proving
 // completed downloads do not leave per-source transports and goroutines lingering.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestBlocklistMergerClosesIdleConnections(testingObject *testing.T) {
 	closed := make(chan struct{})
 	var closeOnce sync.Once
@@ -1440,7 +1440,7 @@ func TestBlocklistMergerClosesIdleConnections(testingObject *testing.T) {
 // url.Error is reduced to its cause, and fallback text loses complete URLs and query
 // values before it can reach status, logs, or the compatible RPC facade.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestBlocklistMergerScrubsSourceSecretsFromErrors(testingObject *testing.T) {
 	merger, _, _, _ := prepareBlocklistMergerTest(testingObject, []string{}, "protected")
 	merger.dialContext = func(
@@ -1478,7 +1478,7 @@ func TestBlocklistMergerScrubsSourceSecretsFromErrors(testingObject *testing.T) 
 // Ordinary polls do not redownload, the configured interval does, and a changed manual
 // request timestamp bypasses the newly reset interval immediately.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestBlocklistMergerSchedulesIntervalsAndRequests(testingObject *testing.T) {
 	var requests atomic.Int32
 	server := newBlocklistTLSServer(testingObject, http.HandlerFunc(func(
@@ -1528,7 +1528,7 @@ func TestBlocklistMergerSchedulesIntervalsAndRequests(testingObject *testing.T) 
 // The fixed bind-address seam uses loopback only inside tests; production retains the
 // permanent 198.18.<slot>.1 address supplied by transmissionconfig.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func prepareBlocklistMergerTest(
 	testingObject *testing.T,
 	sources []string,
@@ -1557,7 +1557,7 @@ func prepareBlocklistMergerTest(
 // Merger tests start at the same ownership boundary as superviseDaemon: the config
 // directory exists already, while the blocklists child may still need creation.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func prepareDaemonConfigForTest(
 	testingObject *testing.T,
 	configRoot string,
@@ -1586,7 +1586,7 @@ func prepareDaemonConfigForTest(
 // Test failures are reported at the caller while production publication remains owned
 // by the API's settings and manual-update paths.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func writeBlocklistConfigurationForTest(
 	testingObject *testing.T,
 	runtimeDirectory string,
@@ -1608,7 +1608,7 @@ func writeBlocklistConfigurationForTest(
 // The helper keeps assertions focused on merger state rather than repeated artifact
 // path construction and error handling.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func readBlocklistStatusForTest(
 	testingObject *testing.T,
 	merger *blocklistMerger,
@@ -1627,7 +1627,7 @@ func readBlocklistStatusForTest(
 // Explicit IPv4 matches the runner's protected source-address contract and avoids
 // depending on the host's localhost address ordering.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func newBlocklistTLSServer(
 	testingObject *testing.T,
 	handler http.Handler,
@@ -1650,7 +1650,7 @@ func newBlocklistTLSServer(
 // The separate helper keeps ordinary source tests terse while allowing lifecycle tests
 // to observe a transport close before httptest server cleanup runs.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func newBlocklistTLSServerWithState(
 	testingObject *testing.T,
 	handler http.Handler,
@@ -1675,7 +1675,7 @@ func newBlocklistTLSServerWithState(
 // No environment variable or process-global trust store is changed, matching the
 // requirement that TLS test trust remain explicit and isolated.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func trustBlocklistServer(
 	testingObject *testing.T,
 	merger *blocklistMerger,
@@ -1692,7 +1692,7 @@ func trustBlocklistServer(
 // The resolver test injects the returned port while retaining production's pure-Go
 // lookup and bound net.Dialer path for the complete hostname connection flow.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func newBlocklistDNSServer(testingObject *testing.T, address net.IP) string {
 	testingObject.Helper()
 	connection, err := net.ListenUDP("udp4", &net.UDPAddr{IP: net.IPv4(127, 0, 0, 1)})
@@ -1727,7 +1727,7 @@ func newBlocklistDNSServer(testingObject *testing.T, address net.IP) string {
 // The implementation copies the original encoded question and appends a compressed
 // A record, which is sufficient to exercise net.Resolver without a DNS dependency.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func blocklistDNSResponse(query []byte, address net.IP) ([]byte, error) {
 	if len(query) < 17 || binary.BigEndian.Uint16(query[4:6]) != 1 {
 		return nil, errors.New("unexpected DNS query")
@@ -1772,7 +1772,7 @@ func blocklistDNSResponse(query []byte, address net.IP) ([]byte, error) {
 // The shared runner helper predates blocklist DNS routing, so this focused helper adds
 // only the fields consumed by protectedDefaultRoute.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func writeBlocklistVPNStatusForTest(
 	testingObject *testing.T,
 	runtimeDirectory string,
@@ -1804,7 +1804,7 @@ func writeBlocklistVPNStatusForTest(
 // Writer closure is checked so corrupt test data cannot accidentally exercise the
 // failure path intended for the merger itself.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func gzipTestContent(testingObject *testing.T, content []byte) []byte {
 	testingObject.Helper()
 	var buffer bytes.Buffer
@@ -1824,7 +1824,7 @@ func gzipTestContent(testingObject *testing.T, content []byte) []byte {
 // The member ordering proves that the merger selects the first regular file rather
 // than assuming the archive's first entry is readable content.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func zipTestContent(testingObject *testing.T, content []byte) []byte {
 	testingObject.Helper()
 	var buffer bytes.Buffer
@@ -1851,7 +1851,7 @@ func zipTestContent(testingObject *testing.T, content []byte) []byte {
 // Every member contains one valid range so a limit regression would continue through
 // normal parsing instead of failing for unrelated empty or malformed content.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func zipTestEntries(testingObject *testing.T, entries int) []byte {
 	testingObject.Helper()
 	var buffer bytes.Buffer

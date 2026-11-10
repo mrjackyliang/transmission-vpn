@@ -91,7 +91,7 @@ func (browser *trackingDirectoryBrowser) Create(
 // Required-directory tests do not delete through HTTP, but the fake retains the
 // complete controller capability used by any Server that receives it.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (browser *trackingDirectoryBrowser) Inspect(
 	_ context.Context,
 	path string,

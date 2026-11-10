@@ -147,7 +147,7 @@ func TestInstallationKeyPersists(testingObject *testing.T) {
 		testingObject.Fatalf("inspect installation key: %v", err)
 	}
 
-	if info.Mode().Perm() != 0o600 {
+	if info.Mode().Perm() != 0o660 {
 		testingObject.Fatalf("installation key mode = %v", info.Mode().Perm())
 	}
 }

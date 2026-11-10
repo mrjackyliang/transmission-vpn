@@ -230,7 +230,7 @@ export const AppShell = ({
      * Shows the bottom fade only while more navigation content remains below
      * the viewport. A one-pixel tolerance avoids subpixel rounding flicker.
      *
-     * @since UNRELEASED
+     * @since 2.0.0
      */
     const updateSidebarOverflow = (): void => {
       const canScroll: boolean = navigation.scrollHeight > navigation.clientHeight + 1;
@@ -262,7 +262,7 @@ export const AppShell = ({
    * Clears the complete stack for tabs, rows, chips, Escape, and the scrim.
    * A later open starts from the selected tab's root level.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const closePhoneNavigation = (): void => {
     setNavSheetStack(closeNavSheetStack());
@@ -280,7 +280,7 @@ export const AppShell = ({
    *
    * @param {Web_Components_View} view - View.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const changeView = (view: Web_Components_View): void => {
     closePhoneNavigation();
@@ -295,7 +295,7 @@ export const AppShell = ({
    *
    * @param {Web_Navigation_Item} item - Item.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const handlePhoneTab = (item: Web_Navigation_Item): void => {
     const openSheetId: string | undefined = phoneSheet?.['id'] ?? navSheetRoot?.['id'];
@@ -340,7 +340,7 @@ export const AppShell = ({
    * Opens More directly because it has no page of its own.
    * A second tap closes the same root sheet and its nested levels.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const handleMoreTab = (): void => {
     if (phoneSheet === undefined && navSheetRoot?.['id'] === 'more') {
@@ -359,7 +359,7 @@ export const AppShell = ({
    * Returns a nested More destination to its parent without closing the dialog.
    * The sheet component moves focus to the newly visible heading.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const popPhoneNavigation = (): void => setNavSheetStack(popNavSheetStack(navSheetStack));
 
@@ -371,7 +371,7 @@ export const AppShell = ({
    *
    * @param {Web_Navigation_SheetLevel} level - Level.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const pushPhoneNavigation = (level: Web_Navigation_SheetLevel): void => {
     setNavSheetStack(pushNavSheetStack(navSheetStack, level));
@@ -388,7 +388,7 @@ export const AppShell = ({
    *
    * @returns {ReactElement}
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const renderDesktopPage = (
     item: Web_Navigation_Item,
@@ -423,7 +423,7 @@ export const AppShell = ({
    *
    * @returns {ReactElement}
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const renderDesktopItem = (item: Web_Navigation_Item): ReactElement => {
     if (item['isGroup'] === true) {

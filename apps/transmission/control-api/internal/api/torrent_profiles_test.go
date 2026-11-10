@@ -738,7 +738,7 @@ func TestProfileFolderOwnershipConflictsAcrossAPIs(testingObject *testing.T) {
 // The read contract carries the setting-backed Default profile folder beside the
 // named profiles, avoiding a second Settings request for Add torrent.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestTorrentProfilesResponseIncludesEffectiveDefault(testingObject *testing.T) {
 	server, cookies, _ := newClaimedTestServer(testingObject)
 	if _, err := server.store.UpdateSettings(
@@ -1813,7 +1813,7 @@ func TestTorrentProfileReassignment(t *testing.T) {
 // TestTorrentProfileResolution applies a selected profile, clears the durable choice,
 // moves the torrent, and resumes it even when the caller leaves applyOptions false.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestTorrentProfileResolution(testingObject *testing.T) {
 	const hash = "cccccccccccccccccccccccccccccccccccccccc"
 	server, cookies, csrfToken := newClaimedTestServer(testingObject)
@@ -1989,7 +1989,7 @@ func TestTorrentProfileResolution(testingObject *testing.T) {
 // TestTorrentProfileResolutionMovesAcrossConnectionsBeforeStarting covers a paused
 // waiting torrent whose selected profile owns another daemon and download folder.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestTorrentProfileResolutionMovesAcrossConnectionsBeforeStarting(testingObject *testing.T) {
 	const hash = "abcdefabcdefabcdefabcdefabcdefabcdefabcd"
 	upperHash := strings.ToUpper(hash)

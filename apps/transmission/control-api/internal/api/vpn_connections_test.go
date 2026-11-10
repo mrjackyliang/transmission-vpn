@@ -1091,7 +1091,7 @@ type defaultVPNMoveTestState struct {
 
 // TestSetDefaultVPNConnectionRequiresTorrentMoveConfirmation keeps the durable default unchanged.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestSetDefaultVPNConnectionRequiresTorrentMoveConfirmation(testingObject *testing.T) {
 	fixture, state := newDefaultVPNMoveTestFixture(testingObject, true, false)
 
@@ -1223,7 +1223,7 @@ func TestSetDefaultVPNConnectionMovesFollowingProfileTorrents(testingObject *tes
 
 // TestSetDefaultVPNConnectionMovesDefaultProfileTorrents reports the completed move.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestSetDefaultVPNConnectionMovesDefaultProfileTorrents(testingObject *testing.T) {
 	fixture, state := newDefaultVPNMoveTestFixture(testingObject, true, false)
 
@@ -1266,7 +1266,7 @@ func TestSetDefaultVPNConnectionMovesDefaultProfileTorrents(testingObject *testi
 
 // TestSetDefaultVPNConnectionKeepsFailedMoveOnSource applies the default independently.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestSetDefaultVPNConnectionKeepsFailedMoveOnSource(testingObject *testing.T) {
 	fixture, state := newDefaultVPNMoveTestFixture(testingObject, true, true)
 
@@ -1307,7 +1307,7 @@ func TestSetDefaultVPNConnectionKeepsFailedMoveOnSource(testingObject *testing.T
 
 // TestSetDefaultVPNConnectionWithoutTorrentsNeedsNoConfirmation preserves the simple path.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestSetDefaultVPNConnectionWithoutTorrentsNeedsNoConfirmation(testingObject *testing.T) {
 	fixture, _ := newDefaultVPNMoveTestFixture(testingObject, false, false)
 

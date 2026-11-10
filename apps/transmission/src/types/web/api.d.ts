@@ -331,7 +331,7 @@ export type Web_Api_TorrentNeedsProfile = {
 /**
  * API.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Web_Api_TorrentProfileSeeding = {
   idleMinutes: number | null;
@@ -553,7 +553,7 @@ export type Web_Api_LiveSnapshot = {
 /**
  * API.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Web_Api_BlocklistState = 'idle' | 'updating' | 'waiting-for-vpn' | 'disabled' | 'no-sources';
 export type Web_Api_BlocklistSourceState = 'ok' | 'error' | 'pending';
@@ -711,7 +711,7 @@ export type Web_Api_ProviderTunnel = {
 /**
  * API.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Web_Api_ProviderP2P = {
   restricted: boolean;
@@ -793,7 +793,7 @@ export type Web_Api_CreatedToken = {
 /**
  * API.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Web_Api_RPCLogin = {
   id: string;
@@ -816,7 +816,7 @@ export type Web_Api_UpdateRPCLoginInput = {
 /**
  * API.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Web_Api_WebProxyState = 'off' | 'listening' | 'waiting-for-vpn' | 'error';
 export type Web_Api_WebProxyLogin = {

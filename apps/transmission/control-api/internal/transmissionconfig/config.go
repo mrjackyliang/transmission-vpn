@@ -25,7 +25,7 @@ type Directories struct {
 // mapping, and leave native blocklist fetching empty. The protected runner merger is
 // therefore the only component allowed to download sources.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func Render(snapshot storage.ConfigurationSnapshot) ([]byte, error) {
 	values := make(map[string]json.RawMessage, len(snapshot.Settings))
 	for _, setting := range snapshot.Settings {
@@ -132,7 +132,7 @@ func Render(snapshot storage.ConfigurationSnapshot) ([]byte, error) {
 // The runner writes this address before every daemon start. It does not depend on
 // provider state, so a reconnect or provider-address change never restarts a daemon.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func SlotBindAddressIPv4(slot int) (string, error) {
 	if slot < 0 || slot > 63 {
 		return "", fmt.Errorf("Transmission slot %d is outside 0 to 63", slot)
@@ -151,7 +151,7 @@ func Write(path string, content []byte) error {
 // The control API uses this for the runner hand-off directory, whose setgid group
 // grants the unprivileged Transmission runner read access without making it public.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func WriteShared(path string, content []byte) error {
 	return write(path, content, 0o640)
 }
@@ -241,7 +241,7 @@ func ReadDirectories(path string) (Directories, error) {
 // Runner-owned live settings are accepted without native RPC arguments because the
 // API has already published their complete desired state through the file hand-off.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func LiveSessionArguments(
 	registry settings.Registry,
 	changes storage.SettingChanges,
@@ -296,7 +296,7 @@ func LiveSessionArguments(
 // Applying the snapshot before session-close lets Transmission persist its own native
 // file gracefully; the s6-supervised runner then starts from the same accepted state.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func RuntimeSessionArguments(
 	snapshot storage.ConfigurationSnapshot,
 ) (map[string]any, error) {

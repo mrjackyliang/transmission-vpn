@@ -305,7 +305,7 @@ func TestRPCFacadeRenameReturnsTheFacadeID(t *testing.T) {
 // It verifies summed, default, and broadcast calls plus the merger-owned update wait,
 // including the guarantee that native daemons never receive blocklist-update.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestRPCFacadeSessionMethodGroups(t *testing.T) {
 	responder := func(identity string) func(recordedTransmissionCall) any {
 		return func(call recordedTransmissionCall) any {
@@ -666,7 +666,7 @@ func TestRPCFacadeRejectsScriptsAndConfinesEveryFolderArgument(t *testing.T) {
 // An unmatched add now sends the setting-backed Default profile folder explicitly,
 // so a daemon waiting for restart cannot fall back to its old settings.json value.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestRPCFacadeDefaultProfileAddNamesEffectiveDownloadDirectory(testingObject *testing.T) {
 	fixture := newMultiTransmissionFixture(
 		testingObject,
@@ -904,7 +904,7 @@ func TestRPCFacadeTorrentAddProfilePrecedence(testingObject *testing.T) {
 // Lenient stored profiles may predate the current rule, but a matching remote-app
 // add still refuses their reserved destination before calling Transmission.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestRPCFacadeProfileFallbackRejectsIncompleteFolder(testingObject *testing.T) {
 	fixture := newMultiTransmissionFixture(
 		testingObject,

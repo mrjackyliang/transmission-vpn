@@ -1,7 +1,7 @@
 /**
  * Piece Map.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Web_PieceMap_Square = {
   first: number;
@@ -16,7 +16,7 @@ export type Web_PieceMap_Square = {
 /**
  * Piece Map.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Web_PieceMap_Props = {
   availability: number[] | undefined;
@@ -29,7 +29,7 @@ export type Web_PieceMap_Props = {
 /**
  * Piece Map.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Web_PieceMap_TipPosition = {
   left: number;

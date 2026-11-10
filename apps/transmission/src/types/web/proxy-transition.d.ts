@@ -3,7 +3,7 @@ import type { Web_Api_WebProxyState } from '@/types/web/api.d.ts';
 /**
  * Proxy Transition.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Web_ProxyTransition_Status_RequestedEnabled = boolean;
 export type Web_ProxyTransition_Status_ReportedState = Web_Api_WebProxyState;

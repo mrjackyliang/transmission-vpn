@@ -7,7 +7,7 @@ import type { Web_TorrentProfileMatcher_GlobState } from '@/types/web/torrent-pr
  * Converts a literal glob character without changing supported wildcards.
  * This keeps punctuation in profile patterns literal and safe.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const escapeRegularExpressionCharacter = (character: string): string => (
   ('\\^$+.[\]{}()|'.includes(character)) ? `\\${character}` : character
@@ -19,7 +19,7 @@ const escapeRegularExpressionCharacter = (character: string): string => (
  * Matches a complete torrent name using case-insensitive `*` and `?` globs.
  * Anchoring prevents a partial substring from becoming an accidental match.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const torrentNameMatchesPattern = (name: string, pattern: string): boolean => {
   const expression: string = [...pattern].map((character: string): string => {
@@ -43,7 +43,7 @@ export const torrentNameMatchesPattern = (name: string, pattern: string): boolea
  * transition and a consuming transition; memoized position pairs make the
  * intersection decision finite.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const torrentPatternsOverlap = (leftPattern: string, rightPattern: string): boolean => {
   const leftRunes: string[] = [...leftPattern];
@@ -114,7 +114,7 @@ export const torrentPatternsOverlap = (leftPattern: string, rightPattern: string
  * Removes the `.torrent` suffix used only by the metainfo container.
  * Extension matching is case-insensitive to reflect common file systems.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const torrentNameFromFile = (fileName: string): string => fileName.replace(/\.torrent$/iu, '');
 
@@ -124,7 +124,7 @@ export const torrentNameFromFile = (fileName: string): string => fileName.replac
  * Keeps malformed remote path text usable instead of rejecting the whole link.
  * Valid percent-encoded segments are decoded for human-readable matching.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 const decodePathSegment = (pathSegment: string): string => {
   try {
@@ -140,7 +140,7 @@ const decodePathSegment = (pathSegment: string): string => {
  * Prefers a server-previewed metainfo name, then uses a magnet display name or
  * the final URL path segment. Invalid links remain visible as entered.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const torrentNameFromLink = (link: string, previewName?: string): string => {
   if (previewName !== undefined && previewName.trim() !== '') {
@@ -167,7 +167,7 @@ export const torrentNameFromLink = (link: string, previewName?: string): string 
  * Returns every named profile whose supported glob matches the complete name.
  * Callers decide how to handle zero, one, or multiple matches.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const matchTorrentProfiles = (
   torrentName: string,

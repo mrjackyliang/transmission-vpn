@@ -6,7 +6,7 @@ import type { Web_Navigation_SheetLevel } from '@/types/web/navigation.d.ts';
 /**
  * Nav Sheet.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Web_NavSheet_Props = {
   activeView: Web_Components_View;

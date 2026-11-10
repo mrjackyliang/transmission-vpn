@@ -87,7 +87,7 @@ export const LibraryNavigation = ({
      *
      * @param {PointerEvent} event - Event.
      *
-     * @since UNRELEASED
+     * @since 2.0.0
      */
     const closeMenuOutside = (event: PointerEvent): void => {
       if (event.target instanceof Element && event.target.closest('.profile-menu, .library-row-menu-button') !== null) {
@@ -105,7 +105,7 @@ export const LibraryNavigation = ({
      *
      * @param {KeyboardEvent} event - Event.
      *
-     * @since UNRELEASED
+     * @since 2.0.0
      */
     const closeMenuOnEscape = (event: KeyboardEvent): void => {
       if (event.key === 'Escape') {
@@ -157,7 +157,7 @@ export const LibraryNavigation = ({
    * Selecting the active row again clears the profile filter.
    * The Default profile sentinel follows the same toggle behavior.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const selectProfile = (profileId: string): void => {
     onFiltersChange({

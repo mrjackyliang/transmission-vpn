@@ -20,7 +20,7 @@ var (
 	// Both the versioned API and compatible RPC facade translate this condition at
 	// their own protocol boundaries.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	errBlocklistsDisabled = errors.New("blocklists are disabled")
 
 	// errBlocklistSourcesEmpty prevents an update with no configured input.
@@ -28,7 +28,7 @@ var (
 	// The runner owns removal for this state, while request callers receive a conflict
 	// immediately instead of waiting for work that cannot start.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	errBlocklistSourcesEmpty = errors.New("blocklist sources are empty")
 )
 
@@ -37,7 +37,7 @@ var (
 // A newly saved source absent from the runner artifact is represented as pending, so
 // clients never need to reconcile settings and status themselves.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (server *Server) handleGetBlocklists(
 	responseWriter http.ResponseWriter,
 	request *http.Request,
@@ -66,7 +66,7 @@ func (server *Server) handleGetBlocklists(
 // Session and CSRF enforcement happen in the route wrapper; this handler validates
 // that useful work exists and answers before the runner begins downloading.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (server *Server) handleUpdateBlocklists(
 	responseWriter http.ResponseWriter,
 	request *http.Request,
@@ -96,7 +96,7 @@ func (server *Server) handleUpdateBlocklists(
 // The registry-backed snapshot is authoritative for enablement, sources, and interval;
 // timestamp preservation is only needed when the artifact is written.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (server *Server) effectiveBlocklistConfiguration(
 	ctx context.Context,
 ) (blocklist.Configuration, error) {
@@ -113,7 +113,7 @@ func (server *Server) effectiveBlocklistConfiguration(
 // Keeping storage translation in the API prevents the runner's lightweight shared
 // contract package from depending on SQLite-backed control-plane implementation code.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func blocklistConfigurationFromSnapshot(
 	snapshot storage.ConfigurationSnapshot,
 ) (blocklist.Configuration, error) {
@@ -149,7 +149,7 @@ func blocklistConfigurationFromSnapshot(
 // The same mutex serializes ordinary Transmission publication, preventing a settings
 // save from restoring an older request marker over this explicit update.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (server *Server) requestBlocklistUpdate(ctx context.Context) (time.Time, error) {
 	server.transmissionConfigMutex.Lock()
 	defer server.transmissionConfigMutex.Unlock()
@@ -184,7 +184,7 @@ func (server *Server) requestBlocklistUpdate(ctx context.Context) (time.Time, er
 // Keeping path construction inside the server ensures the API and RPC facade observe
 // the same status file under tests and in the container.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (server *Server) readBlocklistStatus() (blocklist.Status, error) {
 	return blocklist.ReadStatus(filepath.Join(
 		server.runtimeDirectory,
@@ -198,7 +198,7 @@ func (server *Server) readBlocklistStatus() (blocklist.Status, error) {
 // Removed sources disappear immediately, new sources remain pending, and disabled or
 // empty configurations expose their effective state before the next runner poll.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func translateBlocklistStatus(
 	configuration blocklist.Configuration,
 	status blocklist.Status,
@@ -244,7 +244,7 @@ func translateBlocklistStatus(
 // It completes only for a status written at or after this request and returns the
 // in-use range count, including retained copies, when every source succeeded.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (server *Server) waitForBlocklistUpdate(
 	ctx context.Context,
 	requestedAt time.Time,

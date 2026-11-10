@@ -14,7 +14,7 @@ import type {
  * Presents only the changes that will happen and keeps contextual notes separate.
  * Every app supplies complete human sentences without zero-count fragments.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export const BackupReviewList = ({
   error = '',

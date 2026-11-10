@@ -14,7 +14,7 @@ import (
 // Settings and profiles return the same field guidance before a /data destination
 // can reach Transmission or storage.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestDownloadTargetsRejectDataRoot(testingObject *testing.T) {
 	server, cookies, csrfToken := newClaimedTestServer(testingObject)
 
@@ -75,7 +75,7 @@ func TestDownloadTargetsRejectDataRoot(testingObject *testing.T) {
 // The effective setting, rather than a conventional folder name, reserves both the
 // incomplete folder itself and every descendant while leaving prefixed siblings free.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestDownloadTargetsRejectIncompleteDirectory(testingObject *testing.T) {
 	server, cookies, csrfToken := newClaimedTestServer(testingObject)
 
@@ -137,7 +137,7 @@ func TestDownloadTargetsRejectIncompleteDirectory(testingObject *testing.T) {
 // The first effective Download setting or profile clash is named, while nesting the
 // incomplete folder beneath the Download setting remains valid.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestIncompleteDirectoryRejectsDownloadTargets(testingObject *testing.T) {
 	testCases := []struct {
 		name           string
@@ -223,7 +223,7 @@ func TestIncompleteDirectoryRejectsDownloadTargets(testingObject *testing.T) {
 
 // TestDownloadDirectorySettingRejectsEmptyValue keeps the Default profile concrete.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestDownloadDirectorySettingRejectsEmptyValue(testingObject *testing.T) {
 	server, cookies, csrfToken := newClaimedTestServer(testingObject)
 	response := performRequest(

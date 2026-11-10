@@ -64,7 +64,7 @@ var preparedDummyPasswordHash struct {
 // Production uses the container defaults, while flags supply isolated paths to tests
 // without expanding the end-user environment-variable contract.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type Config struct {
 	ListenAddress      string
 	ConfigPath         string
@@ -79,7 +79,7 @@ type Config struct {
 //
 // ConnectionID selects the protected tunnel used by this credential.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type Login struct {
 	ID           string `json:"id"`
 	Username     string `json:"username"`
@@ -92,7 +92,7 @@ type Login struct {
 // An enabled configuration may have no logins. The listener still opens, while the
 // authenticator refuses every credential until a login is added.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type RuntimeConfig struct {
 	Enabled bool    `json:"enabled"`
 	Logins  []Login `json:"logins"`
@@ -103,7 +103,7 @@ type RuntimeConfig struct {
 // UpdatedAt changes only when the observed state or error changes, avoiding continuous
 // writes while still recording the latest transition.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type Status struct {
 	State     string    `json:"state"`
 	Error     string    `json:"error,omitempty"`
@@ -127,7 +127,7 @@ type connectionState struct {
 // All outbound connections pass through connection-specific guarded dialers, while
 // the firewall remains the independent hard boundary if process state becomes stale.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type Service struct {
 	config Config
 	logger *slog.Logger
@@ -174,7 +174,7 @@ type Service struct {
 // The per-process authentication cache key is generated before any listener can open;
 // failure to obtain secure randomness prevents startup.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func New(config Config) (*Service, error) {
 	if config.ListenAddress == "" {
 		config.ListenAddress = defaultListenAddress
@@ -283,7 +283,7 @@ func webProxyDummyPasswordHash() (string, error) {
 // Invalid or missing configuration is an off state rather than a process failure, so
 // the optional service stays ready while its port remains closed.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (service *Service) Run(ctx context.Context) error {
 	if err := service.reloadConfiguration(ctx); err != nil {
 		return err

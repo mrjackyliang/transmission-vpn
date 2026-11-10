@@ -147,3 +147,5 @@ apps/docs
 assets
 conventions
 graphify-out
+.integration-state.*
+.openvpn-integration-state.*

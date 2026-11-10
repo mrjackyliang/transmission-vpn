@@ -73,7 +73,7 @@ func (server *Server) handleListRPCLogins(responseWriter http.ResponseWriter, re
 // The plaintext is returned only in this response. Storage receives only its digest,
 // and later list responses contain metadata alone.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (server *Server) handleCreateRPCLogin(responseWriter http.ResponseWriter, request *http.Request) {
 	var body rpcLoginCreateBody
 	if err := decodeJSONBody(responseWriter, request, &body); err != nil {

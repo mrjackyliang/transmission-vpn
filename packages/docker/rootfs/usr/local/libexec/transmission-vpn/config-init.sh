@@ -57,6 +57,12 @@ configure_identity() {
   if [[ "${current_user_id}" != "${PUID}" ]]; then
     usermod -u "${PUID}" "${transmission_user}"
   fi
+
+  # The console joins the PUID:PGID group so its state can stay owned by PUID:PGID
+  # like every other persistent file, while it keeps its own user for the firewall.
+  if ! id -nG "${control_user}" | tr ' ' '\n' | grep -qx "${transmission_user}"; then
+    usermod -a -G "${transmission_user}" "${control_user}"
+  fi
 }
 
 configure_timezone() {
@@ -110,14 +116,26 @@ assert_searchable_by() {
   fi
 }
 
+prepare_persistent_state() {
+  local directory_path="${1}"
+
+  # Every persistent folder belongs to PUID:PGID. Group access, inherited through the
+  # setgid bit, lets the console use its own state even after the host changes owners.
+  install -d -m 2770 -o "${transmission_user}" -g "${transmission_user}" "${directory_path}"
+
+  chown -R -h "${transmission_user}:${transmission_user}" "${directory_path}"
+  find "${directory_path}" -type d -exec chmod 2770 {} +
+  find "${directory_path}" -type f -exec chmod 0660 {} +
+}
+
 prepare_directories() {
   prepare_mount_root "/config"
   prepare_mount_root "/data"
 
-  install -d -m 0750 -o "${control_user}" -g "${control_user}" /config/app
-  install -d -m 0700 -o "${control_user}" -g "${control_user}" /config/app/keys
+  prepare_persistent_state /config/app
+  install -d -m 2770 -o "${transmission_user}" -g "${transmission_user}" /config/app/keys
   install -d -m 0750 -o "${transmission_user}" -g "${transmission_user}" /config/transmission
-  install -d -m 0700 -o root -g root /config/vpn
+  prepare_persistent_state /config/vpn
   install -d -m 0755 -o root -g root "${runtime_directory}"
   install -d -m 2750 -o "${transmission_user}" -g "${control_user}" "${runtime_directory}/directories"
   install -d -m 1777 -o root -g root "${runtime_directory}/services"
@@ -127,6 +145,7 @@ prepare_directories() {
   install -d -m 2750 -o "${web_proxy_user}" -g "${control_user}" "${runtime_directory}/web-proxy-state"
 
   assert_writable_by "${control_user}" "/config/app"
+  assert_writable_by "${control_user}" "/config/app/keys"
   assert_writable_by "${transmission_user}" "${runtime_directory}/directories"
   assert_searchable_by "${control_user}" "${runtime_directory}/directories"
   assert_writable_by "${control_user}" "${runtime_directory}/web-proxy"

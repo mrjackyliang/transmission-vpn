@@ -12,7 +12,7 @@ import (
 // Settings return to defaults and profiles keep a usable folder without moving any
 // existing torrent data.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestDownloadSubdirectoriesMigrationRewritesDataRootDestinations(testingObject *testing.T) {
 	ctx := context.Background()
 	store := openVersion12Store(testingObject)
@@ -121,7 +121,7 @@ func TestDownloadSubdirectoriesMigrationRewritesDataRootDestinations(testingObje
 // The effective Download setting resets first, profile destinations follow that
 // effective value.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestDownloadSubdirectoriesMigrationCleansIncompleteDirectoryTargets(testingObject *testing.T) {
 	testingObject.Run("default remains outside incomplete folder", func(testingObject *testing.T) {
 		ctx := context.Background()

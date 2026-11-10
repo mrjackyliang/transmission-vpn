@@ -1,7 +1,7 @@
 /**
  * Torrent Profile Matcher - Glob state.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Web_TorrentProfileMatcher_GlobState = {
   left: number;

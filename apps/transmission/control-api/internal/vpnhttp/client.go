@@ -28,7 +28,7 @@ import (
 // Callers treat this as a quiet wait or fallback state instead of attempting a
 // request through the container's ordinary network path.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 var ErrNotProtected = errors.New("default VPN connection is not protected")
 
 // Route contains one protected connection's outbound network parameters.
@@ -36,7 +36,7 @@ var ErrNotProtected = errors.New("default VPN connection is not protected")
 // SourceIP pins DNS and HTTP sockets to the slot address, while DNSServers come
 // only from the matching protected controller status.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type Route struct {
 	SourceIP   net.IP
 	DNSServers []string
@@ -47,7 +47,7 @@ type Route struct {
 // Production callers supply their URL and destination policies while sharing
 // the same resolver, source binding, redirect handling, and TLS floor.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type ClientOptions struct {
 	Route                 Route
 	ConnectTimeout        time.Duration
@@ -77,7 +77,7 @@ type vpnStatus struct {
 // The status identity and slot must match the caller's durable connection
 // selection before its fixed source address and VPN DNS servers are exposed.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func ProtectedRoute(
 	runtimeDirectory string,
 	connectionID string,
@@ -134,7 +134,7 @@ func ProtectedRoute(
 // Hostnames resolve only through NewResolver, and every resulting connection
 // is checked by the caller's destination policy before the bound dial occurs.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func NewClient(options ClientOptions) *http.Client {
 	dialContext := options.DialContext
 	if dialContext == nil {
@@ -227,7 +227,7 @@ func NewClient(options ClientOptions) *http.Client {
 // UDP queries and TCP retries use the same slot source address as the HTTP
 // connection, preventing name resolution from escaping through container DNS.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func NewResolver(
 	route Route,
 	connectTimeout time.Duration,
@@ -287,7 +287,7 @@ func NewResolver(
 // Every returned address is validated before the first one is selected, so a
 // mixed public and forbidden DNS answer cannot exploit address ordering.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func ResolveIPv4Host(
 	ctx context.Context,
 	host string,

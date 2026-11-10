@@ -106,7 +106,7 @@ export const TorrentOrganizationDialog = ({
    * Adds one unsaved label draft after checking the same length and uniqueness
    * rules used by the request parser.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const addLabel = (): void => {
     const normalizedLabel: string = newLabel.trim();
@@ -142,7 +142,7 @@ export const TorrentOrganizationDialog = ({
    * Changes only the displayed value while preserving the original label used
    * to build a rename operation.
    *
-   * @since UNRELEASED
+   * @since 2.0.0
    */
   const updateLabel = (id: string, value: string): void => {
     setLabelDrafts((currentDrafts: Web_Components_TorrentOrganizationLabelDraft[]): Web_Components_TorrentOrganizationLabelDraft[] => currentDrafts.map(

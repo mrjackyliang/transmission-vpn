@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"os"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -65,6 +66,10 @@ func Open(ctx context.Context, path string) (*Store, error) {
 		return nil, errors.New("database path is required")
 	}
 
+	if err := prepareDatabaseFile(path); err != nil {
+		return nil, err
+	}
+
 	database, err := sql.Open("sqlite", "file:"+filepath.ToSlash(path))
 	if err != nil {
 		return nil, fmt.Errorf("open SQLite database: %w", err)
@@ -82,6 +87,40 @@ func Open(ctx context.Context, path string) (*Store, error) {
 	}
 
 	return store, nil
+}
+
+// prepareDatabaseFile creates the database file group-writable before SQLite opens it.
+//
+// SQLite gives its WAL and shared-memory files the database file's mode, so a 0660
+// database keeps every state file usable by the PUID:PGID group the console shares.
+func prepareDatabaseFile(path string) error {
+	databaseFile, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE, 0o660)
+	if err != nil {
+		return fmt.Errorf("create SQLite database: %w", err)
+	}
+
+	information, err := databaseFile.Stat()
+	if err != nil {
+		_ = databaseFile.Close()
+
+		return fmt.Errorf("inspect SQLite database: %w", err)
+	}
+
+	// Only the owner may change the mode, and the host may have given the file to
+	// PUID:PGID, so an already group-writable database is left as it is.
+	if information.Mode().Perm() != 0o660 {
+		if err := databaseFile.Chmod(0o660); err != nil {
+			_ = databaseFile.Close()
+
+			return fmt.Errorf("set SQLite database permissions: %w", err)
+		}
+	}
+
+	if err := databaseFile.Close(); err != nil {
+		return fmt.Errorf("close SQLite database: %w", err)
+	}
+
+	return nil
 }
 
 // Close releases the underlying SQLite connection.

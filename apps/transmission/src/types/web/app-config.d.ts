@@ -3,7 +3,7 @@ import type { Web_Api_Scope } from '@/types/web/api.d.ts';
 /**
  * App Config - Token scope.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Web_AppConfig_TokenScope = {
   description: string;
@@ -15,7 +15,7 @@ export type Web_AppConfig_TokenScope = {
 /**
  * App Config.
  *
- * @since UNRELEASED
+ * @since 2.0.0
  */
 export type Web_AppConfig = {
   appName: string;

@@ -59,7 +59,7 @@ func createTestRPCLogin(
 // Browser sessions alone manage these credentials, every mutation requires CSRF, and
 // neither lists nor ordinary edits can reveal a password or digest.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func TestRPCLoginRoutes(testingObject *testing.T) {
 	server, cookies, csrfToken := newClaimedTestServer(testingObject)
 

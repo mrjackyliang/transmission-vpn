@@ -31,7 +31,7 @@ const (
 // Tests replace these paths with fixtures, while production uses the container's
 // cgroup and proc files directly.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type Paths struct {
 	// CgroupV2Memory is the memory.max path.
 	CgroupV2Memory string
@@ -48,7 +48,7 @@ type Paths struct {
 // Source identifies the memory source because memory determines which fallback path
 // was used; CPUs always prefer cpu.max before the Go runtime count.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type Snapshot struct {
 	Limit       int     `json:"limit"`
 	Used        int     `json:"used"`
@@ -62,7 +62,7 @@ type Snapshot struct {
 // A mutex keeps concurrent connection-list and create requests on one consistent
 // snapshot while allowing the limits to be refreshed after the cache interval.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type Detector struct {
 	paths       Paths
 	cachePeriod time.Duration
@@ -81,7 +81,7 @@ type Detector struct {
 // Keeping the paths explicit makes the production order visible and lets tests use
 // the same parser against small filesystem fixtures.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func DefaultPaths() Paths {
 	return Paths{
 		CgroupV2Memory: "/sys/fs/cgroup/memory.max",
@@ -96,7 +96,7 @@ func DefaultPaths() Paths {
 // Non-positive intervals use one minute, matching the API's bounded refresh contract.
 // Unreadable environments are reported by Current and use a conservative snapshot.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func NewDetector(paths Paths, cachePeriod time.Duration) *Detector {
 	if cachePeriod <= 0 {
 		cachePeriod = time.Minute
@@ -116,7 +116,7 @@ func NewDetector(paths Paths, cachePeriod time.Duration) *Detector {
 // Used is supplied by storage at response time and is deliberately left at zero in
 // the detector's cached environmental snapshot.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func (detector *Detector) Current() (Snapshot, error) {
 	detector.mutex.Lock()
 	defer detector.mutex.Unlock()

@@ -23,7 +23,7 @@ const (
 	// Oversized lines are discarded without retaining their full contents, which keeps
 	// malformed input from becoming a second unbounded allocation path.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	blocklistMaximumLineBytes = 1 << 20
 
 	// blocklistZipEndRecordBytes is the largest bounded end-record search.
@@ -31,7 +31,7 @@ const (
 	// A zip comment is at most 65,535 bytes, so this window always contains the
 	// standard end record without reading the archive's central directory.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	blocklistZipEndRecordBytes = 22 + 65_535
 )
 
@@ -41,7 +41,7 @@ var (
 	// One unambiguous end record makes the preflight parser and archive/zip select
 	// the same directory before the standard library allocates entries.
 	//
-	// Since: UNRELEASED
+	// Since: 2.0.0
 	errBlocklistZipUnsupported = errors.New("This zip file isn't supported.")
 )
 
@@ -50,7 +50,7 @@ var (
 // Reading these values from the fixed-size end records lets the runner reject large
 // entry tables before archive/zip materializes them in memory.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 type blocklistZipDirectory struct {
 	Entries int
 	Offset  int64
@@ -62,7 +62,7 @@ type blocklistZipDirectory struct {
 // The directory entry is removed immediately while the open descriptor retains the
 // contents, preventing stale downloads from surviving a runner crash.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func createUnlinkedBlocklistFile(directory string, pattern string) (*os.File, error) {
 	temporaryFile, err := os.CreateTemp(directory, pattern)
 	if err != nil {
@@ -88,7 +88,7 @@ func createUnlinkedBlocklistFile(directory string, pattern string) (*os.File, er
 // Independent input, output, and range limits keep decompression and canonicalization
 // bounded without retaining the complete source or result in memory.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func normalizeBlocklistReader(
 	ctx context.Context,
 	reader io.Reader,
@@ -166,7 +166,7 @@ func normalizeBlocklistReader(
 // Only the fixed comment window and, when present, one fixed zip64 record are read;
 // archive/zip runs only after both the entry count and directory bytes are bounded.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func inspectBlocklistZipDirectory(
 	reader io.ReaderAt,
 	archiveSize int64,
@@ -265,7 +265,7 @@ func inspectBlocklistZipDirectory(
 // ZIP readers tolerate a truncated advertised count and can otherwise allocate every
 // hidden record; this fixed-header walk rejects the real 1,001st entry before that.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func validateBlocklistZipEntries(
 	reader io.ReaderAt,
 	directory blocklistZipDirectory,
@@ -340,7 +340,7 @@ func validateBlocklistZipEntries(
 // The config directory must already exist after migration and daemon preparation;
 // only the child blocklists directory may be created through its parent descriptor.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func openDaemonBlocklistDirectory(
 	configRoot string,
 	entry daemonEntry,
@@ -396,7 +396,7 @@ func openDaemonBlocklistDirectory(
 // O_NOFOLLOW and an fstat regular-file check prevent cached copies from traversing a
 // file symlink or reading a non-file entry supplied by the daemon directory.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func openRegularBlocklistFile(directory *os.File, name string) (*os.File, error) {
 	descriptor, err := unix.Openat(
 		int(directory.Fd()),
@@ -427,7 +427,7 @@ func openRegularBlocklistFile(directory *os.File, name string) (*os.File, error)
 // A descriptor-relative temporary file is synced and renamed atomically, so an error
 // leaves the previous regular file untouched without resolving the directory again.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func writeBlocklistCopyAt(
 	directory *os.File,
 	name string,
@@ -489,7 +489,7 @@ func writeBlocklistCopyAt(
 // Directories, links, sockets, and other entry types remain untouched; every stat and
 // unlink operation stays relative to the already verified directory descriptor.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func removeStaleBlocklistFiles(
 	directory *os.File,
 	expected map[string]struct{},
@@ -531,7 +531,7 @@ func removeStaleBlocklistFiles(
 // Random names keep concurrent or crash-left temporary files from colliding without
 // relying on path-based os.CreateTemp inside a security-sensitive daemon folder.
 //
-// Since: UNRELEASED
+// Since: 2.0.0
 func newBlocklistTemporaryName() (string, error) {
 	randomBytes := make([]byte, 12)
 	if _, err := rand.Read(randomBytes); err != nil {
