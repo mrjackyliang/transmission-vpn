@@ -237,6 +237,29 @@ func TestProtectedStatusWithoutSessionHidesLiveFields(testingObject *testing.T) 
 	}
 }
 
+// TestStoppingStatusIsReportedApartFromALostSession keeps the restore safety net narrow.
+//
+// Only the status reported to the control plane keeps a stopping session's tunnel
+// fields. A session lost without a transition still reads as protected without them.
+func TestStoppingStatusIsReportedApartFromALostSession(testingObject *testing.T) {
+	state := &connectionState{status: Status{
+		State:     "protected",
+		Interface: "wg0",
+		Address:   "10.68.0.2",
+	}}
+	if status := state.snapshot(true); status.Interface != "" || status.Address != "" {
+		testingObject.Fatalf("lost session reported its tunnel fields: %+v", status)
+	}
+
+	state.stopping = true
+	if status := state.snapshot(true); status.Interface != "wg0" || status.Address != "10.68.0.2" {
+		testingObject.Fatalf("stopping session lost its reported tunnel fields: %+v", status)
+	}
+	if status := state.statusSnapshot(); status.Interface != "" || status.Address != "" {
+		testingObject.Fatalf("internal snapshot kept a stopping session's tunnel fields: %+v", status)
+	}
+}
+
 // TestProtectUsesSlotAndProviderAddresses keeps firewall routing identities separate.
 func TestProtectUsesSlotAndProviderAddresses(testingObject *testing.T) {
 	daemon := newTestDaemon(testingObject)
@@ -736,6 +759,104 @@ func TestFailedFirewallBlockStillPublishesBlocked(testingObject *testing.T) {
 	attempts, readError := os.ReadFile(blockAttemptsPath)
 	if readError != nil || string(attempts) != "xx" {
 		testingObject.Fatalf("firewall block attempts = %q, %v, want two", attempts, readError)
+	}
+}
+
+// TestLostTunnelTeardownIsNotReportedAsLost keeps the API restore out of a reconnect.
+//
+// Removing a lost tunnel can take a second while the firewall blocks it. The reported
+// status must not read as protected without a session then, because the control plane's
+// restore loop would replace the reconnect with a fresh connect. Reconnecting is still
+// published only after the block, so it always means the firewall is closed.
+func TestLostTunnelTeardownIsNotReportedAsLost(testingObject *testing.T) {
+	daemon := newTestDaemon(testingObject)
+	sessions := make(chan *testTunnelSession, 4)
+	daemon.driverFactory = func(_ string, slot int) tunnelDriver {
+		return testTunnelDriver{start: func(context.Context, Connection, Endpoint) (tunnelSession, error) {
+			session := newTestTunnelSession(slot)
+			sessions <- session
+
+			return session, nil
+		}}
+	}
+	connectionID := "vpc-0000000000000013"
+	connection := testWireGuardConnection(
+		testingObject,
+		"lost-tunnel",
+		"192.0.2.60",
+		"10.64.0.1",
+	)
+	if _, err := daemon.Connect(connectionID, 0, true, connection); err != nil {
+		testingObject.Fatalf("connect before the tunnel is lost: %v", err)
+	}
+	lostSession := <-sessions
+
+	markerDirectory := testingObject.TempDir()
+	blockStartedPath := filepath.Join(markerDirectory, "block-started")
+	releasePath := filepath.Join(markerDirectory, "release")
+	if err := os.WriteFile(
+		daemon.config.FirewallBlockPath,
+		[]byte(fmt.Sprintf(
+			"#!/bin/sh\ntouch %q\nwhile [ ! -e %q ]; do sleep 0.01; done\nexit 0\n",
+			blockStartedPath,
+			releasePath,
+		)),
+		0o700,
+	); err != nil {
+		testingObject.Fatalf("replace firewall helper: %v", err)
+	}
+	release := func() {
+		if err := os.WriteFile(releasePath, nil, 0o600); err != nil {
+			testingObject.Fatalf("release firewall helper: %v", err)
+		}
+	}
+
+	lostSession.Stop()
+	deadline := time.Now().Add(5 * time.Second)
+	for {
+		if _, err := os.Stat(blockStartedPath); err == nil {
+			break
+		}
+		if time.Now().After(deadline) {
+			release()
+			testingObject.Fatal("the lost tunnel's firewall block did not start")
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+
+	statuses := daemon.Status()
+	published, readError := os.ReadFile(daemon.connectionStatusPath(connectionID))
+	release()
+	if len(statuses) != 1 || statuses[0].State != "protected" ||
+		statuses[0].Interface == "" || statuses[0].Address == "" {
+		testingObject.Fatalf("reported status while the lost tunnel is removed = %+v, want its tunnel fields", statuses)
+	}
+	if readError != nil || !strings.Contains(string(published), `"state":"protected"`) {
+		testingObject.Fatalf("published status before the firewall block finished = %q, %v", published, readError)
+	}
+
+	deadline = time.Now().Add(5 * time.Second)
+	for {
+		statuses = daemon.Status()
+		if len(statuses) == 1 && statuses[0].State == "reconnecting" {
+			break
+		}
+		if time.Now().After(deadline) {
+			testingObject.Fatalf("status after the firewall block = %+v, want reconnecting", statuses)
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	if statuses[0].LastError != "test tunnel stopped" {
+		testingObject.Fatalf("reconnecting status error = %q", statuses[0].LastError)
+	}
+
+	select {
+	case <-sessions:
+	case <-time.After(10 * time.Second):
+		testingObject.Fatal("the controller did not reconnect after the retry interval")
+	}
+	if _, err := daemon.Disconnect(connectionID, "test"); err != nil {
+		testingObject.Fatalf("disconnect after the reconnect: %v", err)
 	}
 }
 

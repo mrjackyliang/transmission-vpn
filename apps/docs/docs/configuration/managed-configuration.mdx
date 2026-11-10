@@ -29,7 +29,7 @@ Set or <Terminology title="A managed value that overrides and freezes a setting"
 
 ## File Location and Format
 
-The <Terminology title="Optional /config/managed.json that seeds or locks settings" to="/docs/reference/terminology#managed-configuration">managed configuration</Terminology> file lives at <Terminology title="Optional /config/managed.json that seeds or locks settings" to="/docs/reference/terminology#managed-configuration">`/config/managed.json`</Terminology>, and the built-in `control` user (UID 65532) must be able to read it. A file owned by `PUID:PGID` with group read access works, because `control` is in the `PGID` group.
+The <Terminology title="Optional /config/managed.json that seeds or locks settings" to="/docs/reference/terminology#managed-configuration">managed configuration</Terminology> file lives at <Terminology title="Optional /config/managed.json that seeds or locks settings" to="/docs/reference/terminology#managed-configuration">`/config/managed.json`</Terminology>, and the control plane, which runs as `PUID`, must be able to read it. A file owned by `PUID` works.
 
 ```json title="/config/managed.json"
 {

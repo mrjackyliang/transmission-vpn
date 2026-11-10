@@ -38,38 +38,44 @@ env:
 
 jobs:
   build:
-    runs-on: "ubuntu-latest"
+    runs-on: "ubuntu-24.04"
     timeout-minutes: 90
     permissions:
       contents: "read"
     steps:
       - name: "Checkout repository"
         uses: "actions/checkout@v7"
+        timeout-minutes: 5
         with:
           fetch-depth: 0
 
       - name: "Setup Node.js"
         uses: "actions/setup-node@v7"
+        timeout-minutes: 10
         with:
           node-version-file: "${{ env.ROOT_DIR }}/package.json"
           package-manager-cache: false
 
       - name: "Install packages"
+        timeout-minutes: 20
         run: "npm install"
         working-directory: "${{ env.ROOT_DIR }}"
 
       - name: "Check project"
+        timeout-minutes: 90
         run: |
           npm run check -- --workspace transmission-vpn-docs
         working-directory: "${{ env.ROOT_DIR }}"
 
       - name: "Build project"
+        timeout-minutes: 90
         run: |
           npm run build -- --workspace transmission-vpn-docs --artifact documentation
         working-directory: "${{ env.ROOT_DIR }}"
 
       - name: "Validate manual container tag"
         if: "${{ github.event_name == 'workflow_dispatch' && !inputs.dry-run }}"
+        timeout-minutes: 90
         env:
           MANUAL_TAG: "${{ inputs.tag || '' }}"
         run: |
@@ -79,6 +85,7 @@ jobs:
           fi
 
       - name: "Validate build artifacts"
+        timeout-minutes: 90
         run: |
           set -euo pipefail
 
@@ -171,6 +178,7 @@ jobs:
 
       - name: "Upload assembled artifact (documentation)"
         uses: "actions/upload-artifact@v7"
+        timeout-minutes: 90
         with:
           name: "artifact-documentation"
           retention-days: 1
@@ -179,32 +187,47 @@ jobs:
           path: |
             build/documentation
 
-      - name: "Set up QEMU"
-        uses: "docker/setup-qemu-action@v4"
-        with:
-          platforms: "linux/amd64,linux/arm64"
+  build-container-linux-amd64:
+    runs-on: "ubuntu-24.04"
+    timeout-minutes: 90
+    permissions:
+      contents: "read"
+    steps:
+      - name: "Checkout repository"
+        uses: "actions/checkout@v7"
+        timeout-minutes: 5
 
       - name: "Set up Docker Buildx"
         uses: "docker/setup-buildx-action@v4"
+        timeout-minutes: 10
 
       - name: "Prepare OCI handoff"
+        timeout-minutes: 10
         run: "mkdir -p \"$RUNNER_TEMP/container-oci\""
 
       - name: "Build immutable OCI artifact"
         id: "build-oci"
         uses: "docker/build-push-action@v7"
+        timeout-minutes: 90
         with:
           context: "./"
-          platforms: "linux/amd64,linux/arm64"
+          platforms: "linux/amd64"
           push: false
           provenance: false
           tags: "nova.local/container:nova-oci"
+          labels: |
+            org.opencontainers.image.version=${{ github.event.release.tag_name || inputs.tag || github.ref_name }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          cache-from: "type=gha,scope=container-linux-amd64"
+          cache-to: "type=gha,mode=max,scope=container-linux-amd64"
           outputs: "type=oci,dest=${{ runner.temp }}/container-oci/layout,tar=false"
 
       - name: "Record OCI digest"
+        timeout-minutes: 90
         run: "printf '%s' '${{ steps.build-oci.outputs.digest }}' > \"$RUNNER_TEMP/container-oci/container-image.digest\""
 
       - name: "Validate immutable OCI artifact"
+        timeout-minutes: 90
         run: |
           set -euo pipefail
 
@@ -297,6 +320,296 @@ jobs:
 
       - name: "Upload immutable OCI artifact"
         uses: "actions/upload-artifact@v7"
+        timeout-minutes: 90
+        with:
+          name: "container-oci-linux-amd64"
+          retention-days: 1
+          include-hidden-files: true
+          if-no-files-found: "error"
+          path: "${{ runner.temp }}/container-oci"
+
+  build-container-linux-arm64:
+    runs-on: "ubuntu-24.04-arm"
+    timeout-minutes: 90
+    permissions:
+      contents: "read"
+    steps:
+      - name: "Checkout repository"
+        uses: "actions/checkout@v7"
+        timeout-minutes: 5
+
+      - name: "Set up Docker Buildx"
+        uses: "docker/setup-buildx-action@v4"
+        timeout-minutes: 10
+
+      - name: "Prepare OCI handoff"
+        timeout-minutes: 10
+        run: "mkdir -p \"$RUNNER_TEMP/container-oci\""
+
+      - name: "Build immutable OCI artifact"
+        id: "build-oci"
+        uses: "docker/build-push-action@v7"
+        timeout-minutes: 90
+        with:
+          context: "./"
+          platforms: "linux/arm64"
+          push: false
+          provenance: false
+          tags: "nova.local/container:nova-oci"
+          labels: |
+            org.opencontainers.image.version=${{ github.event.release.tag_name || inputs.tag || github.ref_name }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          cache-from: "type=gha,scope=container-linux-arm64"
+          cache-to: "type=gha,mode=max,scope=container-linux-arm64"
+          outputs: "type=oci,dest=${{ runner.temp }}/container-oci/layout,tar=false"
+
+      - name: "Record OCI digest"
+        timeout-minutes: 90
+        run: "printf '%s' '${{ steps.build-oci.outputs.digest }}' > \"$RUNNER_TEMP/container-oci/container-image.digest\""
+
+      - name: "Validate immutable OCI artifact"
+        timeout-minutes: 90
+        run: |
+          set -euo pipefail
+
+          ALLOWED_ROOT="${{ runner.temp }}"
+          ALLOWED_ROOT="$(realpath "$ALLOWED_ROOT")"
+          cd "$ALLOWED_ROOT"
+
+          validate_artifact_root() {
+            local artifact_root="$1"
+            local candidate
+            local candidate_parent
+            local first_file
+            local relative_candidate
+            local resolved_candidate
+            local resolved_root
+
+            if [ ! -e "$artifact_root" ] && [ ! -L "$artifact_root" ]; then
+              echo "Artifact root does not exist: $artifact_root" >&2
+              exit 1
+            fi
+
+            if ! resolved_root="$(realpath "$artifact_root")"; then
+              echo "Artifact root cannot be resolved: $artifact_root" >&2
+              exit 1
+            fi
+
+            case "$resolved_root" in
+              "$ALLOWED_ROOT"|"$ALLOWED_ROOT"/*) ;;
+              *)
+                echo "Artifact root escapes its allowed boundary: $artifact_root -> $resolved_root" >&2
+                exit 1
+                ;;
+            esac
+
+            while IFS= read -r -d '' candidate; do
+              if ! resolved_candidate="$(realpath "$candidate")"; then
+                echo "Artifact contains a broken symlink: $candidate" >&2
+                exit 1
+              fi
+
+              case "$resolved_candidate" in
+                "$resolved_root"|"$resolved_root"/*) ;;
+                *)
+                  echo "Artifact symlink escapes its root: $candidate -> $resolved_candidate" >&2
+                  exit 1
+                  ;;
+              esac
+
+              candidate_parent="$(realpath "$(dirname "$candidate")")"
+
+              case "$candidate_parent/" in
+                "$resolved_candidate"/*)
+                  echo "Artifact contains a recursive symlink: $candidate -> $resolved_candidate" >&2
+                  exit 1
+                  ;;
+              esac
+            done < <(find -H "$artifact_root" -type l -print0)
+
+            while IFS= read -r -d '' candidate; do
+              if [ "$candidate" = "$artifact_root" ]; then
+                relative_candidate="$(basename "$candidate")"
+              else
+                relative_candidate="${candidate#"$artifact_root"/}"
+              fi
+
+              case "/$relative_candidate" in
+                */.env|*/.env.*|*/.npmrc|*/.netrc|*/.ssh|*/.ssh/*|*/.aws|*/.aws/*|*/.git|*/.git/*)
+                  echo "Artifact contains a sensitive hidden path: $candidate" >&2
+                  exit 1
+                  ;;
+              esac
+            done < <(find -H "$artifact_root" -print0)
+
+            if [ -d "$artifact_root" ]; then
+              if ! first_file="$(find -L "$artifact_root" -type f -print -quit)"; then
+                echo "Artifact root could not be traversed safely: $artifact_root" >&2
+                exit 1
+              fi
+            else
+              first_file="$resolved_root"
+            fi
+
+            if [ -z "$first_file" ]; then
+              echo "Artifact root contains no files: $artifact_root" >&2
+              exit 1
+            fi
+          }
+
+          validate_artifact_root "container-oci"
+
+      - name: "Upload immutable OCI artifact"
+        uses: "actions/upload-artifact@v7"
+        timeout-minutes: 90
+        with:
+          name: "container-oci-linux-arm64"
+          retention-days: 1
+          include-hidden-files: true
+          if-no-files-found: "error"
+          path: "${{ runner.temp }}/container-oci"
+
+  build-container:
+    needs: ["build", "build-container-linux-amd64", "build-container-linux-arm64"]
+    runs-on: "ubuntu-24.04"
+    timeout-minutes: 90
+    permissions:
+      contents: "read"
+    steps:
+      - name: "Download per-platform OCI artifacts"
+        uses: "actions/download-artifact@v8"
+        timeout-minutes: 90
+        with:
+          pattern: "container-oci-*"
+          path: "${{ runner.temp }}/container-oci-platforms"
+
+      - name: "Set up ORAS"
+        uses: "oras-project/setup-oras@v2.0.1"
+        timeout-minutes: 10
+        with:
+          version: "1.3.3"
+
+      - name: "Merge per-platform images"
+        timeout-minutes: 90
+        run: |
+          set -euo pipefail
+
+          layout_directory="$RUNNER_TEMP/container-oci/layout"
+          platform_tags=()
+
+          mkdir -p "$RUNNER_TEMP/container-oci"
+
+          for platform_directory in "$RUNNER_TEMP"/container-oci-platforms/*/; do
+            platform_tag="$(basename "$platform_directory")"
+            platform_digest="$(cat "$platform_directory"container-image.digest)"
+
+            oras cp --from-oci-layout --to-oci-layout "$platform_directory"layout@"$platform_digest" "$layout_directory:$platform_tag"
+            platform_tags+=("$platform_tag")
+          done
+
+          if [ "${#platform_tags[@]}" -eq 0 ]; then
+            echo "No per-platform OCI artifacts were downloaded." >&2
+            exit 1
+          fi
+
+          oras manifest index create --oci-layout "$layout_directory:nova-oci" "${platform_tags[@]}"
+          printf '%s' "$(oras resolve --oci-layout "$layout_directory:nova-oci")" > "$RUNNER_TEMP/container-oci/container-image.digest"
+
+      - name: "Validate immutable OCI artifact"
+        timeout-minutes: 90
+        run: |
+          set -euo pipefail
+
+          ALLOWED_ROOT="${{ runner.temp }}"
+          ALLOWED_ROOT="$(realpath "$ALLOWED_ROOT")"
+          cd "$ALLOWED_ROOT"
+
+          validate_artifact_root() {
+            local artifact_root="$1"
+            local candidate
+            local candidate_parent
+            local first_file
+            local relative_candidate
+            local resolved_candidate
+            local resolved_root
+
+            if [ ! -e "$artifact_root" ] && [ ! -L "$artifact_root" ]; then
+              echo "Artifact root does not exist: $artifact_root" >&2
+              exit 1
+            fi
+
+            if ! resolved_root="$(realpath "$artifact_root")"; then
+              echo "Artifact root cannot be resolved: $artifact_root" >&2
+              exit 1
+            fi
+
+            case "$resolved_root" in
+              "$ALLOWED_ROOT"|"$ALLOWED_ROOT"/*) ;;
+              *)
+                echo "Artifact root escapes its allowed boundary: $artifact_root -> $resolved_root" >&2
+                exit 1
+                ;;
+            esac
+
+            while IFS= read -r -d '' candidate; do
+              if ! resolved_candidate="$(realpath "$candidate")"; then
+                echo "Artifact contains a broken symlink: $candidate" >&2
+                exit 1
+              fi
+
+              case "$resolved_candidate" in
+                "$resolved_root"|"$resolved_root"/*) ;;
+                *)
+                  echo "Artifact symlink escapes its root: $candidate -> $resolved_candidate" >&2
+                  exit 1
+                  ;;
+              esac
+
+              candidate_parent="$(realpath "$(dirname "$candidate")")"
+
+              case "$candidate_parent/" in
+                "$resolved_candidate"/*)
+                  echo "Artifact contains a recursive symlink: $candidate -> $resolved_candidate" >&2
+                  exit 1
+                  ;;
+              esac
+            done < <(find -H "$artifact_root" -type l -print0)
+
+            while IFS= read -r -d '' candidate; do
+              if [ "$candidate" = "$artifact_root" ]; then
+                relative_candidate="$(basename "$candidate")"
+              else
+                relative_candidate="${candidate#"$artifact_root"/}"
+              fi
+
+              case "/$relative_candidate" in
+                */.env|*/.env.*|*/.npmrc|*/.netrc|*/.ssh|*/.ssh/*|*/.aws|*/.aws/*|*/.git|*/.git/*)
+                  echo "Artifact contains a sensitive hidden path: $candidate" >&2
+                  exit 1
+                  ;;
+              esac
+            done < <(find -H "$artifact_root" -print0)
+
+            if [ -d "$artifact_root" ]; then
+              if ! first_file="$(find -L "$artifact_root" -type f -print -quit)"; then
+                echo "Artifact root could not be traversed safely: $artifact_root" >&2
+                exit 1
+              fi
+            else
+              first_file="$resolved_root"
+            fi
+
+            if [ -z "$first_file" ]; then
+              echo "Artifact root contains no files: $artifact_root" >&2
+              exit 1
+            fi
+          }
+
+          validate_artifact_root "container-oci"
+
+      - name: "Upload immutable OCI artifact"
+        uses: "actions/upload-artifact@v7"
+        timeout-minutes: 90
         with:
           name: "container-oci"
           retention-days: 1
@@ -306,7 +619,7 @@ jobs:
 
   publish-github-pages-apps-docs:
     needs: "build"
-    runs-on: "ubuntu-latest"
+    runs-on: "ubuntu-24.04"
     timeout-minutes: 90
     permissions:
       contents: "read"
@@ -315,14 +628,17 @@ jobs:
     steps:
       - name: "Checkout repository"
         uses: "actions/checkout@v7"
+        timeout-minutes: 5
 
       - name: "Download build artifacts"
         uses: "actions/download-artifact@v8"
+        timeout-minutes: 90
         with:
           name: "artifact-documentation"
           path: "build/documentation"
 
       - name: "Check GitHub Pages status"
+        timeout-minutes: 90
         run: |
           if gh api "repos/${{ github.repository }}/pages" > /dev/null 2>&1; then
             echo "[Pages] GitHub Pages is enabled."
@@ -337,20 +653,23 @@ jobs:
       - name: "Setup GitHub Pages"
         if: "${{ env.PUBLISH == 'true' && env.PAGES_ENABLED == 'true' }}"
         uses: "actions/configure-pages@v6"
+        timeout-minutes: 10
 
       - name: "Upload artifact to GitHub Pages"
         if: "${{ env.PUBLISH == 'true' && env.PAGES_ENABLED == 'true' }}"
         uses: "actions/upload-pages-artifact@v5"
+        timeout-minutes: 90
         with:
           path: "build/documentation"
 
       - name: "Deploy to GitHub Pages"
         if: "${{ env.PUBLISH == 'true' && env.PAGES_ENABLED == 'true' }}"
         uses: "actions/deploy-pages@v5"
+        timeout-minutes: 90
 
   publish-docker-hub-root:
-    needs: "build"
-    runs-on: "ubuntu-latest"
+    needs: "build-container"
+    runs-on: "ubuntu-24.04"
     timeout-minutes: 90
     permissions:
       contents: "read"
@@ -360,16 +679,19 @@ jobs:
     steps:
       - name: "Download immutable OCI artifact"
         uses: "actions/download-artifact@v8"
+        timeout-minutes: 90
         with:
           name: "container-oci"
           path: "${{ runner.temp }}/container-oci"
 
       - name: "Set up ORAS"
         uses: "oras-project/setup-oras@v2.0.1"
+        timeout-minutes: 10
         with:
           version: "1.3.3"
 
       - name: "Resolve image coordinate and tags"
+        timeout-minutes: 10
         env:
           EVENT_NAME: "${{ github.event_name }}"
           IMAGE_NAMESPACE: "mrjackyliang"
@@ -526,6 +848,7 @@ jobs:
       - name: "Login to Docker Hub"
         if: "${{ env.PUBLISH == 'true' }}"
         uses: "docker/login-action@v4"
+        timeout-minutes: 5
         env:
           DOCKERHUB_TOKEN: "${{ secrets.PROJECT_DOCKERHUB_TOKEN }}"
         with:
@@ -534,6 +857,7 @@ jobs:
 
       - name: "Reject conflicting immutable tags"
         if: "${{ env.PUBLISH == 'true' }}"
+        timeout-minutes: 90
         run: |
           set -euo pipefail
 
@@ -560,11 +884,13 @@ jobs:
 
       - name: "Push immutable OCI artifact"
         if: "${{ env.PUBLISH == 'true' }}"
+        timeout-minutes: 90
         run: |
           oras cp --from-oci-layout "$RUNNER_TEMP/container-oci/layout@$(cat "$RUNNER_TEMP/container-oci/container-image.digest")" "$IMAGE:$SHA_TAG"
 
       - name: "Apply image tags"
         if: "${{ env.PUBLISH == 'true' && env.ADDITIONAL_TAGS != '' }}"
+        timeout-minutes: 90
         run: |
           set -euo pipefail
 
@@ -574,6 +900,7 @@ jobs:
 
       - name: "Verify immutable image tags"
         if: "${{ env.PUBLISH == 'true' }}"
+        timeout-minutes: 90
         run: |
           set -euo pipefail
 
@@ -594,18 +921,42 @@ jobs:
       - name: "Generate build provenance"
         if: "${{ env.PUBLISH == 'true' }}"
         uses: "actions/attest@v4"
+        timeout-minutes: 10
         with:
           subject-name: "${{ env.IMAGE }}"
           subject-digest: "${{ env.IMAGE_DIGEST }}"
           push-to-registry: true
 
+      - name: "Checkout Docker Hub description source"
+        if: "${{ env.PUBLISH == 'true' }}"
+        uses: "actions/checkout@v7"
+        timeout-minutes: 5
+        with:
+          ref: "${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}"
+
+      - name: "Sync Docker Hub description (warning only)"
+        if: "${{ env.PUBLISH == 'true' }}"
+        uses: "peter-evans/dockerhub-description@v5"
+        timeout-minutes: 90
+        continue-on-error: true
+        env:
+          DOCKERHUB_TOKEN: "${{ secrets.PROJECT_DOCKERHUB_TOKEN }}"
+        with:
+          username: "${{ vars.PROJECT_DOCKERHUB_USERNAME }}"
+          password: "${{ env.DOCKERHUB_TOKEN }}"
+          repository: "mrjackyliang/transmission-vpn"
+          short-description: "A secure Transmission container routed through a VPN with a modern, familiar web interface"
+          readme-filepath: "README.md"
+          enable-url-completion: true
+
       - name: "Publish latest channel"
         if: "${{ env.PUBLISH == 'true' && env.PUBLISH_LATEST == 'true' }}"
+        timeout-minutes: 90
         run: "oras tag \"$IMAGE@$IMAGE_DIGEST\" latest"
 
   publish-ghcr-root:
-    needs: "build"
-    runs-on: "ubuntu-latest"
+    needs: "build-container"
+    runs-on: "ubuntu-24.04"
     timeout-minutes: 90
     permissions:
       contents: "read"
@@ -616,16 +967,19 @@ jobs:
     steps:
       - name: "Download immutable OCI artifact"
         uses: "actions/download-artifact@v8"
+        timeout-minutes: 90
         with:
           name: "container-oci"
           path: "${{ runner.temp }}/container-oci"
 
       - name: "Set up ORAS"
         uses: "oras-project/setup-oras@v2.0.1"
+        timeout-minutes: 10
         with:
           version: "1.3.3"
 
       - name: "Resolve image coordinate and tags"
+        timeout-minutes: 10
         env:
           EVENT_NAME: "${{ github.event_name }}"
           IMAGE_NAMESPACE: "${{ github.repository_owner }}"
@@ -782,6 +1136,7 @@ jobs:
       - name: "Login to GitHub Container Registry"
         if: "${{ env.PUBLISH == 'true' }}"
         uses: "docker/login-action@v4"
+        timeout-minutes: 5
         with:
           registry: "ghcr.io"
           username: "${{ github.actor }}"
@@ -789,6 +1144,7 @@ jobs:
 
       - name: "Reject conflicting immutable tags"
         if: "${{ env.PUBLISH == 'true' }}"
+        timeout-minutes: 90
         run: |
           set -euo pipefail
 
@@ -815,11 +1171,13 @@ jobs:
 
       - name: "Push immutable OCI artifact"
         if: "${{ env.PUBLISH == 'true' }}"
+        timeout-minutes: 90
         run: |
           oras cp --from-oci-layout "$RUNNER_TEMP/container-oci/layout@$(cat "$RUNNER_TEMP/container-oci/container-image.digest")" "$IMAGE:$SHA_TAG"
 
       - name: "Apply image tags"
         if: "${{ env.PUBLISH == 'true' && env.ADDITIONAL_TAGS != '' }}"
+        timeout-minutes: 90
         run: |
           set -euo pipefail
 
@@ -829,6 +1187,7 @@ jobs:
 
       - name: "Verify immutable image tags"
         if: "${{ env.PUBLISH == 'true' }}"
+        timeout-minutes: 90
         run: |
           set -euo pipefail
 
@@ -849,6 +1208,7 @@ jobs:
       - name: "Generate build provenance"
         if: "${{ env.PUBLISH == 'true' }}"
         uses: "actions/attest@v4"
+        timeout-minutes: 10
         with:
           subject-name: "${{ env.IMAGE }}"
           subject-digest: "${{ env.IMAGE_DIGEST }}"
@@ -856,4 +1216,5 @@ jobs:
 
       - name: "Publish latest channel"
         if: "${{ env.PUBLISH == 'true' && env.PUBLISH_LATEST == 'true' }}"
+        timeout-minutes: 90
         run: "oras tag \"$IMAGE@$IMAGE_DIGEST\" latest"

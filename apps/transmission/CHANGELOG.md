@@ -1,5 +1,11 @@
 # transmission-vpn-app-transmission
 
+## 2.0.2 - 2026-11-10
+
+### FIXED
+- A dropped VPN connection no longer skips its retry interval and its **Reconnecting** state. While the VPN controller removed the old tunnel, the console's 10-second check could read the connection as lost and start a fresh connect in its place.
+- Startup no longer stops with `/config/app is not writable by control` on Synology shared folders, which let only the owner of a folder write to it. The control plane now runs as `PUID`, so it owns its database and installation key like Transmission owns its files, and it keeps its own group, which the firewall uses to keep its traffic out of Transmission's rules.
+
 ## 2.0.1 - 2026-11-10
 
 ### FIXED

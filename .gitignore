@@ -244,7 +244,6 @@ firebase-debug.log
 #### Project Excludes ####
 ##########################
 /assets/
-!package-lock.json
 graphify-out/
 .integration-state.*/
 .openvpn-integration-state.*/

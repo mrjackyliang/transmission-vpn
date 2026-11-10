@@ -79,6 +79,7 @@ type connectionState struct {
 	cancelAttempt  context.CancelCauseFunc
 	desired        *Connection
 	session        tunnelSession
+	stopping       bool
 	status         Status
 }
 
@@ -273,6 +274,11 @@ func (daemon *Daemon) prepareNetwork(ctx context.Context) error {
 }
 
 // Status returns every known connection in stable slot order.
+//
+// A protected connection that the controller is tearing down keeps its tunnel fields
+// here. The control plane restores a protected connection without them, which is meant
+// for a session lost without a transition, not for a teardown the controller is still
+// finishing before it publishes reconnecting, blocked, or connecting.
 func (daemon *Daemon) Status() []Status {
 	daemon.connectionsMutex.RLock()
 	states := make([]*connectionState, 0, len(daemon.connections))
@@ -283,7 +289,7 @@ func (daemon *Daemon) Status() []Status {
 
 	statuses := make([]Status, 0, len(states))
 	for _, state := range states {
-		statuses = append(statuses, state.statusSnapshot())
+		statuses = append(statuses, state.snapshot(true))
 	}
 	sort.Slice(statuses, func(left int, right int) bool {
 		if statuses[left].Slot == statuses[right].Slot {
@@ -298,12 +304,20 @@ func (daemon *Daemon) Status() []Status {
 
 // statusSnapshot returns status plus details from a protected live session.
 func (state *connectionState) statusSnapshot() Status {
+	return state.snapshot(false)
+}
+
+// snapshot reads one status, keeping a stopping session's tunnel fields when asked.
+func (state *connectionState) snapshot(keepStoppingTunnel bool) Status {
 	state.stateMutex.RLock()
 	defer state.stateMutex.RUnlock()
 
 	status := state.status
 	status.DNSServers = append([]string{},status.DNSServers...)
 	if status.State == "protected" && state.session == nil {
+		if keepStoppingTunnel && state.stopping {
+			return status
+		}
 		status.Interface = ""
 		status.Address = ""
 		status.Implementation = ""
@@ -882,6 +896,12 @@ func (daemon *Daemon) transition(state *connectionState, status Status) error {
 	defer daemon.projectionMutex.Unlock()
 
 	if err := daemon.ensureStatusDirectories(); err != nil {
+		// The teardown is over even though its state was not recorded, so a protected
+		// status left behind now reads as lost and the control plane can restore it.
+		state.stateMutex.Lock()
+		state.stopping = false
+		state.stateMutex.Unlock()
+
 		return err
 	}
 	status.ConnectionID = state.id
@@ -894,6 +914,7 @@ func (daemon *Daemon) transition(state *connectionState, status Status) error {
 	state.stateMutex.Lock()
 	status.Default = state.status.Default
 	state.status = status
+	state.stopping = false
 	state.stateMutex.Unlock()
 
 	if err := writeAtomicJSON(daemon.connectionStatusPath(state.id), 0o644, status); err != nil {

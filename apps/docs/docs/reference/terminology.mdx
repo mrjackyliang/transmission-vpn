@@ -18,7 +18,7 @@ Define the terms and concepts used throughout this documentation.
 
 ## Control Plane
 
-The unprivileged service that serves the web interface, the API, and live updates on port 22602 and the optional compatible RPC route on port 9091, and sends notifications. It runs as the built-in `control` user and stays reachable while the VPN is down.
+The unprivileged service that serves the web interface, the API, and live updates on port 22602 and the optional compatible RPC route on port 9091, and sends notifications. It runs as `PUID` with its own group and stays reachable while the VPN is down.
 
 ## Control Port
 

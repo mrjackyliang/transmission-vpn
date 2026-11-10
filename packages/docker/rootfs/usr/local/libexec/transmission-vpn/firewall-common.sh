@@ -6,6 +6,11 @@ readonly web_proxy_firewall_chain="TVPN_WEB_PROXY"
 readonly source_backstop_firewall_chain="TVPN_SOURCE_BACKSTOP"
 readonly web_proxy_user_id="65531"
 readonly web_proxy_port="22605"
+
+# The console also runs as PUID, so it can own its files on hosts that ignore group
+# permissions. Its own group keeps its sockets out of Transmission's chain. Neither
+# unprivileged service can change its group, so Transmission can't leave the chain.
+readonly control_group_id="65532"
 readonly firewall_backend_path="/run/transmission-vpn/firewall.backend"
 readonly firewall_interfaces_path="/run/transmission-vpn/firewall.interfaces"
 readonly firewall_ipv6_path="/run/transmission-vpn/firewall.ipv6"
@@ -157,17 +162,19 @@ load_firewall_backend() {
 remove_firewall_family_rules() {
   local firewall_command="${1}"
   local chain_name="${2}"
-  local user_id="${3}"
+  shift 2
+
+  local owner_match=("$@")
 
   if ! "${firewall_command}" -w 5 -L "${chain_name}" > /dev/null 2>&1; then
     return 0
   fi
 
   while "${firewall_command}" -w 5 -C OUTPUT \
-    -m owner --uid-owner "${user_id}" \
+    "${owner_match[@]}" \
     -j "${chain_name}" > /dev/null 2>&1; do
     "${firewall_command}" -w 5 -D OUTPUT \
-      -m owner --uid-owner "${user_id}" \
+      "${owner_match[@]}" \
       -j "${chain_name}"
   done
 
@@ -195,21 +202,21 @@ remove_firewall_rules() {
   remove_firewall_family_rules \
     "${firewall_ipv4_command}" \
     "${transmission_firewall_chain}" \
-    "${PUID}"
+    -m owner --uid-owner "${PUID}" ! --gid-owner "${control_group_id}"
   remove_firewall_family_rules \
     "${firewall_ipv4_command}" \
     "${web_proxy_firewall_chain}" \
-    "${web_proxy_user_id}"
+    -m owner --uid-owner "${web_proxy_user_id}"
 
   if firewall_has_ipv6; then
     remove_firewall_family_rules \
       "${firewall_ipv6_command}" \
       "${transmission_firewall_chain}" \
-      "${PUID}"
+      -m owner --uid-owner "${PUID}" ! --gid-owner "${control_group_id}"
     remove_firewall_family_rules \
       "${firewall_ipv6_command}" \
       "${web_proxy_firewall_chain}" \
-      "${web_proxy_user_id}"
+      -m owner --uid-owner "${web_proxy_user_id}"
   fi
 }
 
@@ -233,7 +240,7 @@ install_transmission_firewall_family_rules() {
   fi
   "${firewall_command}" -w 5 -A "${chain_name}" -j DROP
   "${firewall_command}" -w 5 -I OUTPUT 1 \
-    -m owner --uid-owner "${user_id}" \
+    -m owner --uid-owner "${user_id}" ! --gid-owner "${control_group_id}" \
     -j "${chain_name}"
 }
 
@@ -320,7 +327,7 @@ verify_transmission_firewall_family_rules() {
   local user_id="${4}"
 
   "${firewall_command}" -w 5 -C OUTPUT \
-    -m owner --uid-owner "${user_id}" \
+    -m owner --uid-owner "${user_id}" ! --gid-owner "${control_group_id}" \
     -j "${chain_name}" > /dev/null
   "${firewall_command}" -w 5 -C "${chain_name}" -o lo -j ACCEPT > /dev/null
   "${firewall_command}" -w 5 -C "${chain_name}" \

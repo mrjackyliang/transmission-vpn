@@ -167,7 +167,7 @@
         "issue-comment",
         "issues"
       ],
-      "runsOn": "ubuntu-latest",
+      "runsOn": "ubuntu-24.04",
       "timeoutMinutes": 5
     },
     {
@@ -176,7 +176,7 @@
       "triggers": [
         "schedule-weekly"
       ],
-      "runsOn": "ubuntu-latest",
+      "runsOn": "ubuntu-24.04",
       "timeoutMinutes": 5
     },
     {
@@ -185,7 +185,7 @@
       "triggers": [
         "release"
       ],
-      "runsOn": "ubuntu-latest",
+      "runsOn": "ubuntu-24.04",
       "timeoutMinutes": 90,
       "build": [
         "./apps/docs"
@@ -236,9 +236,9 @@
   },
   "workspaces": {
     "./": {
+      "name": "transmission-vpn-project",
       "role": "project",
-      "policy": "freezable",
-      "name": "transmission-vpn-project"
+      "policy": "freezable"
     },
     "./apps/transmission": {
       "name": "transmission-vpn-app-transmission",
@@ -276,7 +276,6 @@
       ],
       "patterns": [
         "/assets/",
-        "!package-lock.json",
         "graphify-out/",
         ".integration-state.*/",
         ".openvpn-integration-state.*/"

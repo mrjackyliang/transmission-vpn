@@ -29,9 +29,14 @@ validate_identifier() {
 
 validate_identity_is_available() {
   local existing_user
-  existing_user="$(awk -F: -v requested_id="${PUID}" '$3 == requested_id { print $1; exit }' /etc/passwd)"
+  existing_user="$(awk -F: \
+    -v requested_id="${PUID}" \
+    -v transmission_user="${transmission_user}" \
+    -v control_user="${control_user}" \
+    '$3 == requested_id && $1 != transmission_user && $1 != control_user { print $1; exit }' \
+    /etc/passwd)"
 
-  if [[ -n "${existing_user}" && "${existing_user}" != "${transmission_user}" ]]; then
+  if [[ -n "${existing_user}" ]]; then
     fail "PUID ${PUID} is already assigned to user ${existing_user}."
   fi
 
@@ -58,10 +63,15 @@ configure_identity() {
     usermod -u "${PUID}" "${transmission_user}"
   fi
 
-  # The console joins the PUID:PGID group so its state can stay owned by PUID:PGID
-  # like every other persistent file, while it keeps its own user for the firewall.
-  if ! id -nG "${control_user}" | tr ' ' '\n' | grep -qx "${transmission_user}"; then
-    usermod -a -G "${transmission_user}" "${control_user}"
+  # The console runs as PUID too, so it owns its state like every other service. Hosts
+  # such as Synology shared folders ignore group permissions, so only the owner can
+  # always write. The console keeps its own group, which the firewall uses to tell its
+  # traffic apart from Transmission's, and which stops Transmission from tracing it.
+  local current_control_user_id
+  current_control_user_id="$(id -u "${control_user}")"
+
+  if [[ "${current_control_user_id}" != "${PUID}" ]]; then
+    usermod -o -u "${PUID}" "${control_user}"
   fi
 }
 
@@ -119,8 +129,8 @@ assert_searchable_by() {
 prepare_persistent_state() {
   local directory_path="${1}"
 
-  # Every persistent folder belongs to PUID:PGID. Group access, inherited through the
-  # setgid bit, lets the console use its own state even after the host changes owners.
+  # Every persistent folder belongs to PUID:PGID, the account that every service writing
+  # here runs as. The setgid bit keeps new files in PGID for host tools that use it.
   install -d -m 2770 -o "${transmission_user}" -g "${transmission_user}" "${directory_path}"
 
   chown -R -h "${transmission_user}:${transmission_user}" "${directory_path}"

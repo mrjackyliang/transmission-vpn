@@ -49,8 +49,8 @@ type options struct {
 // s6 supervises this process and applies restart policy when initialization or runtime
 // serving cannot continue safely.
 func main() {
-	// State under /config is shared with the PUID:PGID group, so new files stay
-	// group-writable when the host gives every persistent file to PUID:PGID.
+	// The API runs as PUID and state under /config belongs to PUID:PGID, so new
+	// files stay group-writable for host tools that work through PGID.
 	syscall.Umask(0o007)
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{

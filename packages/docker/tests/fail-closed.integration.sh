@@ -177,8 +177,11 @@ verify_runtime_identity() {
   local control_api_user_id
   control_api_user_id="$(docker exec "${protected_container_name}" \
     awk '/^Uid:/ { print $2; exit }' "/proc/${control_api_process_id}/status")"
-  if [[ "${control_api_user_id}" != "65532" ]]; then
-    fail "The control API is running as UID ${control_api_user_id}, expected 65532."
+  local control_api_group_id
+  control_api_group_id="$(docker exec "${protected_container_name}" \
+    awk '/^Gid:/ { print $2; exit }' "/proc/${control_api_process_id}/status")"
+  if [[ "${control_api_user_id}" != "12345" || "${control_api_group_id}" != "65532" ]]; then
+    fail "The control API is running as ${control_api_user_id}:${control_api_group_id}, expected 12345:65532."
   fi
 
   local directory_process_id
@@ -224,7 +227,7 @@ verify_runtime_identity() {
   local transmission_config_permissions
   transmission_config_permissions="$(docker exec "${protected_container_name}" \
     stat -c '%a %u %g' /run/transmission-vpn/transmission-config)"
-  if [[ "${transmission_config_permissions}" != "2750 65532 12345" ]]; then
+  if [[ "${transmission_config_permissions}" != "2750 12345 12345" ]]; then
     fail "Unexpected Transmission config runtime permissions: ${transmission_config_permissions}"
   fi
 
@@ -278,7 +281,7 @@ verify_firewall_rules() {
   esac
 
   docker exec "${protected_container_name}" "${ipv4_command}" -w 5 -C OUTPUT \
-    -m owner --uid-owner 12345 \
+    -m owner --uid-owner 12345 ! --gid-owner 65532 \
     -j TVPN_TRANSMISSION
   docker exec "${protected_container_name}" "${ipv4_command}" -w 5 \
     -C TVPN_TRANSMISSION \
@@ -350,7 +353,7 @@ verify_firewall_rules() {
 
   if docker exec "${protected_container_name}" test -s /proc/net/if_inet6; then
     docker exec "${protected_container_name}" "${ipv6_command}" -w 5 -C OUTPUT \
-      -m owner --uid-owner 12345 \
+      -m owner --uid-owner 12345 ! --gid-owner 65532 \
       -j TVPN_TRANSMISSION
     docker exec "${protected_container_name}" "${ipv6_command}" -w 5 \
       -C TVPN_TRANSMISSION \
@@ -621,6 +624,23 @@ verify_dynamic_firewall_boundary() {
   docker exec "${protected_container_name}" ip link delete wg62
 }
 
+# Synology shared folders ignore group permissions, so only a folder's owner can write.
+# Owner-only modes stand in for that host while the claim below writes the console state.
+restrict_config_to_owner() {
+  docker exec "${protected_container_name}" \
+    find /config/app /config/vpn -type d -exec chmod 0700 {} +
+  docker exec "${protected_container_name}" \
+    find /config/app /config/vpn -type f -exec chmod 0600 {} +
+
+  if ! docker exec "${protected_container_name}" \
+    /command/s6-setuidgid control \
+    touch /config/app/keys/.owner-only-probe; then
+    fail 'The control plane cannot write to its owner-only state folder.'
+  fi
+
+  docker exec "${protected_container_name}" rm -f /config/app/keys/.owner-only-probe
+}
+
 claim_and_verify_control_api() {
   local claim_response_headers
   claim_response_headers="$(docker exec "${protected_container_name}" wget -S \
@@ -695,6 +715,20 @@ verify_egress_is_fail_closed() {
 
   if ! docker exec "${protected_container_name}" nc -z -w 2 "${peer_address}" 8080; then
     fail 'The privileged control path could not reach the test peer.'
+  fi
+
+  # The console shares PUID with Transmission, and its own group keeps it out of
+  # Transmission's chain, so it stays reachable and can send alerts while VPNs are down.
+  if ! docker exec "${protected_container_name}" \
+    /command/s6-setuidgid control \
+    nc -z -w 2 "${peer_address}" 8080; then
+    fail 'The control plane could not reach the test peer while protection was blocked.'
+  fi
+  if ! docker exec "${protected_container_name}" \
+    timeout 5 \
+    /command/s6-setuidgid control \
+    getent ahostsv4 "${peer_container_name}" > /dev/null; then
+    fail 'The control plane could not use the container resolver while protection was blocked.'
   fi
 
   if docker exec "${protected_container_name}" \
@@ -830,6 +864,7 @@ main() {
   verify_transmission_runtime
   verify_dynamic_firewall_boundary
   verify_egress_is_fail_closed
+  restrict_config_to_owner
   claim_and_verify_control_api
   verify_shutdown_order
   verify_firewall_failure_is_fatal

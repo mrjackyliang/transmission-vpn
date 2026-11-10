@@ -343,10 +343,13 @@ func (daemon *Daemon) stopLocked(state *connectionState, reason string) error {
 		interfaceName = tunnelInterfaceName(state.desired.Tunnel, state.slot)
 	}
 
+	// The caller's next transition ends stopping. Until then the reported status keeps
+	// the tunnel fields, so the control plane doesn't restore a teardown in progress.
 	var stopErrors []error
 	state.stateMutex.Lock()
 	session := state.session
 	state.session = nil
+	state.stopping = true
 	state.stateMutex.Unlock()
 	if session != nil {
 		session.Stop()
