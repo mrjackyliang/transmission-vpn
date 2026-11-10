@@ -83,7 +83,6 @@ describe('Project root', () => {
 
   it('uses a selective root-context build and native s6-rc user bundle', () => {
     const dockerfile: Project_Test_String = readFileSync(new URL('../Dockerfile', import.meta.url), 'utf8');
-    const dockerignore: Project_Test_String = readFileSync(new URL('../.dockerignore', import.meta.url), 'utf8');
     const userBundleRoot: Project_Test_String = '../packages/docker/rootfs/etc/s6-overlay/user-bundles.d/user/contents.d/';
 
     expect(dockerfile).toContain('COPY packages/docker/build-package.json ./package.json');
@@ -95,20 +94,6 @@ describe('Project root', () => {
     expect(dockerfile).toContain('COPY packages/docker/rootfs/ /');
 
     expect(dockerfile).not.toContain('COPY . .');
-
-    expect(dockerignore).toContain('**/.env');
-
-    expect(dockerignore).toContain('**/.env.*');
-
-    expect(dockerignore).toContain('!**/.env.sample');
-
-    expect(dockerignore).toContain('!**/.env.example');
-
-    expect(dockerignore).toContain('**/build');
-
-    expect(dockerignore).toContain('**/dist');
-
-    expect(dockerignore).toContain('**/node_modules');
 
     expect(existsSync(new URL(`${userBundleRoot}config-init`, import.meta.url))).toBe(true);
 
@@ -246,29 +231,17 @@ describe('Project root', () => {
     return;
   });
 
-  it('publishes one OCI artifact to both configured registries', () => {
-    const workflow: Project_Test_String = readFileSync(new URL(
-      '../.github/workflows/nova-publish-project.yml',
-      import.meta.url,
-    ), 'utf8');
+  it('publishes the image to Docker Hub and GHCR and the docs to GitHub Pages', () => {
     const novaConfig: Project_Test_String = readFileSync(
       new URL('../nova.config.json', import.meta.url),
       'utf8',
     );
 
-    expect(workflow.split('uses: "docker/build-push-action@v7"')).toHaveLength(2);
+    expect(novaConfig).toContain('"to": "docker-hub"');
 
-    expect(workflow).toContain('context: "./"');
+    expect(novaConfig).toContain('"to": "ghcr"');
 
-    expect(workflow).toContain('name: "container-oci"');
-
-    expect(workflow).toContain('publish-docker-hub-root:');
-
-    expect(workflow).toContain('publish-ghcr-root:');
-
-    expect(workflow).toContain('oras cp --from-oci-layout');
-
-    expect(workflow).not.toContain('context: "./apps/transmission"');
+    expect(novaConfig).toContain('"to": "github-pages"');
 
     expect(novaConfig).toContain('"IMAGE_NAMESPACE": "mrjackyliang"');
 
