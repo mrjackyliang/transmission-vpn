@@ -10,7 +10,9 @@ import {
   describeTorrentState,
   describeTrackerIssue,
   duplicateTorrentNotices,
+  finishedFilesLeftOut,
   summarizeTorrentAddBatch,
+  torrentHasFinishedFiles,
   torrentMatchesFilter,
   torrentMatchesLibrarySelection,
   torrentProgress,
@@ -211,6 +213,29 @@ describe('torrent library organization', (): void => {
     expect(describeTorrentState(verifyingTorrent)['label']).toBe(`Verifying ${formatPercent(torrentProgress(verifyingTorrent))}`);
     expect(describeTorrentState(verifyingTorrent)['label']).toBe('Verifying 46%');
     expect(torrentProgress(downloadingTorrent)).toBe(0.444);
+  });
+
+  it('offers a torrent\'s files only once nothing is left to download', (): void => {
+    const finished = createTorrent(1, '/data/downloads', 100, [], {
+      leftUntilDone: 0,
+      percentDone: 1,
+    });
+
+    expect(torrentHasFinishedFiles(finished)).toBe(true);
+    expect(torrentHasFinishedFiles(createTorrent(2, '/data/downloads', 100, [], { leftUntilDone: 1 }))).toBe(false);
+    expect(torrentHasFinishedFiles({
+      ...finished,
+      metadataPercentComplete: 0.5,
+    })).toBe(false);
+    expect(torrentHasFinishedFiles(createTorrent(3, '/data/downloads', 0, [], { leftUntilDone: 0 }))).toBe(false);
+  });
+
+  it('says which torrents a download of finished files left out', (): void => {
+    expect(finishedFilesLeftOut(0, 0)).toBe('');
+    expect(finishedFilesLeftOut(1, 0)).toBe('1 torrent hasn\'t finished downloading, so it was left out.');
+    expect(finishedFilesLeftOut(2, 0)).toBe('2 torrents haven\'t finished downloading, so they were left out.');
+    expect(finishedFilesLeftOut(0, 1)).toBe('1 torrent\'s files couldn\'t be read, so it was left out.');
+    expect(finishedFilesLeftOut(1, 2)).toBe('1 torrent hasn\'t finished downloading, and 2 torrents\' files couldn\'t be read, so they were left out.');
   });
 
   it('filters unresolved profile choices independently of pause state', (): void => {

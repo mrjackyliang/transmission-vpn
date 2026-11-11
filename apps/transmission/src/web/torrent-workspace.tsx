@@ -5,6 +5,10 @@ import {
   useState,
 } from 'react';
 
+import {
+  downloadFinishedFiles,
+  downloadTorrentFiles,
+} from '@/web/api.ts';
 import { PHONE_NAV_SHEET_ID } from '@/web/navigation.ts';
 import {
   Button,
@@ -23,6 +27,8 @@ import {
   describeTorrentState,
   describeTrackerIssue,
   duplicateTorrentNotices,
+  finishedFilesLeftOut,
+  torrentHasFinishedFiles,
   torrentLibraryFilters,
   torrentMatchesFilter,
   torrentMatchesLibrarySelection,
@@ -48,6 +54,7 @@ import type {
   Web_Api_StatisticsPeriod,
   Web_Api_Torrent,
   Web_Api_TorrentAction,
+  Web_Api_TorrentContentsDownload,
   Web_Api_TorrentProfile,
   Web_Api_TorrentProfileFolderOverlap,
 } from '@/types/web/api.d.ts';
@@ -476,6 +483,18 @@ export const TorrentWorkspace = ({
     statusFilter,
   ]);
 
+  // Another list starts with nothing checked, so an action can't reach torrents that
+  // were checked in a list that is no longer on screen.
+  useEffect((): void => {
+    setSelectedIDs([]);
+    setLastSelectedID(null);
+  }, [
+    connectionFilter,
+    labelFilter,
+    profileFilter,
+    statusFilter,
+  ]);
+
   useEffect((): (() => void) | undefined => {
     if (contextMenu === null) {
       return undefined;
@@ -584,10 +603,33 @@ export const TorrentWorkspace = ({
   const pageCount: number = Math.max(1, Math.ceil(sortedTorrents.length / pageSize));
   const currentPage: number = Math.min(page, pageCount);
   const firstVisibleIndex: number = (currentPage - 1) * pageSize;
-  const visibleTorrents: Web_Api_Torrent[] = sortedTorrents.slice(firstVisibleIndex, firstVisibleIndex + pageSize);
+  const visibleTorrents: Web_Api_Torrent[] = useMemo((): Web_Api_Torrent[] => (
+    sortedTorrents.slice(firstVisibleIndex, firstVisibleIndex + pageSize)
+  ), [
+    firstVisibleIndex,
+    pageSize,
+    sortedTorrents,
+  ]);
   const everyVisibleSelected: boolean = visibleTorrents.length > 0 && visibleTorrents.every(
     (torrent: Web_Api_Torrent): boolean => selectedIDs.includes(torrent['id']),
   );
+
+  // Checks only ever cover rows on screen. A search, another page, a new sort, or a
+  // torrent leaving the list unchecks what it hides, so actions never reach those rows.
+  useEffect((): void => {
+    const visibleIDs: Set<number> = new Set(
+      visibleTorrents.map((torrent: Web_Api_Torrent): number => torrent['id']),
+    );
+
+    setSelectedIDs((currentIDs: number[]): number[] => {
+      const keptIDs: number[] = currentIDs.filter((identifier: number): boolean => visibleIDs.has(identifier));
+
+      return (keptIDs.length === currentIDs.length) ? currentIDs : keptIDs;
+    });
+    setLastSelectedID((currentID: number | null): number | null => (
+      (currentID === null || visibleIDs.has(currentID)) ? currentID : null
+    ));
+  }, [visibleTorrents]);
   const connectionTorrents: Web_Api_Torrent[] = (connectionFilter === '') ? torrents : torrents.filter(
     (torrent: Web_Api_Torrent): boolean => torrent['connectionId'] === connectionFilter,
   );
@@ -617,6 +659,16 @@ export const TorrentWorkspace = ({
   );
   const needsProfileCount: number = torrents.filter(
     (torrent: Web_Api_Torrent): boolean => torrent['needsProfile'] !== null,
+  ).length;
+  const contextMenuTorrentFileCount: number = (contextMenu === null) ? 0 : torrents.filter(
+    (torrent: Web_Api_Torrent): boolean => (
+      contextMenu['torrentIds'].includes(torrent['id']) && torrent['metadataPercentComplete'] >= 1
+    ),
+  ).length;
+  const contextMenuFinishedCount: number = (contextMenu === null) ? 0 : torrents.filter(
+    (torrent: Web_Api_Torrent): boolean => (
+      contextMenu['torrentIds'].includes(torrent['id']) && torrentHasFinishedFiles(torrent)
+    ),
   ).length;
 
   /**
@@ -678,16 +730,17 @@ export const TorrentWorkspace = ({
    * @since 2.0.0
    */
   const toggleTorrent = (identifier: number, range: boolean): void => {
+    // A shift-click range stays on this page, so it never checks rows you can't see.
     if (range && lastSelectedID !== null) {
-      const anchorIndex: number = sortedTorrents.findIndex((torrent: Web_Api_Torrent): boolean => torrent['id'] === lastSelectedID);
-      const targetIndex: number = sortedTorrents.findIndex((torrent: Web_Api_Torrent): boolean => torrent['id'] === identifier);
+      const anchorIndex: number = visibleTorrents.findIndex((torrent: Web_Api_Torrent): boolean => torrent['id'] === lastSelectedID);
+      const targetIndex: number = visibleTorrents.findIndex((torrent: Web_Api_Torrent): boolean => torrent['id'] === identifier);
 
       if (anchorIndex >= 0 && targetIndex >= 0) {
         const startIndex: number = Math.min(anchorIndex, targetIndex);
         const endIndex: number = Math.max(anchorIndex, targetIndex);
         const nextIDs: Set<number> = new Set(selectedIDs);
 
-        for (const torrent of sortedTorrents.slice(startIndex, endIndex + 1)) {
+        for (const torrent of visibleTorrents.slice(startIndex, endIndex + 1)) {
           nextIDs.add(torrent['id']);
         }
 
@@ -734,6 +787,65 @@ export const TorrentWorkspace = ({
       setContextMenu(null);
     } catch (caughtError) {
       showToast((caughtError instanceof Error) ? caughtError.message : 'That action didn\'t go through. Try again.', false);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  /**
+   * Torrent Workspace - Downloads torrent files.
+   *
+   * Saves one torrent's .torrent file, or a zip for several. A toast says when
+   * torrents still fetching their metadata were left out.
+   *
+   * @since 2.2.0
+   */
+  const downloadTorrentFilesFor = async (identifiers: number[]): Promise<void> => {
+    const hashes: string[] = hashesForTorrentIdentifiers(torrents, identifiers);
+    if (hashes.length === 0) {
+      return;
+    }
+
+    setBusy(true);
+
+    try {
+      const skipped: number = await downloadTorrentFiles(hashes);
+      setContextMenu(null);
+      if (skipped > 0) {
+        showToast(`${skipped} ${(skipped === 1) ? 'torrent has' : 'torrents have'} no .torrent file yet, so ${(skipped === 1) ? 'it was' : 'they were'} left out.`, true);
+      }
+    } catch (caughtError) {
+      showToast((caughtError instanceof Error) ? caughtError.message : 'The torrent files couldn\'t be downloaded.', false);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  /**
+   * Torrent Workspace - Downloads finished files.
+   *
+   * Downloads a finished torrent's file, or a zip of its files, and one zip for several
+   * torrents. A toast says which selected torrents were left out and why.
+   *
+   * @since 2.2.0
+   */
+  const downloadFinishedFilesFor = async (identifiers: number[]): Promise<void> => {
+    const hashes: string[] = hashesForTorrentIdentifiers(torrents, identifiers);
+    if (hashes.length === 0) {
+      return;
+    }
+
+    setBusy(true);
+
+    try {
+      const prepared: Web_Api_TorrentContentsDownload = await downloadFinishedFiles(hashes);
+      setContextMenu(null);
+      const leftOut: string = finishedFilesLeftOut(prepared['unfinished'], prepared['unavailable']);
+      if (leftOut !== '') {
+        showToast(leftOut, true);
+      }
+    } catch (caughtError) {
+      showToast((caughtError instanceof Error) ? caughtError.message : 'The files couldn\'t be downloaded.', false);
     } finally {
       setBusy(false);
     }
@@ -1282,6 +1394,31 @@ export const TorrentWorkspace = ({
             <Icon name="refresh" size={16} />
             Ask trackers for more peers
           </button>
+          <button
+            disabled={busy || contextMenuTorrentFileCount === 0}
+            onClick={(): void => {
+              void downloadTorrentFilesFor(contextMenu['torrentIds']);
+            }}
+            role="menuitem"
+            title={(contextMenuTorrentFileCount === 0) ? 'Available once Transmission has the torrent\'s metadata' : undefined}
+            type="button"
+          >
+            <Icon name="download" size={16} />
+            {(contextMenu['torrentIds'].length === 1) ? 'Download torrent file' : 'Download torrent files'}
+          </button>
+          {(contextMenuFinishedCount === 0) ? null : (
+            <button
+              disabled={busy}
+              onClick={(): void => {
+                void downloadFinishedFilesFor(contextMenu['torrentIds']);
+              }}
+              role="menuitem"
+              type="button"
+            >
+              <Icon name="download" size={16} />
+              Download finished files
+            </button>
+          )}
           <hr />
           <button
             onClick={(): void => {

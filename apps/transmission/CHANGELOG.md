@@ -1,5 +1,17 @@
 # transmission-vpn-app-transmission
 
+## 2.2.0 - 2026-11-11
+
+### FIXED
+- Checks in the torrent list cover only the torrents on screen. Switching to another Status, Profiles, Labels, or VPN list clears them, and a search, another page, or a torrent leaving the list unchecks the ones it hides, so Remove and the other bulk actions never reach torrents you can't see.
+- The console no longer holds up the settings database on a busy NAS. Every console request saved when you were last seen, and on a slow disk that save took up to 10 seconds, long enough for the notification check and the health check to fail with `context deadline exceeded`. Browser sessions now save it at most once a minute, and so do API tokens for their last-used time, as RPC logins already did.
+- When Transmission or the NAS disk is too busy to answer one of the console's 2-second refreshes, the console keeps showing the last torrents, speeds, and VPN status for up to 30 seconds, instead of briefly emptying the torrent list or reading No VPN protected.
+- A message that appears while torrents are checked, such as an action that didn't go through, shows above the bar of selected torrents instead of behind it.
+
+### ADDED
+- Download torrent file in each torrent's action menu saves its .torrent file. With several torrents selected, it saves all of their .torrent files as one zip.
+- Download finished files appears in the action menu once a torrent has finished. It downloads the torrent's file straight from the NAS, or its files as one zip, and with several torrents selected, one zip of all their finished files. Torrents still downloading are left out, a single file can pick up where it stopped, and it needs a signed-in browser.
+
 ## 2.1.0 - 2026-11-10
 
 ### FIXED

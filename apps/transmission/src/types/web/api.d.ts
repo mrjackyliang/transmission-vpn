@@ -402,6 +402,13 @@ export type Web_Api_TorrentAddResult = {
   name: string;
   profileName: string;
 };
+export type Web_Api_TorrentContentsDownload = {
+  fileName: string;
+  path: string;
+  size: number;
+  unavailable: number;
+  unfinished: number;
+};
 export type Web_Api_TorrentLinkPreview = {
   hash: string;
   index: number;

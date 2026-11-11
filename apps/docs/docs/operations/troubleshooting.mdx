@@ -207,6 +207,13 @@ Select **Send test** on the <Terminology title="One place alerts go, such as a c
 
 [Notifications](/docs/alerts/notifications/#events) lists what triggers each <Terminology title="Something the container can send an alert about" to="/docs/reference/terminology#notification-event">event</Terminology>.
 
+## Timeouts in the Logs
+
+| Log line                                                                                                                                 | What it means                                                                                                                                                                                                                                                                   |
+|------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `read Transmission statistics for connection <id>` or `list Transmission torrents for connection <id>`, with `context deadline exceeded` | That connection's Transmission didn't answer within the 2 seconds a console refresh waits, usually because it was deleting a removed torrent's files or the disk was busy. The console keeps showing the last answer for up to 30 seconds, so an occasional line needs nothing. |
+| `list notifications` or `control database liveness failed`, with `context deadline exceeded`                                             | The settings database stayed busy for longer than the check waits. Turn on [Debug logging](/docs/configuration/settings/#debug-logging) and look for `slow database use` lines, which name what kept it busy.                                                                   |
+
 ## Getting Help
 
 Report bugs through the [GitHub issue form](https://github.com/mrjackyliang/transmission-vpn/issues). It asks for an email address, the program version, which the `control API is ready` log line includes, your Docker version, the host's operating system and architecture, how you run the container, your browser and its version, and relevant logs.

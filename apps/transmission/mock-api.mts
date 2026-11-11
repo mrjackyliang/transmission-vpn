@@ -2,6 +2,7 @@ import {
   createHash,
   randomBytes,
 } from 'node:crypto';
+import { crc32 } from 'node:zlib';
 
 import type {
   IncomingMessage,
@@ -5765,6 +5766,186 @@ const readIDs = (body: Record<string, unknown>): number[] => {
 };
 
 /**
+ * Mock API - Mock zip file.
+ *
+ * One named file written into a download zip.
+ * Its content is stored as is, without compression.
+ *
+ * @since 2.2.0
+ */
+type MockZipFile = {
+  content: Buffer
+  name: string
+};
+
+/**
+ * Mock API - Mock content download.
+ *
+ * One prepared download of finished files, kept until the browser fetches its link.
+ * The real control API streams it from disk instead.
+ *
+ * @since 2.2.0
+ */
+type MockContentDownload = {
+  content: Buffer
+  fileName: string
+};
+
+/**
+ * Mock API - Mock content downloads.
+ *
+ * Prepared downloads of finished files by the token in their link.
+ * They last until the mock restarts.
+ *
+ * @since 2.2.0
+ */
+const mockContentDownloads: Map<string, MockContentDownload> = new Map();
+
+/**
+ * Mock API - Mock finished files.
+ *
+ * The three files the detail panel lists for a torrent, each holding one line of
+ * text, so a zip of them unpacks into the torrent's folder.
+ *
+ * @since 2.2.0
+ */
+const mockFinishedFiles = (torrent: MockTorrent): MockZipFile[] => [
+  'main.bin',
+  'extras.zip',
+  'README.txt',
+].map((fileName: string): MockZipFile => ({
+  content: Buffer.from(`Mock contents of ${torrent['name']}/${fileName}\n`, 'utf8'),
+  name: `${torrent['name']}/${fileName}`,
+}));
+
+/**
+ * Mock API - Mock torrent file.
+ *
+ * Builds a small bencoded metainfo file from one mock torrent's name and size.
+ * The pieces are zeros, since it only has to look like a .torrent once downloaded.
+ *
+ * @since 2.2.0
+ */
+const mockTorrentFile = (torrent: MockTorrent): Buffer => {
+  const name: Buffer = Buffer.from(torrent['name'], 'utf8');
+  const announce: string = 'https://tracker.example.com/announce';
+
+  return Buffer.concat([
+    Buffer.from(`d8:announce${announce.length}:${announce}4:infod6:lengthi${torrent['totalSize']}e4:name${name.length}:`),
+    name,
+    Buffer.from('12:piece lengthi262144e6:pieces20:'),
+    Buffer.alloc(20),
+    Buffer.from('ee'),
+  ]);
+};
+
+/**
+ * Mock API - Torrent download name.
+ *
+ * Matches the control API: path separators and characters Windows forbids become
+ * underscores, control characters are dropped, and an empty name uses the hash.
+ *
+ * @since 2.2.0
+ */
+const torrentDownloadName = (torrent: MockTorrent): string => {
+  const cleaned: string = [...torrent['name']]
+    .filter((character: string): boolean => character >= ' ' && character !== '\u007f')
+    .map((character: string): string => (('/\\:*?"<>|'.includes(character)) ? '_' : character))
+    .join('')
+    .replace(/^[ .]+|[ .]+$/gu, '');
+
+  return `${(cleaned === '') ? torrent['hashString'] : cleaned}.torrent`;
+};
+
+/**
+ * Mock API - Attachment disposition.
+ *
+ * Quotes a plain ASCII file name and encodes any other one as filename*, the two
+ * forms Go's mime.FormatMediaType writes for the control API.
+ *
+ * @since 2.2.0
+ */
+const attachmentDisposition = (fileName: string): string => {
+  if (/^[ -~]*$/u.test(fileName)) {
+    return `attachment; filename="${fileName.replace(/["\\]/gu, '\\$&')}"`;
+  }
+
+  return `attachment; filename*=utf-8''${encodeURIComponent(fileName)}`;
+};
+
+/**
+ * Mock API - Stored zip.
+ *
+ * Writes files into one zip without compression and with UTF-8 names, like the
+ * control API's torrent file download. Repeated names get " (2)", " (3)", and so on.
+ *
+ * @since 2.2.0
+ */
+const storedZip = (files: MockZipFile[]): Buffer => {
+  const localFileSignature: number = parseInt('04034b50', 16);
+  const centralFileSignature: number = parseInt('02014b50', 16);
+  const endSignature: number = parseInt('06054b50', 16);
+  const utf8NamesFlag: number = parseInt('0800', 16);
+  const firstDosDate: number = parseInt('21', 16);
+  const localParts: Buffer[] = [];
+  const centralParts: Buffer[] = [];
+  const usedNames: Set<string> = new Set();
+  let offset: number = 0;
+
+  for (const file of files) {
+    const extension: string = /\.[^./]{1,16}$/u.exec(file['name'])?.[0] ?? '';
+    const baseName: string = file['name'].slice(0, file['name'].length - extension.length);
+    let entryName: string = file['name'];
+    for (let number: number = 2; usedNames.has(entryName.toLowerCase()); number += 1) {
+      entryName = `${baseName} (${number})${extension}`;
+    }
+    usedNames.add(entryName.toLowerCase());
+
+    const nameBytes: Buffer = Buffer.from(entryName, 'utf8');
+    const checksum: number = crc32(file['content']);
+    const local: Buffer = Buffer.alloc(30);
+    local.writeUInt32LE(localFileSignature, 0);
+    local.writeUInt16LE(20, 4);
+    local.writeUInt16LE(utf8NamesFlag, 6);
+    local.writeUInt16LE(firstDosDate, 12);
+    local.writeUInt32LE(checksum, 14);
+    local.writeUInt32LE(file['content'].length, 18);
+    local.writeUInt32LE(file['content'].length, 22);
+    local.writeUInt16LE(nameBytes.length, 26);
+    localParts.push(local, nameBytes, file['content']);
+
+    const central: Buffer = Buffer.alloc(46);
+    central.writeUInt32LE(centralFileSignature, 0);
+    central.writeUInt16LE(20, 4);
+    central.writeUInt16LE(20, 6);
+    central.writeUInt16LE(utf8NamesFlag, 8);
+    central.writeUInt16LE(firstDosDate, 14);
+    central.writeUInt32LE(checksum, 16);
+    central.writeUInt32LE(file['content'].length, 20);
+    central.writeUInt32LE(file['content'].length, 24);
+    central.writeUInt16LE(nameBytes.length, 28);
+    central.writeUInt32LE(offset, 42);
+    centralParts.push(central, nameBytes);
+
+    offset += local.length + nameBytes.length + file['content'].length;
+  }
+
+  const centralSize: number = centralParts.reduce((size: number, part: Buffer): number => size + part.length, 0);
+  const end: Buffer = Buffer.alloc(22);
+  end.writeUInt32LE(endSignature, 0);
+  end.writeUInt16LE(files.length, 8);
+  end.writeUInt16LE(files.length, 10);
+  end.writeUInt32LE(centralSize, 12);
+  end.writeUInt32LE(offset, 16);
+
+  return Buffer.concat([
+    ...localParts,
+    ...centralParts,
+    end,
+  ]);
+};
+
+/**
  * Mock API - Mock torrent selection.
  *
  * Retains the response field selected by the request while resolving every
@@ -10373,6 +10554,102 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
     }
 
     response.writeHead(204).end();
+
+    return true;
+  }
+
+  if (path === '/api/v1/torrents/torrent-files' && method === 'POST') {
+    const body: Record<string, unknown> = await readBody(request);
+    const selection: MockTorrentSelection | undefined = readTorrentSelection(body, response);
+    if (selection === undefined) {
+      return true;
+    }
+    const downloadable: MockTorrent[] = selection['items'].filter(
+      (torrent: MockTorrent): boolean => torrent['metadataPercentComplete'] >= 1,
+    );
+    const requestedCount: number = (selection['field'] === 'hashes') ? selection['hashes'].length : selection['ids'].length;
+    const [firstTorrent] = downloadable;
+    if (firstTorrent === undefined) {
+      sendError(response, 409, 'torrent_file_unavailable', 'There\'s no .torrent file yet. Transmission saves one once a torrent has its metadata.');
+
+      return true;
+    }
+    const downloadHeaders: Record<string, string> = {
+      'Cache-Control': 'no-store',
+      'X-Torrent-Files-Skipped': String(requestedCount - downloadable.length),
+    };
+    if (requestedCount === 1) {
+      response.writeHead(200, {
+        ...downloadHeaders,
+        'Content-Disposition': attachmentDisposition(torrentDownloadName(firstTorrent)),
+        'Content-Type': 'application/x-bittorrent',
+      }).end(mockTorrentFile(firstTorrent));
+
+      return true;
+    }
+    response.writeHead(200, {
+      ...downloadHeaders,
+      'Content-Disposition': attachmentDisposition(`transmission-vpn-torrents-${new Date().toISOString().slice(0, 10)}.zip`),
+      'Content-Type': 'application/zip',
+    }).end(storedZip(downloadable.map((torrent: MockTorrent): MockZipFile => ({
+      content: mockTorrentFile(torrent),
+      name: torrentDownloadName(torrent),
+    }))));
+
+    return true;
+  }
+
+  if (path === '/api/v1/torrents/contents' && method === 'POST') {
+    const body: Record<string, unknown> = await readBody(request);
+    const selection: MockTorrentSelection | undefined = readTorrentSelection(body, response);
+    if (selection === undefined) {
+      return true;
+    }
+    const finished: MockTorrent[] = selection['items'].filter(
+      (torrent: MockTorrent): boolean => torrent['metadataPercentComplete'] >= 1 && torrent['leftUntilDone'] === 0 && torrent['sizeWhenDone'] > 0,
+    );
+    const [firstTorrent] = finished;
+    if (firstTorrent === undefined) {
+      sendError(response, 409, 'torrent_contents_unfinished', 'These torrents haven\'t finished downloading yet.');
+
+      return true;
+    }
+    const requestedCount: number = (selection['field'] === 'hashes') ? selection['hashes'].length : selection['ids'].length;
+    let fileName: string = `transmission-vpn-downloads-${new Date().toISOString().slice(0, 10)}.zip`;
+    if (requestedCount === 1) {
+      fileName = torrentDownloadName(firstTorrent).replace(/\.torrent$/u, '.zip');
+    }
+    const content: Buffer = storedZip(finished.flatMap(mockFinishedFiles));
+    const token: string = `tvdl_mock${String(mockContentDownloads.size + 1)}`;
+    mockContentDownloads.set(token, {
+      content,
+      fileName,
+    });
+    sendJSON(response, 201, {
+      fileName,
+      path: `/api/v1/torrents/contents/${token}`,
+      size: content.length,
+      unavailable: 0,
+      unfinished: requestedCount - finished.length,
+    });
+
+    return true;
+  }
+
+  const contentDownloadMatch: RegExpExecArray | null = /^\/api\/v1\/torrents\/contents\/(tvdl_[\w-]+)$/u.exec(path);
+  if (contentDownloadMatch !== null && method === 'GET') {
+    const download: MockContentDownload | undefined = mockContentDownloads.get(contentDownloadMatch[1] ?? '');
+    if (download === undefined) {
+      sendError(response, 404, 'download_expired', 'This download has expired. Start it again from the torrent\'s menu.');
+
+      return true;
+    }
+    response.writeHead(200, {
+      'Cache-Control': 'no-store',
+      'Content-Disposition': attachmentDisposition(download['fileName']),
+      'Content-Length': String(download['content'].length),
+      'Content-Type': 'application/zip',
+    }).end(download['content']);
 
     return true;
   }

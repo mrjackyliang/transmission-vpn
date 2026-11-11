@@ -231,6 +231,9 @@ type Server struct {
 	backupImportRunning               map[string]struct{}
 	backupImportWait                  sync.WaitGroup
 	backupImportPollInterval          time.Duration
+	dataRootPath                      string
+	contentDownloadMutex              sync.Mutex
+	contentDownloads                  map[string]contentDownload
 }
 
 // principal records the authenticated request identity and authorization method.
@@ -363,6 +366,8 @@ func NewServer(config Config) (*Server, error) {
 		backupPasskeyCeremonies:         map[string]backupPasskeyCeremony{},
 		backupImportRunning:             map[string]struct{}{},
 		backupImportPollInterval:        time.Second,
+		dataRootPath:                    "/data",
+		contentDownloads:                map[string]contentDownload{},
 	}
 	server.backupImportContext, server.backupImportCancel = context.WithCancel(context.Background())
 	server.rpcCompatibilityAllowed.Store(rpcCompatibilityAllowed)
@@ -720,6 +725,19 @@ func (server *Server) routes() http.Handler {
 	multiplexer.HandleFunc(
 		"POST /api/v1/torrents/remove",
 		server.requireAuthentication("torrents:write", true, server.handleRemoveTorrents),
+	)
+	multiplexer.HandleFunc(
+		"POST /api/v1/torrents/torrent-files",
+		server.requireAuthentication("torrents:read", true, server.handleDownloadTorrentFiles),
+	)
+	// Finished files download only in a signed-in browser, so no API token gains them.
+	multiplexer.HandleFunc(
+		"POST /api/v1/torrents/contents",
+		server.requireSession(true, server.handlePrepareTorrentContents),
+	)
+	multiplexer.HandleFunc(
+		"GET /api/v1/torrents/contents/{download}",
+		server.requireSession(false, server.handleDownloadTorrentContents),
 	)
 	multiplexer.HandleFunc(
 		"POST /api/v1/torrents/rename",

@@ -222,9 +222,9 @@ A scoped credential for automating the control plane's API, sent as a bearer tok
 
 After **Create token**, the same dialog shows **Token for &lt;name&gt;** with the one-time token, a copy button, and **Done**.
 
-The `torrents:write` scope reads `Add, start, stop, and remove torrents, and change their profiles.` The **Remote apps** page refreshes a token's last-used time every three seconds while the page is open in a visible browser tab.
+The `torrents:write` scope reads `Add, start, stop, and remove torrents, and change their profiles.` The **Remote apps** page refreshes the token list every three seconds while the page is open in a visible browser tab, and a token's last-used time is saved at most once a minute.
 
-Creating, editing, or revoking a token requires a signed-in browser session. Tokens can't manage notifications either, because those routes also need a browser session.
+Creating, editing, or revoking a token requires a signed-in browser session. Tokens can't manage notifications or download a torrent's finished files either, because those routes also need a browser session.
 
 ## Setting Source
 

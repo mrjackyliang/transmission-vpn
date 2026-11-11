@@ -297,7 +297,7 @@ func (store *Store) RecordRPCLoginUsed(ctx context.Context, id string) error {
 		if err != nil {
 			return err
 		}
-		if lastUsedAt.Add(time.Minute).After(now) {
+		if !activityWriteDue(lastUsedAt, now) {
 			if err := transaction.Commit(); err != nil {
 				return fmt.Errorf("commit unchanged RPC login use: %w", err)
 			}

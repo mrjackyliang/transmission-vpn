@@ -35,7 +35,7 @@
     "node": "^22 || ^24 || ^26"
   },
   "dependencies": {
-    "@cbnventures/nova": "0.38.0"
+    "@cbnventures/nova": "0.40.1"
   },
   "devDependencies": {
     "@types/node": "24.9.1",

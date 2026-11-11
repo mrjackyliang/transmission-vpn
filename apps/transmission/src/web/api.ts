@@ -89,6 +89,7 @@ import type {
   Web_Api_TorrentActionInput,
   Web_Api_TorrentAddResult,
   Web_Api_TorrentChanges,
+  Web_Api_TorrentContentsDownload,
   Web_Api_TorrentDetail,
   Web_Api_TorrentLinkPreview,
   Web_Api_TorrentLinkPreviewResponse,
@@ -1737,6 +1738,22 @@ const notificationTestSchema: Web_Api_Schema<Web_Notifications_TestResult> = z.o
   delivered: z.boolean(),
   details: z.string().optional(),
   message: z.string().optional(),
+});
+
+/**
+ * API - Torrent contents download schema.
+ *
+ * Reads the link a prepared download of finished files is fetched from, and how many
+ * selected torrents it left out.
+ *
+ * @since 2.2.0
+ */
+const torrentContentsDownloadSchema: Web_Api_Schema<Web_Api_TorrentContentsDownload> = z.object({
+  fileName: z.string(),
+  path: z.string().startsWith('/api/v1/torrents/contents/'),
+  size: z.number(),
+  unavailable: z.number(),
+  unfinished: z.number(),
 });
 
 // requestJSON performs one same-origin request and validates its response contract.
@@ -3935,6 +3952,104 @@ export const downloadBackupExport = async (
   link.download = filename;
   link.click();
   URL.revokeObjectURL(url);
+};
+
+/**
+ * API - Reads a download's file name.
+ *
+ * Prefers the encoded filename* form, which carries names outside ASCII, then the plain
+ * filename form, quoted or not, and otherwise uses the fallback.
+ *
+ * @param {string} disposition - Disposition.
+ * @param {string} fallback    - Fallback.
+ *
+ * @returns {string}
+ *
+ * @since 2.2.0
+ */
+export const dispositionFileName = (disposition: string, fallback: string): string => {
+  const encodedName: string | undefined = /filename\*=utf-8''([^;]+)/iu.exec(disposition)?.[1];
+  if (encodedName !== undefined) {
+    try {
+      return decodeURIComponent(encodedName.trim());
+    } catch {
+      // A malformed encoding falls through to the plain form.
+    }
+  }
+
+  return /filename="((?:[^"\\]|\\.)*)"/u.exec(disposition)?.[1]?.replace(/\\(.)/gu, '$1')
+    ?? /filename=([^;]+)/u.exec(disposition)?.[1]?.trim()
+    ?? fallback;
+};
+
+/**
+ * API - Downloads torrent files.
+ *
+ * Saves one torrent's .torrent file, or a zip of several. Torrents still fetching their
+ * metadata have no file yet; the result is how many were left out for that reason.
+ *
+ * @param {string[]} hashes - Hashes.
+ *
+ * @returns {Promise<number>}
+ *
+ * @since 2.2.0
+ */
+export const downloadTorrentFiles = async (hashes: string[]): Promise<number> => {
+  const headers: Headers = new Headers({ 'Content-Type': 'application/json' });
+  const csrfToken: string | undefined = readCookie('tvpn_csrf');
+  if (csrfToken !== undefined) {
+    headers.set('X-CSRF-Token', csrfToken);
+  }
+  const response: Response = await fetch('/api/v1/torrents/torrent-files', {
+    body: JSON.stringify({ hashes }),
+    cache: 'no-store',
+    credentials: 'same-origin',
+    headers,
+    method: 'POST',
+  });
+  if (!response.ok) {
+    throw await responseError(response);
+  }
+  const fallbackName: string = (hashes.length === 1) ? `${hashes[0]}.torrent` : 'transmission-vpn-torrents.zip';
+  const filename: string = dispositionFileName(response.headers.get('Content-Disposition') ?? '', fallbackName);
+  const url: string = URL.createObjectURL(await response.blob());
+  const link: HTMLAnchorElement = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+
+  return Number(response.headers.get('X-Torrent-Files-Skipped') ?? '0') || 0;
+};
+
+/**
+ * API - Downloads finished files.
+ *
+ * Has the server get the torrents' finished files ready, then lets the browser download
+ * the link it answers with, so even a large download goes straight to disk with the
+ * browser's own progress and can resume. The result counts the torrents left out.
+ *
+ * @param {string[]} hashes - Hashes.
+ *
+ * @returns {Promise<Web_Api_TorrentContentsDownload>}
+ *
+ * @since 2.2.0
+ */
+export const downloadFinishedFiles = async (hashes: string[]): Promise<Web_Api_TorrentContentsDownload> => {
+  const prepared: Web_Api_TorrentContentsDownload = await requestJSON(
+    '/api/v1/torrents/contents',
+    torrentContentsDownloadSchema,
+    {
+      method: 'POST',
+      body: { hashes },
+    },
+  );
+  const link: HTMLAnchorElement = document.createElement('a');
+  link.href = prepared['path'];
+  link.download = prepared['fileName'];
+  link.click();
+
+  return prepared;
 };
 
 /**

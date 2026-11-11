@@ -47,6 +47,7 @@ type eventHub struct {
 	subscribers map[chan []byte]struct{}
 	wake        chan struct{}
 	sequence    atomic.Uint64
+	memory      liveSnapshotMemory
 }
 
 // newEventHub prepares a lazily started live-state broadcaster.
@@ -112,15 +113,18 @@ func (hub *eventHub) run() {
 }
 
 // refresh builds one shared snapshot only when at least one browser is listening.
+//
+// A part that misses this refresh repeats its last answer for a short while, so a slow
+// disk or a busy daemon doesn't blank it in every browser. Only run calls refresh.
 func (hub *eventHub) refresh() {
 	if !hub.hasSubscribers() {
 		return
 	}
 
-	snapshot := hub.server.buildLiveSnapshot(
+	snapshot := hub.memory.fill(hub.server.buildLiveSnapshot(
 		hub.ctx,
 		hub.sequence.Add(1),
-	)
+	))
 	payload, err := json.Marshal(jsonbody.Normalize(snapshot))
 	if err != nil {
 		hub.server.logInternalError("encode live event snapshot", err)

@@ -63,10 +63,12 @@ Each torrent row carries a VPN tag with the name of its connection. This shows w
 </Frame>
 
 <Frame caption="Several connections with the # column hidden and a profile choice waiting">
-  <ThemedImage sources={{ light: managingTorrentsOneLight, dark: managingTorrentsOneDark }} alt="Torrents page with a one-torrent profile-choice banner and Resolve button, no queue number column across several connections, a Needs a profile row and torrent tag, and named profiles alphabetically" width={1280} height={1282} style={{ maxWidth: '100%', height: 'auto' }} />
+  <ThemedImage sources={{ light: managingTorrentsOneLight, dark: managingTorrentsOneDark }} alt="Torrents page with a one-torrent profile-choice banner and Resolve button, no queue number column across several connections, a Needs a profile row and torrent tag, and named profiles alphabetically" width={1280} height={1330} style={{ maxWidth: '100%', height: 'auto' }} />
 </Frame>
 
 The list refreshes every 2 seconds while the page is open. While it's closed, [Notifications](/docs/alerts/notifications/) can tell you when a torrent finishes, reports an error, or needs a profile choice after a remote add.
+
+If a connection's Transmission is too busy to answer a refresh, for example while it deletes a removed torrent's files, the list keeps showing that connection's torrents as they last loaded, for up to 30 seconds.
 
 ## Navigate Between Pages
 
@@ -91,7 +93,7 @@ The account menu contains **Appearance**, **Sign-in and security**, and **Sign o
 
 ## Batch Actions
 
-1. Select the check box on each torrent, or Shift-click a second check box to select a range.
+1. Select the check box on each torrent, or Shift-click a second check box to select the range between them on the current page.
 2. Use the bar that appears at the bottom of the page, which counts the selected torrents.
 
 <Frame caption="The Change profile selection bar below a profile-choice banner">
@@ -110,6 +112,7 @@ The account menu contains **Appearance**, **Sign-in and security**, and **Sign o
 **Change profile** also offers **Also apply its labels and limits**. Leave it off to keep the selected torrents' labels and per-torrent options.
 
 - The check box in the column heading selects every torrent on the current page.
+- The selection only covers torrents on screen. Switching to another list under **Status**, **Profiles**, **Labels**, or a VPN connection clears it, and a search, another page, or a torrent leaving the list unchecks the torrents it hides.
 - One action can include up to 1,000 torrents.
 
 ### Action Menu
@@ -120,11 +123,13 @@ Right-click a torrent, or select the actions button at the end of its row, to op
 - **Pause** — Stops their transfers.
 - **Verify local data** — Checks the downloaded data against the torrent.
 - **Ask trackers for more peers** — Announces to the trackers again.
+- **Download torrent file** — Saves the torrent's `.torrent` file. With several torrents selected, **Download torrent files** saves them as one zip. A magnet still fetching its metadata has no file yet, so it's left out, and the option is unavailable when none of the torrents has one.
+- **Download finished files** — Downloads a finished torrent's file to the computer you're using, or its files as one zip with the torrent's folder inside. With several torrents selected, all of their files come as one zip. The option appears once one of the torrents has finished downloading, and a torrent that hasn't finished, or whose files were moved or deleted, is left out. The browser shows the progress, and a single file picks up where it stopped if the connection drops. It needs a signed-in browser, so API tokens can't use it.
 - **Move to top of queue**, **Move up one**, **Move down one**, and **Move to bottom of queue** — Change their place in the queue.
 - **Remove…** — Opens the same confirmation as **Remove**.
 
 <Frame caption="The action menu in a multi-connection list without the # column">
-  <ThemedImage sources={{ light: managingTorrentsThreeLight, dark: managingTorrentsThreeDark }} alt="Action menu open below a profile-choice banner in a multi-connection list without the queue number column, listing Start, Start now, skip the queue, Pause, Verify local data, Ask trackers for more peers, four queue moves, and Remove" width={1024} height={900} style={{ maxWidth: '100%', height: 'auto' }} />
+  <ThemedImage sources={{ light: managingTorrentsThreeLight, dark: managingTorrentsThreeDark }} alt="Action menu open below a profile-choice banner in a multi-connection list without the queue number column, listing Start, Start now, skip the queue, Pause, Verify local data, Ask trackers for more peers, Download torrent file, Download finished files, four queue moves, and Remove" width={1024} height={900} style={{ maxWidth: '100%', height: 'auto' }} />
 </Frame>
 
 ## Resolve Needs a Profile

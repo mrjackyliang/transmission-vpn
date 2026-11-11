@@ -128,7 +128,7 @@ Use <Terminology title="A scoped credential for automating the API" to="/docs/re
   <ThemedImage sources={{ light: remoteAppsFourLight, dark: remoteAppsFourDark }} alt="Token for Backup script step of the Create token dialog with the one-time token, a copy button, and Done" width={584} height={275} style={{ maxWidth: '100%', height: 'auto' }} />
 </Frame>
 
-- **Tokens** lists each token with its scopes, when it was created and last used, and when it expires. The last-used time refreshes every three seconds while **Remote apps** is open and the browser tab is visible.
+- **Tokens** lists each token with its scopes, when it was created and last used, and when it expires. The last-used time is saved at most once a minute, and the list refreshes every three seconds while **Remote apps** is open and the browser tab is visible.
 - **`torrents:write`** reads `Add, start, stop, and remove torrents, and change their profiles.` It includes `torrents:read`.
 - **Edit** changes a token's name, scopes, or expiry. Its value stays the same, so the app keeps working with the new scopes.
 - **Revoke** asks you to confirm, then deletes the token, and apps using it stop working right away.

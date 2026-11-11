@@ -173,3 +173,112 @@ func TestNamedTokensMigration(testingObject *testing.T) {
 		testingObject.Fatalf("deleting a deleted token error = %v, want ErrNotFound", err)
 	}
 }
+
+// TestActivityTimesSaveOncePerMinute keeps session and API token checks from writing on
+// every request.
+//
+// A check inside the minute leaves the saved time alone, a check after it saves a new
+// one, and an unreadable saved time is replaced.
+func TestActivityTimesSaveOncePerMinute(testingObject *testing.T) {
+	ctx := context.Background()
+	store, err := Open(ctx, filepath.Join(testingObject.TempDir(), "state.sqlite3"))
+	if err != nil {
+		testingObject.Fatalf("open store: %v", err)
+	}
+	defer store.Close()
+
+	if _, err := store.databaseHandle().ExecContext(
+		ctx,
+		"INSERT INTO administrators (id, username, password_hash, created_at, updated_at) VALUES (1, ?, ?, ?, ?)",
+		"administrator",
+		"unused",
+		"2026-01-01T00:00:00Z",
+		"2026-01-01T00:00:00Z",
+	); err != nil {
+		testingObject.Fatalf("add administrator: %v", err)
+	}
+
+	readSaved := func(query string, id string) string {
+		testingObject.Helper()
+
+		var saved sql.NullString
+		if err := store.databaseHandle().QueryRowContext(ctx, query, id).Scan(&saved); err != nil {
+			testingObject.Fatalf("read saved activity time: %v", err)
+		}
+
+		return saved.String
+	}
+	setSaved := func(statement string, value string, id string) {
+		testingObject.Helper()
+
+		if _, err := store.databaseHandle().ExecContext(ctx, statement, value, id); err != nil {
+			testingObject.Fatalf("set saved activity time: %v", err)
+		}
+	}
+	twoMinutesAgo := formatTime(time.Now().Add(-2 * time.Minute))
+
+	const readSession = "SELECT last_seen_at FROM sessions WHERE id = ?"
+	const setSession = "UPDATE sessions SET last_seen_at = ? WHERE id = ?"
+	if err := store.CreateSession(
+		ctx,
+		"session-a",
+		1,
+		[]byte("session-a"),
+		[]byte("csrf-a"),
+		time.Now().Add(time.Hour),
+	); err != nil {
+		testingObject.Fatalf("create session: %v", err)
+	}
+	created := readSaved(readSession, "session-a")
+	for range 3 {
+		if _, err := store.FindSession(ctx, []byte("session-a")); err != nil {
+			testingObject.Fatalf("find session: %v", err)
+		}
+	}
+	if seen := readSaved(readSession, "session-a"); seen != created {
+		testingObject.Fatalf("last_seen_at inside the minute = %q, want %q", seen, created)
+	}
+
+	for _, saved := range []string{twoMinutesAgo, "not a time"} {
+		setSaved(setSession, saved, "session-a")
+		if _, err := store.FindSession(ctx, []byte("session-a")); err != nil {
+			testingObject.Fatalf("find session with last_seen_at %q: %v", saved, err)
+		}
+		seen := readSaved(readSession, "session-a")
+		if seenAt, err := parseTime(seen); err != nil || activityWriteDue(seenAt, time.Now()) {
+			testingObject.Fatalf("last_seen_at after %q = %q, want a time inside the last minute", saved, seen)
+		}
+	}
+
+	const readToken = "SELECT last_used_at FROM api_tokens WHERE id = ?"
+	const setToken = "UPDATE api_tokens SET last_used_at = ? WHERE id = ?"
+	if _, err := store.CreateAPIToken(ctx, "token-a", 1, "script", []byte("token-a"), []string{"vpn:read"}, nil); err != nil {
+		testingObject.Fatalf("create API token: %v", err)
+	}
+	if saved := readSaved(readToken, "token-a"); saved != "" {
+		testingObject.Fatalf("a new token's last_used_at = %q, want none", saved)
+	}
+	firstUse, err := store.FindAPIToken(ctx, []byte("token-a"))
+	if err != nil || firstUse.LastUsedAt == nil {
+		testingObject.Fatalf("first token use = %+v, %v", firstUse, err)
+	}
+	firstSaved := readSaved(readToken, "token-a")
+	if firstSaved == "" {
+		testingObject.Fatal("the first token use should save last_used_at")
+	}
+	secondUse, err := store.FindAPIToken(ctx, []byte("token-a"))
+	if err != nil || secondUse.LastUsedAt == nil || formatTime(*secondUse.LastUsedAt) != firstSaved {
+		testingObject.Fatalf("second token use = %+v, %v, want last_used_at %q", secondUse, err, firstSaved)
+	}
+	if saved := readSaved(readToken, "token-a"); saved != firstSaved {
+		testingObject.Fatalf("last_used_at inside the minute = %q, want %q", saved, firstSaved)
+	}
+
+	setSaved(setToken, twoMinutesAgo, "token-a")
+	if _, err := store.FindAPIToken(ctx, []byte("token-a")); err != nil {
+		testingObject.Fatalf("token use after the minute: %v", err)
+	}
+	if saved := readSaved(readToken, "token-a"); saved == twoMinutesAgo || saved == "" {
+		testingObject.Fatalf("last_used_at after the minute = %q, want a new time", saved)
+	}
+}

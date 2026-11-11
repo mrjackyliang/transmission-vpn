@@ -46,6 +46,8 @@ The <Terminology title="The service that runs the web interface and API" to="/do
 
 The <Terminology title="The service that runs the web interface and API" to="/docs/reference/terminology#control-plane">control plane</Terminology> shares <Terminology title="User and group IDs that own Transmission's files" to="/docs/reference/terminology#puid-and-pgid">`PUID`</Terminology> with Transmission, so it owns its files in `/config` on hosts that ignore group permissions. Its own group is what opens the controller's sockets to it. Because the groups differ, Transmission can't read the control plane's memory or open either socket.
 
+The control plane reads `/data` only to send a finished torrent's files to a signed-in browser. It sends only the files Transmission reports as complete, opens them read-only, and refuses symbolic links anywhere on the path, as the folder browser does.
+
 ## Network isolation
 
 - **Fixed source address** — Each Transmission sends from `198.18.<slot>.1`. Its route leads only to that connection's tunnel and fails inside the container while the tunnel is down.

@@ -332,6 +332,49 @@ export const torrentProgress = (
   torrent: Web_Api_Torrent,
 ): number => ((torrent['status'] === 2) ? torrent['recheckProgress'] : torrent['percentDone']);
 
+/**
+ * Torrent Library - Torrent has finished files.
+ *
+ * True once a torrent has its metadata and nothing left to download, which is when
+ * its files can be downloaded to this computer. A torrent that skips every file has
+ * nothing to send.
+ *
+ * @since 2.2.0
+ */
+export const torrentHasFinishedFiles = (
+  torrent: Web_Api_Torrent,
+): boolean => (
+  torrent['metadataPercentComplete'] >= 1
+  && torrent['leftUntilDone'] === 0
+  && torrent['sizeWhenDone'] > 0
+);
+
+/**
+ * Torrent Library - Finished files left out.
+ *
+ * Says how many selected torrents a download of finished files left out, and why:
+ * still downloading, or files that couldn't be read. Empty when none were left out.
+ *
+ * @since 2.2.0
+ */
+export const finishedFilesLeftOut = (
+  unfinished: number,
+  unavailable: number,
+): string => {
+  const reasons: string[] = [];
+  if (unfinished > 0) {
+    reasons.push(`${unfinished} ${(unfinished === 1) ? 'torrent hasn\'t' : 'torrents haven\'t'} finished downloading`);
+  }
+  if (unavailable > 0) {
+    reasons.push(`${unavailable} ${(unavailable === 1) ? 'torrent\'s files couldn\'t' : 'torrents\' files couldn\'t'} be read`);
+  }
+  if (reasons.length === 0) {
+    return '';
+  }
+
+  return `${reasons.join(', and ')}, so ${(unfinished + unavailable === 1) ? 'it was' : 'they were'} left out.`;
+};
+
 // Describes what a torrent is doing in words, plus the tone used for its dot and progress bar.
 
 /**
