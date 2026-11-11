@@ -4,6 +4,7 @@ import {
   it,
 } from 'vitest';
 
+import { formatPercent } from '../src/web/torrent-format.ts';
 import {
   buildTorrentLabelSummaries,
   describeTorrentState,
@@ -12,6 +13,7 @@ import {
   summarizeTorrentAddBatch,
   torrentMatchesFilter,
   torrentMatchesLibrarySelection,
+  torrentProgress,
   torrentQueuePositionsAreComparable,
 } from '../src/web/torrent-library.ts';
 
@@ -191,6 +193,24 @@ describe('torrent library organization', (): void => {
     });
     expect(describeTrackerIssue(localError)).toBeNull();
     expect(torrentMatchesFilter(localError, 'error')).toBe(true);
+  });
+
+  it('shows the check on the progress bar while verifying, matching the label', (): void => {
+    const verifyingTorrent = createTorrent(1, '/data/downloads', 100, [], {
+      percentDone: 0.444,
+      recheckProgress: 0.456,
+      status: 2,
+    });
+    const downloadingTorrent = createTorrent(2, '/data/downloads', 100, [], {
+      percentDone: 0.444,
+      recheckProgress: 0,
+      status: 4,
+    });
+
+    expect(torrentProgress(verifyingTorrent)).toBe(0.456);
+    expect(describeTorrentState(verifyingTorrent)['label']).toBe(`Verifying ${formatPercent(torrentProgress(verifyingTorrent))}`);
+    expect(describeTorrentState(verifyingTorrent)['label']).toBe('Verifying 46%');
+    expect(torrentProgress(downloadingTorrent)).toBe(0.444);
   });
 
   it('filters unresolved profile choices independently of pause state', (): void => {

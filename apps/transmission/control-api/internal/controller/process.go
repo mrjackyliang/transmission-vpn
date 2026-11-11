@@ -89,7 +89,7 @@ func (daemon *Daemon) establishLocked(
 	}
 	localAddress := connectionLocalAddress(state.slot)
 
-	dnsServers := append([]string{},connection.DNSServers...)
+	dnsServers := append([]string{}, connection.DNSServers...)
 	if len(dnsServers) == 0 {
 		dnsServers = append(dnsServers, session.ProviderDNSServers()...)
 	}
@@ -542,7 +542,7 @@ func (daemon *Daemon) prepareDefaultDNS(
 		State:        "protected",
 		Interface:    interfaceName,
 		Address:      state.statusSnapshot().Address,
-		DNSServers:   append([]string{},dnsServers...),
+		DNSServers:   append([]string{}, dnsServers...),
 	}
 	daemon.sharedMutex.Lock()
 	defer daemon.sharedMutex.Unlock()

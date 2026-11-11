@@ -1,7 +1,7 @@
 ---
 id: settings
 title: Settings
-description: Review the global Transmission settings for incomplete storage, queues, peers, network ports, and blocklists, with their defaults and apply impact.
+description: Review the global settings for incomplete storage, queues, peers, network ports, blocklists, and debug logging, with their defaults and apply impact.
 sidebar_position: 1
 keywords:
   - transmission vpn
@@ -10,6 +10,7 @@ keywords:
   - apply impact
   - restart
   - blocklists
+  - debug logging
 tags:
   - configuration
   - settings
@@ -26,10 +27,10 @@ import settingsTwoDark from './_assets_/settings-2-dark.png';
 import settingsThreeLight from './_assets_/settings-3-light.png';
 import settingsThreeDark from './_assets_/settings-3-dark.png';
 
-Change settings that apply across every profile from the **Settings** page: the incomplete folder, download queue, global peer limit, randomized peer ports, and blocklists. The page ends with **Backup** for portable export and import.
+Change settings that apply across every profile from the **Settings** page: the incomplete folder, download queue, global peer limit, randomized peer ports, blocklists, and debug logging. The page ends with **Backup** for portable export and import.
 
 <Frame caption="Global Transmission settings with the incomplete-folder controls">
-  <ThemedImage sources={{ light: settingsTwoLight, dark: settingsTwoDark }} alt="Settings page with Use incomplete folder and Incomplete folder above the download queue, global peer limit, randomized peer port range, blocklist controls, and Blocklist status, followed by the Backup panel with Export and Import" width={1280} height={1735} style={{ maxWidth: '100%', height: 'auto' }} />
+  <ThemedImage sources={{ light: settingsTwoLight, dark: settingsTwoDark }} alt="Settings page with Use incomplete folder and Incomplete folder above the download queue, global peer limit, randomized peer port range, blocklist controls, Blocklist status, and the Debug logging switch, followed by the Backup panel with Export and Import" width={1280} height={1821} style={{ maxWidth: '100%', height: 'auto' }} />
 </Frame>
 
 ## How Saving Works
@@ -48,15 +49,15 @@ If you try to open another page or sign out with unsaved changes, the interface 
 The page leaves enough space below its last setting for the fixed save bar. Corner notifications sit above the bar while it is present.
 
 <Frame caption="Settings with an unsaved global peer limit and room below the last setting">
-  <ThemedImage sources={{ light: settingsOneLight, dark: settingsOneDark }} alt="Settings page with Global peer limit changed to 300, Use incomplete folder and Incomplete folder, queue controls, randomized peer ports, blocklist sources and status, the Backup panel, and a save bar below the page content reading 1 unsaved change with Discard and Save" width={1280} height={1835} style={{ maxWidth: '100%', height: 'auto' }} />
+  <ThemedImage sources={{ light: settingsOneLight, dark: settingsOneDark }} alt="Settings page with Global peer limit changed to 300, Use incomplete folder and Incomplete folder, queue controls, randomized peer ports, blocklist sources and status, the Debug logging switch, the Backup panel, and a save bar below the page content reading 1 unsaved change with Discard and Save" width={1280} height={1921} style={{ maxWidth: '100%', height: 'auto' }} />
 </Frame>
 
 ## When Changes Take Effect
 
-| Takes effect        | Settings                                                                                                                                            |
-|---------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
-| **Immediately**     | The Default profile's Download folder, **Use incomplete folder**, both queue settings, Global peer limit, all blocklist settings, and the RPC proxy |
-| **After a restart** | **Incomplete folder** and the three random peer port settings                                                                                       |
+| Takes effect        | Settings                                                                                                                                                               |
+|---------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Immediately**     | The Default profile's Download folder, **Use incomplete folder**, both queue settings, Global peer limit, all blocklist settings, the RPC proxy, and **Debug logging** |
+| **After a restart** | **Incomplete folder** and the three random peer port settings                                                                                                          |
 
 The Download folder is edited on the **Default profile**, and the RPC proxy switch is on **Remote apps**. Both remain registered settings even though the **Settings** page does not show them.
 
@@ -174,6 +175,20 @@ Transmission VPN doesn't set up <Terminology title="Inbound peer port opened thr
 - A zip source can contain at most 1,000 entries and an 8 MiB central directory. The normalized files for all sources together can use at most 256 MiB and contain at most 3,000,000 ranges.
 - A source that fails keeps its last successful file. With no sources, the merger removes its files and Transmission turns blocklists off even when **Enable blocklists** remains on.
 - Sources refresh when settings change, when a manual or compatible RPC update is requested, after VPN protection returns to a waiting update, and at the configured interval.
+
+## Debug Logging
+
+| Setting       | Key                        | Default  | Allowed values      | Takes effect |
+|---------------|----------------------------|----------|---------------------|--------------|
+| Debug logging | `diagnostics.debugLogging` | Disabled | Enabled or disabled | Immediately  |
+
+Turn on **Debug logging** while you track down a problem, then turn it off again, because it makes the log much longer. While it's on, Transmission VPN adds `DEBUG` lines to the container log, which `docker compose logs app` shows:
+
+- **Slow database work** — `slow database use` names the step that kept the settings database busy for more than a quarter of a second, the code that asked for it, and how long it took. A step still running after five seconds is named right away with `database still in use`.
+- **VPN reconnects** — `VPN restore started` and `VPN restore finished` bracket each reconnect after a restart or a dropped tunnel. `VPN controller is still starting` shows the container waiting for its VPN controller at startup.
+- **Canceled requests** — A request the browser cancels, such as when you close the tab while a page loads, appears as a debug line. With debug logging off, it isn't logged.
+
+The lines `debug logging is on` and `debug logging is off` mark each switch. The setting is saved like any other, so debug logging stays on after a restart until you turn it off. To have it on from the very first start, seed `diagnostics.debugLogging` in [Managed Configuration](/docs/configuration/managed-configuration/).
 
 ## Settings on Other Pages
 

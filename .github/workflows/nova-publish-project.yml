@@ -927,28 +927,6 @@ jobs:
           subject-digest: "${{ env.IMAGE_DIGEST }}"
           push-to-registry: true
 
-      - name: "Checkout Docker Hub description source"
-        if: "${{ env.PUBLISH == 'true' }}"
-        uses: "actions/checkout@v7"
-        timeout-minutes: 5
-        with:
-          ref: "${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}"
-
-      - name: "Sync Docker Hub description (warning only)"
-        if: "${{ env.PUBLISH == 'true' }}"
-        uses: "peter-evans/dockerhub-description@v5"
-        timeout-minutes: 90
-        continue-on-error: true
-        env:
-          DOCKERHUB_TOKEN: "${{ secrets.PROJECT_DOCKERHUB_TOKEN }}"
-        with:
-          username: "${{ vars.PROJECT_DOCKERHUB_USERNAME }}"
-          password: "${{ env.DOCKERHUB_TOKEN }}"
-          repository: "mrjackyliang/transmission-vpn"
-          short-description: "A secure Transmission container routed through a VPN with a modern, familiar web interface"
-          readme-filepath: "README.md"
-          enable-url-completion: true
-
       - name: "Publish latest channel"
         if: "${{ env.PUBLISH == 'true' && env.PUBLISH_LATEST == 'true' }}"
         timeout-minutes: 90

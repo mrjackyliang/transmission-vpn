@@ -343,7 +343,7 @@ func (state *connectionState) snapshot(keepStoppingTunnel bool) Status {
 	defer state.stateMutex.RUnlock()
 
 	status := state.status
-	status.DNSServers = append([]string{},status.DNSServers...)
+	status.DNSServers = append([]string{}, status.DNSServers...)
 	if status.State == "protected" && state.session == nil {
 		if keepStoppingTunnel && state.stopping {
 			return status
@@ -1269,7 +1269,7 @@ func connectionStatus(
 		RemoteHost:       endpoint.RemoteHost,
 		RemotePort:       endpoint.RemotePort,
 		Address:          address,
-		DNSServers:       append([]string{},dnsServers...),
+		DNSServers:       append([]string{}, dnsServers...),
 		Attempt:          attempt,
 		LastError:        lastError,
 	}

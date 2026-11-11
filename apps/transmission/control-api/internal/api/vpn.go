@@ -841,6 +841,16 @@ func (server *Server) restoreActiveVPNConnection(
 		return nil
 	}
 
+	controllerState := "missing"
+	switch {
+	case protectedWithoutSession:
+		controllerState = "protected without a session"
+	case found:
+		controllerState = status.State
+	}
+	server.logger.Debug("VPN restore started", "connectionId", configuration.ID, "state", controllerState)
+	restoreStartedAt := time.Now()
+
 	connection, err := server.storedVPNConnection(restoreContext, configuration)
 	if err != nil {
 		if restoreContext.Err() != nil {
@@ -864,6 +874,13 @@ func (server *Server) restoreActiveVPNConnection(
 
 		return fmt.Errorf("restore VPN connection %q: %w", configuration.ID, err)
 	}
+	server.logger.Debug(
+		"VPN restore finished",
+		"connectionId",
+		configuration.ID,
+		"took",
+		time.Since(restoreStartedAt).Round(time.Millisecond).String(),
+	)
 
 	return nil
 }

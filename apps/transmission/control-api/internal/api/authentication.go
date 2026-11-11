@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -844,7 +845,14 @@ func expireAuthenticationCookie(
 // logInternalError records server-side detail without exposing it to API clients.
 //
 // Credentials and request bodies are never passed to this helper, preserving the
-// project's secret-free logging invariant.
+// project's secret-free logging invariant. A canceled context isn't a failure: the
+// browser closed the request or the API is stopping. It's a debug line instead.
 func (server *Server) logInternalError(message string, err error) {
+	if errors.Is(err, context.Canceled) {
+		server.logger.Debug(message, "error", err)
+
+		return
+	}
+
 	server.logger.Error(message, "error", err)
 }

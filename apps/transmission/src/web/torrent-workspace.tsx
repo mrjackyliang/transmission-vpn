@@ -26,6 +26,7 @@ import {
   torrentLibraryFilters,
   torrentMatchesFilter,
   torrentMatchesLibrarySelection,
+  torrentProgress,
   torrentQueuePositionsAreComparable,
 } from '@/web/torrent-library.ts';
 import { torrentMoveResultLabel } from '@/web/torrent-move-result.ts';
@@ -1098,13 +1099,13 @@ export const TorrentWorkspace = ({
                         ))}
                       </div>
                       <div className={`progress progress-inline status-${state['tone']}`}>
-                        <span style={{ width: formatPercent(torrent['percentDone']) }} />
+                        <span style={{ width: formatPercent(torrentProgress(torrent)) }} />
                       </div>
                     </td>
                     <td className={`cell-progress status-${state['tone']}`}>
-                      <span>{formatPercent(torrent['percentDone'])}</span>
+                      <span>{formatPercent(torrentProgress(torrent))}</span>
                       <div className="progress">
-                        <span style={{ width: formatPercent(torrent['percentDone']) }} />
+                        <span style={{ width: formatPercent(torrentProgress(torrent)) }} />
                       </div>
                     </td>
                     <td className="numeric column-secondary">{formatBytes(torrent['sizeWhenDone'])}</td>

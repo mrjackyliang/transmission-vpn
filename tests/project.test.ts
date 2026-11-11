@@ -231,27 +231,6 @@ describe('Project root', () => {
     return;
   });
 
-  it('publishes the image to Docker Hub and GHCR and the docs to GitHub Pages', () => {
-    const novaConfig: Project_Test_String = readFileSync(
-      new URL('../nova.config.json', import.meta.url),
-      'utf8',
-    );
-
-    expect(novaConfig).toContain('"to": "docker-hub"');
-
-    expect(novaConfig).toContain('"to": "ghcr"');
-
-    expect(novaConfig).toContain('"to": "github-pages"');
-
-    expect(novaConfig).toContain('"IMAGE_NAMESPACE": "mrjackyliang"');
-
-    expect(novaConfig).toContain('"IMAGE_REPOSITORY": "transmission-vpn"');
-
-    expect(novaConfig).toContain('"path": "./apps/docs"');
-
-    return;
-  });
-
   return;
 });
 

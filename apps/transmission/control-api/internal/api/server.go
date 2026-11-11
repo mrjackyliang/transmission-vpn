@@ -138,6 +138,10 @@ type Config struct {
 	Version             string
 	MountedSetupCode    bool
 
+	// LogLevel is the level Logger's handler checks. The debug logging setting moves it
+	// between Info and Debug while the API runs; nil leaves the level alone.
+	LogLevel *slog.LevelVar
+
 	// DirectDial opens connections outside the VPN, for VPN provider catalogs and
 	// notifications. Production passes the VPN controller's direct socket, because the
 	// firewall drops the console's own connections outside the VPN.
@@ -165,6 +169,7 @@ type Server struct {
 	webProxyConfigPath          string
 	webProxyStatusPath          string
 	logger                      *slog.Logger
+	logLevel                    *slog.LevelVar
 	version                     string
 	dummyPasswordHash           string
 	mountedSetupCode            bool
@@ -301,6 +306,10 @@ func NewServer(config Config) (*Server, error) {
 	if err != nil {
 		return nil, fmt.Errorf("load compatible RPC setting: %w", err)
 	}
+	debugLogging, err := debugLoggingSetting(configurationSnapshot)
+	if err != nil {
+		return nil, fmt.Errorf("load debug logging setting: %w", err)
+	}
 	rpcSessionSecret := make([]byte, 32)
 	if _, err := rand.Read(rpcSessionSecret); err != nil {
 		return nil, fmt.Errorf("generate compatible RPC session secret: %w", err)
@@ -328,6 +337,7 @@ func NewServer(config Config) (*Server, error) {
 		webProxyConfigPath:              filepath.Join(config.RuntimeDirectory, "web-proxy", "config.json"),
 		webProxyStatusPath:              filepath.Join(config.RuntimeDirectory, "web-proxy-state", "status.json"),
 		logger:                          config.Logger,
+		logLevel:                        config.LogLevel,
 		version:                         config.Version,
 		dummyPasswordHash:               dummyPasswordHash,
 		mountedSetupCode:                config.MountedSetupCode,
@@ -356,6 +366,7 @@ func NewServer(config Config) (*Server, error) {
 	}
 	server.backupImportContext, server.backupImportCancel = context.WithCancel(context.Background())
 	server.rpcCompatibilityAllowed.Store(rpcCompatibilityAllowed)
+	server.applyDebugLogging(debugLogging)
 	if server.transmission == nil && server.transmissionClients != nil {
 		server.transmission = server.transmissionClients
 	}

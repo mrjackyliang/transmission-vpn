@@ -2617,6 +2617,18 @@ const settings: Record<string, unknown>[] = [
     'valid': true,
     'applyImpact': 'live',
   },
+  {
+    'key': 'diagnostics.debugLogging',
+    'category': 'diagnostics',
+    'title': 'Debug logging',
+    'description': 'Writes extra detail to the container log, such as slow database work and each VPN reconnect.',
+    'value': false,
+    'defaultValue': false,
+    'source': 'default',
+    'locked': false,
+    'valid': true,
+    'applyImpact': 'live',
+  },
 ];
 
 /**
@@ -7006,7 +7018,7 @@ const mockAnotherTransmissionPreview = (folderMappings: Record<string, unknown>)
   return {
     actions: [],
     appVersion: 'Transmission 4',
-    connections: [
+    connections: (noVPNConnections) ? [] : [
       {
         default: true,
         id: 'connection-default',
@@ -9079,6 +9091,12 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
     if (method === 'POST') {
       const body: Record<string, unknown> = await readBody(request);
       const created: string = `${String(body['parentPath'] ?? '/data')}/${String(body['name'] ?? 'New folder')}`;
+
+      if (directories.has(created)) {
+        sendError(response, 409, 'directory_exists', 'A folder with that name already exists.');
+
+        return true;
+      }
 
       ensureDirectory(created);
       sendJSON(response, 201, listDirectory(created, purpose, profileID));

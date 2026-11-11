@@ -314,6 +314,11 @@ func (server *Server) importBackupSettings(
 		return err
 	}
 	server.rpcCompatibilityAllowed.Store(compatibilityAllowed)
+	debugLogging, err := debugLoggingSetting(updated)
+	if err != nil {
+		return err
+	}
+	server.applyDebugLogging(debugLogging)
 	server.ensureConfiguredStorageDirectories(ctx, updated)
 
 	return nil

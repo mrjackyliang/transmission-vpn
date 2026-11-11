@@ -252,6 +252,7 @@ const parseInput = <Value>(
  * @since 2.0.0
  */
 const settingTitles: Record<string, string> = {
+  'diagnostics.debugLogging': 'Debug logging',
   'rpc.compatibilityEnabled': 'Transmission-compatible RPC',
   'transmission.blocklistEnabled': 'Enable blocklists',
   'transmission.blocklistSources': 'Blocklist sources',
@@ -1066,6 +1067,7 @@ const blocklistURLSchema = z.url('Every blocklist source must be a valid URL.').
  * @since 2.0.0
  */
 const settingValueSchemas: Record<string, z.ZodType> = {
+  'diagnostics.debugLogging': z.boolean(),
   'rpc.compatibilityEnabled': z.boolean(),
   'transmission.blocklistEnabled': z.boolean(),
   'transmission.blocklistSources': z.array(blocklistURLSchema).max(20, 'Enter no more than 20 blocklist sources.'),

@@ -132,10 +132,14 @@ export const BackupExportDialog = ({
                   <input
                     checked={selection[option['id']] ?? false}
                     id={`backup-export-${option['id']}`}
-                    onChange={(event): void => setSelection((current: Web_BackupComponents_ExportSelection): Web_BackupComponents_ExportSelection => ({
-                      ...current,
-                      [option['id']]: event.target.checked,
-                    }))}
+                    onChange={(event): void => {
+                      const nextChecked: boolean = event.target.checked;
+
+                      setSelection((current: Web_BackupComponents_ExportSelection): Web_BackupComponents_ExportSelection => ({
+                        ...current,
+                        [option['id']]: nextChecked,
+                      }));
+                    }}
                     type="checkbox"
                   />
                   <span>

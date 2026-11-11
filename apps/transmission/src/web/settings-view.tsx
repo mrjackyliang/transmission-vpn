@@ -83,10 +83,20 @@ const blocklistKeys: string[] = [
 ];
 
 /**
+ * Settings View - Diagnostic keys.
+ *
+ * Keeps debug logging last, after every setting that changes how torrents run.
+ * It isn't a Transmission setting, so it stays out of the torrent groups above.
+ *
+ * @since 2.1.0
+ */
+const diagnosticKeys: string[] = ['diagnostics.debugLogging'];
+
+/**
  * Settings View - Visible keys.
  *
  * Limits this screen to global Transmission settings that are not owned by a
- * torrent profile.
+ * torrent profile, plus debug logging.
  *
  * @since 2.0.0
  */
@@ -94,6 +104,7 @@ const visibleSettingKeys: string[] = [
   ...allTorrentKeys,
   ...networkKeys,
   ...blocklistKeys,
+  ...diagnosticKeys,
 ];
 
 /**
@@ -564,6 +575,7 @@ export const SettingsView = ({
   const globalSettings: Web_Api_Setting[] = selectSettings(visibleSettings, allTorrentKeys);
   const networkSettings: Web_Api_Setting[] = selectSettings(visibleSettings, networkKeys);
   const blocklistSettings: Web_Api_Setting[] = selectSettings(visibleSettings, blocklistKeys);
+  const diagnosticSettings: Web_Api_Setting[] = selectSettings(visibleSettings, diagnosticKeys);
   const pendingRestartTitles: string[] = selectSettings(
     visibleSettings,
     snapshot['pendingRestartKeys'],
@@ -634,6 +646,7 @@ export const SettingsView = ({
                 </button>
               </div>
             </div>
+            {diagnosticSettings.map(renderSetting)}
           </div>
         </section>
       </div>

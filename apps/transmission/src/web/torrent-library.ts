@@ -1,3 +1,5 @@
+import { formatPercent } from '@/web/torrent-format.ts';
+
 import type {
   Web_Api_Torrent,
   Web_Api_VpnConnection,
@@ -317,6 +319,19 @@ export const describeTrackerIssue = (torrent: Web_Api_Torrent): Web_Components_T
   };
 };
 
+/**
+ * Torrent Library - Torrent progress.
+ *
+ * Returns the fraction a progress bar shows: how much of the check is done while
+ * Transmission verifies the data, so the bar matches the Verifying label, and how
+ * much is downloaded the rest of the time.
+ *
+ * @since 2.1.0
+ */
+export const torrentProgress = (
+  torrent: Web_Api_Torrent,
+): number => ((torrent['status'] === 2) ? torrent['recheckProgress'] : torrent['percentDone']);
+
 // Describes what a torrent is doing in words, plus the tone used for its dot and progress bar.
 
 /**
@@ -355,7 +370,7 @@ export const describeTorrentState = (
 
     case 2: {
       return {
-        label: `Verifying ${Math.round(torrent['recheckProgress'] * 100)}%`,
+        label: `Verifying ${formatPercent(torrentProgress(torrent))}`,
         tone: 'checking',
       };
     }

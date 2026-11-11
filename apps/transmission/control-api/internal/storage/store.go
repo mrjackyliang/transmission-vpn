@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"sort"
@@ -14,7 +15,7 @@ import (
 	"strings"
 	"time"
 
-	_ "modernc.org/sqlite"
+	"modernc.org/sqlite"
 )
 
 var (
@@ -56,6 +57,7 @@ var migrations embed.FS
 // ensures connection-local PRAGMA settings are consistently enforced.
 type Store struct {
 	database *sql.DB
+	timing   *databaseTiming
 }
 
 // Open initializes SQLite, applies migrations, and verifies the resulting store.
@@ -70,16 +72,18 @@ func Open(ctx context.Context, path string) (*Store, error) {
 		return nil, err
 	}
 
-	database, err := sql.Open("sqlite", "file:"+filepath.ToSlash(path))
+	connector, err := sqlite.NewConnector("file:" + filepath.ToSlash(path))
 	if err != nil {
 		return nil, fmt.Errorf("open SQLite database: %w", err)
 	}
+	timing := newDatabaseTiming()
+	database := sql.OpenDB(&timedConnector{base: connector, timing: timing})
 
 	database.SetMaxOpenConns(1)
 	database.SetMaxIdleConns(1)
 	database.SetConnMaxLifetime(0)
 
-	store := &Store{database: database}
+	store := &Store{database: database, timing: timing}
 	if err := store.initialize(ctx); err != nil {
 		_ = database.Close()
 
@@ -87,6 +91,14 @@ func Open(ctx context.Context, path string) (*Store, error) {
 	}
 
 	return store, nil
+}
+
+// SetLogger sends reports of slow database use to logger.
+//
+// The reports are debug lines, so they appear only while the logger's level allows
+// them. Without a logger the store reports nothing.
+func (store *Store) SetLogger(logger *slog.Logger) {
+	store.timing.logger.Store(logger)
 }
 
 // prepareDatabaseFile creates the database file group-writable before SQLite opens it.

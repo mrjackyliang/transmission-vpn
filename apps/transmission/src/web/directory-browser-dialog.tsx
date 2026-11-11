@@ -7,6 +7,7 @@ import {
 import { createPortal } from 'react-dom';
 
 import {
+  ApiError,
   createDirectory,
   deleteDirectory,
   getDirectory,
@@ -618,9 +619,46 @@ export const DirectoryBrowserDialog = ({
   };
 
   /**
+   * Directory Browser Dialog - Reveal folder.
+   *
+   * Leaves the name step and shows one folder inside its refreshed, expanded parent.
+   * The folder is selected only when it can be chosen; the result reports which.
+   *
+   * @since 2.1.0
+   */
+  const revealFolder = (
+    parentPath: string,
+    parentLevel: Web_Api_Directory,
+    folderPath: string,
+  ): boolean => {
+    const folderEntry: Web_Api_DirectoryEntry | undefined = parentLevel['directories'].find(
+      (entry: Web_Api_DirectoryEntry): boolean => entry['path'] === folderPath,
+    );
+    const selectable: boolean = folderEntry?.['selectable'] === true && folderEntry['usable'];
+
+    if (parentPath !== '/data') {
+      setExpandedPaths((currentPaths: string[]): string[] => (
+        (currentPaths.includes(parentPath)) ? currentPaths : [
+          ...currentPaths,
+          parentPath,
+        ]
+      ));
+    }
+    setCreateParentPath(null);
+    setFolderName('');
+    setSelectedPath((selectable) ? folderPath : null);
+    setFocusedPath(folderPath);
+    setDeleteConfirmationOpen(false);
+    treeFocusAfterCreateRef.current = folderPath;
+
+    return selectable;
+  };
+
+  /**
    * Directory Browser Dialog - Create folder.
    *
-   * Creates the folder, refreshes its parent, then selects and reveals it.
+   * Creates the folder, refreshes its parent, then selects and reveals it. A name
+   * that is already a folder there reveals that folder instead of failing.
    * Keeping the name step open on refresh failure leaves a visible recovery message.
    *
    * @since 2.0.0
@@ -630,43 +668,54 @@ export const DirectoryBrowserDialog = ({
       return;
     }
 
+    const parentPath: string = createParentPath;
+    const name: string = folderName.trim();
     setCreating(true);
     setCreateError('');
     try {
       const createdDirectory: Web_Api_Directory = await createDirectory(
         {
-          name: folderName.trim(),
-          parentPath: createParentPath,
+          name,
+          parentPath,
         },
         purpose,
         profileId,
       );
-      const refreshedParent: Web_Api_Directory | null = await loadLevel(createParentPath, true);
+      const refreshedParent: Web_Api_Directory | null = await loadLevel(parentPath, true);
       if (refreshedParent === null) {
         setCreateError('The folder was created, but the folder list could not be refreshed. Retry the folder list.');
 
         return;
       }
 
-      if (createParentPath !== '/data') {
-        setExpandedPaths((currentPaths: string[]): string[] => (
-          (currentPaths.includes(createParentPath)) ? currentPaths : [
-            ...currentPaths,
-            createParentPath,
-          ]
-        ));
-      }
-      setCreateParentPath(null);
-      setFolderName('');
-      const createdEntry: Web_Api_DirectoryEntry | undefined = refreshedParent['directories'].find(
-        (entry: Web_Api_DirectoryEntry): boolean => entry['path'] === createdDirectory['path'],
-      );
-      setSelectedPath((createdEntry?.['selectable'] === true && createdEntry['usable']) ? createdDirectory['path'] : null);
-      setFocusedPath(createdDirectory['path']);
-      setDeleteConfirmationOpen(false);
-      treeFocusAfterCreateRef.current = createdDirectory['path'];
+      revealFolder(parentPath, refreshedParent, createdDirectory['path']);
     } catch (caughtError) {
-      setCreateError(messageFor(caughtError, 'The folder could not be created.'));
+      if (!(caughtError instanceof ApiError) || caughtError['code'] !== 'directory_exists') {
+        setCreateError(messageFor(caughtError, 'The folder could not be created.'));
+
+        return;
+      }
+
+      const existingPath: string = `${parentPath}/${name}`;
+      const refreshedParent: Web_Api_Directory | null = await loadLevel(parentPath, true);
+      if (refreshedParent === null) {
+        setCreateError(caughtError['message']);
+
+        return;
+      }
+
+      // The tree lists only real folders, so a file or link with this name stays hidden.
+      const existingFolder: boolean = refreshedParent['directories'].some(
+        (entry: Web_Api_DirectoryEntry): boolean => entry['path'] === existingPath,
+      );
+      if (!existingFolder) {
+        setCreateError(`Something named “${name}” is already in ${parentPath}, and it isn’t a folder. Use another name.`);
+
+        return;
+      }
+
+      const selected: boolean = revealFolder(parentPath, refreshedParent, existingPath);
+      showToast((selected) ? `“${name}” was already in ${parentPath}, so it’s selected.` : `“${name}” is already in ${parentPath}.`, true);
     } finally {
       setCreating(false);
     }

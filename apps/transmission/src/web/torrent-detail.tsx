@@ -24,6 +24,7 @@ import {
 import {
   describeTorrentState,
   describeTrackerIssue,
+  torrentProgress,
 } from '@/web/torrent-library.ts';
 import { torrentMoveResultLabel } from '@/web/torrent-move-result.ts';
 import {
@@ -609,10 +610,10 @@ export const TorrentDetail = ({
           <>
             <div className={`detail-progress status-${describeTorrentState(detail)['tone']}`}>
               <div className="detail-progress-numbers">
-                <strong>{formatPercent(detail['percentDone'])}</strong>
+                <strong>{formatPercent(torrentProgress(detail))}</strong>
                 <span>{`${formatBytes(detail['downloadedEver'])} of ${formatBytes(detail['sizeWhenDone'])}`}</span>
               </div>
-              <div className="progress"><span style={{ width: formatPercent(detail['percentDone']) }} /></div>
+              <div className="progress"><span style={{ width: formatPercent(torrentProgress(detail)) }} /></div>
               <div className="detail-rates">
                 <span>
                   <Icon name="arrow-down" size={14} />
@@ -836,13 +837,17 @@ export const TorrentDetail = ({
                           <input
                             aria-label={`Download ${row['file']['name']}`}
                             checked={draft['wanted']}
-                            onChange={(event): void => setFileDrafts((currentDrafts: Web_Components_TorrentFileDrafts): Web_Components_TorrentFileDrafts => ({
-                              ...currentDrafts,
-                              [row['index']]: {
-                                ...draft,
-                                wanted: event.currentTarget.checked,
-                              },
-                            }))}
+                            onChange={(event): void => {
+                              const nextWanted: boolean = event.currentTarget.checked;
+
+                              setFileDrafts((currentDrafts: Web_Components_TorrentFileDrafts): Web_Components_TorrentFileDrafts => ({
+                                ...currentDrafts,
+                                [row['index']]: {
+                                  ...draft,
+                                  wanted: nextWanted,
+                                },
+                              }));
+                            }}
                             type="checkbox"
                           />
                           <div className="file-row-main">
@@ -854,13 +859,17 @@ export const TorrentDetail = ({
                             aria-label={`Priority for ${row['file']['name']}`}
                             className="select-control"
                             disabled={!draft['wanted']}
-                            onChange={(event: ChangeEvent<HTMLSelectElement>): void => setFileDrafts((currentDrafts: Web_Components_TorrentFileDrafts): Web_Components_TorrentFileDrafts => ({
-                              ...currentDrafts,
-                              [row['index']]: {
-                                ...draft,
-                                priority: Number(event.currentTarget.value) as -1 | 0 | 1,
-                              },
-                            }))}
+                            onChange={(event: ChangeEvent<HTMLSelectElement>): void => {
+                              const nextPriority: -1 | 0 | 1 = Number(event.currentTarget.value) as -1 | 0 | 1;
+
+                              setFileDrafts((currentDrafts: Web_Components_TorrentFileDrafts): Web_Components_TorrentFileDrafts => ({
+                                ...currentDrafts,
+                                [row['index']]: {
+                                  ...draft,
+                                  priority: nextPriority,
+                                },
+                              }));
+                            }}
                             value={draft['priority']}
                           >
                             <option value="1">High</option>

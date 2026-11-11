@@ -858,7 +858,7 @@ export const BackupView = (): ReactElement => {
     && !preview['connections'].some((connection): boolean => connection['default']);
   const nextDisabled: boolean = (
     (step === 'review' && (missingDefaultConnection || nestingConflict))
-    || (step === 'source' && !sourceReady)
+    || (step === 'source' && (!sourceReady || missingDefaultConnection))
     || (step === 'folders' && !mappingsComplete)
     || (step === 'profiles' && !choicesComplete)
   );
@@ -1298,6 +1298,12 @@ export const BackupView = (): ReactElement => {
               </p>
             ) : null}
             {(sourceError === '') ? null : <div className="form-error" role="alert">{sourceError}</div>}
+            {(!missingDefaultConnection) ? null : (
+              <div className="backup-review-note" role="alert">
+                <Icon name="warning" size={18} />
+                <span>{`Torrents need a VPN connection to run, so add a default VPN connection on the VPN page before importing ${countLabel(preview?.['torrentCount'] ?? 0, 'torrent')}.`}</span>
+              </div>
+            )}
           </div>
         )}
 
@@ -1404,10 +1410,14 @@ export const BackupView = (): ReactElement => {
                                 <input
                                   aria-label={`Create profile for ${sourcePath}`}
                                   checked={included}
-                                  onChange={(event): void => setProfileIncluded((current): Record<string, boolean> => ({
-                                    ...current,
-                                    [sourcePath]: event.currentTarget.checked,
-                                  }))}
+                                  onChange={(event): void => {
+                                    const nextIncluded: boolean = event.currentTarget.checked;
+
+                                    setProfileIncluded((current): Record<string, boolean> => ({
+                                      ...current,
+                                      [sourcePath]: nextIncluded,
+                                    }));
+                                  }}
                                   type="checkbox"
                                 />
                               )}
@@ -1415,10 +1425,14 @@ export const BackupView = (): ReactElement => {
                                 <input
                                   aria-label={`Profile name for ${sourcePath}`}
                                   disabled={!included}
-                                  onChange={(event): void => setProfileNames((current): Record<string, string> => ({
-                                    ...current,
-                                    [sourcePath]: event.currentTarget.value,
-                                  }))}
+                                  onChange={(event): void => {
+                                    const nextName: string = event.currentTarget.value;
+
+                                    setProfileNames((current): Record<string, string> => ({
+                                      ...current,
+                                      [sourcePath]: nextName,
+                                    }));
+                                  }}
                                   value={profileNames[sourcePath] ?? profile['name']}
                                 />
                               ) : profile['name']}
@@ -1431,10 +1445,14 @@ export const BackupView = (): ReactElement => {
                               aria-label={`VPN connection for ${profile['name']}`}
                               className="select-control"
                               disabled={profile['default'] || !included}
-                              onChange={(event): void => setProfileConnections((current): Record<string, string | null> => ({
-                                ...current,
-                                [sourcePath]: event.currentTarget.value || null,
-                              }))}
+                              onChange={(event): void => {
+                                const nextConnection: string | null = event.currentTarget.value || null;
+
+                                setProfileConnections((current): Record<string, string | null> => ({
+                                  ...current,
+                                  [sourcePath]: nextConnection,
+                                }));
+                              }}
                               value={profileConnections[sourcePath] ?? ''}
                             >
                               <option value="">Follow default connection</option>

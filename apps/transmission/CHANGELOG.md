@@ -1,5 +1,20 @@
 # transmission-vpn-app-transmission
 
+## 2.1.0 - 2026-11-10
+
+### FIXED
+- After the container starts, the VPN reconnects as soon as the VPN controller is up, instead of up to 10 seconds later with a warning that the controller couldn't be reached.
+- Requests the browser cancels, such as when you close the console while a page is loading, no longer show up in the logs as errors.
+- The import wizard says on its first step when the import has torrents but there is no default VPN connection, instead of stopping you at the last step.
+- The import wizard's Back and Next buttons stay visible on every step, however short the window. A long step now scrolls instead of pushing them out of the dialog.
+- In the folder picker, giving New folder the name of a folder that's already there opens and selects that folder, instead of only saying it already exists.
+- The console no longer goes blank when you rename a profile in the import wizard. Changing a profile's VPN connection or whether it's created, a torrent file's download box or priority, and the export dialog's section boxes had the same fault.
+- The control API reports the version it shipped in. Every image so far said 2.0.0 in its startup log, health check, and backup exports.
+- While a torrent is being verified, its progress bar and percentage follow the check, so they match the Verifying label instead of showing how much is downloaded.
+
+### ADDED
+- Debug logging on the Settings page. While it's on, the container log names slow database work and what asked for it, each VPN reconnect, and requests the browser canceled.
+
 ## 2.0.3 - 2026-11-10
 
 ### FIXED

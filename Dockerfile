@@ -183,12 +183,16 @@ FROM control-api-test AS control-api-build
 
 ARG TARGETARCH
 ARG TARGETOS
-ARG VERSION="2.0.0"
 
-RUN CGO_ENABLED=0 GOARCH="${TARGETARCH}" GOOS="${TARGETOS}" \
+# The release step bumps this manifest, so the API reports the version it shipped in.
+COPY ["apps/transmission/package.json", "/version/package.json"]
+
+RUN version="$(sed -n 's/^  "version": "\([^"]*\)",$/\1/p' /version/package.json)" \
+  && test -n "${version}" \
+  && CGO_ENABLED=0 GOARCH="${TARGETARCH}" GOOS="${TARGETOS}" \
   go build \
     -buildvcs=false \
-    -ldflags="-s -w -X main.version=${VERSION}" \
+    -ldflags="-s -w -X main.version=${version}" \
     -o /out/transmission-vpn-api \
     -trimpath \
     ./cmd/transmission-vpn-api \
@@ -226,11 +230,9 @@ RUN CGO_ENABLED=0 GOARCH="${TARGETARCH}" GOOS="${TARGETOS}" \
 #######################
 FROM debian-base AS runtime
 
-ARG VERSION="2.0.0"
-
+# The publish workflow adds org.opencontainers.image.version from the release tag.
 LABEL org.opencontainers.image.title="Transmission VPN" \
-  org.opencontainers.image.description="Fail-closed Transmission appliance with OpenVPN and WireGuard" \
-  org.opencontainers.image.version="${VERSION}"
+  org.opencontainers.image.description="Fail-closed Transmission appliance with OpenVPN and WireGuard"
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \

@@ -178,6 +178,14 @@ func NewRegistry() Registry {
 			false,
 			ApplyImpactLive,
 		),
+		newBooleanDefinition(
+			"diagnostics.debugLogging",
+			"diagnostics",
+			"Debug logging",
+			"Writes extra detail to the container log, such as slow database work and each VPN reconnect.",
+			false,
+			ApplyImpactLive,
+		),
 	}
 
 	definitionMap := make(map[string]Definition, len(definitions))

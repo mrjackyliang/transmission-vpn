@@ -159,6 +159,14 @@
       ]
     }
   },
+  "dockerHub": {
+    "namespace": "mrjackyliang",
+    "repository": "transmission-vpn",
+    "visibility": "public",
+    "categories": [
+      "networking"
+    ]
+  },
   "workflows": [
     {
       "template": "check-sponsor-gated-issues",
@@ -198,11 +206,7 @@
         },
         {
           "to": "docker-hub",
-          "path": "./",
-          "with": {
-            "IMAGE_NAMESPACE": "mrjackyliang",
-            "IMAGE_REPOSITORY": "transmission-vpn"
-          }
+          "path": "./"
         },
         {
           "to": "ghcr",
@@ -301,6 +305,14 @@
     "codex"
   ],
   "recipes": {
+    "docker-hub": {
+      "sync-identity": {
+        "enabled": true
+      },
+      "sync-policies": {
+        "enabled": true
+      }
+    },
     "github": {
       "sync-actions": {
         "enabled": true

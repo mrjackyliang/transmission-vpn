@@ -380,6 +380,14 @@ func (server *Server) handleUpdateSettings(
 		return
 	}
 	server.rpcCompatibilityAllowed.Store(rpcCompatibilityAllowed)
+	debugLogging, err := debugLoggingSetting(snapshot)
+	if err != nil {
+		server.logInternalError("refresh debug logging setting", err)
+		writeError(responseWriter, http.StatusInternalServerError, "settings_unavailable", "Updated settings are unavailable.")
+
+		return
+	}
+	server.applyDebugLogging(debugLogging)
 	if storageDirectorySettingsChanged(input.Changes) {
 		server.ensureConfiguredStorageDirectories(context.WithoutCancel(request.Context()), snapshot)
 	}

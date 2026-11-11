@@ -802,12 +802,15 @@ func TestLostTunnelTeardownIsNotReportedAsLost(testingObject *testing.T) {
 	markerDirectory := testingObject.TempDir()
 	blockStartedPath := filepath.Join(markerDirectory, "block-started")
 	releasePath := filepath.Join(markerDirectory, "release")
+	// The helper also gives up once the test's folder is gone or after about 10 seconds,
+	// so a call that comes after the test ends can't wait forever for a release file.
 	if err := os.WriteFile(
 		daemon.config.FirewallBlockPath,
 		[]byte(fmt.Sprintf(
-			"#!/bin/sh\ntouch %q\nwhile [ ! -e %q ]; do sleep 0.01; done\nexit 0\n",
+			"#!/bin/sh\ntouch %q\ni=0\nwhile [ ! -e %q ] && [ -d %q ] && [ \"$i\" -lt 1000 ]; do sleep 0.01; i=$((i + 1)); done\nexit 0\n",
 			blockStartedPath,
 			releasePath,
+			markerDirectory,
 		)),
 		0o700,
 	); err != nil {

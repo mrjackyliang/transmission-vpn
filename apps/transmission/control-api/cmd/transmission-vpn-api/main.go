@@ -55,10 +55,12 @@ func main() {
 	// files stay group-writable for host tools that work through PGID.
 	syscall.Umask(0o007)
 
+	// Info until the debug logging setting moves it, which can happen while the API runs.
+	logLevel := new(slog.LevelVar)
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slog.LevelInfo,
+		Level: logLevel,
 	}))
-	if err := run(logger); err != nil {
+	if err := run(logger, logLevel); err != nil {
 		logger.Error("control API stopped", "error", err)
 		os.Exit(1)
 	}
@@ -68,7 +70,7 @@ func main() {
 //
 // Dependencies are prepared before the readiness marker is published so s6 and Docker
 // health checks cannot observe a partially initialized control plane.
-func run(logger *slog.Logger) error {
+func run(logger *slog.Logger, logLevel *slog.LevelVar) error {
 	configuredOptions := parseOptions()
 	ctx := context.Background()
 
@@ -84,6 +86,7 @@ func run(logger *slog.Logger) error {
 		return err
 	}
 	defer store.Close()
+	store.SetLogger(logger)
 
 	keyResult, err := api.PrepareInstallationKey(ctx, store, configuredOptions.InstallationKeyPath)
 	if err != nil {
@@ -166,6 +169,7 @@ func run(logger *slog.Logger) error {
 		Version:             version,
 		MountedSetupCode:    mountedSetupCode,
 		DirectDial:          directDialer.DialContext,
+		LogLevel:            logLevel,
 	})
 	if err != nil {
 		return err
@@ -261,24 +265,40 @@ func run(logger *slog.Logger) error {
 	return nil
 }
 
+// controllerStartupGrace is how long after startup an unreachable VPN controller is
+// treated as still starting: retried every second and not logged.
+const controllerStartupGrace = time.Minute
+
 // keepVPNRestored recovers enabled last-known-good tunnels for as long as the API runs.
 //
 // Every 10 seconds it reconnects missing, blocked, or sessionless controller states: at
 // startup, after s6 restarts a crashed controller without its tunnels, and after a
 // failed connect or reconnect. Controller ordering and provider outages never block the
 // setup UI, and a check that stepped aside for an administrator change is not logged.
+// The API can start before the controller opens its socket, so during the first minute
+// a controller nobody answers for is retried every second, as a debug line rather than
+// a warning.
 func keepVPNRestored(
 	ctx context.Context,
 	server *api.Server,
 	logger *slog.Logger,
 ) {
+	startedAt := time.Now()
 	for {
-		if err := server.RestoreActiveVPN(ctx); err != nil &&
-			ctx.Err() == nil && !errors.Is(err, api.ErrVPNRestoreDeferred) {
+		retryDelay := 10 * time.Second
+		err := server.RestoreActiveVPN(ctx)
+		switch {
+		case err == nil, ctx.Err() != nil:
+		case errors.Is(err, api.ErrVPNRestoreDeferred):
+			logger.Debug("VPN restore check stepped aside for a VPN change in progress")
+		case controllerStarting(err) && time.Since(startedAt) < controllerStartupGrace:
+			retryDelay = time.Second
+			logger.Debug("VPN controller is still starting", "retryIn", retryDelay.String())
+		default:
 			logger.Warn("restore active VPN configuration", "error", err)
 		}
 
-		retryTimer := time.NewTimer(10 * time.Second)
+		retryTimer := time.NewTimer(retryDelay)
 		select {
 		case <-ctx.Done():
 			retryTimer.Stop()
@@ -287,6 +307,17 @@ func keepVPNRestored(
 		case <-retryTimer.C:
 		}
 	}
+}
+
+// controllerStarting reports whether a restore failed only because nothing listens on
+// the controller's socket yet: the file is missing or nobody accepts on it.
+func controllerStarting(err error) bool {
+	var dialError *net.OpError
+	if !errors.As(err, &dialError) || dialError.Op != "dial" {
+		return false
+	}
+
+	return errors.Is(dialError, syscall.ENOENT) || errors.Is(dialError, syscall.ECONNREFUSED)
 }
 
 // probeDirectDial opens one connection through the VPN controller and closes it.
