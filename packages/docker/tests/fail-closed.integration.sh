@@ -832,6 +832,10 @@ main() {
   claim_secret_path="${test_state_directory}/transmission-vpn-claim"
   printf '%s\n' 'integration-claim-secret-123' > "${claim_secret_path}"
 
+  # The container reads the claim as PUID 12345, not as the host user that made these paths.
+  chmod 0755 "${test_state_directory}"
+  chmod 0644 "${claim_secret_path}"
+
   docker build --tag "${image_name}" "${project_directory}"
   docker network create "${network_name}" > /dev/null
 
