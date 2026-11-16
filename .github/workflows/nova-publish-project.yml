@@ -66,6 +66,8 @@ jobs:
         run: |
           npm run check -- --workspace transmission-vpn-docs --workspace transmission-vpn-app-transmission --workspace transmission-vpn-tool-docker
         working-directory: "${{ env.ROOT_DIR }}"
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 
       - name: "Build project"
         timeout-minutes: 90

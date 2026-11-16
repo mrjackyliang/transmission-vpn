@@ -836,7 +836,13 @@ main() {
   chmod 0755 "${test_state_directory}"
   chmod 0644 "${claim_secret_path}"
 
-  docker build --tag "${image_name}" "${project_directory}"
+  local build_secret_arguments=()
+
+  if [[ -n "${GITHUB_TOKEN:-}" ]]; then
+    build_secret_arguments=(--secret id=github_token,env=GITHUB_TOKEN)
+  fi
+
+  docker build ${build_secret_arguments[@]+"${build_secret_arguments[@]}"} --tag "${image_name}" "${project_directory}"
   docker network create "${network_name}" > /dev/null
 
   docker run --detach \

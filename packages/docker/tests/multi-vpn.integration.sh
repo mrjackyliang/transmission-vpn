@@ -1422,7 +1422,13 @@ main() {
   trap cleanup EXIT
   trap print_failure_diagnostics ERR
 
-  docker build --tag "${image_name}" "${project_directory}"
+  local build_secret_arguments=()
+
+  if [[ -n "${GITHUB_TOKEN:-}" ]]; then
+    build_secret_arguments=(--secret id=github_token,env=GITHUB_TOKEN)
+  fi
+
+  docker build ${build_secret_arguments[@]+"${build_secret_arguments[@]}"} --tag "${image_name}" "${project_directory}"
   test_state_directory="$(mktemp -d "${project_directory}/.multi-vpn-state.XXXXXX")"
   write_peer_programs
   write_peer_keys_and_profiles

@@ -1233,7 +1233,13 @@ main() {
   trap cleanup EXIT
   trap 'report_unhandled_error "$?" "${LINENO}" "${BASH_COMMAND}"' ERR
 
-  docker build --tag "${image_name}" "${project_directory}"
+  local build_secret_arguments=()
+
+  if [[ -n "${GITHUB_TOKEN:-}" ]]; then
+    build_secret_arguments=(--secret id=github_token,env=GITHUB_TOKEN)
+  fi
+
+  docker build ${build_secret_arguments[@]+"${build_secret_arguments[@]}"} --tag "${image_name}" "${project_directory}"
 
   test_state_directory="$(mktemp -d "${project_directory}/.integration-state.XXXXXX")"
   write_peer_files
