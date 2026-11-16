@@ -223,6 +223,8 @@ jobs:
           cache-from: "type=gha,scope=container-linux-amd64"
           cache-to: "type=gha,mode=max,scope=container-linux-amd64"
           outputs: "type=oci,dest=${{ runner.temp }}/container-oci/layout,tar=false"
+          secrets: |
+            github_token=${{ secrets.GITHUB_TOKEN }}
 
       - name: "Record OCI digest"
         timeout-minutes: 90
@@ -364,6 +366,8 @@ jobs:
           cache-from: "type=gha,scope=container-linux-arm64"
           cache-to: "type=gha,mode=max,scope=container-linux-arm64"
           outputs: "type=oci,dest=${{ runner.temp }}/container-oci/layout,tar=false"
+          secrets: |
+            github_token=${{ secrets.GITHUB_TOKEN }}
 
       - name: "Record OCI digest"
         timeout-minutes: 90
