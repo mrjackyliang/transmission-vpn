@@ -22,7 +22,7 @@ Use Docker health, the health routes, and the authenticated status route to tell
 
 ## Docker health check
 
-The image's <Terminology title="Docker's periodic self-test of the container's services" to="/docs/reference/terminology#health-check">health check</Terminology> runs every 30 seconds. It checks the TUN device, startup markers, firewall rules, supervised services, control API liveness, and the default Transmission's private RPC listener.
+The image's <Terminology title="Docker's every-30-seconds check that the container is OK" to="/docs/reference/terminology#health-and-notifications">health check</Terminology> runs every 30 seconds. It checks the TUN device, startup markers, firewall rules, supervised services, control API liveness, and the default Transmission's private RPC listener.
 
 ```bash
 docker compose ps
@@ -72,7 +72,7 @@ Both health routes answer on port 22602 without a sign-in:
 curl --include http://<docker-host>:22602/api/v1/health/ready
 ```
 
-Use <Terminology title="Route confirming traffic is protected and the default Transmission is ready" to="/docs/reference/terminology#readiness">readiness</Terminology> when a monitor should require the default connection to work. Use <Terminology title="Route confirming the control plane and firewall state" to="/docs/reference/terminology#liveness">liveness</Terminology> when it should require only a working container and safety boundary.
+Use <Terminology title="Is the default VPN protected and Transmission ready?" to="/docs/reference/terminology#health-and-notifications">readiness</Terminology> when a monitor should require the default connection to work. Use <Terminology title="Is the container alive, even if the VPN is down?" to="/docs/reference/terminology#health-and-notifications">liveness</Terminology> when it should require only a working container and safety boundary.
 
 ## Read logs
 

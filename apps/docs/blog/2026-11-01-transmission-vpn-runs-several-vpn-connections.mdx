@@ -1,0 +1,49 @@
+---
+title: "Transmission VPN Runs Up to 64 VPN Connections at Once"
+description: Each VPN connection gets its own Transmission and its own tunnel, and torrent profiles decide which connection every download uses.
+slug: transmission-vpn-runs-several-vpn-connections
+authors:
+  - mrjackyliang
+keywords:
+  - transmission vpn
+  - multiple vpn connections
+  - torrent profiles
+  - openvpn
+  - wireguard
+tags:
+  - release
+  - vpn
+  - torrents
+---
+
+Transmission VPN 2.0.0 runs several VPN connections in one container, from 1 up to 64 depending on its memory and CPUs. Each connection has its own Transmission, its own tunnel, and its own peer port, all behind one web interface.
+
+{/* truncate */}
+
+## Why It Matters
+
+One container used to mean one VPN. Sending some torrents through one provider or country and the rest through another took a second container, a second web interface, and a second set of settings.
+
+Now each connection is a separate Transmission that can only send traffic through its own tunnel. A dropped tunnel blocks only that connection's torrents, while the others keep running.
+
+## How It Works
+
+### Profiles Pick the Connection
+
+A torrent profile owns one download folder and one VPN connection. When a torrent is added, its profile decides where the files go and which connection carries the traffic. Changing a torrent's profile moves it to that profile's connection and keeps its files.
+
+### One Default Connection
+
+One connection is the default. It handles torrents in the Default profile, remote-app adds that match no profile, and DNS lookups for every Transmission.
+
+### Capacity From the Container
+
+The **VPN** page shows usage as `<N> of <M> connections`. The container keeps 256 MiB for shared services, allows one connection for each 160 MiB left and up to two for each CPU, and uses the smaller number, from 1 to 64.
+
+### One Interface for All of Them
+
+The torrent list combines every connection, with a **VPN** filter for each. Remote apps connect to one Transmission-compatible route that presents every connection as one Transmission.
+
+## Try It
+
+[VPN Connections](/docs/vpn/connections/) explains the default connection, capacity, and moving torrents between connections. [Torrent Profiles](/docs/torrents/torrent-profiles/) shows how profiles pick a connection.

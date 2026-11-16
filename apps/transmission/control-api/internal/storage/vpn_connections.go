@@ -144,7 +144,7 @@ func NewVPNConnectionID() (string, error) {
 //
 // Since: 2.0.0
 func (store *Store) ListVPNConnections(ctx context.Context) ([]EncryptedVPNConnection, error) {
-	rows, err := store.databaseHandle().QueryContext(
+	rows, err := store.readHandle().QueryContext(
 		ctx,
 		"SELECT "+vpnConnectionColumns+" FROM vpn_connections ORDER BY slot",
 	)
@@ -172,7 +172,7 @@ func (store *Store) ListVPNConnections(ctx context.Context) ([]EncryptedVPNConne
 	for index := range connections {
 		profileIDs, endpointError := readVPNConnectionEndpoints(
 			ctx,
-			store.databaseHandle(),
+			store.readHandle(),
 			connections[index].ID,
 		)
 		if endpointError != nil {
@@ -196,7 +196,7 @@ func (store *Store) VPNConnectionByID(
 ) (EncryptedVPNConnection, error) {
 	return readVPNConnection(
 		ctx,
-		store.databaseHandle(),
+		store.readHandle(),
 		"SELECT "+vpnConnectionColumns+" FROM vpn_connections WHERE id = ?",
 		connectionID,
 	)
@@ -211,7 +211,7 @@ func (store *Store) VPNConnectionByID(
 func (store *Store) DefaultVPNConnection(ctx context.Context) (EncryptedVPNConnection, error) {
 	return readVPNConnection(
 		ctx,
-		store.databaseHandle(),
+		store.readHandle(),
 		"SELECT "+vpnConnectionColumns+" FROM vpn_connections WHERE is_default = 1",
 	)
 }

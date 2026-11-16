@@ -98,7 +98,7 @@ func (store *Store) CreateRPCLogin(ctx context.Context, login RPCLogin) (RPCLogi
 //
 // Since: 2.0.0
 func (store *Store) ListRPCLogins(ctx context.Context) ([]RPCLogin, error) {
-	rows, err := store.databaseHandle().QueryContext(
+	rows, err := store.readHandle().QueryContext(
 		ctx,
 		"SELECT "+rpcLoginColumns+" FROM rpc_logins ORDER BY created_at DESC, username",
 	)
@@ -130,7 +130,7 @@ func (store *Store) ListRPCLogins(ctx context.Context) ([]RPCLogin, error) {
 //
 // Since: 2.0.0
 func (store *Store) FindRPCLogin(ctx context.Context, id string) (RPCLogin, error) {
-	login, err := scanRPCLogin(store.databaseHandle().QueryRowContext(
+	login, err := scanRPCLogin(store.readHandle().QueryRowContext(
 		ctx,
 		"SELECT "+rpcLoginColumns+" FROM rpc_logins WHERE id = ?",
 		id,
@@ -149,7 +149,7 @@ func (store *Store) FindRPCLogin(ctx context.Context, id string) (RPCLogin, erro
 //
 // Since: 2.0.0
 func (store *Store) FindRPCLoginByUsername(ctx context.Context, username string) (RPCLogin, error) {
-	login, err := scanRPCLogin(store.databaseHandle().QueryRowContext(
+	login, err := scanRPCLogin(store.readHandle().QueryRowContext(
 		ctx,
 		"SELECT "+rpcLoginColumns+" FROM rpc_logins WHERE username = ? COLLATE NOCASE",
 		username,
@@ -269,19 +269,15 @@ func (store *Store) DeleteRPCLogin(ctx context.Context, id string) error {
 
 // RecordRPCLoginUsed records a successful sign-in at most once per minute.
 //
-// The read and conditional write share one transaction, so concurrent successful
-// requests cannot turn the bounded activity timestamp into a write per RPC call.
+// The check reads on the read-only connections and a due save is queued for the
+// background activity writer, so an RPC call never waits for the writing connection.
+// A save that arrives after a newer one changes no rows. A login that no longer
+// exists returns ErrNotFound.
 //
-// Since: 2.0.0
+// Since: 2.2.1
 func (store *Store) RecordRPCLoginUsed(ctx context.Context, id string) error {
-	transaction, err := store.databaseHandle().BeginTx(ctx, nil)
-	if err != nil {
-		return fmt.Errorf("begin RPC login use update: %w", err)
-	}
-	defer func() { _ = transaction.Rollback() }()
-
 	var lastUsedAtText sql.NullString
-	if err := transaction.QueryRowContext(
+	if err := store.readHandle().QueryRowContext(
 		ctx,
 		"SELECT last_used_at FROM rpc_logins WHERE id = ?",
 		id,
@@ -298,26 +294,18 @@ func (store *Store) RecordRPCLoginUsed(ctx context.Context, id string) error {
 			return err
 		}
 		if !activityWriteDue(lastUsedAt, now) {
-			if err := transaction.Commit(); err != nil {
-				return fmt.Errorf("commit unchanged RPC login use: %w", err)
-			}
-
 			return nil
 		}
 	}
 
-	if _, err := transaction.ExecContext(
-		ctx,
-		"UPDATE rpc_logins SET last_used_at = ? WHERE id = ?",
-		formatTime(now),
-		id,
-	); err != nil {
-		return fmt.Errorf("record RPC login use: %w", err)
+	var previous any
+	if lastUsedAtText.Valid {
+		previous = lastUsedAtText.String
 	}
-
-	if err := transaction.Commit(); err != nil {
-		return fmt.Errorf("commit RPC login use: %w", err)
-	}
+	store.activity.queue("rpc_logins:"+id, activitySave{
+		query:     "UPDATE rpc_logins SET last_used_at = ? WHERE id = ? AND last_used_at IS ?",
+		arguments: []any{formatTime(now), id, previous},
+	})
 
 	return nil
 }

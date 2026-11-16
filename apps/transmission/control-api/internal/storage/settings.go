@@ -51,7 +51,7 @@ type SettingChanges map[string]json.RawMessage
 // Runtime status includes this value so diagnostics and UI state can be correlated
 // with the exact accepted configuration snapshot.
 func (store *Store) CurrentConfigurationRevision(ctx context.Context) (int64, error) {
-	return currentConfigurationRevision(ctx, store.databaseHandle())
+	return currentConfigurationRevision(ctx, store.readHandle())
 }
 
 // EffectiveConfiguration resolves defaults, persisted values, seeds, and locks.
@@ -826,7 +826,7 @@ type persistedSetting struct {
 func (store *Store) readPersistedSettings(
 	ctx context.Context,
 ) (map[string]persistedSetting, error) {
-	rows, err := store.databaseHandle().QueryContext(
+	rows, err := store.readHandle().QueryContext(
 		ctx,
 		"SELECT key, value_json, source FROM settings",
 	)
@@ -864,7 +864,7 @@ func (store *Store) readPersistedSettings(
 func (store *Store) readManagedSettings(
 	ctx context.Context,
 ) (map[string]settings.ManagedValue, error) {
-	return readManagedSettingsFrom(ctx, store.databaseHandle())
+	return readManagedSettingsFrom(ctx, store.readHandle())
 }
 
 // queryInterface captures query behavior shared by a database and transaction.

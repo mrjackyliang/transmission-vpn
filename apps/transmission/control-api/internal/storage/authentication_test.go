@@ -198,9 +198,12 @@ func TestActivityTimesSaveOncePerMinute(testingObject *testing.T) {
 		testingObject.Fatalf("add administrator: %v", err)
 	}
 
+	// Saves are queued for the background activity writer, so each read waits for the
+	// queue to drain first.
 	readSaved := func(query string, id string) string {
 		testingObject.Helper()
 
+		store.flushActivity()
 		var saved sql.NullString
 		if err := store.databaseHandle().QueryRowContext(ctx, query, id).Scan(&saved); err != nil {
 			testingObject.Fatalf("read saved activity time: %v", err)

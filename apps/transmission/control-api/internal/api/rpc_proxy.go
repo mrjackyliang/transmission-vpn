@@ -46,6 +46,10 @@ type rpcFacadeRequest struct {
 //
 // Third-party applications use Basic authentication with an independently revocable
 // RPC username and generated password. API tokens are never accepted on this route.
+// Any method passes the same login and session checks, so a GET handshake gets the
+// 409 session reply, but only POST carries a call, as with Transmission itself.
+//
+// Since: 2.2.1
 func (server *Server) handleRPCProxy(
 	responseWriter http.ResponseWriter,
 	request *http.Request,
@@ -113,6 +117,13 @@ func (server *Server) handleRPCProxy(
 
 		return
 	}
+	if request.Method != http.MethodPost {
+		responseWriter.Header().Set("Allow", http.MethodPost)
+		writeError(responseWriter, http.StatusMethodNotAllowed, "method_not_allowed", "Transmission RPC calls use POST.")
+
+		return
+	}
+
 	request.Body = http.MaxBytesReader(responseWriter, request.Body, maximumRPCRequestBytes)
 	server.serveRPCFacade(responseWriter, request)
 }

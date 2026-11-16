@@ -32,7 +32,7 @@ import remoteAppsFiveDark from './_assets_/remote-apps-5-dark.png';
 
 Use **Remote apps** to connect Transmission clients, scripts, and other devices. On a phone, its tab is labeled **Apps**.
 
-The page has separate cards for the **RPC proxy**, **API tokens**, and the <Terminology title="Authenticated HTTP and SOCKS5 service that sends private-network clients through the VPN" to="/docs/reference/terminology#web-proxy">Web proxy</Terminology>.
+The page has separate cards for the **RPC proxy**, **API tokens**, and the <Terminology title="Lets other devices browse through your VPN on port 22605" to="/docs/reference/terminology#remote-access">Web proxy</Terminology>.
 
 <Frame caption="Copy rows with each label above its address">
   <ThemedImage sources={{ light: remoteAppsOneLight, dark: remoteAppsOneDark }} alt="Remote apps page with the RPC proxy and web proxy ready, each copy-row label above an address that wraps after the protocol marker and path slashes, two RPC logins, three API tokens, and two web proxy logins" width={1280} height={952} style={{ maxWidth: '100%', height: 'auto' }} />
@@ -40,15 +40,15 @@ The page has separate cards for the **RPC proxy**, **API tokens**, and the <Term
 
 ## RPC proxy
 
-The <Terminology title="Opt-in /transmission/rpc route for third-party apps" to="/docs/reference/terminology#compatible-rpc">RPC proxy</Terminology> serves Transmission's standard `/transmission/rpc` path on port 9091. It stays off until you turn it on and keeps every <Terminology title="Transmission's own RPC, private to the container" to="/docs/reference/terminology#native-rpc">native RPC</Terminology> private to the container.
+The <Terminology title="Makes all connections look like one Transmission to apps" to="/docs/reference/terminology#remote-access">RPC proxy</Terminology> serves Transmission's standard `/transmission/rpc` path on port 9091. It stays off until you turn it on and keeps every <Terminology title="Each Transmission's private RPC port, never published" to="/docs/reference/terminology#remote-access">native RPC</Terminology> private to the container.
 
 Remote apps see the torrents from every VPN connection in one combined Transmission. The proxy routes each torrent action to the Transmission that owns it.
 
 ### Turn it on
 
-1. Open **<Terminology title="A third-party Transmission client connecting over RPC" to="/docs/reference/terminology#remote-app">Remote apps</Terminology>** in the navigation.
+1. Open **<Terminology title="A Transmission app on your phone or desktop" to="/docs/reference/terminology#remote-access">Remote apps</Terminology>** in the navigation.
 2. Add a VPN connection if you don't have one yet.
-3. Add an <Terminology title="Username and generated password for the compatible RPC route" to="/docs/reference/terminology#rpc-login">RPC login</Terminology> for each app, using the steps below.
+3. Add an <Terminology title="One app's own username and password for RPC" to="/docs/reference/terminology#remote-access">RPC login</Terminology> for each app, using the steps below.
 4. Turn on the **RPC proxy** switch.
 
 A VPN connection is required before you can add a login or turn on the proxy. Without one, the only link is **Add VPN connection** in the note under each proxy heading, and each **Logins** section says `Logins can be added once there's a VPN connection.`
@@ -63,7 +63,7 @@ While a switch change is taking effect, the state reads **Turning on…** or **T
 
 ### Add a login
 
-Give each app its own <Terminology title="Username and generated password for the compatible RPC route" to="/docs/reference/terminology#rpc-login">RPC login</Terminology>:
+Give each app its own <Terminology title="One app's own username and password for RPC" to="/docs/reference/terminology#remote-access">RPC login</Terminology>:
 
 1. Select **Add login** in the **Logins** section.
 2. Enter a username for the app.
@@ -78,11 +78,11 @@ The list shows when each login was last used, or **Never used**. **Edit** change
 
 ### Connect an app
 
-| App field      | Value                                                                                                                                                                              |
-|----------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Address or URL | The **URL** under **Connection details**, such as `http://<docker-host>:9091/transmission/rpc`.                                                                                    |
-| Username       | The username from that app's <Terminology title="Username and generated password for the compatible RPC route" to="/docs/reference/terminology#rpc-login">RPC login</Terminology>. |
-| Password       | The generated password for that login.                                                                                                                                             |
+| App field      | Value                                                                                                                                                                 |
+|----------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Address or URL | The **URL** under **Connection details**, such as `http://<docker-host>:9091/transmission/rpc`.                                                                       |
+| Username       | The username from that app's <Terminology title="One app's own username and password for RPC" to="/docs/reference/terminology#remote-access">RPC login</Terminology>. |
+| Password       | The generated password for that login.                                                                                                                                |
 
 If an app asks for the host, port, and path separately, use the Docker host, port 9091 or your `TRANSMISSION_VPN_RPC_PORT`, and `/transmission/rpc`.
 
@@ -112,7 +112,7 @@ A torrent added by link starts only after the cross-connection duplicate check p
 
 ## API tokens
 
-Use <Terminology title="A scoped credential for automating the API" to="/docs/reference/terminology#api-token">API tokens</Terminology> for scripts that call the control API on port 22602. They do not work on the RPC route.
+Use <Terminology title="A scoped key for scripts that call the API" to="/docs/reference/terminology#remote-access">API tokens</Terminology> for scripts that call the control API on port 22602. They do not work on the RPC route.
 
 1. Select **Create token** in the **API tokens** card.
 2. Enter a name and choose the scopes the script needs.

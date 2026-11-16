@@ -100,6 +100,7 @@ func TestRPCLogins(testingObject *testing.T) {
 	if err := store.RecordRPCLoginUsed(ctx, first.ID); err != nil {
 		testingObject.Fatalf("record first RPC login use: %v", err)
 	}
+	store.flushActivity()
 	used, err := store.FindRPCLogin(ctx, first.ID)
 	if err != nil || used.LastUsedAt == nil {
 		testingObject.Fatalf("read first RPC login use = %+v, %v", used, err)
@@ -109,6 +110,7 @@ func TestRPCLogins(testingObject *testing.T) {
 	if err := store.RecordRPCLoginUsed(ctx, first.ID); err != nil {
 		testingObject.Fatalf("record throttled RPC login use: %v", err)
 	}
+	store.flushActivity()
 	usedAgain, err := store.FindRPCLogin(ctx, first.ID)
 	if err != nil || usedAgain.LastUsedAt == nil || !usedAgain.LastUsedAt.Equal(firstUse) {
 		testingObject.Fatalf("throttled RPC login use = %+v, %v", usedAgain, err)
@@ -126,6 +128,7 @@ func TestRPCLogins(testingObject *testing.T) {
 	if err := store.RecordRPCLoginUsed(ctx, first.ID); err != nil {
 		testingObject.Fatalf("record aged RPC login use: %v", err)
 	}
+	store.flushActivity()
 	usedAfterWindow, err := store.FindRPCLogin(ctx, first.ID)
 	if err != nil || usedAfterWindow.LastUsedAt == nil || !usedAfterWindow.LastUsedAt.After(oldUse) {
 		testingObject.Fatalf("RPC login use after window = %+v, %v", usedAfterWindow, err)

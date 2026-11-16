@@ -295,7 +295,7 @@ func (store *Store) ListVPNProfiles(
 	providerID string,
 	tunnel string,
 ) ([]VPNProfileMetadata, error) {
-	rows, err := store.databaseHandle().QueryContext(
+	rows, err := store.readHandle().QueryContext(
 		ctx,
 		`SELECT id, provider_id, tunnel, display_name, country_code, country_name, city,
 		        continent, protocol, remote_host, remote_port,
@@ -335,7 +335,7 @@ func (store *Store) ListVPNProfiles(
 func (store *Store) FindVPNProfile(ctx context.Context, profileID string) (StoredVPNProfile, error) {
 	var profile StoredVPNProfile
 	var updatedAtText string
-	err := store.databaseHandle().QueryRowContext(
+	err := store.readHandle().QueryRowContext(
 		ctx,
 		`SELECT id, provider_id, tunnel, display_name, country_code, country_name, city,
 		        continent, protocol, remote_host, remote_port,
@@ -386,7 +386,7 @@ func (store *Store) VPNCatalogStatusFor(
 ) (VPNCatalogStatus, error) {
 	var status VPNCatalogStatus
 	var refreshedAtText string
-	err := store.databaseHandle().QueryRowContext(
+	err := store.readHandle().QueryRowContext(
 		ctx,
 		`SELECT provider_id, tunnel, source_url, endpoint_count, refreshed_at
 		 FROM vpn_catalogs

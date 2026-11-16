@@ -1,5 +1,13 @@
 # transmission-vpn-app-transmission
 
+## 2.2.1 - 2026-11-16
+
+### FIXED
+- Sonarr, Radarr, and Prowlarr connect through the RPC proxy. Their download client test failed with Authentication Failure even with the right login, because the proxy answered the GET request they open with as an unknown page instead of with Transmission's session reply.
+- The console, remote apps, and the health check no longer wait for the database on a busy NAS disk. Checking a sign-in, listing settings, and every other read uses its own connection, and the once-a-minute saves of when a session, API token, or RPC login was last used happen in the background, so only changes you make wait for the disk. A single slow save used to freeze the console for up to 16 seconds and make the notification check and the health check fail with context deadline exceeded.
+- When a VPN connection skips a server and moves on to the next one, the container log names why the skipped server failed, such as a server name that didn't resolve. A restore that worked through several servers used to log each one with an empty error.
+- New API tokens and generated login passwords show in regular weight in the dialog that reveals them, instead of semi-bold.
+
 ## 2.2.0 - 2026-11-11
 
 ### FIXED

@@ -41,9 +41,9 @@ Change settings that apply across every profile from the **Settings** page: the 
 
 If you try to open another page or sign out with unsaved changes, the interface asks before discarding them. Refreshing or closing the browser tab uses the browser's unsaved-changes warning too.
 
-- **Notes** — Each row shows its key and <Terminology title="Whether a change applies live or after a restart" to="/docs/reference/terminology#apply-impact">apply impact</Terminology>. **Transmission restart required** means the saved value applies after you confirm a restart.
+- **Notes** — Each row shows its key and <Terminology title="Whether a change applies now or after a restart" to="/docs/reference/terminology#settings-and-managed-configuration">apply impact</Terminology>. **Transmission restart required** means the saved value applies after you confirm a restart.
 - **Sources and locks** — A changed, unlocked row reads **Changed from default**. A managed lock reads **Locked** and makes its control unavailable.
-- **<Terminology title="Counter that detects conflicting settings changes" to="/docs/reference/terminology#revision">Revision</Terminology> check** — A save based on an older revision fails with `Settings changed since this revision. Refresh and try again.`
+- **<Terminology title="Stops two browsers from overwriting each other's settings" to="/docs/reference/terminology#settings-and-managed-configuration">Revision</Terminology> check** — A save based on an older revision fails with `Settings changed since this revision. Refresh and try again.`
 - **Confirmation** — A successful save shows `Settings saved.` in a notification in the corner.
 
 The page leaves enough space below its last setting for the fixed save bar. Corner notifications sit above the bar while it is present.
@@ -75,11 +75,11 @@ You can also apply pending settings at the next container start:
 docker compose restart app
 ```
 
-The button uses the same <Terminology title="API-triggered Transmission restart that applies pending settings" to="/docs/reference/terminology#controlled-restart">controlled restart</Terminology> as `POST /api/v1/transmission/restart` with `{"confirm": true}`.
+The button uses the same <Terminology title="Restarts Transmission to apply settings, not the container" to="/docs/reference/terminology#settings-and-managed-configuration">controlled restart</Terminology> as `POST /api/v1/transmission/restart` with `{"confirm": true}`.
 
 ## Default Profile
 
-The <Terminology title="The first profile, used when no named profile matches" to="/docs/reference/terminology#default-profile">Default profile</Terminology> owns the defaults for unmatched torrents. Open its **⋯** menu under **Profiles** on the **Torrents** page, then select **Edit**.
+The <Terminology title="Where torrents go when no named profile matches" to="/docs/reference/terminology#torrent-profiles">Default profile</Terminology> owns the defaults for unmatched torrents. Open its **⋯** menu under **Profiles** on the **Torrents** page, then select **Edit**.
 
 Its editor contains **Name**, **Download folder**, **Labels**, **Start paused**, **Seeding**, **Download limit**, **Upload limit**, **Priority**, **Peer limit**, and **Queue position**. It has no **Name patterns**.
 
@@ -154,7 +154,7 @@ Each VPN connection has its own peer port, set on that connection's [VPN page](/
 
 With **Randomize peer port** off, each Transmission uses its connection's peer port. With it on, the container chooses a separate available port for each Transmission from the range above when the daemon starts.
 
-Transmission VPN doesn't set up <Terminology title="Inbound peer port opened through a VPN or router" to="/docs/reference/terminology#port-forwarding">port forwarding</Terminology> for the peer port.
+Transmission VPN doesn't set up <Terminology title="Inbound ports for peers; this image never opens them" to="/docs/reference/terminology#vpn-connections">port forwarding</Terminology> for the peer port.
 
 ### Blocklists
 
@@ -203,20 +203,20 @@ Some Transmission settings are fixed by the container and don't appear on the **
 - DHT, peer exchange (PEX), and uTP are on, and Local Peer Discovery is off.
 - Router port mapping (UPnP and NAT-PMP) is off.
 - Script hooks for added, finished, and done-seeding torrents are off.
-- Each <Terminology title="Transmission's own RPC, private to the container" to="/docs/reference/terminology#native-rpc">native RPC</Terminology> listens on a separate loopback port inside the container, starting at `127.0.0.1:9092`.
+- Each <Terminology title="Each Transmission's private RPC port, never published" to="/docs/reference/terminology#remote-access">native RPC</Terminology> listens on a separate loopback port inside the container, starting at `127.0.0.1:9092`.
 - Every Transmission's IPv6 address is bound to `::1`.
 
 At every container start, each Transmission settings file is rebuilt from registered settings, profile and connection settings, and the fixed values above. Other Transmission settings, such as global speed limits, aren't part of it.
 
 ## Sources and Locks
 
-- The settings API reports each setting's <Terminology title="Where a setting's current value comes from" to="/docs/reference/terminology#setting-source">setting source</Terminology> as `default`, `user`, `managed-seed`, or `managed-lock`.
+- The settings API reports each setting's <Terminology title="Where a setting's value came from" to="/docs/reference/terminology#settings-and-managed-configuration">setting source</Terminology> as `default`, `user`, `managed-seed`, or `managed-lock`.
 - An unlocked `user` or `managed-seed` value shows **Changed from default**. Default values and locked values don't show that note.
-- A <Terminology title="A managed value that overrides and freezes a setting" to="/docs/reference/terminology#managed-lock">locked</Terminology> row shows **Locked**, and its control can't be edited.
-- [Managed Configuration](/docs/configuration/managed-configuration/) explains <Terminology title="A managed value applied once when unset" to="/docs/reference/terminology#managed-seed">seeds</Terminology> and <Terminology title="A managed value that overrides and freezes a setting" to="/docs/reference/terminology#managed-lock">locks</Terminology>.
+- A <Terminology title="A value pinned by managed.json that can't be edited" to="/docs/reference/terminology#settings-and-managed-configuration">locked</Terminology> row shows **Locked**, and its control can't be edited.
+- [Managed Configuration](/docs/configuration/managed-configuration/) explains <Terminology title="A starting value you can still change later" to="/docs/reference/terminology#settings-and-managed-configuration">seeds</Terminology> and <Terminology title="A value pinned by managed.json that can't be edited" to="/docs/reference/terminology#settings-and-managed-configuration">locks</Terminology>.
 
 ## Backup
 
-The final section is **Backup**, with **Export…** and **Import…** beside **Export and import**. It works independently of the settings save bar and makes a portable <Terminology title="a portable JSON backup made from selected Backup sections" to="/docs/reference/terminology#export-file">export file</Terminology> or imports one, and it can also import an existing Transmission 3 or 4 configuration.
+The final section is **Backup**, with **Export…** and **Import…** beside **Export and import**. It works independently of the settings save bar and makes a portable <Terminology title="A portable JSON backup you can import anywhere" to="/docs/reference/terminology#accounts-and-backups">export file</Terminology> or imports one, and it can also import an existing Transmission 3 or 4 configuration.
 
 See [Export and Import](/docs/configuration/export-and-import/) for the sections, wizard steps, and migration behavior.

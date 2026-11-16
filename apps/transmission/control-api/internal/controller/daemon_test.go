@@ -49,7 +49,16 @@ func TestControllerSocketStatus(testingObject *testing.T) {
 	go func() { serveErrors <- daemon.Serve(serveContext) }()
 	waitForSocket(testingObject, daemon.config.SocketPath, serveErrors)
 
-	directInfo, err := os.Stat(daemon.config.DirectSocketPath)
+	// Serve opens the direct socket and sets its mode after the control socket is
+	// already listening, so the check waits for that final mode.
+	var directInfo os.FileInfo
+	for attempt := 0; attempt < 100; attempt++ {
+		directInfo, err = os.Stat(daemon.config.DirectSocketPath)
+		if err == nil && directInfo.Mode()&os.ModeSocket != 0 && directInfo.Mode().Perm() == 0o660 {
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
 	if err != nil {
 		testingObject.Fatalf("stat direct connection socket: %v", err)
 	}
@@ -301,6 +310,58 @@ func TestProtectUsesSlotAndProviderAddresses(testingObject *testing.T) {
 	}
 	if strings.TrimSpace(string(arguments)) != "wg4 198.18.4.1 10.68.4.2" {
 		testingObject.Fatalf("protect arguments = %q", arguments)
+	}
+}
+
+// TestFailedEndpointIsLoggedBeforeTheNextOne names why an endpoint was skipped.
+//
+// A later endpoint's success discards the collected errors, so without this line a
+// restore that skips servers leaves no reason in the container log.
+func TestFailedEndpointIsLoggedBeforeTheNextOne(testingObject *testing.T) {
+	daemon := newTestDaemon(testingObject)
+	logOutput := &lockedLogBuffer{}
+	daemon.config.Logger = slog.New(slog.NewJSONHandler(logOutput, nil))
+
+	failing := testWireGuardConnection(testingObject, "unresolvable-server", "192.0.2.61", "10.64.0.1")
+	working := testWireGuardConnection(testingObject, "working-server", "192.0.2.62", "10.64.0.1")
+	connection := failing
+	connection.Endpoints = append(connection.Endpoints, working.Endpoints...)
+	failingProfileID := failing.Endpoints[0].ProfileID
+	workingProfileID := working.Endpoints[0].ProfileID
+
+	daemon.driverFactory = func(_ string, slot int) tunnelDriver {
+		return testTunnelDriver{start: func(_ context.Context, _ Connection, endpoint Endpoint) (tunnelSession, error) {
+			if endpoint.ProfileID == failingProfileID {
+				return nil, errors.New("resolve the WireGuard endpoint vpn.example.test: no such host")
+			}
+
+			return newTestTunnelSession(slot), nil
+		}}
+	}
+
+	status, err := daemon.Connect("vpc-0000000000000017", 5, false, connection)
+	if err != nil {
+		testingObject.Fatalf("connect after one failed endpoint: %v", err)
+	}
+	if status.State != "protected" || status.ProfileID != workingProfileID {
+		testingObject.Fatalf("status = %s on %s, want protected on %s", status.State, status.ProfileID, workingProfileID)
+	}
+
+	var failure map[string]any
+	for _, line := range strings.Split(strings.TrimSpace(logOutput.String()), "\n") {
+		var record map[string]any
+		if json.Unmarshal([]byte(line), &record) == nil && record["msg"] == "VPN endpoint failed" {
+			failure = record
+		}
+	}
+	if failure == nil {
+		testingObject.Fatalf("no VPN endpoint failed line in:\n%s", logOutput.String())
+	}
+	if failure["level"] != "WARN" ||
+		failure["profile"] != failingProfileID ||
+		failure["connectionId"] != "vpc-0000000000000017" ||
+		!strings.Contains(fmt.Sprint(failure["error"]), "no such host") {
+		testingObject.Fatalf("VPN endpoint failed line = %v", failure)
 	}
 }
 
@@ -1007,6 +1068,26 @@ AllowedIPs = 0.0.0.0/0
 
 type testTunnelDriver struct {
 	start func(context.Context, Connection, Endpoint) (tunnelSession, error)
+}
+
+// lockedLogBuffer collects log lines written from the daemon's goroutines.
+type lockedLogBuffer struct {
+	mutex  sync.Mutex
+	output strings.Builder
+}
+
+func (buffer *lockedLogBuffer) Write(content []byte) (int, error) {
+	buffer.mutex.Lock()
+	defer buffer.mutex.Unlock()
+
+	return buffer.output.Write(content)
+}
+
+func (buffer *lockedLogBuffer) String() string {
+	buffer.mutex.Lock()
+	defer buffer.mutex.Unlock()
+
+	return buffer.output.String()
 }
 
 type startupTunnelDriver struct {

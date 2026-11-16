@@ -17,7 +17,7 @@ tags:
 
 import { Terminology } from '@cbnventures/docusaurus-preset-nova/blocks';
 
-Find answers to common questions about VPN support, the web interface, networking, accounts, and the <Terminology title="The original Synology script this image replaces" to="/docs/reference/terminology#legacy-project">legacy script</Terminology>.
+Find answers to common questions about VPN support, the web interface, networking, accounts, and the <Terminology title="The old Synology script this Docker image replaces" to="/docs/reference/terminology#container-and-services">legacy script</Terminology>.
 
 ## VPN
 
@@ -27,31 +27,31 @@ Yes. Each VPN connection runs its own Transmission and tunnel, so protected conn
 
 ### Where does a torrent's traffic go?
 
-A torrent uses its <Terminology title="The folder, VPN connection, labels, and defaults that belong to a torrent" to="/docs/reference/terminology#profile">profile</Terminology>'s effective VPN connection. The <Terminology title="The first profile, used when no named profile matches" to="/docs/reference/terminology#default-profile">Default profile</Terminology> uses the default connection for new adds and assignments.
+A torrent uses its <Terminology title="Decides a torrent's folder and which VPN it uses" to="/docs/reference/terminology#torrent-profiles">profile</Terminology>'s effective VPN connection. The <Terminology title="Where torrents go when no named profile matches" to="/docs/reference/terminology#torrent-profiles">Default profile</Terminology> uses the default connection for new adds and assignments.
 
 The torrent row and details show its current connection. Change the torrent's profile to put it on another connection, or select **Save and move** after changing the assigned profile's connection. Removing a VPN connection can also transfer its torrents to a chosen connection.
 
 ### Does it support WireGuard?
 
-Yes. NordVPN, Surfshark, IVPN, and Custom offer <Terminology title="VPN protocol that signs in with a key pair" to="/docs/reference/terminology#wireguard">WireGuard</Terminology> next to OpenVPN, and Mullvad offers WireGuard only, as covered in [Supported Providers](/docs/vpn/providers/).
+Yes. NordVPN, Surfshark, IVPN, and Custom offer <Terminology title="The VPN protocol that signs in with a key, not a password" to="/docs/reference/terminology#vpn-connections">WireGuard</Terminology> next to OpenVPN, and Mullvad offers WireGuard only, as covered in [Supported Providers](/docs/vpn/providers/).
 
-WireGuard needs no extra container settings, only the same <Terminology title="Docker capability that lets the container manage networking" to="/docs/reference/terminology#net_admin">`NET_ADMIN`</Terminology> capability and <Terminology title="Kernel device /dev/net/tun that VPN tunnels need" to="/docs/reference/terminology#tun-device">TUN device</Terminology> as OpenVPN. It uses the host's kernel module when there is one, and the slower <Terminology title="WireGuard run by wireguard-go when the kernel lacks it" to="/docs/reference/terminology#userspace-wireguard">`wireguard-go`</Terminology> otherwise.
+WireGuard needs no extra container settings, only the same <Terminology title="The Docker capability that lets it manage its firewall" to="/docs/reference/terminology#container-and-services">`NET_ADMIN`</Terminology> capability and <Terminology title="The /dev/net/tun device the container needs for tunnels" to="/docs/reference/terminology#container-and-services">TUN device</Terminology> as OpenVPN. It uses the host's kernel module when there is one, and the slower <Terminology title="WireGuard without a kernel module; slower, no setup" to="/docs/reference/terminology#vpn-connections">`wireguard-go`</Terminology> otherwise.
 
 ### Which VPN services work?
 
-PureVPN, Private Internet Access, IPVanish, NordVPN, Surfshark, IVPN, and Mullvad have built-in <Terminology title="A provider's official endpoint list, downloaded on request" to="/docs/reference/terminology#endpoint-catalog">catalogs</Terminology>. Other OpenVPN and WireGuard services work through a <Terminology title="Your own .ovpn or .conf file for any service" to="/docs/reference/terminology#custom-profile">custom profile</Terminology> when their `.ovpn` or `.conf` file passes the [profile checks](/docs/vpn/custom-profiles/#profile-requirements).
+PureVPN, Private Internet Access, IPVanish, NordVPN, Surfshark, IVPN, and Mullvad have built-in <Terminology title="The provider's server list you pick endpoints from" to="/docs/reference/terminology#providers-and-endpoints">catalogs</Terminology>. Other OpenVPN and WireGuard services work through a <Terminology title="Your own .ovpn or .conf file for any VPN service" to="/docs/reference/terminology#custom-profiles">custom profile</Terminology> when their `.ovpn` or `.conf` file passes the [profile checks](/docs/vpn/custom-profiles/#profile-requirements).
 
 ### Can one pool mix providers?
 
-No. Every <Terminology title="One VPN server profile you can connect to" to="/docs/reference/terminology#endpoint">endpoint</Terminology> in an <Terminology title="Ordered endpoints from one provider and tunnel for failover" to="/docs/reference/terminology#endpoint-pool">endpoint pool</Terminology> comes from the same provider and uses the same <Terminology title="The VPN protocol a connection uses, OpenVPN or WireGuard" to="/docs/reference/terminology#tunnel">tunnel</Terminology>.
+No. Every <Terminology title="One VPN server you can connect to" to="/docs/reference/terminology#providers-and-endpoints">endpoint</Terminology> in an <Terminology title="Backup servers to try in order when one fails" to="/docs/reference/terminology#providers-and-endpoints">endpoint pool</Terminology> comes from the same provider and uses the same <Terminology title="OpenVPN or WireGuard; every endpoint in a pool shares one" to="/docs/reference/terminology#vpn-connections">tunnel</Terminology>.
 
 ### What happens to several remote lines in a custom OpenVPN file?
 
-Each `remote` line becomes a separate selected <Terminology title="One VPN server profile you can connect to" to="/docs/reference/terminology#endpoint">endpoint</Terminology>. **Fallback order** follows the lines' order in the file, as covered in [Custom Profiles](/docs/vpn/custom-profiles/#openvpn-profiles).
+Each `remote` line becomes a separate selected <Terminology title="One VPN server you can connect to" to="/docs/reference/terminology#providers-and-endpoints">endpoint</Terminology>. **Fallback order** follows the lines' order in the file, as covered in [Custom Profiles](/docs/vpn/custom-profiles/#openvpn-profiles).
 
 ### Does it support port forwarding?
 
-No. No <Terminology title="Built-in integration for one VPN service" to="/docs/reference/terminology#provider-adapter">provider adapter</Terminology> requests a <Terminology title="Inbound peer port opened through a VPN or router" to="/docs/reference/terminology#port-forwarding">forwarded port</Terminology>, and Transmission's router port mapping (UPnP and NAT-PMP) is turned off.
+No. No <Terminology title="Built-in support for one VPN service; data, never code" to="/docs/reference/terminology#providers-and-endpoints">provider adapter</Terminology> requests a <Terminology title="Inbound ports for peers; this image never opens them" to="/docs/reference/terminology#vpn-connections">forwarded port</Terminology>, and Transmission's router port mapping (UPnP and NAT-PMP) is turned off.
 
 ### Can Transmission run without the VPN?
 
@@ -61,13 +61,13 @@ No. No setting lets Transmission use your regular connection, and **Disconnect a
 
 ### What is a profile?
 
-A <Terminology title="The folder, VPN connection, labels, and defaults that belong to a torrent" to="/docs/reference/terminology#profile">profile</Terminology> owns one download folder and one effective VPN connection, and supplies labels, paused state, seeding, speed, priority, peer, and queue defaults. Every torrent is assigned to one profile.
+A <Terminology title="Decides a torrent's folder and which VPN it uses" to="/docs/reference/terminology#torrent-profiles">profile</Terminology> owns one download folder and one effective VPN connection, and supplies labels, paused state, seeding, speed, priority, peer, and queue defaults. Every torrent is assigned to one profile.
 
 Change the profile to move the torrent's files or put it on another VPN connection. **Also apply its labels and limits** is optional.
 
 ### What is the Default profile?
 
-The <Terminology title="The first profile, used when no named profile matches" to="/docs/reference/terminology#default-profile">Default profile</Terminology> receives torrents that match no named profile. It stays first, uses the default VPN connection for new adds and assignments, and has the same folder, label, paused, seeding, speed, priority, peer, and queue fields as the other profiles.
+The <Terminology title="Where torrents go when no named profile matches" to="/docs/reference/terminology#torrent-profiles">Default profile</Terminology> receives torrents that match no named profile. It stays first, uses the default VPN connection for new adds and assignments, and has the same folder, label, paused, seeding, speed, priority, peer, and queue fields as the other profiles.
 
 Its **⋯** menu opens an editor where **Name** can be changed. **VPN connection** is read-only and follows the default connection, while **Name patterns** are unavailable; the profile cannot be deleted.
 
@@ -79,7 +79,7 @@ In **Add torrent**, **Profile** says `Matches N profiles. Pick one.`, and you ch
 
 ### What is a label?
 
-A <Terminology title="A free-form tag attached to a torrent" to="/docs/reference/terminology#label">label</Terminology> is a free-form tag. A torrent starts with its profile's labels, but you can add or remove labels without changing its profile, folder, or VPN connection.
+A <Terminology title="A free tag for grouping; it never moves the torrent" to="/docs/reference/terminology#torrent-profiles">label</Terminology> is a free-form tag. A torrent starts with its profile's labels, but you can add or remove labels without changing its profile, folder, or VPN connection.
 
 Renaming a saved label renames it on every torrent and profile that uses it. Deleting one removes it from those torrents and profiles without moving anything.
 
@@ -87,7 +87,7 @@ Renaming a saved label renames it on every torrent and profile that uses it. Del
 
 ### Does an export include downloaded files?
 
-No. The **Torrent list** section records metainfo, folders, profiles, labels, limits, and paused state, but the <Terminology title="a portable JSON backup made from selected Backup sections" to="/docs/reference/terminology#export-file">export file</Terminology> never contains the data under `/data`.
+No. The **Torrent list** section records metainfo, folders, profiles, labels, limits, and paused state, but the <Terminology title="A portable JSON backup you can import anywhere" to="/docs/reference/terminology#accounts-and-backups">export file</Terminology> never contains the data under `/data`.
 
 Mount the same data under `/data` on the destination, map any missing folders during import, and let Transmission re-check each torrent whose data it finds before that torrent returns to its saved paused or running state. A torrent whose data is not found stays paused as **Data missing**. See [Export and Import](/docs/configuration/export-and-import/#import-an-export-file).
 
@@ -95,13 +95,13 @@ Mount the same data under `/data` on the destination, map any missing folders du
 
 Yes. Mount a Transmission 3 or 4 config folder read-only, for example `-v /path/to/old/config:/import:ro`, then choose **Another Transmission** under **Settings** > **Backup** > **Import…**.
 
-The wizard turns download folders into profiles, carries over the incomplete folder and supported settings, and imports the torrent list. It does not import the old RPC sign-in, so add an <Terminology title="Username and generated password for the compatible RPC route" to="/docs/reference/terminology#rpc-login">RPC login</Terminology> afterwards for each remote app.
+The wizard turns download folders into profiles, carries over the incomplete folder and supported settings, and imports the torrent list. It does not import the old RPC sign-in, so add an <Terminology title="One app's own username and password for RPC" to="/docs/reference/terminology#remote-access">RPC login</Terminology> afterwards for each remote app.
 
 ## Web Interface
 
 ### Can I use Transmission's own web interface?
 
-No. The image builds Transmission without its own web interface, while apps that use Transmission's RPC can connect as <Terminology title="A third-party Transmission client connecting over RPC" to="/docs/reference/terminology#remote-app">remote apps</Terminology>.
+No. The image builds Transmission without its own web interface, while apps that use Transmission's RPC can connect as <Terminology title="A Transmission app on your phone or desktop" to="/docs/reference/terminology#remote-access">remote apps</Terminology>.
 
 ### Can I embed the interface in a dashboard?
 
@@ -133,7 +133,7 @@ When the container has IPv6, the same firewall rules apply to IPv6 traffic.
 
 ### Does it include a proxy for other apps?
 
-Yes. The opt-in <Terminology title="Authenticated HTTP and SOCKS5 service that sends private-network clients through a VPN connection" to="/docs/reference/terminology#web-proxy">web proxy</Terminology> accepts HTTP and SOCKS5 clients from private networks. Each login selects a VPN connection or follows the default, as covered in [Web proxy](/docs/remote-access/web-proxy/).
+Yes. The opt-in <Terminology title="Lets other devices browse through your VPN on port 22605" to="/docs/reference/terminology#remote-access">web proxy</Terminology> accepts HTTP and SOCKS5 clients from private networks. Each login selects a VPN connection or follows the default, as covered in [Web proxy](/docs/remote-access/web-proxy/).
 
 ### Which Transmission version do trackers see?
 
@@ -143,7 +143,7 @@ The newest Transmission 4.1 release when the image was built. Each build compile
 
 ### How do remote apps sign in?
 
-Each <Terminology title="A third-party Transmission client connecting over RPC" to="/docs/reference/terminology#remote-app">remote app</Terminology> uses its own <Terminology title="Username and generated password for the compatible RPC route" to="/docs/reference/terminology#rpc-login">RPC login</Terminology> on port 9091. Scripts that call the control API use scoped <Terminology title="A scoped credential for automating the API" to="/docs/reference/terminology#api-token">API tokens</Terminology> on port 22602 instead, as covered in [Remote apps](/docs/remote-access/remote-apps/).
+Each <Terminology title="A Transmission app on your phone or desktop" to="/docs/reference/terminology#remote-access">remote app</Terminology> uses its own <Terminology title="One app's own username and password for RPC" to="/docs/reference/terminology#remote-access">RPC login</Terminology> on port 9091. Scripts that call the control API use scoped <Terminology title="A scoped key for scripts that call the API" to="/docs/reference/terminology#remote-access">API tokens</Terminology> on port 22602 instead, as covered in [Remote apps](/docs/remote-access/remote-apps/).
 
 ### Can I reset a forgotten password?
 
@@ -161,4 +161,4 @@ No. The installation has one administrator account. Remote apps and web proxy cl
 
 ### What happened to the Synology script?
 
-The Docker image replaces the <Terminology title="The original Synology script this image replaces" to="/docs/reference/terminology#legacy-project">legacy script</Terminology>, whose last release is tagged `v1.3.2`. The [Migration Guide](/docs/getting-started/migration/) maps its settings to the image.
+The Docker image replaces the <Terminology title="The old Synology script this Docker image replaces" to="/docs/reference/terminology#container-and-services">legacy script</Terminology>, whose last release is tagged `v1.3.2`. The [Migration Guide](/docs/getting-started/migration/) maps its settings to the image.

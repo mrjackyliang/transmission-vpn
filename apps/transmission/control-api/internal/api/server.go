@@ -422,10 +422,13 @@ func (server *Server) ServeHTTP(responseWriter http.ResponseWriter, request *htt
 // RPCHandler serves the compatible RPC route on its own port.
 //
 // Remote apps keep Transmission's usual port and path, while the web interface and API
-// answer only on the control port.
+// answer only on the control port. The path takes every method, because Sonarr, Radarr,
+// and Prowlarr open with a GET that must get Transmission's 409 session reply.
+//
+// Since: 2.2.1
 func (server *Server) RPCHandler() http.Handler {
 	multiplexer := http.NewServeMux()
-	multiplexer.HandleFunc("POST /transmission/rpc", server.handleRPCProxy)
+	multiplexer.HandleFunc("/transmission/rpc", server.handleRPCProxy)
 	multiplexer.HandleFunc("/", func(responseWriter http.ResponseWriter, request *http.Request) {
 		writeError(responseWriter, http.StatusNotFound, "not_found", "No route matches this request.")
 	})

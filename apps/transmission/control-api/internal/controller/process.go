@@ -157,6 +157,12 @@ func (daemon *Daemon) establishLocked(
 }
 
 // establishPoolLocked tries candidates in strategy order for one connection.
+//
+// Each endpoint that fails is logged with its reason before the next one is tried,
+// because a later success discards the collected errors and the state change for the
+// next endpoint carries none.
+//
+// Since: 2.2.1
 func (daemon *Daemon) establishPoolLocked(
 	ctx context.Context,
 	state *connectionState,
@@ -194,6 +200,19 @@ func (daemon *Daemon) establishPoolLocked(
 			break
 		}
 		candidateErrors = append(candidateErrors, fmt.Sprintf("%s: %v", endpoint.ProfileID, err))
+		daemon.config.Logger.Warn(
+			"VPN endpoint failed",
+			"connectionId",
+			state.id,
+			"slot",
+			state.slot,
+			"profile",
+			endpoint.ProfileID,
+			"attempt",
+			attempt,
+			"error",
+			err.Error(),
+		)
 	}
 
 	cause := context.Cause(ctx)

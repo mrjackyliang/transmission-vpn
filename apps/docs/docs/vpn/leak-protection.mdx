@@ -28,7 +28,7 @@ import leakProtectionThreeDark from './_assets_/leak-protection-3-dark.png';
 import leakProtectionFourLight from './_assets_/leak-protection-4-light.png';
 import leakProtectionFourDark from './_assets_/leak-protection-4-dark.png';
 
-Leak protection keeps every Transmission and <Terminology title="Authenticated HTTP and SOCKS5 service that sends private-network clients through a VPN connection" to="/docs/reference/terminology#web-proxy">web proxy</Terminology> request inside its selected VPN connection. There is no direct mode.
+Leak protection keeps every Transmission and <Terminology title="Lets other devices browse through your VPN on port 22605" to="/docs/reference/terminology#remote-access">web proxy</Terminology> request inside its selected VPN connection. There is no direct mode.
 
 ## What protects each connection
 
@@ -38,7 +38,7 @@ The container translates the private address to the provider address at the tunn
 
 If a tunnel is down, its private route ends inside the container. Traffic from that connection's Transmission fails there and never reaches Docker's normal network.
 
-A separate <Terminology title="Rules that confine Transmission's traffic to its VPN tunnel" to="/docs/reference/terminology#firewall-boundary">firewall boundary</Terminology> is the backstop. It drops every new connection the container opens outside a VPN tunnel, whichever service opens it. Only the VPN controller's own traffic and replies to incoming connections leave over Docker's normal network.
+A separate <Terminology title="Firewall rules that drop anything not going through a VPN" to="/docs/reference/terminology#leak-protection">firewall boundary</Terminology> is the backstop. It drops every new connection the container opens outside a VPN tunnel, whichever service opens it. Only the VPN controller's own traffic and replies to incoming connections leave over Docker's normal network.
 
 The rules don't depend on which account sends a packet, so they also work on NAS kernels that leave out iptables' owner match, such as Synology's.
 
@@ -84,7 +84,7 @@ Each row on the **VPN** page shows that connection's state. Open the connection 
 
 ## DNS protection
 
-Every Transmission uses DNS through the <Terminology title="The VPN connection used when no other connection is selected" to="/docs/reference/terminology#default-connection">default connection</Terminology>. The container routes those lookups from the default connection's private address through its tunnel.
+Every Transmission uses DNS through the <Terminology title="The VPN used whenever nothing picks another one" to="/docs/reference/terminology#vpn-connections">default connection</Terminology>. The container routes those lookups from the default connection's private address through its tunnel.
 
 When the default connection is down, Transmission DNS lookups stop. They do not fall back to the container's normal resolver.
 
@@ -113,6 +113,6 @@ The controller keeps checking WireGuard handshakes and outside connections. It b
 
 ## Startup failures
 
-If the firewall cannot be installed, protected services do not start. A common cause is a missing <Terminology title="Docker capability that lets the container manage networking" to="/docs/reference/terminology#net_admin">`NET_ADMIN`</Terminology> capability or TUN device. The firewall also stops startup when the host's kernel lacks a match its rules need, and the log names the missing match.
+If the firewall cannot be installed, protected services do not start. A common cause is a missing <Terminology title="The Docker capability that lets it manage its firewall" to="/docs/reference/terminology#container-and-services">`NET_ADMIN`</Terminology> capability or TUN device. The firewall also stops startup when the host's kernel lacks a match its rules need, and the log names the missing match.
 
 [Health and logs](/docs/operations/health-and-logs/) explains the overall state, per-connection status, Transmission readiness, and useful log lines.

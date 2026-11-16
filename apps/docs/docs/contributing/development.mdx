@@ -50,11 +50,11 @@ transmission-vpn/
 | `npm run check --workspace transmission-vpn-tool-docker`        | Runs the Go tests in a Docker build stage, plus the foundation, fail-closed, OpenVPN, WireGuard, and several-connection container tests. |
 | `npm run dev --workspace transmission-vpn-docs`                 | Starts the documentation development server.                                                                                             |
 
-With the mock API, setting `MOCK_KEY_REPLACED=true` starts the interface as if the <Terminology title="Key that encrypts saved secrets, such as VPN logins" to="/docs/reference/terminology#installation-key">installation key</Terminology> had been lost, so the **Saved secrets were removed** notice and a paused notification show.
+With the mock API, setting `MOCK_KEY_REPLACED=true` starts the interface as if the <Terminology title="Unlocks your saved secrets; lose it and they're removed" to="/docs/reference/terminology#storage-and-keys">installation key</Terminology> had been lost, so the **Saved secrets were removed** notice and a paused notification show.
 
 ## Architecture
 
-The image runs one service graph under <Terminology title="Supervisor that starts, restarts, and stops the services" to="/docs/reference/terminology#s6-overlay">s6-overlay</Terminology>:
+The image runs one service graph under <Terminology title="Starts the firewall first and keeps every service running" to="/docs/reference/terminology#container-and-services">s6-overlay</Terminology>:
 
 ```text title="Service graph"
 base
@@ -66,8 +66,8 @@ base
         `-- transmission (longrun)
 ```
 
-- **`config-init`** — Validates <Terminology title="User and group IDs that own Transmission's files" to="/docs/reference/terminology#puid-and-pgid">`PUID`</Terminology>, <Terminology title="User and group IDs that own Transmission's files" to="/docs/reference/terminology#puid-and-pgid">`PGID`</Terminology>, `TZ`, and the <Terminology title="Kernel device /dev/net/tun that VPN tunnels need" to="/docs/reference/terminology#tun-device">TUN device</Terminology>, and prepares persistent folders.
-- **`firewall-init`** — Installs the <Terminology title="Rules that confine Transmission's traffic to the tunnel" to="/docs/reference/terminology#firewall-boundary">firewall boundary</Terminology>, and its down script removes the rules after the protected services stop.
+- **`config-init`** — Validates <Terminology title="Which user owns your downloads on the host" to="/docs/reference/terminology#storage-and-keys">`PUID`</Terminology>, <Terminology title="Which user owns your downloads on the host" to="/docs/reference/terminology#storage-and-keys">`PGID`</Terminology>, `TZ`, and the <Terminology title="The /dev/net/tun device the container needs for tunnels" to="/docs/reference/terminology#container-and-services">TUN device</Terminology>, and prepares persistent folders.
+- **`firewall-init`** — Installs the <Terminology title="Firewall rules that drop anything not going through a VPN" to="/docs/reference/terminology#leak-protection">firewall boundary</Terminology>, and its down script removes the rules after the protected services stop.
 - **Go binaries** — `transmission-vpn-api`, `transmission-vpn-directory-controller`, `transmission-vpn-vpn-controller`, and `transmission-vpn-transmission-runner`, all built from `apps/transmission/control-api`.
 - **Web interface** — Built with Vite and served by `transmission-vpn-api` from `/usr/local/share/transmission-vpn/web`.
 
@@ -75,10 +75,10 @@ base
 
 - **Go** — The image build runs `go test ./...` in its `control-api-test` stage, so a failing test stops the build.
 - **Web interface** — Vitest unit tests run through the workspace's `check` script.
-- **Container** — `packages/docker/tests` holds a foundation test and a <Terminology title="Blocking Transmission traffic whenever the VPN is unavailable" to="/docs/reference/terminology#fail-closed">fail-closed</Terminology> integration test that builds the image and checks identities, firewall rules, blocked egress, connections opened through the VPN controller, the claim flow, a <Terminology title="API-triggered Transmission restart that applies pending settings" to="/docs/reference/terminology#controlled-restart">controlled restart</Terminology>, and a missing <Terminology title="Docker capability that lets the container manage networking" to="/docs/reference/terminology#net_admin">`NET_ADMIN`</Terminology>.
+- **Container** — `packages/docker/tests` holds a foundation test and a <Terminology title="When the VPN drops, traffic stops instead of leaking" to="/docs/reference/terminology#leak-protection">fail-closed</Terminology> integration test that builds the image and checks identities, firewall rules, blocked egress, connections opened through the VPN controller, the claim flow, a <Terminology title="Restarts Transmission to apply settings, not the container" to="/docs/reference/terminology#settings-and-managed-configuration">controlled restart</Terminology>, and a missing <Terminology title="The Docker capability that lets it manage its firewall" to="/docs/reference/terminology#container-and-services">`NET_ADMIN`</Terminology>.
 - **OpenVPN** — `check:openvpn` verifies policy routing, fixed source binding, SNAT, peer loss, and recovery through an OpenVPN server container.
 - **Several connections** — `check:multi-vpn` runs two isolated tunnels and Transmission daemons, then verifies combined RPC, per-login proxy routes, torrent moves, removal with a move target, and duplicate WireGuard provider addresses.
-- **WireGuard** — `check:wireguard` in `packages/docker` runs an end-to-end test against a WireGuard server in a second container, once with the kernel module and once with <Terminology title="WireGuard run by wireguard-go when the kernel lacks it" to="/docs/reference/terminology#userspace-wireguard">`wireguard-go`</Terminology>. It checks that:
+- **WireGuard** — `check:wireguard` in `packages/docker` runs an end-to-end test against a WireGuard server in a second container, once with the kernel module and once with <Terminology title="WireGuard without a kernel module; slower, no setup" to="/docs/reference/terminology#vpn-connections">`wireguard-go`</Terminology>. It checks that:
   - Slot 0 Transmission traffic leaves only through `wg0`, from its fixed private address.
   - The uploaded file's IPv6 lines are stripped.
   - A dead server blocks Transmission until the server returns.
@@ -88,7 +88,7 @@ base
 
 - **Pages** — Each sidebar category is a folder in `apps/docs/docs/` with a `_category_.json`, and `sidebars.ts` generates the sidebar from the folders.
 - **Conventions** — Page structure, frontmatter, and voice follow `conventions/documentation.md`.
-- **Glossary** — Terms are defined as H2 headings in `docs/reference/terminology.mdx`, and pages link to them with the `Terminology` component from `@cbnventures/docusaurus-preset-nova/blocks`.
+- **Glossary** — Terms are rows in topic tables under H2 sections in `docs/reference/terminology.mdx`, and pages link to a term's section with the `Terminology` component from `@cbnventures/docusaurus-preset-nova/blocks`, using one short hover line per term.
 
 ### Homepage Blocks
 

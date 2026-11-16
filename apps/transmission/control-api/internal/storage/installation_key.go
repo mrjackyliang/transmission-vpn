@@ -48,7 +48,7 @@ type SealedSample struct {
 // InstallationKeyCheck returns the check value sealed with the current key.
 func (store *Store) InstallationKeyCheck(ctx context.Context) ([]byte, []byte, bool, error) {
 	var nonce, ciphertext []byte
-	err := store.databaseHandle().QueryRowContext(
+	err := store.readHandle().QueryRowContext(
 		ctx,
 		"SELECT nonce, ciphertext FROM protected_secrets WHERE key = ?",
 		installationKeyCheckName,
@@ -88,7 +88,7 @@ func (store *Store) SetInstallationKeyCheck(ctx context.Context, nonce []byte, c
 // SealedSample returns one encrypted connection, profile, or authenticator secret.
 func (store *Store) SealedSample(ctx context.Context) (SealedSample, bool, error) {
 	var sample SealedSample
-	err := store.databaseHandle().QueryRowContext(
+	err := store.readHandle().QueryRowContext(
 		ctx,
 		`SELECT id, COALESCE(credentials_legacy_profile_id, ''),
 		        credentials_nonce, credentials_ciphertext
@@ -111,7 +111,7 @@ func (store *Store) SealedSample(ctx context.Context) (SealedSample, bool, error
 		return SealedSample{}, false, fmt.Errorf("read sealed VPN connection: %w", err)
 	}
 
-	err = store.databaseHandle().QueryRowContext(
+	err = store.readHandle().QueryRowContext(
 		ctx,
 		"SELECT id, nonce, ciphertext FROM vpn_profiles ORDER BY id LIMIT 1",
 	).Scan(&sample.ProfileID, &sample.Nonce, &sample.Ciphertext)
@@ -125,7 +125,7 @@ func (store *Store) SealedSample(ctx context.Context) (SealedSample, bool, error
 		return SealedSample{}, false, fmt.Errorf("read sealed VPN profile: %w", err)
 	}
 
-	err = store.databaseHandle().QueryRowContext(
+	err = store.readHandle().QueryRowContext(
 		ctx,
 		`SELECT id, totp_nonce, totp_ciphertext FROM administrators
 		 WHERE totp_ciphertext IS NOT NULL
@@ -299,7 +299,7 @@ func (store *Store) ReplaceInstallationKey(
 // Entries are oldest first and include appliance-wide ones, such as the VPN login and
 // notification destinations.
 func (store *Store) RemovedSecrets(ctx context.Context, administratorID int64) ([]RemovedSecret, error) {
-	rows, err := store.databaseHandle().QueryContext(
+	rows, err := store.readHandle().QueryContext(
 		ctx,
 		`SELECT removed_secrets.kind, COALESCE(notification_targets.name, ''),
 		        COALESCE(removed_secrets.notification_id, ''), removed_secrets.removed_at

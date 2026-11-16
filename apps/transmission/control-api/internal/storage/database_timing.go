@@ -31,14 +31,24 @@ func packagePrefix() string {
 	return name[:strings.LastIndex(name, ".")+1]
 }
 
-// databaseTiming reports long holds on the store's single SQLite connection.
+const (
+	// writerConnection labels holds on the store's single writing connection.
+	writerConnection = "writer"
+
+	// readerConnection labels holds on one of the store's read-only connections.
+	readerConnection = "reader"
+)
+
+// databaseTiming reports long holds on the store's SQLite connections.
 //
-// Every other caller waits while one operation holds the connection, so a slow
-// holder shows up elsewhere as a timeout. With debug logging on, each transaction and
-// each statement outside one is timed, and the store method holding it is named.
-// Otherwise the only cost is one level check per statement.
+// Every other write waits while one operation holds the writing connection, so a slow
+// holder there shows up elsewhere as a delay. Reads run on their own connections and
+// are timed too, so a slow disk read is named as well. With debug logging on, each
+// transaction and each statement outside one is timed, and the store method holding it
+// and the connection it held are named. Otherwise the only cost is one level check per
+// statement.
 //
-// Since: 2.1.0
+// Since: 2.2.1
 type databaseTiming struct {
 	logger     atomic.Pointer[slog.Logger]
 	slowAfter  time.Duration
@@ -55,20 +65,23 @@ func newDatabaseTiming() *databaseTiming {
 
 // databaseUse is one timed hold: a transaction, or a statement outside one.
 type databaseUse struct {
-	timing    *databaseTiming
-	logger    *slog.Logger
-	kind      string
-	operation string
-	caller    string
-	startedAt time.Time
-	watchdog  *time.Timer
+	timing     *databaseTiming
+	logger     *slog.Logger
+	connection string
+	kind       string
+	operation  string
+	caller     string
+	startedAt  time.Time
+	watchdog   *time.Timer
 }
 
 // start begins timing one hold, or returns nil when debug logging is off.
 //
 // A hold that hasn't finished when stillAfter passes is reported once right away, so
 // a stuck holder is named even if it never lets go.
-func (timing *databaseTiming) start(kind string) *databaseUse {
+//
+// Since: 2.2.1
+func (timing *databaseTiming) start(connection string, kind string) *databaseUse {
 	logger := timing.logger.Load()
 	if logger == nil || !logger.Enabled(context.Background(), slog.LevelDebug) {
 		return nil
@@ -76,12 +89,13 @@ func (timing *databaseTiming) start(kind string) *databaseUse {
 
 	operation, caller := describeCallers(callerFunctions())
 	use := &databaseUse{
-		timing:    timing,
-		logger:    logger,
-		kind:      kind,
-		operation: operation,
-		caller:    caller,
-		startedAt: time.Now(),
+		timing:     timing,
+		logger:     logger,
+		connection: connection,
+		kind:       kind,
+		operation:  operation,
+		caller:     caller,
+		startedAt:  time.Now(),
 	}
 	use.watchdog = time.AfterFunc(timing.stillAfter, func() {
 		logger.Debug("database still in use", use.fields(time.Since(use.startedAt))...)
@@ -106,10 +120,13 @@ func (use *databaseUse) finish() {
 }
 
 // fields lists one hold's log attributes.
+//
+// Since: 2.2.1
 func (use *databaseUse) fields(held time.Duration) []any {
 	return []any{
 		"operation", use.operation,
 		"caller", use.caller,
+		"connection", use.connection,
 		"kind", use.kind,
 		"held", held.Round(time.Millisecond).String(),
 	}
@@ -168,9 +185,14 @@ func shortFunctionName(function string) string {
 }
 
 // timedConnector opens SQLite connections that time how long each use holds them.
+//
+// connection names which of the store's connections these are, writer or reader.
+//
+// Since: 2.2.1
 type timedConnector struct {
-	base   driver.Connector
-	timing *databaseTiming
+	base       driver.Connector
+	timing     *databaseTiming
+	connection string
 }
 
 // Connect opens one wrapped connection.
@@ -180,7 +202,7 @@ func (connector *timedConnector) Connect(ctx context.Context) (driver.Conn, erro
 		return nil, err
 	}
 
-	return &timedConn{base: connection, timing: connector.timing}, nil
+	return &timedConn{base: connection, timing: connector.timing, connection: connector.connection}, nil
 }
 
 // Driver returns the SQLite driver.
@@ -196,6 +218,7 @@ func (connector *timedConnector) Driver() driver.Driver {
 type timedConn struct {
 	base          driver.Conn
 	timing        *databaseTiming
+	connection    string
 	inTransaction bool
 }
 
@@ -225,7 +248,7 @@ func (connection *timedConn) Begin() (driver.Tx, error) {
 
 // BeginTx starts a transaction and times it until Commit or Rollback.
 func (connection *timedConn) BeginTx(ctx context.Context, options driver.TxOptions) (driver.Tx, error) {
-	use := connection.timing.start("transaction")
+	use := connection.timing.start(connection.connection, "transaction")
 
 	var (
 		transaction driver.Tx
@@ -297,7 +320,7 @@ func (connection *timedConn) startStatement(kind string) *databaseUse {
 		return nil
 	}
 
-	return connection.timing.start(kind)
+	return connection.timing.start(connection.connection, kind)
 }
 
 // Ping checks the SQLite connection.

@@ -77,7 +77,7 @@ type APITokenChanges struct {
 // installation can never mint another setup credential.
 func (store *Store) IsClaimed(ctx context.Context) (bool, error) {
 	var count int
-	if err := store.databaseHandle().QueryRowContext(
+	if err := store.readHandle().QueryRowContext(
 		ctx,
 		"SELECT COUNT(*) FROM administrators",
 	).Scan(&count); err != nil {
@@ -143,7 +143,7 @@ func (store *Store) SetupClaimStatus(ctx context.Context) (SetupClaimStatus, err
 	}
 
 	var expirationText string
-	err = store.databaseHandle().QueryRowContext(
+	err = store.readHandle().QueryRowContext(
 		ctx,
 		"SELECT expires_at FROM setup_claims WHERE id = 1",
 	).Scan(&expirationText)
@@ -256,7 +256,7 @@ func (store *Store) FindAdministratorByUsername(
 ) (Administrator, error) {
 	var administrator Administrator
 	var createdAtText string
-	err := store.databaseHandle().QueryRowContext(
+	err := store.readHandle().QueryRowContext(
 		ctx,
 		`SELECT id, username, password_hash, created_at
 		 FROM administrators
@@ -336,13 +336,16 @@ func activityWriteDue(lastActivity time.Time, now time.Time) bool {
 // FindSession authenticates a browser token digest and returns its CSRF boundary.
 //
 // Expired sessions are treated as absent and opportunistically removed without
-// extending their lifetime during reads. last_seen_at is saved at most once per
-// activityWriteInterval, so checking a session is a read on nearly every request.
+// extending their lifetime during reads. The check reads on the read-only connections,
+// and last_seen_at, due at most once per activityWriteInterval, is queued for the
+// background activity writer, so a request never waits for a disk flush.
+//
+// Since: 2.2.1
 func (store *Store) FindSession(ctx context.Context, tokenDigest []byte) (Session, error) {
 	var session Session
 	var expirationText string
 	var lastSeenText string
-	err := store.databaseHandle().QueryRowContext(
+	err := store.readHandle().QueryRowContext(
 		ctx,
 		`SELECT sessions.id,
 		        sessions.administrator_id,
@@ -389,15 +392,12 @@ func (store *Store) FindSession(ctx context.Context, tokenDigest []byte) (Sessio
 	// An unreadable last_seen_at is repaired by the next save.
 	lastSeenAt, parseError := parseTime(lastSeenText)
 	if parseError != nil || activityWriteDue(lastSeenAt, now) {
-		// Matching the old value lets one of several parallel requests save it; the
-		// others change no rows, so nothing is written for them.
-		_, _ = store.databaseHandle().ExecContext(
-			ctx,
-			"UPDATE sessions SET last_seen_at = ? WHERE id = ? AND last_seen_at = ?",
-			formatTime(now),
-			session.ID,
-			lastSeenText,
-		)
+		// Matching the old value means a save that arrives after a newer one changes no
+		// rows.
+		store.activity.queue("sessions:"+session.ID, activitySave{
+			query:     "UPDATE sessions SET last_seen_at = ? WHERE id = ? AND last_seen_at = ?",
+			arguments: []any{formatTime(now), session.ID, lastSeenText},
+		})
 	}
 
 	return session, nil
@@ -483,10 +483,12 @@ func (store *Store) CreateAPIToken(
 // FindAPIToken authenticates one active token digest and returns its scopes.
 //
 // Expired tokens are indistinguishable from unknown credentials at the API boundary,
-// and a revoked token no longer exists at all. last_used_at is saved at most once per
-// activityWriteInterval.
+// and a revoked token no longer exists at all. last_used_at, due at most once per
+// activityWriteInterval, is queued for the background activity writer.
+//
+// Since: 2.2.1
 func (store *Store) FindAPIToken(ctx context.Context, tokenDigest []byte) (APIToken, error) {
-	token, err := store.scanAPIToken(store.databaseHandle().QueryRowContext(
+	token, err := store.scanAPIToken(store.readHandle().QueryRowContext(
 		ctx,
 		"SELECT "+apiTokenColumns+" FROM api_tokens WHERE token_digest = ?",
 		tokenDigest,
@@ -502,14 +504,11 @@ func (store *Store) FindAPIToken(ctx context.Context, tokenDigest []byte) (APITo
 
 	if token.LastUsedAt == nil || activityWriteDue(*token.LastUsedAt, now) {
 		// Every last_used_at is written by formatTime, so the parsed value formats back
-		// to the stored text, and of several parallel requests only one saves it.
-		_, _ = store.databaseHandle().ExecContext(
-			ctx,
-			"UPDATE api_tokens SET last_used_at = ? WHERE id = ? AND last_used_at IS ?",
-			formatTime(now),
-			token.ID,
-			optionalTime(token.LastUsedAt),
-		)
+		// to the stored text, and a save that arrives after a newer one changes no rows.
+		store.activity.queue("api_tokens:"+token.ID, activitySave{
+			query:     "UPDATE api_tokens SET last_used_at = ? WHERE id = ? AND last_used_at IS ?",
+			arguments: []any{formatTime(now), token.ID, optionalTime(token.LastUsedAt)},
+		})
 		token.LastUsedAt = &now
 	}
 
@@ -521,7 +520,7 @@ func (store *Store) FindAPIToken(ctx context.Context, tokenDigest []byte) (APITo
 // Expired tokens stay listed until they are revoked, and no response ever includes
 // plaintext or reusable token digests.
 func (store *Store) ListAPITokens(ctx context.Context) ([]APIToken, error) {
-	rows, err := store.databaseHandle().QueryContext(
+	rows, err := store.readHandle().QueryContext(
 		ctx,
 		"SELECT "+apiTokenColumns+" FROM api_tokens ORDER BY created_at DESC, id",
 	)

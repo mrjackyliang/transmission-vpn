@@ -1,0 +1,45 @@
+---
+title: "Transmission VPN Downloads Finished Files to Your Browser"
+description: Version 2.2.0 saves finished torrents and their .torrent files from the NAS straight to the computer you're using, one file or one zip.
+slug: transmission-vpn-downloads-finished-files
+authors:
+  - mrjackyliang
+keywords:
+  - transmission vpn
+  - download finished files
+  - torrent file
+  - zip
+  - nas
+tags:
+  - release
+  - torrents
+---
+
+Transmission VPN 2.2.0 adds **Download finished files** and **Download torrent file** to every torrent's action menu. A finished download goes from the NAS to the computer you're using, without a file share or a second app.
+
+{/* truncate */}
+
+## Why It Matters
+
+Torrents finish on the NAS, but the files are often needed on a laptop or desktop. Getting them there meant opening a network share, mapping a drive, or copying them by hand.
+
+Now the same web interface that started the download hands you the result.
+
+## What's Included
+
+### Download Finished Files
+
+- **One torrent** — A single-file torrent downloads as that file. A torrent with several files downloads as one zip with the torrent's folder inside.
+- **Several torrents** — Select them and get one zip of all their finished files.
+- **Partial selections** — Torrents still downloading, or whose files were moved or deleted, are left out.
+- **Resumes** — A single file picks up where it stopped if the connection drops.
+
+The option appears once a torrent has finished, and it needs a signed-in browser, so API tokens can't use it.
+
+### Download Torrent File
+
+Saves a torrent's `.torrent` file. With several torrents selected, **Download torrent files** saves them all as one zip. A magnet link still fetching its metadata is left out until it has a file.
+
+## Try It
+
+Open the action menu on any finished torrent. [Managing Torrents](/docs/torrents/managing-torrents/) lists every action in the menu.

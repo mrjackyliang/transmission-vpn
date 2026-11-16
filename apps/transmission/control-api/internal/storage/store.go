@@ -51,18 +51,40 @@ var (
 //go:embed migrations/*.sql
 var migrations embed.FS
 
+// readerConnections is how many read-only connections the store keeps open.
+//
+// Reads come from the console's refreshes, sign-in checks, remote apps, background
+// checks, and the health check, so a few at once is the most it sees.
+const readerConnections = 4
+
+// readerPragmas apply to every read-only connection as SQLite opens it.
+//
+// query_only refuses any write, so a write sent to the wrong handle fails instead of
+// bypassing the writing connection.
+const readerPragmas = "_pragma=busy_timeout(5000)&_pragma=foreign_keys(1)&_pragma=query_only(1)"
+
 // Store owns durable control-plane state and transaction boundaries.
 //
-// A single SQLite connection serializes the appliance's small mutation workload and
-// ensures connection-local PRAGMA settings are consistently enforced.
+// One writing connection serializes the appliance's small mutation workload and
+// ensures connection-local PRAGMA settings are consistently enforced. Reads outside a
+// write transaction use a separate pool of read-only connections, which WAL lets run
+// while a write is still flushing to disk, so a slow NAS disk delays only writes.
+// Last-activity saves are queued for the writing connection in the background.
+//
+// Since: 2.2.1
 type Store struct {
 	database *sql.DB
+	reader   *sql.DB
 	timing   *databaseTiming
+	activity *activityWriter
 }
 
 // Open initializes SQLite, applies migrations, and verifies the resulting store.
 //
-// The caller owns the returned store and must close it during graceful shutdown.
+// The caller owns the returned store and must close it during graceful shutdown. The
+// read-only connections open only after migrations, so they never see an older schema.
+//
+// Since: 2.2.1
 func Open(ctx context.Context, path string) (*Store, error) {
 	if path == "" {
 		return nil, errors.New("database path is required")
@@ -72,12 +94,13 @@ func Open(ctx context.Context, path string) (*Store, error) {
 		return nil, err
 	}
 
-	connector, err := sqlite.NewConnector("file:" + filepath.ToSlash(path))
+	location := "file:" + filepath.ToSlash(path)
+	connector, err := sqlite.NewConnector(location)
 	if err != nil {
 		return nil, fmt.Errorf("open SQLite database: %w", err)
 	}
 	timing := newDatabaseTiming()
-	database := sql.OpenDB(&timedConnector{base: connector, timing: timing})
+	database := sql.OpenDB(&timedConnector{base: connector, timing: timing, connection: writerConnection})
 
 	database.SetMaxOpenConns(1)
 	database.SetMaxIdleConns(1)
@@ -89,6 +112,28 @@ func Open(ctx context.Context, path string) (*Store, error) {
 
 		return nil, err
 	}
+
+	readerConnector, err := sqlite.NewConnector(location + "?" + readerPragmas)
+	if err != nil {
+		_ = database.Close()
+
+		return nil, fmt.Errorf("open SQLite read connections: %w", err)
+	}
+	reader := sql.OpenDB(&timedConnector{base: readerConnector, timing: timing, connection: readerConnection})
+	reader.SetMaxOpenConns(readerConnections)
+	reader.SetMaxIdleConns(readerConnections)
+	reader.SetConnMaxLifetime(0)
+
+	var schemaRows int
+	if err := reader.QueryRowContext(ctx, "SELECT COUNT(*) FROM schema_migrations").Scan(&schemaRows); err != nil {
+		_ = reader.Close()
+		_ = database.Close()
+
+		return nil, fmt.Errorf("verify SQLite read connections: %w", err)
+	}
+
+	store.reader = reader
+	store.activity = newActivityWriter(database)
 
 	return store, nil
 }
@@ -135,27 +180,43 @@ func prepareDatabaseFile(path string) error {
 	return nil
 }
 
-// Close releases the underlying SQLite connection.
+// Close saves any queued last-activity times and releases every SQLite connection.
 //
 // Shutdown calls this only after the HTTP server has stopped accepting requests.
+//
+// Since: 2.2.1
 func (store *Store) Close() error {
-	return store.database.Close()
+	store.activity.close()
+
+	return errors.Join(store.reader.Close(), store.database.Close())
 }
 
-// Ping verifies that SQLite can execute a minimal query.
+// flushActivity writes every queued last-activity save and waits for it.
 //
-// The liveness endpoint uses this check so a wedged or inaccessible persistent store
-// makes the control plane unhealthy without conflating VPN readiness.
+// Tests use it to read back a save that requests queue in the background.
+func (store *Store) flushActivity() {
+	store.activity.flush()
+}
+
+// Ping verifies that SQLite can answer on a read-only connection.
+//
+// The liveness endpoint uses this check so an inaccessible persistent store makes the
+// control plane unhealthy without conflating VPN readiness. It doesn't wait for the
+// writing connection, so a write still flushing to a slow disk doesn't fail it.
+//
+// Since: 2.2.1
 func (store *Store) Ping(ctx context.Context) error {
-	return store.database.PingContext(ctx)
+	return store.reader.PingContext(ctx)
 }
 
 // SchemaVersion returns the highest successfully applied embedded migration.
 //
 // Status responses expose this value for diagnostics and upgrade verification.
+//
+// Since: 2.2.1
 func (store *Store) SchemaVersion(ctx context.Context) (int, error) {
 	var version sql.NullInt64
-	err := store.database.QueryRowContext(
+	err := store.reader.QueryRowContext(
 		ctx,
 		"SELECT MAX(version) FROM schema_migrations",
 	).Scan(&version)
@@ -178,10 +239,21 @@ func (store *Store) databaseHandle() *sql.DB {
 	return store.database
 }
 
+// readHandle returns the read-only connections for queries outside a write.
+//
+// A query here never waits for the writing connection. Anything that writes, and any
+// read that must share a write's transaction, uses databaseHandle instead.
+//
+// Since: 2.2.1
+func (store *Store) readHandle() *sql.DB {
+	return store.reader
+}
+
 // initialize configures safe SQLite behavior before applying schema migrations.
 //
-// WAL supports concurrent status reads, foreign keys protect auth relationships, and
-// the busy timeout bounds temporary lock contention instead of failing immediately.
+// WAL lets the read-only connections read while a write commits, foreign keys protect
+// auth relationships, and the busy timeout bounds temporary lock contention instead of
+// failing immediately.
 func (store *Store) initialize(ctx context.Context) error {
 	pragmas := []string{
 		"PRAGMA journal_mode = WAL",

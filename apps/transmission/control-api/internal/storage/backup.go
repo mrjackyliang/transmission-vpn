@@ -136,7 +136,7 @@ func (store *Store) CreateBackupImportJob(
 //
 // Since: 2.0.0
 func (store *Store) BackupImportJobByID(ctx context.Context, id string) (BackupImportJob, error) {
-	job, err := scanBackupImportJob(store.databaseHandle().QueryRowContext(
+	job, err := scanBackupImportJob(store.readHandle().QueryRowContext(
 		ctx,
 		`SELECT id, source, status, payload_nonce, payload_ciphertext, total_torrents,
 		        completed_torrents, summary_json, error, created_at, updated_at,
@@ -164,7 +164,7 @@ func (store *Store) BackupImportJobByID(ctx context.Context, id string) (BackupI
 //
 // Since: 2.0.0
 func (store *Store) ActiveBackupImportJob(ctx context.Context) (BackupImportJob, error) {
-	job, err := scanBackupImportJob(store.databaseHandle().QueryRowContext(
+	job, err := scanBackupImportJob(store.readHandle().QueryRowContext(
 		ctx,
 		`SELECT id, source, status, payload_nonce, payload_ciphertext, total_torrents,
 		        completed_torrents, summary_json, error, created_at, updated_at,
@@ -193,7 +193,7 @@ func (store *Store) ActiveBackupImportJob(ctx context.Context) (BackupImportJob,
 //
 // Since: 2.0.0
 func (store *Store) ResumableBackupImportJobs(ctx context.Context) ([]BackupImportJob, error) {
-	rows, err := store.databaseHandle().QueryContext(
+	rows, err := store.readHandle().QueryContext(
 		ctx,
 		`SELECT id, source, status, payload_nonce, payload_ciphertext, total_torrents,
 		        completed_torrents, summary_json, error, created_at, updated_at,
@@ -355,7 +355,7 @@ func (store *Store) FinishBackupImportJob(
 //
 // Since: 2.0.0
 func (store *Store) ListAPITokensForBackup(ctx context.Context) ([]BackupAPIToken, error) {
-	rows, err := store.databaseHandle().QueryContext(
+	rows, err := store.readHandle().QueryContext(
 		ctx,
 		`SELECT id, name, token_digest, scopes_json, expires_at, created_at, last_used_at
 		 FROM api_tokens
@@ -419,7 +419,7 @@ func (store *Store) listBackupImportItems(
 	ctx context.Context,
 	jobID string,
 ) ([]BackupImportItem, error) {
-	rows, err := store.databaseHandle().QueryContext(
+	rows, err := store.readHandle().QueryContext(
 		ctx,
 		`SELECT position, hash, name, profile_name, folder, state, progress, detail,
 		        updated_at

@@ -68,7 +68,7 @@ const webProxyLoginColumns = `id, username, password_hash, connection_id, create
 //
 // Since: 2.0.0
 func (store *Store) WebProxyConfiguration(ctx context.Context) (WebProxy, []WebProxyLogin, error) {
-	transaction, err := store.databaseHandle().BeginTx(ctx, &sql.TxOptions{ReadOnly: true})
+	transaction, err := store.readHandle().BeginTx(ctx, &sql.TxOptions{ReadOnly: true})
 	if err != nil {
 		return WebProxy{}, nil, fmt.Errorf("begin web proxy read: %w", err)
 	}
@@ -207,7 +207,7 @@ func (store *Store) CreateWebProxyLogin(
 //
 // Since: 2.0.0
 func (store *Store) FindWebProxyLogin(ctx context.Context, id string) (WebProxyLogin, error) {
-	login, err := scanWebProxyLogin(store.databaseHandle().QueryRowContext(
+	login, err := scanWebProxyLogin(store.readHandle().QueryRowContext(
 		ctx,
 		"SELECT "+webProxyLoginColumns+" FROM web_proxy_logins WHERE id = ?",
 		id,

@@ -91,11 +91,11 @@ func (store *Store) PlanBackupRemoteAccess(
 	ctx context.Context,
 	backup BackupRemoteAccess,
 ) (BackupMergeResult, error) {
-	logins, err := listBackupRPCLogins(ctx, store.databaseHandle())
+	logins, err := listBackupRPCLogins(ctx, store.readHandle())
 	if err != nil {
 		return BackupMergeResult{}, err
 	}
-	tokens, err := listBackupAPITokens(ctx, store.databaseHandle())
+	tokens, err := listBackupAPITokens(ctx, store.readHandle())
 	if err != nil {
 		return BackupMergeResult{}, err
 	}
@@ -197,7 +197,7 @@ func (store *Store) PlanBackupNotifications(
 	ctx context.Context,
 	targets []NotificationTarget,
 ) (BackupMergeResult, error) {
-	currentTargets, err := listBackupNotificationTargets(ctx, store.databaseHandle())
+	currentTargets, err := listBackupNotificationTargets(ctx, store.readHandle())
 	if err != nil {
 		return BackupMergeResult{}, err
 	}

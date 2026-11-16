@@ -107,7 +107,7 @@ func (store *Store) CreateNotificationTarget(ctx context.Context, target Notific
 
 // ListNotificationTargets returns every destination, newest first.
 func (store *Store) ListNotificationTargets(ctx context.Context) ([]NotificationTarget, error) {
-	rows, err := store.databaseHandle().QueryContext(
+	rows, err := store.readHandle().QueryContext(
 		ctx,
 		"SELECT "+notificationTargetColumns+" FROM notification_targets ORDER BY created_at DESC, name",
 	)
@@ -134,7 +134,7 @@ func (store *Store) ListNotificationTargets(ctx context.Context) ([]Notification
 
 // FindNotificationTarget returns one destination, or ErrNotFound.
 func (store *Store) FindNotificationTarget(ctx context.Context, id string) (NotificationTarget, error) {
-	target, err := scanNotificationTarget(store.databaseHandle().QueryRowContext(
+	target, err := scanNotificationTarget(store.readHandle().QueryRowContext(
 		ctx,
 		"SELECT "+notificationTargetColumns+" FROM notification_targets WHERE id = ?",
 		id,

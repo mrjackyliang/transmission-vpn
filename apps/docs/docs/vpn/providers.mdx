@@ -22,31 +22,31 @@ tags:
 
 import { Terminology } from '@cbnventures/docusaurus-preset-nova/blocks';
 
-Connect through PureVPN, Private Internet Access, IPVanish, NordVPN, Surfshark, IVPN, or Mullvad with their official server lists, or through another OpenVPN or <Terminology title="VPN protocol that signs in with a key pair" to="/docs/reference/terminology#wireguard">WireGuard</Terminology> service with a <Terminology title="Your own .ovpn or .conf file for any service" to="/docs/reference/terminology#custom-profile">custom profile</Terminology>.
+Connect through PureVPN, Private Internet Access, IPVanish, NordVPN, Surfshark, IVPN, or Mullvad with their official server lists, or through another OpenVPN or <Terminology title="The VPN protocol that signs in with a key, not a password" to="/docs/reference/terminology#vpn-connections">WireGuard</Terminology> service with a <Terminology title="Your own .ovpn or .conf file for any VPN service" to="/docs/reference/terminology#custom-profiles">custom profile</Terminology>.
 
 ## Why Use a Built-In Provider?
 
-1. Downloads the provider's official OpenVPN or WireGuard <Terminology title="A provider's official endpoint list, downloaded on request" to="/docs/reference/terminology#endpoint-catalog">catalog</Terminology> over HTTPS, so you don't need to find and upload profile files.
-2. Labels each <Terminology title="One VPN server profile you can connect to" to="/docs/reference/terminology#endpoint">endpoint</Terminology> with its country, and its city when the file name or server list includes one, so you can filter the list by location.
-3. Validates and encrypts every profile before saving it, so a broken or unsafe file can't end up in your <Terminology title="Ordered endpoints from one provider and tunnel for failover" to="/docs/reference/terminology#endpoint-pool">pool</Terminology>.
-4. Replaces the whole <Terminology title="A provider's official endpoint list, downloaded on request" to="/docs/reference/terminology#endpoint-catalog">catalog</Terminology> only when every profile passes, so a failed refresh keeps the list you had.
-5. Keeps your WireGuard <Terminology title="The secret half of your WireGuard key pair" to="/docs/reference/terminology#private-key">private key</Terminology> out of the server list, so the key is added only when you connect.
+1. Downloads the provider's official OpenVPN or WireGuard <Terminology title="The provider's server list you pick endpoints from" to="/docs/reference/terminology#providers-and-endpoints">catalog</Terminology> over HTTPS, so you don't need to find and upload profile files.
+2. Labels each <Terminology title="One VPN server you can connect to" to="/docs/reference/terminology#providers-and-endpoints">endpoint</Terminology> with its country, and its city when the file name or server list includes one, so you can filter the list by location.
+3. Validates and encrypts every profile before saving it, so a broken or unsafe file can't end up in your <Terminology title="Backup servers to try in order when one fails" to="/docs/reference/terminology#providers-and-endpoints">pool</Terminology>.
+4. Replaces the whole <Terminology title="The provider's server list you pick endpoints from" to="/docs/reference/terminology#providers-and-endpoints">catalog</Terminology> only when every profile passes, so a failed refresh keeps the list you had.
+5. Keeps your WireGuard <Terminology title="Your WireGuard password; it never shows up in logs" to="/docs/reference/terminology#vpn-connections">private key</Terminology> out of the server list, so the key is added only when you connect.
 
 ## Provider Comparison
 
-NordVPN, Surfshark, IVPN, and Custom offer both <Terminology title="The VPN protocol a connection uses, OpenVPN or WireGuard" to="/docs/reference/terminology#tunnel">tunnels</Terminology>, each with its own <Terminology title="A provider's official endpoint list, downloaded on request" to="/docs/reference/terminology#endpoint-catalog">catalog</Terminology> and sign-in. Mullvad offers WireGuard only, and PureVPN, Private Internet Access, and IPVanish offer OpenVPN only.
+NordVPN, Surfshark, IVPN, and Custom offer both <Terminology title="OpenVPN or WireGuard; every endpoint in a pool shares one" to="/docs/reference/terminology#vpn-connections">tunnels</Terminology>, each with its own <Terminology title="The provider's server list you pick endpoints from" to="/docs/reference/terminology#providers-and-endpoints">catalog</Terminology> and sign-in. Mullvad offers WireGuard only, and PureVPN, Private Internet Access, and IPVanish offer OpenVPN only.
 
 ### OpenVPN
 
-| Provider                | Catalog source                                                                                                                                                               | Credentials                                                                                      | Endpoint labels                                                                                            |
-|-------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------|
-| PureVPN                 | Official recommended profile bundle                                                                                                                                          | Required: the manual-connection username and password from the PureVPN member area               | Country from the file name                                                                                 |
-| Private Internet Access | Official strong-encryption UDP and TCP bundles                                                                                                                               | Required: the PIA username and password used for manual OpenVPN connections                      | Country, a city when the file name has one, and **Streaming** on streaming-optimized servers               |
-| IPVanish                | Official OpenVPN 2.6 <Terminology title="A provider's official endpoint list, downloaded on request" to="/docs/reference/terminology#endpoint-catalog">catalog</Terminology> | Required: the IPVanish subscription username and password                                        | Country and city, with **Virtual** on virtual locations                                                    |
-| NordVPN                 | Official OpenVPN 2.6 server archive                                                                                                                                          | Required: the service username and password from the manual setup section of your Nord Account   | Country and server name, with **Double VPN via** the entry country and **Onion over VPN** on those servers |
-| Surfshark               | Official archive of one profile per location                                                                                                                                 | Required: the service username and password from the manual setup page of your Surfshark account | Country and city                                                                                           |
-| IVPN                    | Official UDP and TCP location archives                                                                                                                                       | Required: your IVPN account ID as the username; IVPN doesn't check the password                  | Country and city                                                                                           |
-| Custom                  | Your uploaded `.ovpn` file                                                                                                                                                   | Optional                                                                                         | The file name; `(1)`, `(2)`, and so on when it has several `remote` lines                                  |
+| Provider                | Catalog source                                                                                                                                                              | Credentials                                                                                      | Endpoint labels                                                                                            |
+|-------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------|
+| PureVPN                 | Official recommended profile bundle                                                                                                                                         | Required: the manual-connection username and password from the PureVPN member area               | Country from the file name                                                                                 |
+| Private Internet Access | Official strong-encryption UDP and TCP bundles                                                                                                                              | Required: the PIA username and password used for manual OpenVPN connections                      | Country, a city when the file name has one, and **Streaming** on streaming-optimized servers               |
+| IPVanish                | Official OpenVPN 2.6 <Terminology title="The provider's server list you pick endpoints from" to="/docs/reference/terminology#providers-and-endpoints">catalog</Terminology> | Required: the IPVanish subscription username and password                                        | Country and city, with **Virtual** on virtual locations                                                    |
+| NordVPN                 | Official OpenVPN 2.6 server archive                                                                                                                                         | Required: the service username and password from the manual setup section of your Nord Account   | Country and server name, with **Double VPN via** the entry country and **Onion over VPN** on those servers |
+| Surfshark               | Official archive of one profile per location                                                                                                                                | Required: the service username and password from the manual setup page of your Surfshark account | Country and city                                                                                           |
+| IVPN                    | Official UDP and TCP location archives                                                                                                                                      | Required: your IVPN account ID as the username; IVPN doesn't check the password                  | Country and city                                                                                           |
+| Custom                  | Your uploaded `.ovpn` file                                                                                                                                                  | Optional                                                                                         | The file name; `(1)`, `(2)`, and so on when it has several `remote` lines                                  |
 
 ### WireGuard
 
@@ -61,9 +61,9 @@ NordVPN, Surfshark, IVPN, and Custom offer both <Terminology title="The VPN prot
 ## Usage
 
 1. Open **VPN** in the navigation and pick the service in **Provider**.
-2. When the provider offers both <Terminology title="The VPN protocol a connection uses, OpenVPN or WireGuard" to="/docs/reference/terminology#tunnel">tunnels</Terminology>, choose **OpenVPN** or **WireGuard** under **Tunnel**.
-3. Select **Refresh list** to download its <Terminology title="A provider's official endpoint list, downloaded on request" to="/docs/reference/terminology#endpoint-catalog">catalog</Terminology>.
-4. Add <Terminology title="One VPN server profile you can connect to" to="/docs/reference/terminology#endpoint">endpoints</Terminology> to **Fallback order**, fill in **Sign-in**, and select **Test and connect**.
+2. When the provider offers both <Terminology title="OpenVPN or WireGuard; every endpoint in a pool shares one" to="/docs/reference/terminology#vpn-connections">tunnels</Terminology>, choose **OpenVPN** or **WireGuard** under **Tunnel**.
+3. Select **Refresh list** to download its <Terminology title="The provider's server list you pick endpoints from" to="/docs/reference/terminology#providers-and-endpoints">catalog</Terminology>.
+4. Add <Terminology title="One VPN server you can connect to" to="/docs/reference/terminology#providers-and-endpoints">endpoints</Terminology> to **Fallback order**, fill in **Sign-in**, and select **Test and connect**.
 
 [Connect to a VPN](/docs/vpn/connecting/) walks through each step.
 
@@ -97,8 +97,8 @@ NordVPN, Surfshark, IVPN, and Custom offer both <Terminology title="The VPN prot
   - **Profile changes** — `ping-timer-rem` lines are dropped.
 - **WireGuard**
   - **Source** — `https://api.nordvpn.com/v2/servers?limit=0`, an 8 MB list of about 7,000 servers. Only online servers that offer WireGuard are kept.
-  - **<Terminology title="The secret half of your WireGuard key pair" to="/docs/reference/terminology#private-key">Private key</Terminology>** — The `PrivateKey` line from a WireGuard file downloaded in your Nord Account under Set up NordVPN manually.
-  - **<Terminology title="The IPv4 address a provider assigned to your key" to="/docs/reference/terminology#tunnel-address">Tunnel address</Terminology>** — Not asked for, because NordVPN gives every key the address `10.5.0.2/32`.
+  - **<Terminology title="Your WireGuard password; it never shows up in logs" to="/docs/reference/terminology#vpn-connections">Private key</Terminology>** — The `PrivateKey` line from a WireGuard file downloaded in your Nord Account under Set up NordVPN manually.
+  - **<Terminology title="The address your WireGuard provider gave your key" to="/docs/reference/terminology#vpn-connections">Tunnel address</Terminology>** — Not asked for, because NordVPN gives every key the address `10.5.0.2/32`.
   - **Labels** — Each server shows its country, city, and name, such as **UK765**.
 
 ## Surfshark
@@ -109,8 +109,8 @@ NordVPN, Surfshark, IVPN, and Custom offer both <Terminology title="The VPN prot
   - **Labels** — Each location shows its country and city. A location newer than the image's city table shows its airport code instead, such as **MAD**.
 - **WireGuard**
   - **Source** — `https://api.surfshark.com/v4/server/clusters/generic`, with about 140 locations. Locations without a WireGuard key are skipped.
-  - **<Terminology title="The secret half of your WireGuard key pair" to="/docs/reference/terminology#private-key">Private key</Terminology>** — The private key of a WireGuard key pair from the manual setup page of your Surfshark account.
-  - **<Terminology title="The IPv4 address a provider assigned to your key" to="/docs/reference/terminology#tunnel-address">Tunnel address</Terminology>** — Optional. When it's empty, the connection uses `10.14.0.2/16`, the address in Surfshark's WireGuard files.
+  - **<Terminology title="Your WireGuard password; it never shows up in logs" to="/docs/reference/terminology#vpn-connections">Private key</Terminology>** — The private key of a WireGuard key pair from the manual setup page of your Surfshark account.
+  - **<Terminology title="The address your WireGuard provider gave your key" to="/docs/reference/terminology#vpn-connections">Tunnel address</Terminology>** — Optional. When it's empty, the connection uses `10.14.0.2/16`, the address in Surfshark's WireGuard files.
   - **Labels** — Each location shows its country and city.
 
 ## IVPN
@@ -121,8 +121,8 @@ NordVPN, Surfshark, IVPN, and Custom offer both <Terminology title="The VPN prot
   - **Credentials** — Your IVPN account ID, such as `i-XXXX-XXXX-XXXX`, as the username. IVPN doesn't check the password, so any value works.
 - **WireGuard**
   - **Source** — `https://api.ivpn.net/v4/servers/stats`, with about 90 servers. Only active servers outside maintenance are kept, and each one is reached on port 2049.
-  - **<Terminology title="The secret half of your WireGuard key pair" to="/docs/reference/terminology#private-key">Private key</Terminology>** — The private key of the WireGuard key you added under WireGuard in your IVPN account.
-  - **<Terminology title="The IPv4 address a provider assigned to your key" to="/docs/reference/terminology#tunnel-address">Tunnel address</Terminology>** — Required. The IP address IVPN assigned to that key, such as `172.20.12.34/32`.
+  - **<Terminology title="Your WireGuard password; it never shows up in logs" to="/docs/reference/terminology#vpn-connections">Private key</Terminology>** — The private key of the WireGuard key you added under WireGuard in your IVPN account.
+  - **<Terminology title="The address your WireGuard provider gave your key" to="/docs/reference/terminology#vpn-connections">Tunnel address</Terminology>** — Required. The IP address IVPN assigned to that key, such as `172.20.12.34/32`.
   - **Labels** — Each server shows its country, city, and name, such as **US-TX1**.
 
 ## Mullvad
@@ -130,20 +130,20 @@ NordVPN, Surfshark, IVPN, and Custom offer both <Terminology title="The VPN prot
 Mullvad offers WireGuard only, because it dropped OpenVPN in January 2026.
 
 - **Source** — `https://api.mullvad.net/www/relays/all/`, with about 520 relays. Only active WireGuard relays are kept, and bridge relays are skipped.
-- **<Terminology title="The secret half of your WireGuard key pair" to="/docs/reference/terminology#private-key">Private key</Terminology>** — The `PrivateKey` line from a WireGuard file generated in your Mullvad account.
-- **<Terminology title="The IPv4 address a provider assigned to your key" to="/docs/reference/terminology#tunnel-address">Tunnel address</Terminology>** — Required. The IPv4 `Address` line from that file, such as `10.68.12.34/32`.
+- **<Terminology title="Your WireGuard password; it never shows up in logs" to="/docs/reference/terminology#vpn-connections">Private key</Terminology>** — The `PrivateKey` line from a WireGuard file generated in your Mullvad account.
+- **<Terminology title="The address your WireGuard provider gave your key" to="/docs/reference/terminology#vpn-connections">Tunnel address</Terminology>** — Required. The IPv4 `Address` line from that file, such as `10.68.12.34/32`.
 - **Labels** — Each relay shows its country, city, and name, such as **SE-STO-WG-001**.
 
 ## Custom
 
-- **Setup** — Select Custom in **Provider** on the **VPN** page, choose a tunnel, then upload one file at a time as a <Terminology title="Your own .ovpn or .conf file for any service" to="/docs/reference/terminology#custom-profile">custom profile</Terminology>.
-- **OpenVPN** — A `.ovpn` file, and a username and password are optional. Every `remote` line becomes a selected <Terminology title="One VPN server profile you can connect to" to="/docs/reference/terminology#endpoint">endpoint</Terminology>, and **Fallback order** follows the lines' order in the file.
-- **WireGuard** — A `.conf` file that includes its own <Terminology title="The secret half of your WireGuard key pair" to="/docs/reference/terminology#private-key">private key</Terminology>, so there's no sign-in.
+- **Setup** — Select Custom in **Provider** on the **VPN** page, choose a tunnel, then upload one file at a time as a <Terminology title="Your own .ovpn or .conf file for any VPN service" to="/docs/reference/terminology#custom-profiles">custom profile</Terminology>.
+- **OpenVPN** — A `.ovpn` file, and a username and password are optional. Every `remote` line becomes a selected <Terminology title="One VPN server you can connect to" to="/docs/reference/terminology#providers-and-endpoints">endpoint</Terminology>, and **Fallback order** follows the lines' order in the file.
+- **WireGuard** — A `.conf` file that includes its own <Terminology title="Your WireGuard password; it never shows up in logs" to="/docs/reference/terminology#vpn-connections">private key</Terminology>, so there's no sign-in.
 - **Checks** — The file must pass the checks in [Custom Profiles](/docs/vpn/custom-profiles/).
 
 ## Refreshing a Catalog
 
-- **Manual only** — A <Terminology title="A provider's official endpoint list, downloaded on request" to="/docs/reference/terminology#endpoint-catalog">catalog</Terminology> downloads only when you select **Refresh list**.
+- **Manual only** — A <Terminology title="The provider's server list you pick endpoints from" to="/docs/reference/terminology#providers-and-endpoints">catalog</Terminology> downloads only when you select **Refresh list**.
 - **One list per tunnel** — Each tunnel has its own list and refresh time, and a refresh replaces only the list of the tunnel you chose.
 - **Fixed sources** — Downloads come only from the HTTPS addresses above, and any redirect must stay on HTTPS and on the same host.
 - **Limits**
@@ -153,10 +153,10 @@ Mullvad offers WireGuard only, because it dropped OpenVPN in January 2026.
   - PIA, IPVanish, and Surfshark archives larger than 16 MiB, and IVPN archives larger than 8 MiB, fail validation.
   - A WireGuard list with more than 30,000 servers fails validation.
 - **Lookup retries** — If the container can't look up a source's host, it tries 2 more times, 1 and then 2 seconds apart, before the refresh fails with a message that names the host.
-- **All or nothing** — If any profile or server fails validation, the refresh fails and the previous <Terminology title="A provider's official endpoint list, downloaded on request" to="/docs/reference/terminology#endpoint-catalog">catalog</Terminology> stays.
-- **No keys in lists** — A WireGuard list holds each server's public key and address, while your <Terminology title="The secret half of your WireGuard key pair" to="/docs/reference/terminology#private-key">private key</Terminology> and <Terminology title="The IPv4 address a provider assigned to your key" to="/docs/reference/terminology#tunnel-address">tunnel address</Terminology> are added only when you connect.
+- **All or nothing** — If any profile or server fails validation, the refresh fails and the previous <Terminology title="The provider's server list you pick endpoints from" to="/docs/reference/terminology#providers-and-endpoints">catalog</Terminology> stays.
+- **No keys in lists** — A WireGuard list holds each server's public key and address, while your <Terminology title="Your WireGuard password; it never shows up in logs" to="/docs/reference/terminology#vpn-connections">private key</Terminology> and <Terminology title="The address your WireGuard provider gave your key" to="/docs/reference/terminology#vpn-connections">tunnel address</Terminology> are added only when you connect.
 - **Retired servers** — Servers dropped from the new list disappear from the page, but ones in your saved connection keep working for **Reconnect** and automatic reconnects.
-- **While blocked** — The <Terminology title="The service that runs the web interface and API" to="/docs/reference/terminology#control-plane">control plane</Terminology> downloads the <Terminology title="A provider's official endpoint list, downloaded on request" to="/docs/reference/terminology#endpoint-catalog">catalog</Terminology>, so a refresh works while Transmission's traffic is blocked.
+- **While blocked** — The <Terminology title="The web interface and API; it stays up when the VPN is down" to="/docs/reference/terminology#container-and-services">control plane</Terminology> downloads the <Terminology title="The provider's server list you pick endpoints from" to="/docs/reference/terminology#providers-and-endpoints">catalog</Terminology>, so a refresh works while Transmission's traffic is blocked.
 
 Server locations come from a country table built into the image, so a refresh doesn't contact a geolocation service.
 
@@ -173,4 +173,4 @@ The **Endpoints** section of the **VPN** page shows the provider's own word on w
 
 ## Port Forwarding
 
-No <Terminology title="Built-in integration for one VPN service" to="/docs/reference/terminology#provider-adapter">provider adapter</Terminology> requests a <Terminology title="Inbound peer port opened through a VPN or router" to="/docs/reference/terminology#port-forwarding">forwarded port</Terminology>, and Transmission's router port mapping (UPnP and NAT-PMP) is turned off.
+No <Terminology title="Built-in support for one VPN service; data, never code" to="/docs/reference/terminology#providers-and-endpoints">provider adapter</Terminology> requests a <Terminology title="Inbound ports for peers; this image never opens them" to="/docs/reference/terminology#vpn-connections">forwarded port</Terminology>, and Transmission's router port mapping (UPnP and NAT-PMP) is turned off.

@@ -259,7 +259,7 @@ func (store *Store) CreateTorrentProfile(ctx context.Context, profile TorrentPro
 //
 // Since: 2.0.0
 func (store *Store) ListTorrentProfiles(ctx context.Context) ([]TorrentProfile, error) {
-	rows, err := store.databaseHandle().QueryContext(
+	rows, err := store.readHandle().QueryContext(
 		ctx,
 		"SELECT "+torrentProfileColumns+" FROM torrent_profiles "+
 			"ORDER BY name COLLATE NOCASE, name, created_at, id",
@@ -301,7 +301,7 @@ func (store *Store) ListTorrentProfiles(ctx context.Context) ([]TorrentProfile, 
 //
 // Since: 2.0.0
 func (store *Store) FindTorrentProfile(ctx context.Context, id string) (TorrentProfile, error) {
-	profile, err := scanTorrentProfile(store.databaseHandle().QueryRowContext(
+	profile, err := scanTorrentProfile(store.readHandle().QueryRowContext(
 		ctx,
 		"SELECT "+torrentProfileColumns+" FROM torrent_profiles WHERE id = ?",
 		id,
@@ -320,7 +320,7 @@ func (store *Store) FindTorrentProfile(ctx context.Context, id string) (TorrentP
 //
 // Since: 2.0.0
 func (store *Store) DefaultTorrentProfile(ctx context.Context) (DefaultTorrentProfile, error) {
-	return scanDefaultTorrentProfile(store.databaseHandle().QueryRowContext(
+	return scanDefaultTorrentProfile(store.readHandle().QueryRowContext(
 		ctx,
 		`SELECT name, labels_json, start_paused, options_json, updated_at
 		 FROM torrent_default_profile
@@ -578,7 +578,7 @@ func (store *Store) DeleteTorrentProfile(ctx context.Context, id string) error {
 //
 // Since: 2.0.0
 func (store *Store) ListTorrentProfileAssignments(ctx context.Context) (map[string]string, error) {
-	rows, err := store.databaseHandle().QueryContext(
+	rows, err := store.readHandle().QueryContext(
 		ctx,
 		"SELECT hash, profile_id FROM torrent_profile_assignments",
 	)
@@ -609,7 +609,7 @@ func (store *Store) ListTorrentProfileAssignments(ctx context.Context) (map[stri
 //
 // Since: 2.0.0
 func (store *Store) ListTorrentNeedsProfiles(ctx context.Context) (map[string][]string, error) {
-	rows, err := store.databaseHandle().QueryContext(
+	rows, err := store.readHandle().QueryContext(
 		ctx,
 		"SELECT hash, profile_ids_json FROM torrent_profile_needs_choice",
 	)

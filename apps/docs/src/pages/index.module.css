@@ -283,3 +283,17 @@
     transition: none;
   }
 }
+
+/**
+ * ============================
+ * Web Interface Showcase
+ * ============================
+ */
+
+/*
+ * The screenshot section uses the full page width instead of the preset's
+ * 768px text column, so the web interface shows near its real size.
+ */
+.shot-spotlight :global(.nova-spotlight-inner) {
+  max-width: var(--nova-grid-container-max);
+}

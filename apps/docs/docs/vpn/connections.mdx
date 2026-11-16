@@ -23,13 +23,13 @@ import connectionsOneDark from './_assets_/connections-1-dark.png';
 import connectionsTwoLight from './_assets_/connections-2-light.png';
 import connectionsTwoDark from './_assets_/connections-2-dark.png';
 
-A <Terminology title="One VPN tunnel with its own Transmission" to="/docs/reference/terminology#vpn-connection">VPN connection</Terminology> runs its own Transmission. That Transmission sends its traffic only through that connection's tunnel.
+A <Terminology title="One VPN with its own Transmission and its own torrents" to="/docs/reference/terminology#vpn-connections">VPN connection</Terminology> runs its own Transmission. That Transmission sends its traffic only through that connection's tunnel.
 
 You can run several connections at once. When a torrent is added or its profile changes, that profile selects the connection whose Transmission owns it.
 
 ## The default connection
 
-One connection is the <Terminology title="The VPN connection used when no other connection is selected" to="/docs/reference/terminology#default-connection">default connection</Terminology>. The first connection becomes the default.
+One connection is the <Terminology title="The VPN used whenever nothing picks another one" to="/docs/reference/terminology#vpn-connections">default connection</Terminology>. The first connection becomes the default.
 
 The default connection handles:
 

@@ -242,12 +242,13 @@ func testVPNConnection(name string, profileID string) EncryptedVPNConnection {
 // upgrade must label them that way without losing a row.
 func TestTunnelMigrationKeepsOpenVPNRows(testingObject *testing.T) {
 	ctx := context.Background()
-	database, err := sql.Open("sqlite", "file:"+filepath.ToSlash(filepath.Join(testingObject.TempDir(), "state.sqlite3")))
+	path := filepath.Join(testingObject.TempDir(), "state.sqlite3")
+	database, err := sql.Open("sqlite", "file:"+filepath.ToSlash(path))
 	if err != nil {
 		testingObject.Fatalf("open database: %v", err)
 	}
 	database.SetMaxOpenConns(1)
-	store := &Store{database: database}
+	store := partialStore(testingObject, database, path)
 	defer store.Close()
 
 	if _, err := database.ExecContext(ctx, "PRAGMA foreign_keys = ON"); err != nil {

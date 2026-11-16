@@ -27,7 +27,6 @@ transmission-vpn/
 |   `-- docs/              - Docusaurus documentation workspace
 |-- conventions/           - Nova-generated agent and coding conventions
 |-- assets/
-|   `-- legacy/            - Local original Synology scripts retained as reference
 |-- scripts/                - Root maintenance and Nova-linking scripts
 |-- tests/                  - Root project-contract tests
 |-- AGENTS.md               - Codex project instructions
@@ -787,6 +786,11 @@ folder is the live `transmission.downloadDirectory` value.
 SQLite schema changes use ordered, deterministic SQL migrations embedded in the control
 API binary and applied atomically through the pure-Go `modernc.org/sqlite` driver. The
 database runs in WAL mode with foreign-key enforcement and a bounded busy timeout.
+Every write and write transaction goes through one connection with full synchronous
+commits. Reads outside a write use a small pool of read-only connections, and the
+once-a-minute last-activity times for sessions, API tokens, and RPC logins are saved
+in the background, so a slow disk delays only writes, never sign-in checks, lists, or
+the health check.
 
 ### Error Strategy
 
@@ -1040,8 +1044,6 @@ setup warnings in unrelated workspaces.
 
 - Build the greenfield replacement in `apps/transmission` from Nova's container-native
   Docker scaffold.
-- Keep the current Synology scripts under `assets/legacy/` only as behavioral and historical
-  reference.
 - Do not preserve Synology-specific paths, services, VPN identifiers, or scheduling
   assumptions in the new architecture.
 - Do not begin by layering new container behavior over `transmission-vpn.sh`.

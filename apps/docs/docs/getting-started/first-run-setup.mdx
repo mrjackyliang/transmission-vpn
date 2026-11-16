@@ -27,7 +27,7 @@ Claim a new installation with the one-time code from the container logs, and cre
 
 Open `http://<docker-host>:22602/` in a browser, where `<docker-host>` is the name or address of the machine that runs Docker. If you changed `TRANSMISSION_VPN_PORT`, use that port instead.
 
-A new installation opens the **Set up your account** screen, which asks for a <Terminology title="One-time code from the logs that creates the administrator" to="/docs/reference/terminology#claim-code">claim code</Terminology>, a username, and a password.
+A new installation opens the **Set up your account** screen, which asks for a <Terminology title="The code from the logs that creates your admin account" to="/docs/reference/terminology#accounts-and-backups">claim code</Terminology>, a username, and a password.
 
 <Frame caption="Setting up the account on the first visit" style={{ maxWidth: 450, marginInline: 'auto' }}>
   <ThemedImage sources={{ light: firstRunSetupOneLight, dark: firstRunSetupOneDark }} alt="Set up your account screen with a one-time code, a username, and a password rated Strong, above the Create account button" width={448} height={735} style={{ maxWidth: '100%', height: 'auto' }} />
@@ -57,12 +57,12 @@ docker compose logs app | grep setupCode
 
 ## Create the Administrator
 
-1. Enter the code in **<Terminology title="One-time code from the logs that creates the administrator" to="/docs/reference/terminology#claim-code">One-time code</Terminology>**.
+1. Enter the code in **<Terminology title="The code from the logs that creates your admin account" to="/docs/reference/terminology#accounts-and-backups">One-time code</Terminology>**.
 2. Enter a username with 3 to 64 letters, digits, periods, underscores, or hyphens, starting with a letter or digit.
 3. Enter a password with 12 to 1024 characters, then type it again in **Confirm password**. The bar under the field rates it from **Weak** to **Strong**, and any password of 12 or more characters is accepted.
 4. Select **Create account**.
 
-You're signed in right away, and the <Terminology title="One-time code from the logs that creates the administrator" to="/docs/reference/terminology#claim-code">claim code</Terminology> can't be used again. Transmission VPN has a single administrator account, so it is recommended to keep its password in a password manager.
+You're signed in right away, and the <Terminology title="The code from the logs that creates your admin account" to="/docs/reference/terminology#accounts-and-backups">claim code</Terminology> can't be used again. Transmission VPN has a single administrator account, so it is recommended to keep its password in a password manager.
 
 :::warning
 You can change the administrator's username and password under **Sign-in and security** in the account menu, but nothing can reset a forgotten password.
@@ -70,7 +70,7 @@ You can change the administrator's username and password under **Sign-in and sec
 
 ## Use a Claim Secret File
 
-A <Terminology title="Mounted file used instead of a generated claim code" to="/docs/reference/terminology#claim-secret-file">claim secret file</Terminology> replaces the generated code with a secret you choose, which suits deployments managed by other tools.
+A <Terminology title="Your own claim code, mounted as a file" to="/docs/reference/terminology#accounts-and-backups">claim secret file</Terminology> replaces the generated code with a secret you choose, which suits deployments managed by other tools.
 
 - **Location** — Mount the file at `/run/secrets/transmission-vpn-claim`.
 - **Length** — It must hold 12 to 256 characters after surrounding spaces and line breaks are removed.
@@ -93,7 +93,7 @@ secrets:
     file: ./transmission-vpn-claim.txt
 ```
 
-Enter the file's contents in **<Terminology title="One-time code from the logs that creates the administrator" to="/docs/reference/terminology#claim-code">One-time code</Terminology>** to create the administrator.
+Enter the file's contents in **<Terminology title="The code from the logs that creates your admin account" to="/docs/reference/terminology#accounts-and-backups">One-time code</Terminology>** to create the administrator.
 
 ## Sign In Later
 
@@ -103,5 +103,5 @@ Enter the file's contents in **<Terminology title="One-time code from the logs t
 
 ## Next Steps
 
-- **[Connect to a VPN](/docs/vpn/connecting/)** — Choose a provider, build an <Terminology title="Ordered endpoints from one provider and tunnel for failover" to="/docs/reference/terminology#endpoint-pool">endpoint pool</Terminology>, and test the connection.
+- **[Connect to a VPN](/docs/vpn/connecting/)** — Choose a provider, build an <Terminology title="Backup servers to try in order when one fails" to="/docs/reference/terminology#providers-and-endpoints">endpoint pool</Terminology>, and test the connection.
 - **[Settings](/docs/configuration/settings/)** — Review the Transmission settings and when changes take effect.

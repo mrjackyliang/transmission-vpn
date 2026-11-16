@@ -628,16 +628,14 @@ func openVersion12Store(testingObject *testing.T) *Store {
 	testingObject.Helper()
 
 	ctx := context.Background()
-	database, err := sql.Open(
-		"sqlite",
-		"file:"+filepath.ToSlash(filepath.Join(testingObject.TempDir(), "state.sqlite3")),
-	)
+	path := filepath.Join(testingObject.TempDir(), "state.sqlite3")
+	database, err := sql.Open("sqlite", "file:"+filepath.ToSlash(path))
 	if err != nil {
 		testingObject.Fatalf("open database: %v", err)
 	}
 	database.SetMaxOpenConns(1)
 	database.SetMaxIdleConns(1)
-	store := &Store{database: database}
+	store := partialStore(testingObject, database, path)
 	if _, err := database.ExecContext(ctx, "PRAGMA foreign_keys = ON"); err != nil {
 		_ = store.Close()
 		testingObject.Fatalf("enable foreign keys: %v", err)

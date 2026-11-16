@@ -64,7 +64,7 @@ jobs:
       - name: "Check project"
         timeout-minutes: 90
         run: |
-          npm run check -- --workspace transmission-vpn-docs
+          npm run check -- --workspace transmission-vpn-docs --workspace transmission-vpn-app-transmission --workspace transmission-vpn-tool-docker
         working-directory: "${{ env.ROOT_DIR }}"
 
       - name: "Build project"

@@ -12,7 +12,11 @@ import (
 // handleLiveness verifies the control store and fail-closed runtime boundary.
 //
 // A setup-required or reconnecting appliance stays live when its firewall is safely
-// blocking traffic; liveness does not claim that downloads are ready.
+// blocking traffic; liveness does not claim that downloads are ready. The store check
+// uses a read-only connection, so a write still flushing to a slow disk doesn't make
+// the container unhealthy.
+//
+// Since: 2.2.1
 func (server *Server) handleLiveness(
 	responseWriter http.ResponseWriter,
 	request *http.Request,

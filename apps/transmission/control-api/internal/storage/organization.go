@@ -46,7 +46,7 @@ type TorrentLabelRename struct {
 // Stable case-insensitive ordering keeps the API and interface deterministic while
 // the revision supports safe full-list replacement by the management dialog.
 func (store *Store) TorrentOrganization(ctx context.Context) (TorrentOrganization, error) {
-	return readTorrentOrganization(ctx, store.databaseHandle())
+	return readTorrentOrganization(ctx, store.readHandle())
 }
 
 // EnsureTorrentLabels saves labels that are not already organization choices.

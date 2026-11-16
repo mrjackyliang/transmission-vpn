@@ -52,7 +52,7 @@ type Passkey struct {
 func (store *Store) FindAdministratorByID(ctx context.Context, administratorID int64) (Administrator, error) {
 	var administrator Administrator
 	var createdAtText string
-	err := store.databaseHandle().QueryRowContext(
+	err := store.readHandle().QueryRowContext(
 		ctx,
 		`SELECT id, username, password_hash, created_at
 		 FROM administrators
@@ -180,7 +180,7 @@ func (store *Store) UpdateAdministratorUsername(
 func (store *Store) AccountSecurity(ctx context.Context, administratorID int64) (AccountSecurity, error) {
 	var security AccountSecurity
 	var enabledAt sql.NullString
-	err := store.databaseHandle().QueryRowContext(
+	err := store.readHandle().QueryRowContext(
 		ctx,
 		`SELECT totp_nonce, totp_ciphertext, totp_enabled_at, totp_last_step,
 		        (SELECT COUNT(*) FROM recovery_codes
@@ -242,7 +242,7 @@ func (store *Store) TOTPEnrollment(ctx context.Context, administratorID int64) (
 	var nonce []byte
 	var ciphertext []byte
 	var expiresAtText string
-	err := store.databaseHandle().QueryRowContext(
+	err := store.readHandle().QueryRowContext(
 		ctx,
 		"SELECT nonce, ciphertext, expires_at FROM totp_enrollments WHERE administrator_id = ?",
 		administratorID,
@@ -459,7 +459,7 @@ func (store *Store) CreateSignInChallenge(
 func (store *Store) FindSignInChallenge(ctx context.Context, challengeDigest []byte) (SignInChallenge, error) {
 	var challenge SignInChallenge
 	var expiresAtText string
-	err := store.databaseHandle().QueryRowContext(
+	err := store.readHandle().QueryRowContext(
 		ctx,
 		"SELECT id, administrator_id, failures, expires_at FROM sign_in_challenges WHERE challenge_digest = ?",
 		challengeDigest,
@@ -554,7 +554,7 @@ func (store *Store) EnsureWebAuthnUserID(ctx context.Context, administratorID in
 // FindAdministratorByWebAuthnUserID resolves the user handle a passkey returns.
 func (store *Store) FindAdministratorByWebAuthnUserID(ctx context.Context, userID []byte) (Administrator, error) {
 	var administratorID int64
-	err := store.databaseHandle().QueryRowContext(
+	err := store.readHandle().QueryRowContext(
 		ctx,
 		"SELECT id FROM administrators WHERE webauthn_user_id = ?",
 		userID,
@@ -601,7 +601,7 @@ func (store *Store) ListPasskeys(ctx context.Context, administratorID int64, rpI
 	}
 	query += " ORDER BY created_at DESC"
 
-	rows, err := store.databaseHandle().QueryContext(ctx, query, arguments...)
+	rows, err := store.readHandle().QueryContext(ctx, query, arguments...)
 	if err != nil {
 		return nil, fmt.Errorf("list passkeys: %w", err)
 	}

@@ -1,0 +1,42 @@
+---
+title: "Transmission VPN Begins as a Synology Script"
+description: Version 1.0.0 binds the Synology Transmission package to a DSM VPN address, so torrent traffic leaves only through the VPN.
+slug: transmission-vpn-begins-on-synology
+authors:
+  - mrjackyliang
+keywords:
+  - transmission vpn
+  - synology
+  - dsm
+  - bind address
+  - vpn
+tags:
+  - release
+  - synology
+  - vpn
+---
+
+Transmission VPN 1.0.0 shipped on November 20, 2015, as a shell script for Synology NAS. It connects a VPN profile from DSM and binds Transmission to the VPN's address, so torrent traffic has one way out.
+
+{/* truncate */}
+
+## Why It Mattered
+
+DSM could connect to a VPN, and the Synology Transmission package could download torrents, but nothing tied the two together. When the VPN dropped, Transmission kept running on the regular connection.
+
+The script closed that gap with one Transmission setting: `bind-address-ipv4`.
+
+## What the First Release Did
+
+- **`start`** — Connects the DSM VPN profile and binds Transmission to the VPN interface's address.
+- **`stop`** — Binds Transmission to `127.0.0.1`, so it can't reach the internet while the VPN is off.
+
+## What Came Next
+
+Within two days, version 1.0.1 added a `repair` command that compared the VPN interface's address with the public address and reconnected when they differed, keeping Transmission on `127.0.0.1` while the VPN was down. It also brought OpenVPN (`tun0`) alongside L2TP and PPTP (`ppp0`).
+
+Over the next five years, the script grew to version 1.3.2 with retry settings, a port forwarding check, and support for each new Synology Transmission package.
+
+## Where It Led
+
+The same idea — torrent traffic goes through the VPN or nowhere — now runs as one Docker image with a fail-closed firewall, OpenVPN and WireGuard, and a web interface. [Installation](/docs/getting-started/installation/) covers the current release, and the [Migration Guide](/docs/getting-started/migration/) helps if you ran the script.

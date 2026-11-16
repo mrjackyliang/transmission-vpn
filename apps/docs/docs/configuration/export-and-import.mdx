@@ -35,20 +35,20 @@ Use **Backup** at the end of **Settings** to move selected configuration between
 ## Export
 
 1. Open **Settings**, scroll to **Backup**, and select **Export…**.
-2. Leave every section selected, or clear anything that should stay out of the <Terminology title="a portable JSON backup made from selected Backup sections" to="/docs/reference/terminology#export-file">export file</Terminology>.
+2. Leave every section selected, or clear anything that should stay out of the <Terminology title="A portable JSON backup you can import anywhere" to="/docs/reference/terminology#accounts-and-backups">export file</Terminology>.
 3. Select **Continue**.
-4. Complete <Terminology title="the fresh account check before an export or import" to="/docs/reference/terminology#confirm-its-you">**Confirm it’s you**</Terminology>, then select **Confirm**.
+4. Complete <Terminology title="A quick re-check before secrets leave or arrive" to="/docs/reference/terminology#accounts-and-backups">**Confirm it’s you**</Terminology>, then select **Confirm**.
 
-The downloaded file is named `transmission-vpn-export-YYYY-MM-DD.json`. It can be imported into another installation without its <Terminology title="Key that encrypts saved secrets, such as VPN logins" to="/docs/reference/terminology#installation-key">installation key</Terminology>.
+The downloaded file is named `transmission-vpn-export-YYYY-MM-DD.json`. It can be imported into another installation without its <Terminology title="Unlocks your saved secrets; lose it and they're removed" to="/docs/reference/terminology#storage-and-keys">installation key</Terminology>.
 
 ### Export Sections
 
-- **Settings and profiles** — Global Transmission settings, the <Terminology title="The first profile, used when no named profile matches" to="/docs/reference/terminology#default-profile">Default profile</Terminology>, and every named <Terminology title="The folder, VPN connection, labels, and defaults that belong to a torrent" to="/docs/reference/terminology#profile">profile</Terminology>.
-- **Labels** — Every saved <Terminology title="A free-form tag attached to a torrent" to="/docs/reference/terminology#label">label</Terminology>, including one that no torrent uses now.
+- **Settings and profiles** — Global Transmission settings, the <Terminology title="Where torrents go when no named profile matches" to="/docs/reference/terminology#torrent-profiles">Default profile</Terminology>, and every named <Terminology title="Decides a torrent's folder and which VPN it uses" to="/docs/reference/terminology#torrent-profiles">profile</Terminology>.
+- **Labels** — Every saved <Terminology title="A free tag for grouping; it never moves the torrent" to="/docs/reference/terminology#torrent-profiles">label</Terminology>, including one that no torrent uses now.
 - **Notifications** — Destinations, events, settings, and sign-ins.
 - **Torrent list** — Metainfo, profile, labels, limits, download folder, and paused state. Downloaded data is never included.
 - **VPN connections** — Providers, endpoints, sign-ins, DNS servers, peer ports, and connection choices.
-- **Remote app logins and API tokens** — Compatible <Terminology title="Username and generated password for the compatible RPC route" to="/docs/reference/terminology#rpc-login">RPC logins</Terminology> and scoped <Terminology title="A scoped credential for automating the API" to="/docs/reference/terminology#api-token">API tokens</Terminology>.
+- **Remote app logins and API tokens** — Compatible <Terminology title="One app's own username and password for RPC" to="/docs/reference/terminology#remote-access">RPC logins</Terminology> and scoped <Terminology title="A scoped key for scripts that call the API" to="/docs/reference/terminology#remote-access">API tokens</Terminology>.
 
 :::warning
 The file holds selected VPN credentials, endpoint configurations, and notification secrets in plain text. RPC passwords and API token values remain stored as digests, but the rest of the file still needs the same protection as a password.
@@ -56,17 +56,17 @@ The file holds selected VPN credentials, endpoint configurations, and notificati
 
 ### Confirm It's You
 
-<Terminology title="the fresh account check before an export or import" to="/docs/reference/terminology#confirm-its-you">Confirm it’s you</Terminology> asks for the current account password and, when the authenticator app is on, its current 6-digit **Authenticator code**. Select **Use a passkey instead** to complete the check with a saved passkey.
+<Terminology title="A quick re-check before secrets leave or arrive" to="/docs/reference/terminology#accounts-and-backups">Confirm it’s you</Terminology> asks for the current account password and, when the authenticator app is on, its current 6-digit **Authenticator code**. Select **Use a passkey instead** to complete the check with a saved passkey.
 
 The confirmation lasts five minutes, works once, belongs only to that browser session, and is limited to the export or import that requested it. Closing the dialog, using another browser, or trying the other operation requires another confirmation.
 
 ## Import an Export File
 
 1. Open **Settings**, scroll to **Backup**, and select **Import…**.
-2. In **Source**, choose <Terminology title="a portable JSON backup made from selected Backup sections" to="/docs/reference/terminology#export-file">**An export file**</Terminology>, then select the JSON file.
+2. In **Source**, choose <Terminology title="A portable JSON backup you can import anywhere" to="/docs/reference/terminology#accounts-and-backups">**An export file**</Terminology>, then select the JSON file.
 3. Complete **Folders**, **Profiles**, and **Settings** when those steps appear.
 4. Check **Review**, then select **Import**.
-5. Complete <Terminology title="the fresh account check before an export or import" to="/docs/reference/terminology#confirm-its-you">**Confirm it’s you**</Terminology>, then select **Confirm**.
+5. Complete <Terminology title="A quick re-check before secrets leave or arrive" to="/docs/reference/terminology#accounts-and-backups">**Confirm it’s you**</Terminology>, then select **Confirm**.
 
 The wizard shows only the steps the file needs. A missing download folder adds **Folders**; saved profiles add **Profiles**; and saved settings add **Settings** before **Review** and **Importing**.
 
@@ -76,8 +76,8 @@ The wizard shows only the steps the file needs. A missing download folder adds *
 
 ### What the Import Changes
 
-- **Settings** — Saved values replace current values when this version supports them and no <Terminology title="A managed value that overrides and freezes a setting" to="/docs/reference/terminology#managed-lock">managed lock</Terminology> blocks them. Unsupported, locked, or invalid values appear under **Not brought over**.
-- **Default profile** — The <Terminology title="The first profile, used when no named profile matches" to="/docs/reference/terminology#default-profile">Default profile</Terminology> is updated in place.
+- **Settings** — Saved values replace current values when this version supports them and no <Terminology title="A value pinned by managed.json that can't be edited" to="/docs/reference/terminology#settings-and-managed-configuration">managed lock</Terminology> blocks them. Unsupported, locked, or invalid values appear under **Not brought over**.
+- **Default profile** — The <Terminology title="Where torrents go when no named profile matches" to="/docs/reference/terminology#torrent-profiles">Default profile</Terminology> is updated in place.
 - **Named profiles** — A new name is added. When the same name already exists, choose **Replace** or **Keep this one**.
 - **Labels** — Saved labels are added without removing labels already here.
 - **Notifications** — Selecting this section merges destinations by name. A destination with the same name, ignoring letter case, is replaced; new destinations are added up to the limit; and destinations not in the file stay.
@@ -108,7 +108,7 @@ Mount the old download folders under `/data` too. The import reads the mounted c
 5. In **Folders**, map every old download and incomplete folder to an existing folder under `/data`.
 6. In **Profiles**, review the generated names, choose a VPN connection when a folder should not follow the default, and clear any empty sibling folder that should be skipped.
 7. In **Settings**, review both the supported changes and **Not brought over**.
-8. In **Review**, check the counts and any warnings, select **Import**, complete <Terminology title="the fresh account check before an export or import" to="/docs/reference/terminology#confirm-its-you">**Confirm it’s you**</Terminology>, and select **Confirm**.
+8. In **Review**, check the counts and any warnings, select **Import**, complete <Terminology title="A quick re-check before secrets leave or arrive" to="/docs/reference/terminology#accounts-and-backups">**Confirm it’s you**</Terminology>, and select **Confirm**.
 
 <Frame caption="The source check reads the mounted config folder">
   <ThemedImage sources={{ light: exportAndImportThreeLight, dark: exportAndImportThreeDark }} alt="Import dialog on Source with Another Transmission selected, Config folder /import, and the check Transmission 4, settings.json, 15 torrents, nothing in it will be changed" width={1064} height={571} style={{ maxWidth: '100%', height: 'auto' }} />
@@ -116,7 +116,7 @@ Mount the old download folders under `/data` too. The import reads the mounted c
 
 ### Folders and Profiles
 
-The old default download folder becomes the <Terminology title="The first profile, used when no named profile matches" to="/docs/reference/terminology#default-profile">Default profile</Terminology>'s folder. Every other download folder becomes a named <Terminology title="The folder, VPN connection, labels, and defaults that belong to a torrent" to="/docs/reference/terminology#profile">profile</Terminology>, named after the folder.
+The old default download folder becomes the <Terminology title="Where torrents go when no named profile matches" to="/docs/reference/terminology#torrent-profiles">Default profile</Terminology>'s folder. Every other download folder becomes a named <Terminology title="Decides a torrent's folder and which VPN it uses" to="/docs/reference/terminology#torrent-profiles">profile</Terminology>, named after the folder.
 
 - **Same paths** — When an old folder exists here at the same path, **Folders** fills it in. Otherwise, choose a folder with **Browse…**.
 - **Empty folders beside them** — When the old download folders are mounted here at the same paths, empty folders next to them are offered as profiles too, because another app may still send torrents there. A folder that a profile here already uses is never offered.
@@ -134,7 +134,7 @@ The incomplete folder carries over and is mapped separately, so unfinished downl
 
 ### Not Brought Over
 
-- **RPC settings and credentials** — Remote apps use separate <Terminology title="Username and generated password for the compatible RPC route" to="/docs/reference/terminology#rpc-login">RPC logins</Terminology> here. Add one afterwards for each app that used the old Transmission, then paste it into that app.
+- **RPC settings and credentials** — Remote apps use separate <Terminology title="One app's own username and password for RPC" to="/docs/reference/terminology#remote-access">RPC logins</Terminology> here. Add one afterwards for each app that used the old Transmission, then paste it into that app.
 - **Peer port and port-forwarding settings** — Each VPN connection owns its peer port and incoming-port behavior.
 - **Bind addresses** — Torrent traffic always leaves through its selected VPN connection.
 - **Watch folders** — Watch folders are not supported.

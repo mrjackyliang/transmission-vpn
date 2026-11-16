@@ -417,7 +417,12 @@ func TestWebInterfaceAndCompatibleRPC(testingObject *testing.T) {
 			jsonRPCResponse.Body.String(),
 		)
 	}
+	// The last-use time is saved in the background, so the check waits for it.
 	usedLogin, err := store.FindRPCLogin(ctx, rpcLoginID)
+	for deadline := time.Now().Add(2 * time.Second); err == nil && usedLogin.LastUsedAt == nil && time.Now().Before(deadline); {
+		time.Sleep(10 * time.Millisecond)
+		usedLogin, err = store.FindRPCLogin(ctx, rpcLoginID)
+	}
 	if err != nil || usedLogin.LastUsedAt == nil {
 		testingObject.Fatalf("used RPC login = %+v, %v", usedLogin, err)
 	}
@@ -563,5 +568,132 @@ func TestWebInterfaceAndCompatibleRPC(testingObject *testing.T) {
 			zeroLoginRPCResponse.Code,
 			zeroLoginRPCResponse.Body.String(),
 		)
+	}
+}
+
+// TestCompatibleRPCAcceptsGETSessionHandshake replays the handshake Sonarr, Radarr, and
+// Prowlarr send.
+//
+// Their Transmission client opens with a GET that carries the login but no session ID
+// and treats any answer except the 409 session reply as a failed sign-in, so every
+// method must reach the login and session checks while only POST carries a call.
+func TestCompatibleRPCAcceptsGETSessionHandshake(testingObject *testing.T) {
+	ctx := context.Background()
+	temporaryDirectory := testingObject.TempDir()
+	runtimeDirectory := filepath.Join(temporaryDirectory, "runtime")
+	prepareRuntimeMarkers(testingObject, runtimeDirectory)
+
+	_, transmission := newFakeTransmissionDaemon(testingObject, func(call recordedTransmissionCall) any {
+		if call.Method == "session-get" {
+			return map[string]any{"rpc-version": 17, "version": "4.1.3"}
+		}
+
+		return map[string]any{}
+	})
+
+	store, err := storage.Open(ctx, filepath.Join(temporaryDirectory, "state.sqlite3"))
+	if err != nil {
+		testingObject.Fatalf("open store: %v", err)
+	}
+	defer store.Close()
+
+	const rpcUsername = "media-apps"
+	const rpcPassword = "Hq4vT8yN2kLm6pRs0wXz-Ab3Cd5Ef7Gh9Jk1Mn3Pq5"
+	if _, err := store.CreateRPCLogin(ctx, storage.RPCLogin{
+		ID:           "rpl-0000000000000002",
+		Username:     rpcUsername,
+		SecretDigest: security.Digest(rpcPassword),
+	}); err != nil {
+		testingObject.Fatalf("create compatible RPC login: %v", err)
+	}
+
+	server, err := NewServer(Config{
+		Store:            store,
+		Registry:         settings.NewRegistry(),
+		InstallationKey:  make([]byte, 32),
+		RuntimeDirectory: runtimeDirectory,
+		Transmission:     transmission,
+		Logger:           slog.New(slog.NewTextHandler(io.Discard, nil)),
+		Version:          "test",
+	})
+	if err != nil {
+		testingObject.Fatalf("create API server: %v", err)
+	}
+	defer server.Close()
+	server.rpcCompatibilityAllowed.Store(true)
+
+	send := func(method string, body string, password string, sessionID string) *httptest.ResponseRecorder {
+		testingObject.Helper()
+
+		var requestBody io.Reader
+		if body != "" {
+			requestBody = strings.NewReader(body)
+		}
+		request := httptest.NewRequest(method, "/transmission/rpc", requestBody)
+		request.RemoteAddr = "172.18.0.5:41000"
+		if password != "" {
+			request.SetBasicAuth(rpcUsername, password)
+		}
+		if sessionID != "" {
+			request.Header.Set("X-Transmission-Session-Id", sessionID)
+		}
+		response := httptest.NewRecorder()
+		server.RPCHandler().ServeHTTP(response, request)
+
+		return response
+	}
+
+	handshakeResponse := send(http.MethodGet, "", rpcPassword, "")
+	sessionID := handshakeResponse.Header().Get("X-Transmission-Session-Id")
+	if handshakeResponse.Code != http.StatusConflict || sessionID == "" {
+		testingObject.Fatalf(
+			"GET handshake response %d with session ID %q: %s",
+			handshakeResponse.Code,
+			sessionID,
+			handshakeResponse.Body.String(),
+		)
+	}
+
+	callResponse := send(http.MethodPost, `{"method":"session-get"}`, rpcPassword, sessionID)
+	if callResponse.Code != http.StatusOK ||
+		!strings.Contains(callResponse.Body.String(), `"result":"success"`) ||
+		!strings.Contains(callResponse.Body.String(), `"version":"4.1.3"`) {
+		testingObject.Fatalf(
+			"POST after the GET handshake response %d: %s",
+			callResponse.Code,
+			callResponse.Body.String(),
+		)
+	}
+
+	refusals := []struct {
+		name       string
+		password   string
+		sessionID  string
+		wantStatus int
+		wantAllow  string
+	}{
+		{name: "GET with a session ID carries no call", password: rpcPassword, sessionID: sessionID, wantStatus: http.StatusMethodNotAllowed, wantAllow: http.MethodPost},
+		{name: "GET without a login", wantStatus: http.StatusUnauthorized},
+		{name: "GET with a wrong password", password: "wrong-password", wantStatus: http.StatusUnauthorized},
+	}
+	for _, refusal := range refusals {
+		testingObject.Run(refusal.name, func(subtest *testing.T) {
+			response := send(http.MethodGet, "", refusal.password, refusal.sessionID)
+			if response.Code != refusal.wantStatus || response.Header().Get("Allow") != refusal.wantAllow {
+				subtest.Fatalf(
+					"response %d with Allow %q, want %d with Allow %q: %s",
+					response.Code,
+					response.Header().Get("Allow"),
+					refusal.wantStatus,
+					refusal.wantAllow,
+					response.Body.String(),
+				)
+			}
+			if refusal.wantStatus == http.StatusUnauthorized &&
+				(response.Header().Get("WWW-Authenticate") == "" ||
+					response.Header().Get("X-Transmission-Session-Id") != "") {
+				subtest.Fatal("a refused sign-in must ask for credentials and carry no session ID")
+			}
+		})
 	}
 }

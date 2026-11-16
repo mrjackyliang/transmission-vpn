@@ -53,7 +53,7 @@
 }
 
 /* A generated or one-time secret, with its copy button inside the field. */
-.generated-secret-field {
+.field > .generated-secret-field {
   position: relative;
 
   display: block;

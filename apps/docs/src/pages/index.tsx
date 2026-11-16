@@ -1,17 +1,25 @@
 import {
   BlogPreview,
+  BrowserFrame,
   Canvas,
   Features,
-  InstallStrip,
-  Stats,
+  Showcase,
+  Spotlight,
 } from '@cbnventures/docusaurus-preset-nova/blocks';
 import Head from '@docusaurus/Head';
 import Link from '@docusaurus/Link';
 import { translate } from '@docusaurus/Translate';
 import Heading from '@theme/Heading';
 import Layout from '@theme/Layout';
+import ThemedImage from '@theme/ThemedImage';
 import { useEffect, useState } from 'react';
 
+import remoteAppsOneDark from '../../docs/remote-access/_assets_/remote-apps-1-dark.png';
+import remoteAppsOneLight from '../../docs/remote-access/_assets_/remote-apps-1-light.png';
+import managingTorrentsOneDark from '../../docs/torrents/_assets_/managing-torrents-1-dark.png';
+import managingTorrentsOneLight from '../../docs/torrents/_assets_/managing-torrents-1-light.png';
+import connectionsOneDark from '../../docs/vpn/_assets_/connections-1-dark.png';
+import connectionsOneLight from '../../docs/vpn/_assets_/connections-1-light.png';
 import styles from './index.module.css';
 
 import type {
@@ -29,8 +37,8 @@ import type {
 /**
  * Pages - Home.
  *
- * Landing page that composes the hero with a VPN status panel, the install strip,
- * the feature grid, stats, and the blog preview using theme blocks.
+ * Landing page that composes the hero with a VPN status panel, the feature grid,
+ * and the blog preview using theme blocks.
  *
  * @constructor
  *
@@ -112,7 +120,7 @@ function Home(): Pages_Index_Home_Returns {
             <div className={`nova-hero-actions ${styles['hero-actions']}`}>
               <Link
                 className="nova-cta-primary"
-                to="/docs/overview/"
+                to="/docs/getting-started/installation/"
               >
                 {translate({
                   id: 'home.hero.ctaLabel',
@@ -122,11 +130,11 @@ function Home(): Pages_Index_Home_Returns {
               </Link>
               <Link
                 className="nova-cta-secondary"
-                to="https://github.com/mrjackyliang/transmission-vpn"
+                to="/docs/overview/"
               >
                 {translate({
                   id: 'home.hero.secondaryCtaLabel',
-                  message: 'View on GitHub',
+                  message: 'Learn More',
                   description: 'Front page hero secondary call-to-action button label',
                 })}
               </Link>
@@ -190,7 +198,6 @@ function Home(): Pages_Index_Home_Returns {
           </div>
         </div>
       </Canvas>
-      <InstallStrip command="docker compose up --build --detach" />
       <main>
         <Features
           items={[
@@ -274,51 +281,151 @@ function Home(): Pages_Index_Home_Returns {
             },
           ]}
         />
-        <Stats
+        <Spotlight
+          surface="alt"
+          className={styles['shot-spotlight']}
           heading={translate({
-            id: 'home.stats.heading',
-            message: 'By the Numbers',
-            description: 'Front page Stats section heading',
+            id: 'home.showcase.heading',
+            message: 'Inside the web interface',
+            description: 'Front page heading above the web interface screenshots',
           })}
-          items={[
-            {
-              value: '128',
-              label: translate({
-                id: 'home.stats.poolEndpoints.label',
-                message: 'Endpoints in a pool',
-                description: 'Front page Stats label for the endpoint pool size',
-              }),
-              color: 'primary',
-            },
-            {
-              value: '5',
-              label: translate({
-                id: 'home.stats.tunnelChecks.label',
-                message: 'Checks before Transmission connects',
-                description: 'Front page Stats label for tunnel verification checks count',
-              }),
-              color: 'accent',
-            },
-            {
-              value: '3',
-              label: translate({
-                id: 'home.stats.providerLists.label',
-                message: 'Provider server lists built in',
-                description: 'Front page Stats label for built-in provider server lists count',
-              }),
-              color: 'primary',
-            },
-            {
-              value: '2',
-              label: translate({
-                id: 'home.stats.architectures.label',
-                message: 'Architectures, amd64 and arm64',
-                description: 'Front page Stats label for supported architectures count',
-              }),
-              color: 'accent',
-            },
-          ]}
-        />
+        >
+          <Showcase
+            tabsLabel={translate({
+              id: 'home.showcase.tabsLabel',
+              message: 'Web interface pages',
+              description: 'Accessible label for the screenshot tabs on the front page',
+            })}
+            items={[
+              {
+                label: translate({
+                  id: 'home.showcase.torrents.label',
+                  message: 'Torrents',
+                  description: 'Front page screenshot tab for the Torrents page',
+                }),
+                heading: translate({
+                  id: 'home.showcase.torrents.heading',
+                  message: 'Your whole library in one list',
+                  description: 'Front page heading for the Torrents page screenshot',
+                }),
+                description: translate({
+                  id: 'home.showcase.torrents.description',
+                  message: 'Filter by status, profile, or label, run batch actions, and see each torrent\'s progress, speed, and the VPN connection it runs through.',
+                  description: 'Front page description for the Torrents page screenshot',
+                }),
+                link: {
+                  label: translate({
+                    id: 'home.showcase.torrents.link',
+                    message: 'Manage Torrents',
+                    description: 'Front page link from the Torrents screenshot to its guide',
+                  }),
+                  to: '/docs/torrents/managing-torrents/',
+                },
+                content: (
+                  <BrowserFrame title="Transmission VPN" url="localhost:22602" favicon="/favicon.svg">
+                    <ThemedImage
+                      sources={{
+                        light: managingTorrentsOneLight,
+                        dark: managingTorrentsOneDark,
+                      }}
+                      alt={translate({
+                        id: 'home.showcase.torrents.alt',
+                        message: 'Torrents page listing torrents with their status, profile, labels, progress, and speeds',
+                        description: 'Alt text for the Torrents page screenshot on the front page',
+                      })}
+                      width={1280}
+                      height={1330}
+                    />
+                  </BrowserFrame>
+                ),
+              },
+              {
+                label: translate({
+                  id: 'home.showcase.vpn.label',
+                  message: 'VPN',
+                  description: 'Front page screenshot tab for the VPN page',
+                }),
+                heading: translate({
+                  id: 'home.showcase.vpn.heading',
+                  message: 'Several VPN connections at once',
+                  description: 'Front page heading for the VPN page screenshot',
+                }),
+                description: translate({
+                  id: 'home.showcase.vpn.description',
+                  message: 'Each connection runs its own Transmission. See which ones are protected, the endpoint each one uses, and how many torrents each one carries.',
+                  description: 'Front page description for the VPN page screenshot',
+                }),
+                link: {
+                  label: translate({
+                    id: 'home.showcase.vpn.link',
+                    message: 'Set Up VPN Connections',
+                    description: 'Front page link from the VPN screenshot to its guide',
+                  }),
+                  to: '/docs/vpn/connections/',
+                },
+                content: (
+                  <BrowserFrame title="Transmission VPN" url="localhost:22602" favicon="/favicon.svg">
+                    <ThemedImage
+                      sources={{
+                        light: connectionsOneLight,
+                        dark: connectionsOneDark,
+                      }}
+                      alt={translate({
+                        id: 'home.showcase.vpn.alt',
+                        message: 'VPN page listing three connections with their status, current endpoint, and torrent count',
+                        description: 'Alt text for the VPN page screenshot on the front page',
+                      })}
+                      width={1280}
+                      height={900}
+                    />
+                  </BrowserFrame>
+                ),
+              },
+              {
+                label: translate({
+                  id: 'home.showcase.remoteApps.label',
+                  message: 'Remote apps',
+                  description: 'Front page screenshot tab for the Remote apps page',
+                }),
+                heading: translate({
+                  id: 'home.showcase.remoteApps.heading',
+                  message: 'Bring your favorite Transmission app',
+                  description: 'Front page heading for the Remote apps page screenshot',
+                }),
+                description: translate({
+                  id: 'home.showcase.remoteApps.description',
+                  message: 'Give Transmission clients their own RPC logins and scripts their own scoped API tokens, without sharing your web interface password.',
+                  description: 'Front page description for the Remote apps page screenshot',
+                }),
+                link: {
+                  label: translate({
+                    id: 'home.showcase.remoteApps.link',
+                    message: 'Connect Remote Apps',
+                    description: 'Front page link from the Remote apps screenshot to its guide',
+                  }),
+                  to: '/docs/remote-access/remote-apps/',
+                },
+                content: (
+                  <BrowserFrame title="Transmission VPN" url="localhost:22602" favicon="/favicon.svg">
+                    <ThemedImage
+                      sources={{
+                        light: remoteAppsOneLight,
+                        dark: remoteAppsOneDark,
+                      }}
+                      alt={translate({
+                        id: 'home.showcase.remoteApps.alt',
+                        message: 'Remote apps page with the RPC proxy, RPC logins, API tokens, and web proxy logins',
+                        description: 'Alt text for the Remote apps page screenshot on the front page',
+                      })}
+                      width={1280}
+                      height={952}
+                    />
+                  </BrowserFrame>
+                ),
+              },
+            ]}
+          />
+        </Spotlight>
         <BlogPreview
           heading={translate({
             id: 'home.blogPreview.heading',
@@ -327,11 +434,12 @@ function Home(): Pages_Index_Home_Returns {
           })}
           description={translate({
             id: 'home.blogPreview.description',
-            message: 'Project updates, setup guides, and notes on VPN protection.',
+            message: 'Launches, milestones, and what\'s new in Transmission VPN.',
             description: 'Front page Blog Preview section description',
           })}
           auto={true}
           limit={3}
+          sort="newest"
         />
       </main>
     </Layout>
