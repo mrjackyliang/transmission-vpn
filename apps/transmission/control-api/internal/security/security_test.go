@@ -3,8 +3,11 @@ package security
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
 	"errors"
 	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -115,7 +118,8 @@ func TestSecretEncryptionBindsLogicalKey(testingObject *testing.T) {
 // Losing or silently replacing this key would make encrypted provider credentials
 // unrecoverable even though the application database remained intact.
 func TestInstallationKeyPersists(testingObject *testing.T) {
-	path := testingObject.TempDir() + "/keys/installation.key"
+	keyDirectory := filepath.Join(testingObject.TempDir(), "keys")
+	path := filepath.Join(keyDirectory, "installation.key")
 	if _, found, err := LoadInstallationKey(path); err != nil || found {
 		testingObject.Fatalf("missing key = found %v, error %v", found, err)
 	}
@@ -147,8 +151,94 @@ func TestInstallationKeyPersists(testingObject *testing.T) {
 		testingObject.Fatalf("inspect installation key: %v", err)
 	}
 
-	if info.Mode().Perm() != 0o660 {
+	if info.Mode().Perm() != installationKeyMode {
 		testingObject.Fatalf("installation key mode = %v", info.Mode().Perm())
+	}
+
+	directoryInfo, err := os.Stat(keyDirectory)
+	if err != nil {
+		testingObject.Fatalf("inspect installation key directory: %v", err)
+	}
+	if directoryInfo.Mode().Perm() != installationKeyFolderMode {
+		testingObject.Fatalf("installation key directory mode = %v", directoryInfo.Mode().Perm())
+	}
+
+	encodedKey, err := os.ReadFile(path)
+	if err != nil {
+		testingObject.Fatalf("read encoded installation key: %v", err)
+	}
+	wantedEncoding := hex.EncodeToString(firstKey) + "\n"
+	if string(encodedKey) != wantedEncoding {
+		testingObject.Fatalf("installation key encoding = %q, want %q", encodedKey, wantedEncoding)
+	}
+}
+
+// TestLoadInstallationKeyConvertsLegacyBytes preserves the exact encryption key while
+// upgrading an old raw file to Nova's lowercase hexadecimal format and modes.
+//
+// Since: 2.4.0
+func TestLoadInstallationKeyConvertsLegacyBytes(testingObject *testing.T) {
+	keyDirectory := filepath.Join(testingObject.TempDir(), "keys")
+	path := filepath.Join(keyDirectory, "installation.key")
+	if err := os.MkdirAll(keyDirectory, 0o770); err != nil {
+		testingObject.Fatalf("create legacy key directory: %v", err)
+	}
+	legacyKey := bytes.Repeat([]byte{0x5c}, installationKeyBytes)
+	if err := os.WriteFile(path, legacyKey, 0o660); err != nil {
+		testingObject.Fatalf("write legacy installation key: %v", err)
+	}
+
+	loadedKey, found, err := LoadInstallationKey(path)
+	if err != nil || !found {
+		testingObject.Fatalf("load legacy installation key: found %v, error %v", found, err)
+	}
+	if !bytes.Equal(loadedKey, legacyKey) {
+		testingObject.Fatal("legacy installation key bytes changed during conversion")
+	}
+
+	encodedKey, err := os.ReadFile(path)
+	if err != nil {
+		testingObject.Fatalf("read converted installation key: %v", err)
+	}
+	if string(encodedKey) != hex.EncodeToString(legacyKey)+"\n" {
+		testingObject.Fatalf("converted installation key = %q", encodedKey)
+	}
+
+	keyInfo, err := os.Stat(path)
+	if err != nil {
+		testingObject.Fatalf("inspect converted installation key: %v", err)
+	}
+	directoryInfo, err := os.Stat(keyDirectory)
+	if err != nil {
+		testingObject.Fatalf("inspect converted key directory: %v", err)
+	}
+	if keyInfo.Mode().Perm() != installationKeyMode || directoryInfo.Mode().Perm() != installationKeyFolderMode {
+		testingObject.Fatalf(
+			"converted key modes = %v and %v",
+			keyInfo.Mode().Perm(),
+			directoryInfo.Mode().Perm(),
+		)
+	}
+}
+
+// TestLoadInstallationKeyRejectsInvalidText fails closed on uppercase and malformed keys.
+//
+// Since: 2.4.0
+func TestLoadInstallationKeyRejectsInvalidText(testingObject *testing.T) {
+	for _, content := range []string{
+		strings.Repeat("A", installationKeyBytes*2) + "\n",
+		strings.Repeat("a", installationKeyBytes*2),
+		strings.Repeat("g", installationKeyBytes*2) + "\n",
+	} {
+		testingObject.Run(content[:1], func(testingObject *testing.T) {
+			path := filepath.Join(testingObject.TempDir(), "installation.key")
+			if err := os.WriteFile(path, []byte(content), installationKeyMode); err != nil {
+				testingObject.Fatalf("write invalid installation key: %v", err)
+			}
+			if _, _, err := LoadInstallationKey(path); err == nil {
+				testingObject.Fatal("invalid installation key was accepted")
+			}
+		})
 	}
 }
 

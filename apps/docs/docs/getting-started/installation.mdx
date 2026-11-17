@@ -52,7 +52,7 @@ docker compose logs --follow app
 On the first start, the container works through these steps:
 
 1. It checks <Terminology title="Which user owns your downloads on the host" to="/docs/reference/terminology#storage-and-keys">`PUID`</Terminology>, <Terminology title="Which user owns your downloads on the host" to="/docs/reference/terminology#storage-and-keys">`PGID`</Terminology>, `TZ`, and the <Terminology title="The /dev/net/tun device the container needs for tunnels" to="/docs/reference/terminology#container-and-services">TUN device</Terminology>, and prepares its folders.
-2. It creates the database and the <Terminology title="Unlocks your saved secrets; lose it and they're removed" to="/docs/reference/terminology#storage-and-keys">installation key</Terminology> under `/config/app`, and writes Transmission's settings file.
+2. It creates `/config/database/state.sqlite3` and the <Terminology title="Unlocks your saved secrets; lose it and they're removed" to="/docs/reference/terminology#storage-and-keys">installation key</Terminology> at `/config/keys/installation.key`, then writes Transmission's settings file.
 3. It blocks protected traffic before any Transmission daemon or the <Terminology title="The only part allowed to bring tunnels up or down" to="/docs/reference/terminology#container-and-services">VPN controller</Terminology> starts.
 4. It starts the web interface, which prints a one-time <Terminology title="The code from the logs that creates your admin account" to="/docs/reference/terminology#accounts-and-backups">claim code</Terminology> to the logs unless a <Terminology title="Your own claim code, mounted as a file" to="/docs/reference/terminology#accounts-and-backups">claim secret file</Terminology> is mounted.
 
@@ -75,8 +75,12 @@ docker build --tag transmission-vpn:local .
 docker run --detach \
   --name transmission-vpn \
   --restart unless-stopped \
+  --user 0:0 \
   --cap-add NET_ADMIN \
   --device /dev/net/tun \
+  --env PUID=1000 \
+  --env PGID=1000 \
+  --env TZ=UTC \
   --publish 22602:22602 \
   --publish 9091:9091 \
   --publish 22605:22605 \
@@ -93,8 +97,8 @@ On a Docker network without IPv6, wildcard publishing can forward outside IPv6 c
 
 | Variable                                                                                                                               | Default | Description                                                                          |
 |----------------------------------------------------------------------------------------------------------------------------------------|---------|--------------------------------------------------------------------------------------|
-| <Terminology title="Which user owns your downloads on the host" to="/docs/reference/terminology#storage-and-keys">`PUID`</Terminology> | `1000`  | User ID that runs Transmission and owns its files, from 1000 to 60000.               |
-| <Terminology title="Which user owns your downloads on the host" to="/docs/reference/terminology#storage-and-keys">`PGID`</Terminology> | `1000`  | Group ID for the same account, from 1000 to 60000.                                   |
+| <Terminology title="Which user owns your downloads on the host" to="/docs/reference/terminology#storage-and-keys">`PUID`</Terminology> | `1000`  | User ID that runs unprivileged services and owns app files, from 1 to 60000.         |
+| <Terminology title="Which user owns your downloads on the host" to="/docs/reference/terminology#storage-and-keys">`PGID`</Terminology> | `1000`  | Group ID for the same services and files, from 1 to 60000.                           |
 | `TZ`                                                                                                                                   | `UTC`   | Time zone name, such as `Europe/London`, that matches a zone installed in the image. |
 
 Compose reads these variables from your shell when it starts the container:
@@ -120,6 +124,12 @@ No environment variable selects the VPN provider or tunnel, holds VPN credential
 - The Compose file turns on IPv6 for the container's network, so the web interface sees each IPv6 visitor's own address. Docker Engine 27 or later picks the IPv6 subnet on its own, and on a host without IPv6, you can delete the `networks` block. IPv6 addresses are often reachable from the internet, so it is recommended to check that your router or host firewall blocks inbound connections to ports 22602, 22605, and 9091.
 - The <Terminology title="Unlocks your saved secrets; lose it and they're removed" to="/docs/reference/terminology#storage-and-keys">installation key</Terminology> in `/config` encrypts the authenticator app's secret, VPN profile contents and connection credentials, and notification secrets, so it is recommended to keep it with the database whenever you copy or move `/config`, as covered in [Updates and Backups](/docs/operations/updates-and-backups/#missing-installation-key).
 - Each Transmission's <Terminology title="Each Transmission's private RPC port, never published" to="/docs/reference/terminology#remote-access">native RPC</Terminology> uses a separate loopback port inside the container, starting at 9092. These ports are never published.
+
+### Upgrade an old `/data` state mount
+
+Older images kept app state under `/data`. Stop the old container, change the state folder's mount from `-v <state-folder>:/data` to `-v <state-folder>:/config`, and give downloads their own `/data` mount. On first start, the container moves the old `app/keys/installation.key` and SQLite files into `keys/` and `database/` without overwriting anything, and converts a raw 32-byte key to the 64-character lowercase hexadecimal format without changing its key bytes.
+
+An unchanged old run line that mounts only `/data` is also detected. The container uses that mount as its state directory for the start, performs the same internal layout migration, and logs a warning to move the state mount to `/config`. It is recommended to change the mount before the next update so `/data` contains only downloads.
 
 ### Use Host Folders
 

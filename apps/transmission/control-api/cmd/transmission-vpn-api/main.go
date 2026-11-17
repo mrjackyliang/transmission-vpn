@@ -17,10 +17,12 @@ import (
 	"time"
 
 	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/api"
+	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/appstate"
 	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/capacity"
 	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/controller"
 	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/directdial"
 	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/directorybrowser"
+	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/logging"
 	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/security"
 	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/settings"
 	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/storage"
@@ -34,16 +36,18 @@ var version = "development"
 // Flags keep the production defaults explicit while allowing isolated integration
 // tests without creating a broad environment-variable configuration surface.
 type options struct {
-	DatabasePath        string
-	InitializeOnly      bool
-	InstallationKeyPath string
-	ListenAddress       string
-	ManagedConfigPath   string
-	ProbeDirectDial     string
-	RPCListenAddress    string
-	RuntimeDirectory    string
-	SetupClaimPath      string
-	WebDirectory        string
+	DatabasePath          string
+	InitializeOnly        bool
+	InstallationKeyPath   string
+	ListenAddress         string
+	ManagedConfigPath     string
+	MigrateStateOnly      bool
+	ProbeDirectDial       string
+	RPCListenAddress      string
+	RuntimeDirectory      string
+	SetupClaimPath        string
+	TransmissionDirectory string
+	WebDirectory          string
 }
 
 // main starts the unprivileged control plane and reports fatal startup failures.
@@ -57,9 +61,7 @@ func main() {
 
 	// Info until the debug logging setting moves it, which can happen while the API runs.
 	logLevel := new(slog.LevelVar)
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		Level: logLevel,
-	}))
+	logger := logging.New(os.Stdout, "control-api", logLevel)
 	if err := run(logger, logLevel); err != nil {
 		logger.Error("control API stopped", "error", err)
 		os.Exit(1)
@@ -73,10 +75,37 @@ func main() {
 func run(logger *slog.Logger, logLevel *slog.LevelVar) error {
 	configuredOptions := parseOptions()
 	ctx := context.Background()
+	if err := appstate.MigrateLegacyLayout(logger); err != nil {
+		return fmt.Errorf("migrate legacy app state: %w", err)
+	}
+	if configuredOptions.MigrateStateOnly {
+		legacyKeyFormat := false
+		keyInfo, statError := os.Stat(configuredOptions.InstallationKeyPath)
+		if statError == nil {
+			legacyKeyFormat = keyInfo.Mode().IsRegular() && keyInfo.Size() == 32
+		} else if !errors.Is(statError, os.ErrNotExist) {
+			return fmt.Errorf("inspect installation key before migration: %w", statError)
+		}
+
+		_, keyFound, err := security.LoadInstallationKey(configuredOptions.InstallationKeyPath)
+		if err != nil {
+			return err
+		}
+		if keyFound && legacyKeyFormat {
+			logger.Info(
+				"converted legacy installation key",
+				"path",
+				configuredOptions.InstallationKeyPath,
+			)
+		}
+		logger.Info("legacy app-state migration is complete")
+
+		return nil
+	}
 
 	directSocketPath := filepath.Join(configuredOptions.RuntimeDirectory, "direct.sock")
 	if configuredOptions.ProbeDirectDial != "" {
-		return probeDirectDial(ctx, directSocketPath, configuredOptions.ProbeDirectDial)
+		return probeDirectDial(ctx, logger, directSocketPath, configuredOptions.ProbeDirectDial)
 	}
 	directDialer := directdial.NewClient(directSocketPath)
 
@@ -161,15 +190,16 @@ func run(logger *slog.Logger, logLevel *slog.LevelVar) error {
 			),
 			5*time.Second,
 		),
-		Transmission:        transmissionClients,
-		TransmissionClients: transmissionClients,
-		RuntimeDirectory:    configuredOptions.RuntimeDirectory,
-		WebDirectory:        configuredOptions.WebDirectory,
-		Logger:              logger,
-		Version:             version,
-		MountedSetupCode:    mountedSetupCode,
-		DirectDial:          directDialer.DialContext,
-		LogLevel:            logLevel,
+		Transmission:          transmissionClients,
+		TransmissionClients:   transmissionClients,
+		TransmissionDirectory: configuredOptions.TransmissionDirectory,
+		RuntimeDirectory:      configuredOptions.RuntimeDirectory,
+		WebDirectory:          configuredOptions.WebDirectory,
+		Logger:                logger,
+		Version:               version,
+		MountedSetupCode:      mountedSetupCode,
+		DirectDial:            directDialer.DialContext,
+		LogLevel:              logLevel,
 	})
 	if err != nil {
 		return err
@@ -255,7 +285,7 @@ func run(logger *slog.Logger, logLevel *slog.LevelVar) error {
 		}
 	}
 
-	shutdownContext, cancelShutdown := context.WithTimeout(context.Background(), 15*time.Second)
+	shutdownContext, cancelShutdown := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancelShutdown()
 	if err := httpServer.Shutdown(shutdownContext); err != nil {
 		return fmt.Errorf("shut down control API: %w", err)
@@ -326,7 +356,12 @@ func controllerStarting(err error) bool {
 //
 // It never falls back to dialing on its own, so a success proves the controller's
 // socket, its mark, and the firewall's mark rule all work.
-func probeDirectDial(ctx context.Context, socketPath string, address string) error {
+func probeDirectDial(
+	ctx context.Context,
+	logger *slog.Logger,
+	socketPath string,
+	address string,
+) error {
 	probeContext, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
@@ -336,7 +371,7 @@ func probeDirectDial(ctx context.Context, socketPath string, address string) err
 	}
 	_ = connection.Close()
 
-	fmt.Printf("Opened a connection outside the VPN to %s.\n", address)
+	logger.Info("opened a connection outside the VPN", "address", address)
 
 	return nil
 }
@@ -350,7 +385,7 @@ func parseOptions() options {
 	flag.StringVar(
 		&configuredOptions.DatabasePath,
 		"database",
-		"/config/app/state.sqlite3",
+		appstate.DatabaseFile(),
 		"SQLite application state path",
 	)
 	flag.BoolVar(
@@ -362,7 +397,7 @@ func parseOptions() options {
 	flag.StringVar(
 		&configuredOptions.InstallationKeyPath,
 		"installation-key",
-		"/config/app/keys/installation.key",
+		appstate.InstallationKeyFile(),
 		"installation encryption key path",
 	)
 	flag.StringVar(
@@ -374,8 +409,14 @@ func parseOptions() options {
 	flag.StringVar(
 		&configuredOptions.ManagedConfigPath,
 		"managed-config",
-		"/config/managed.json",
+		appstate.ManagedConfigFile(),
 		"optional managed configuration document",
+	)
+	flag.BoolVar(
+		&configuredOptions.MigrateStateOnly,
+		"migrate-state-only",
+		false,
+		"migrate legacy state and exit",
 	)
 	flag.StringVar(
 		&configuredOptions.ProbeDirectDial,
@@ -400,6 +441,12 @@ func parseOptions() options {
 		"setup-claim-file",
 		"/run/secrets/transmission-vpn-claim",
 		"optional mounted one-time setup claim secret",
+	)
+	flag.StringVar(
+		&configuredOptions.TransmissionDirectory,
+		"transmission-directory",
+		appstate.TransmissionDirectory(),
+		"Transmission daemon state root",
 	)
 	flag.StringVar(
 		&configuredOptions.WebDirectory,

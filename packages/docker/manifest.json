@@ -1,4 +1,7 @@
 {
+  "healthPath": "/api/v1/health/live",
+  "legacyStatePaths": [],
+  "networkMode": "bridge",
   "schemaVersion": 1,
   "services": [
     {
@@ -15,12 +18,13 @@
     },
     {
       "command": "/usr/local/bin/transmission-vpn-api",
-      "critical": false,
+      "critical": true,
       "dependencies": [
         "config-init",
         "directory-controller"
       ],
       "environment": {},
+      "finishCommand": "/usr/local/libexec/transmission-vpn/foundation-service-finish.sh control-api",
       "kind": "longrun",
       "name": "control-api",
       "port": 22602,
@@ -31,17 +35,20 @@
     },
     {
       "command": "/usr/local/bin/transmission-vpn-directory-controller",
-      "critical": false,
+      "critical": true,
       "dependencies": [
         "config-init"
       ],
       "environment": {},
+      "finishCommand": "/usr/local/libexec/transmission-vpn/foundation-service-finish.sh directory-controller",
       "kind": "longrun",
       "name": "directory-controller",
       "requiredForHealth": true,
       "runAsRoot": false,
       "workspace": "apps/transmission",
-      "writablePaths": []
+      "writablePaths": [
+        "/data"
+      ]
     },
     {
       "command": "/usr/local/libexec/transmission-vpn/firewall-init.sh",
@@ -59,17 +66,20 @@
     },
     {
       "command": "/usr/local/bin/transmission-vpn-transmission-runner",
-      "critical": false,
+      "critical": true,
       "dependencies": [
         "firewall-init"
       ],
       "environment": {},
+      "finishCommand": "/usr/local/libexec/transmission-vpn/foundation-service-finish.sh transmission",
       "kind": "longrun",
       "name": "transmission",
       "requiredForHealth": true,
       "runAsRoot": false,
       "workspace": "apps/transmission",
-      "writablePaths": []
+      "writablePaths": [
+        "/data"
+      ]
     },
     {
       "command": "/usr/local/bin/transmission-vpn-vpn-controller",
@@ -78,6 +88,7 @@
         "firewall-init"
       ],
       "environment": {},
+      "finishCommand": "/usr/local/libexec/transmission-vpn/foundation-service-finish.sh vpn-controller",
       "kind": "longrun",
       "name": "vpn-controller",
       "requiredForHealth": true,
@@ -87,20 +98,22 @@
     },
     {
       "command": "/usr/local/bin/transmission-vpn-web-proxy",
-      "critical": false,
+      "critical": true,
       "dependencies": [
         "firewall-init"
       ],
       "environment": {},
+      "finishCommand": "/usr/local/libexec/transmission-vpn/foundation-service-finish.sh web-proxy",
       "kind": "longrun",
       "name": "web-proxy",
       "port": 22605,
-      "requiredForHealth": false,
+      "requiredForHealth": true,
       "runAsRoot": false,
       "workspace": "apps/transmission",
       "writablePaths": []
     }
   ],
+  "stateEnvironment": "TRANSMISSION_VPN_STATE_DIRECTORY",
   "workspaces": [
     {
       "packageName": "transmission-vpn-app-transmission",

@@ -285,7 +285,7 @@ wait_for_services() {
   local attempt
   for attempt in $(seq 1 30); do
     if docker exec "${protected_container_name}" \
-      /usr/local/libexec/transmission-vpn/healthcheck.sh > /dev/null 2>&1; then
+      /usr/local/libexec/nova-docker/healthcheck > /dev/null 2>&1; then
       return 0
     fi
 
@@ -407,7 +407,7 @@ transmission_reaches_bound() {
   local port="${3}"
 
   docker exec "${protected_container_name}" \
-    /command/s6-setuidgid transmission \
+    /command/s6-applyuidgid -u 12345 -g 12345 -G 12345 \
     nc -z -w 3 -s "${source_address}" "${address}" "${port}" > /dev/null 2>&1
 }
 
@@ -416,7 +416,7 @@ transmission_reaches_unbound() {
   local port="${2}"
 
   docker exec "${protected_container_name}" \
-    /command/s6-setuidgid transmission \
+    /command/s6-applyuidgid -u 12345 -g 12345 -G 12345 \
     nc -z -w 3 "${address}" "${port}" > /dev/null 2>&1
 }
 
@@ -613,6 +613,7 @@ main() {
 
   docker run --detach \
     --name "${protected_container_name}" \
+    --user 0:0 \
     --network "${network_name}" \
     --cap-add NET_ADMIN \
     --device /dev/net/tun \

@@ -15,6 +15,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/logging"
 	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/transmissionconfig"
 	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/transmissionrpc"
 )
@@ -421,8 +422,13 @@ func (runner *runner) superviseDaemon(ctx context.Context, entry daemonEntry) {
 			"--log-level",
 			"info",
 		)
-		command.Stdout = os.Stdout
-		command.Stderr = os.Stderr
+		daemonOutput := logging.NewLineWriter(
+			runner.logger,
+			slog.LevelInfo,
+			"transmission-daemon",
+		)
+		command.Stdout = daemonOutput
+		command.Stderr = daemonOutput
 		command.SysProcAttr = childProcessAttributes()
 		if err := command.Start(); err != nil {
 			releasePeerPort()
@@ -451,7 +457,9 @@ func (runner *runner) superviseDaemon(ctx context.Context, entry daemonEntry) {
 
 		exited := make(chan error, 1)
 		go func() {
-			exited <- command.Wait()
+			processError := command.Wait()
+			daemonOutput.Flush()
+			exited <- processError
 		}()
 
 		readiness, err := waitForReadiness(

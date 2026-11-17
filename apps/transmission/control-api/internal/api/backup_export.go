@@ -220,7 +220,7 @@ func (server *Server) exportTorrents(ctx context.Context) ([]backupTorrent, erro
 		}
 		metainfo, err := server.directoryBrowser.ReadTorrent(
 			ctx,
-			filepath.Join("/config/transmission", connectionID, "torrents", hash+".torrent"),
+			filepath.Join(server.transmissionDirectory, connectionID, "torrents", hash+".torrent"),
 		)
 		if err != nil {
 			return nil, fmt.Errorf("read metainfo for %s: %w", snapshot.Name, err)

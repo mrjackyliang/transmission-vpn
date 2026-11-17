@@ -1,4 +1,11 @@
-#!/command/with-contenv bash
-set -euo pipefail
-
-exec /usr/local/libexec/transmission-vpn/foundation-service-finish.sh directory-controller "$@"
+#!/command/with-contenv sh
+set -eu
+. /usr/local/libexec/nova-docker/log
+if ! /usr/local/libexec/transmission-vpn/foundation-service-finish.sh directory-controller "$@"; then
+  nova_log WARN 'directory-controller' 'The service finish command failed.'
+fi
+if [ "${1:-0}" -ne 0 ]; then
+  nova_log ERROR 'directory-controller' "Critical service exited abnormally with code ${1:-0} and signal ${2:-0}; halting the container."
+  exec /run/s6/basedir/bin/halt
+fi
+exit 0

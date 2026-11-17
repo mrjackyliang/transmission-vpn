@@ -1,4 +1,7 @@
-#!/command/with-contenv bash
-set -euo pipefail
-
-exec /usr/local/libexec/transmission-vpn/foundation-service-finish.sh vpn-controller "$@"
+#!/command/with-contenv sh
+set -eu
+. /usr/local/libexec/nova-docker/log
+if ! /usr/local/libexec/transmission-vpn/foundation-service-finish.sh vpn-controller "$@"; then
+  nova_log WARN 'vpn-controller' 'The service finish command failed.'
+fi
+exit 0

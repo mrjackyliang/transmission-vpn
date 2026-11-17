@@ -254,7 +254,7 @@ func (server *Server) moveTorrentBetweenConnectionsLocked(
 			return server.logFailedTorrentMove(hash, name, sourceConnectionID, targetConnectionID, err)
 		}
 		metainfoPath := filepath.Join(
-			"/config/transmission",
+			server.transmissionDirectory,
 			sourceConnectionID,
 			"torrents",
 			hash+".torrent",

@@ -14,10 +14,8 @@ import (
 	"net/netip"
 	"os"
 	"os/exec"
-	"os/user"
 	"path/filepath"
 	"sort"
-	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -61,7 +59,7 @@ type DaemonConfig struct {
 	FirewallBlockPath       string
 	FirewallProtectPath     string
 	ResolverPath            string
-	ControlGroup            string
+	ControlGroupID          int
 	ConnectTimeout          time.Duration
 	Logger                  *slog.Logger
 }
@@ -112,8 +110,11 @@ func NewDaemon(config DaemonConfig) (*Daemon, error) {
 	if config.SocketPath == "" || config.RuntimeDirectory == "" ||
 		config.OpenVPNPath == "" || config.WireGuardPath == "" || config.WireGuardGoPath == "" ||
 		config.IPPath == "" || config.FirewallBlockPath == "" || config.FirewallProtectPath == "" ||
-		config.ResolverPath == "" || config.ControlGroup == "" {
-		return nil, errors.New("VPN controller paths and control group are required")
+		config.ResolverPath == "" {
+		return nil, errors.New("VPN controller paths are required")
+	}
+	if config.ControlGroupID < 1 || config.ControlGroupID > 60000 {
+		return nil, errors.New("VPN controller group identifier must be between 1 and 60000")
 	}
 
 	if config.DirectSocketPath == "" {
@@ -1079,20 +1080,12 @@ func validBootstrapResolver(content []byte) bool {
 	return foundNameserver
 }
 
-// setSocketPermissions grants only root and the control API group access.
+// setSocketPermissions grants root and Nova's configured service group access.
 //
-// Transmission runs as the same user as the console on hosts that need PUID to own
-// every file, so the group is what keeps it away from the controller's sockets.
+// The controller stays root for network administration while every unprivileged
+// service runs as the shared PUID:PGID required by the appliance contract.
 func (daemon *Daemon) setSocketPermissions(socketPath string) error {
-	controlGroup, err := user.LookupGroup(daemon.config.ControlGroup)
-	if err != nil {
-		return fmt.Errorf("find control group: %w", err)
-	}
-	groupID, err := strconv.Atoi(controlGroup.Gid)
-	if err != nil {
-		return fmt.Errorf("parse control group identifier: %w", err)
-	}
-	if err := os.Chown(socketPath, 0, groupID); err != nil {
+	if err := os.Chown(socketPath, 0, daemon.config.ControlGroupID); err != nil {
 		return fmt.Errorf("set VPN controller socket ownership: %w", err)
 	}
 	if err := os.Chmod(socketPath, 0o660); err != nil {

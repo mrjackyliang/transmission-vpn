@@ -22,13 +22,15 @@ Use Docker health, the health routes, and the authenticated status route to tell
 
 ## Docker health check
 
-The image's <Terminology title="Docker's every-30-seconds check that the container is OK" to="/docs/reference/terminology#health-and-notifications">health check</Terminology> runs every 30 seconds. It checks the TUN device, startup markers, firewall rules, supervised services, control API liveness, and the default Transmission's private RPC listener.
+The image's <Terminology title="Docker's every-30-seconds check that the container is OK" to="/docs/reference/terminology#health-and-notifications">health check</Terminology> starts after 30 seconds, runs every 30 seconds, times out after 5 seconds, and marks the container unhealthy after 3 failed checks. It verifies that all five long-running s6 services are up, then sends `GET /api/v1/health/live` to port 22602 and requires a successful response.
 
 ```bash
 docker compose ps
 ```
 
-A container with no VPN connections is healthy when the control plane, firewall, and setup services are ready. Its Transmission marker uses the `no-connections` phase, so you can open the web interface and create the first connection.
+A container with no VPN connections can be healthy because liveness requires a working database and fail-closed runtime boundary, not an active tunnel. You can still open the web interface and create the first connection.
+
+The control API, directory controller, Transmission runner, VPN controller, and web proxy are critical s6 services. An abnormal exit halts the container so Docker's restart policy can replace the complete appliance instead of leaving a partial service set running.
 
 :::warning
 A healthy container can have blocked VPN traffic. Docker health means the container can enforce its safety boundary and serve the control page.
@@ -80,24 +82,30 @@ Use <Terminology title="Is the default VPN protected and Transmission ready?" to
 docker compose logs --follow app
 ```
 
-The Go services write JSON lines with `level` and `msg`. Startup and firewall scripts write plain text.
+Every app and startup script writes plain, single-line records in this shape; logs are never JSON:
 
-| Look for                                                                                                          | Meaning                                                                                                                              |
-|-------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------|
-| `config-init: runtime identity 1000:1000 and persistent paths are ready.`                                         | Startup checks passed, here with the default IDs.                                                                                    |
-| `firewall-init: Transmission egress is blocked through the legacy backend.`                                       | The firewall backstop is installed, here with the legacy backend.                                                                    |
-| `"msg":"VPN controller blocked all VPN egress at startup"`                                                        | Every protected source address is blocked before connections are restored.                                                           |
-| `firewall-protect: Transmission egress is restricted to <interface> from <address> with SNAT <provider-address>.` | One connection's private address is allowed through its tunnel and translated to its provider address.                               |
-| `firewall-block: Transmission egress through <interface> is blocked (<reason>).`                                  | One connection was blocked. The reason follows the line.                                                                             |
-| `"msg":"VPN state changed"`                                                                                       | One connection changed state. The line includes `connectionId`, `slot`, state, provider, tunnel, profile, attempt, and error.        |
-| `"msg":"Transmission daemon is ready"`                                                                            | One Transmission answered its first RPC check. The line includes its `connectionId` and private bind address.                        |
-| `"msg":"Transmission daemon did not become ready"`, `"msg":"Transmission daemon exited"`                          | A connection's Transmission failed during startup or stopped. Use its `connectionId` with the status response.                       |
-| `"msg":"moving Transmission torrent"`, `"msg":"moved Transmission torrent"`                                       | A torrent move started or completed. The lines include source and target connection IDs; the completion line also includes warnings. |
-| `"msg":"Transmission torrent move failed"`                                                                        | A move failed. The source torrent is kept when the target add fails.                                                                 |
-| `"msg":"web proxy listener opened"`                                                                               | The web proxy is listening. Individual requests still wait when their login's connection is blocked.                                 |
-| `"msg":"openvpn"` or `"msg":"wireguard-go"`                                                                       | Tunnel process output, with credentials and keys replaced by `[redacted]`.                                                           |
-| `"msg":"control API is ready"`                                                                                    | The web interface and API are listening.                                                                                             |
-| `"msg":"control API stopped"`                                                                                     | The control plane stopped on an unrecoverable error, described in its `error` field.                                                 |
+```text
+<ISO time> <LEVEL> <component>: <message>
+```
+
+Structured details follow the message as `name=value` fields on the same line. Embedded newlines are escaped, so each line records one fact.
+
+| Look for                                                                                                               | Meaning                                                                                                                               |
+|------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------|
+| `INFO config-init: Runtime identity 1000:1000 and app paths are ready.`                                                | Startup checks passed, here with example IDs.                                                                                         |
+| `INFO firewall-init: Transmission egress is blocked through the legacy backend.`                                       | The firewall backstop is installed, here with the legacy backend.                                                                     |
+| `INFO vpn-controller: VPN controller blocked all VPN egress at startup`                                                | Every protected source address is blocked before connections are restored.                                                            |
+| `INFO firewall-protect: Transmission egress is restricted to <interface> from <address> with SNAT <provider-address>.` | One connection's private address is allowed through its tunnel and translated to its provider address.                                |
+| `INFO firewall-block: Transmission egress through <interface> is blocked (<reason>).`                                  | One connection was blocked. The reason follows the line.                                                                              |
+| `INFO vpn-controller: VPN state changed connectionId=<id>`                                                             | One connection changed state. The line also gives its slot, state, provider, tunnel, profile, attempt, and error.                     |
+| `INFO transmission: Transmission daemon is ready connectionId=<id>`                                                    | One Transmission answered its first RPC check. The line also gives its private bind address.                                          |
+| `ERROR transmission: Transmission daemon did not become ready` or `ERROR transmission: Transmission daemon exited`     | A connection's Transmission failed during startup or stopped. Use its `connectionId` with the status response.                        |
+| `INFO control-api: moving Transmission torrent` and `INFO control-api: moved Transmission torrent`                     | A torrent move started and completed. The lines include source and target connection IDs; the completion line also includes warnings. |
+| `WARN control-api: Transmission torrent move failed`                                                                   | A move failed. The source torrent is kept when the target add fails.                                                                  |
+| `INFO web-proxy: web proxy listener opened`                                                                            | The web proxy is listening. Individual requests still wait when their login's connection is blocked.                                  |
+| `INFO vpn-controller: openvpn` or `INFO vpn-controller: wireguard-go`                                                  | Tunnel process output, with credentials and keys replaced by `[redacted]`.                                                            |
+| `INFO control-api: control API is ready`                                                                               | The web interface and API are listening.                                                                                              |
+| `ERROR control-api: control API stopped error=<reason>`                                                                | The control plane stopped on an unrecoverable error.                                                                                  |
 
 ## Runtime status files
 

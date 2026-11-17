@@ -1,5 +1,10 @@
 # transmission-vpn-app-transmission
 
+## 2.4.0 - 2026-11-17
+
+### UPDATED
+- App state under /config uses the shared layout, with the installation key in keys/ and the database in database/, all owned by PUID and PGID; an existing install moves its app/ files over on its first start with the same key, and the container uses the shared health check, shutdown timing and plain log lines of the other Docker apps.
+
 ## 2.3.0 - 2026-11-17
 
 ### FIXED

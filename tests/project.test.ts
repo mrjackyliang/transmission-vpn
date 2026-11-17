@@ -165,7 +165,7 @@ describe('Project root', () => {
     return;
   });
 
-  it('records the appliance dependency and privilege policies', () => {
+  it('records Nova\'s appliance state, health, and privilege contract', () => {
     const manifest: Project_Test_String = readFileSync(
       new URL('../packages/docker/manifest.json', import.meta.url),
       'utf8',
@@ -190,8 +190,48 @@ describe('Project root', () => {
       '../packages/docker/rootfs/etc/s6-overlay/s6-rc.d/web-proxy/run',
       import.meta.url,
     ), 'utf8');
+    const initUser: Project_Test_String = readFileSync(new URL(
+      '../packages/docker/rootfs/usr/local/libexec/nova-docker/init-user',
+      import.meta.url,
+    ), 'utf8');
+    const healthcheck: Project_Test_String = readFileSync(new URL(
+      '../packages/docker/rootfs/usr/local/libexec/nova-docker/healthcheck',
+      import.meta.url,
+    ), 'utf8');
+    const userIdentifierVariable: Project_Test_String = [
+      '$',
+      '{PUID:-1000}',
+    ].join('');
+    const groupIdentifierVariable: Project_Test_String = [
+      '$',
+      '{PGID:-1000}',
+    ].join('');
+    const stateDirectoryVariable: Project_Test_String = [
+      '$',
+      '{STATE_DIRECTORY}',
+    ].join('');
+    const applyIdentityCommand: Project_Test_String = [
+      '/command/s6-applyuidgid',
+      `-u "${userIdentifierVariable}"`,
+      `-g "${groupIdentifierVariable}"`,
+      `-G "${groupIdentifierVariable}"`,
+    ].join(' ');
 
-    expect(manifest).not.toContain('"critical": true');
+    expect(manifest).toContain('"healthPath": "/api/v1/health/live"');
+
+    expect(manifest).toContain('"stateEnvironment": "TRANSMISSION_VPN_STATE_DIRECTORY"');
+
+    // Four longruns halt the container on failure; the VPN controller restarts in place behind the closed firewall.
+    expect(manifest.split('"critical": true')).toHaveLength(5);
+
+    // App state was always under /config; /data holds downloads, so nothing there may be treated as legacy state.
+    expect(manifest).toContain('"legacyStatePaths": []');
+
+    expect(manifest).toContain([
+      '"writablePaths": [',
+      '        "/data"',
+      '      ]',
+    ].join('\n'));
 
     expect(existsSync(new URL(
       '../packages/docker/rootfs/etc/s6-overlay/s6-rc.d/firewall-init/dependencies.d/config-init',
@@ -218,15 +258,61 @@ describe('Project root', () => {
       import.meta.url,
     ))).toBe(true);
 
-    expect(controlRun).toContain('/command/s6-setuidgid control');
+    expect(existsSync(new URL(
+      '../packages/docker/rootfs/etc/s6-overlay/s6-rc.d/config-init/dependencies.d/nova-container-init',
+      import.meta.url,
+    ))).toBe(true);
 
-    expect(directoryRun).toContain('/command/s6-setuidgid transmission');
+    expect(controlRun).toContain(applyIdentityCommand);
 
-    expect(transmissionRun).toContain('/command/s6-setuidgid transmission');
+    expect(directoryRun).toContain(applyIdentityCommand);
 
-    expect(vpnRun).not.toContain('s6-setuidgid');
+    expect(transmissionRun).toContain(applyIdentityCommand);
 
-    expect(webProxyRun).toContain('/command/s6-setuidgid webproxy');
+    expect(vpnRun).not.toContain('s6-applyuidgid');
+
+    expect(webProxyRun).toContain(applyIdentityCommand);
+
+    expect(initUser).toContain('PUID must be an integer between 1 and 60000.');
+
+    expect(initUser).toContain(`mkdir -p "${stateDirectoryVariable}/keys" "${stateDirectoryVariable}/database"`);
+
+    expect(initUser).toContain(`chmod 0700 "${stateDirectoryVariable}/keys"`);
+
+    expect(initUser).toContain('export NOVA_INSTALLATION_KEY_FILE=%s/keys/installation.key');
+
+    expect(initUser).toContain('export NOVA_DATABASE_DIRECTORY=%s/database');
+
+    expect(healthcheck).toContain('/run/service/control-api');
+
+    expect(healthcheck).toContain('/run/service/web-proxy');
+
+    expect(healthcheck).toContain('http://127.0.0.1:22602/api/v1/health/live');
+
+    for (const service of [
+      'control-api',
+      'directory-controller',
+      'transmission',
+      'vpn-controller',
+      'web-proxy',
+    ]) {
+      const finish: Project_Test_String = readFileSync(new URL(
+        `../packages/docker/rootfs/etc/s6-overlay/s6-rc.d/${service}/finish`,
+        import.meta.url,
+      ), 'utf8');
+
+      // Every longrun clears its ready marker when it stops, so a restart is noticed.
+      expect(finish).toContain(`/usr/local/libexec/transmission-vpn/foundation-service-finish.sh ${service}`);
+
+      // The VPN controller restarts in place behind the closed firewall; the others halt the container.
+      if (service === 'vpn-controller') {
+        expect(finish).not.toContain('exec /run/s6/basedir/bin/halt');
+      } else {
+        expect(finish).toContain('Critical service exited abnormally');
+
+        expect(finish).toContain('exec /run/s6/basedir/bin/halt');
+      }
+    }
 
     return;
   });

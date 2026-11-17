@@ -1,0 +1,46 @@
+#!/bin/sh
+set -eu
+. /usr/local/libexec/nova-docker/log
+if [ -f /run/nova-docker/environment ]; then
+  . /run/nova-docker/environment
+fi
+if [ -x /etc/nova-docker/healthcheck ]; then
+  exec /etc/nova-docker/healthcheck
+fi
+service_status="$(/command/s6-svstat -o up /run/service/control-api 2>/dev/null || true)"
+if [ "${service_status}" != true ]; then
+  nova_log ERROR healthcheck 's6 service control-api is down.'
+  exit 1
+fi
+service_status="$(/command/s6-svstat -o up /run/service/directory-controller 2>/dev/null || true)"
+if [ "${service_status}" != true ]; then
+  nova_log ERROR healthcheck 's6 service directory-controller is down.'
+  exit 1
+fi
+service_status="$(/command/s6-svstat -o up /run/service/transmission 2>/dev/null || true)"
+if [ "${service_status}" != true ]; then
+  nova_log ERROR healthcheck 's6 service transmission is down.'
+  exit 1
+fi
+service_status="$(/command/s6-svstat -o up /run/service/vpn-controller 2>/dev/null || true)"
+if [ "${service_status}" != true ]; then
+  nova_log ERROR healthcheck 's6 service vpn-controller is down.'
+  exit 1
+fi
+service_status="$(/command/s6-svstat -o up /run/service/web-proxy 2>/dev/null || true)"
+if [ "${service_status}" != true ]; then
+  nova_log ERROR healthcheck 's6 service web-proxy is down.'
+  exit 1
+fi
+if ! http_status="$(curl --silent --output /dev/null --write-out '%{http_code}' --max-time 4 --request GET "http://127.0.0.1:22602/api/v1/health/live")"; then
+  nova_log ERROR healthcheck 'GET /api/v1/health/live failed.'
+  exit 1
+fi
+case "${http_status}" in
+  2??) ;;
+  *)
+    nova_log ERROR healthcheck "GET /api/v1/health/live returned HTTP ${http_status}."
+    exit 1
+    ;;
+esac
+exit 0

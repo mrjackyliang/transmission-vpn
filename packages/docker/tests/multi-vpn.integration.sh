@@ -284,6 +284,7 @@ start_protected_container() {
 
   docker run --detach \
     --name "${protected_container}" \
+    --user 0:0 \
     --network "${network_zero}" \
     --cap-add NET_ADMIN \
     --device /dev/net/tun \
@@ -467,7 +468,7 @@ verify_connection_layout() {
     fi
   done
 
-  if docker exec "${protected_container}" /command/s6-setuidgid transmission \
+  if docker exec "${protected_container}" /command/s6-applyuidgid -u 12345 -g 12345 -G 12345 \
     nc -z -w 3 1.1.1.1 443; then
     fail 'An unbound Transmission-user socket reached a live tunnel target.'
   fi
@@ -484,7 +485,7 @@ verify_isolation() {
   docker exec "${peer_zero}" rm -f /tmp/tunnel-source
   docker exec "${peer_one}" rm -f /tmp/tunnel-source
 
-  if ! docker exec "${protected_container}" /command/s6-setuidgid transmission \
+  if ! docker exec "${protected_container}" /command/s6-applyuidgid -u 12345 -g 12345 -G 12345 \
     nc -z -w 3 -s 198.18.0.1 1.1.1.1 443; then
     fail 'Slot 0 could not reach its WireGuard peer from 198.18.0.1.'
   fi
@@ -496,7 +497,7 @@ verify_isolation() {
   fi
 
   docker exec "${peer_zero}" rm -f /tmp/tunnel-source
-  if ! docker exec "${protected_container}" /command/s6-setuidgid transmission \
+  if ! docker exec "${protected_container}" /command/s6-applyuidgid -u 12345 -g 12345 -G 12345 \
     nc -z -w 3 -s 198.18.1.1 1.1.1.1 443; then
     fail 'Slot 1 could not reach its WireGuard peer from 198.18.1.1.'
   fi
@@ -558,7 +559,7 @@ verify_default_dns() {
 
   docker exec "${peer_zero}" rm -f /tmp/dns-hit
   docker exec "${peer_one}" rm -f /tmp/dns-hit
-  if ! docker exec "${protected_container}" /command/s6-setuidgid transmission \
+  if ! docker exec "${protected_container}" /command/s6-applyuidgid -u 12345 -g 12345 -G 12345 \
     getent ahostsv4 e4-default-dns.test > /dev/null; then
     fail "The transmission user could not resolve through default DNS ${expected_server}."
   fi
@@ -779,7 +780,7 @@ verify_failure_isolation() {
     fail "Connection two did not report a non-protected state within 150 seconds after its peer went down: ${second}"
   fi
 
-  if ! docker exec "${protected_container}" /command/s6-setuidgid transmission \
+  if ! docker exec "${protected_container}" /command/s6-applyuidgid -u 12345 -g 12345 -G 12345 \
     nc -z -w 3 -s 198.18.0.1 1.1.1.1 443; then
     fail 'Connection one stopped working when only connection two failed.'
   fi
@@ -790,7 +791,7 @@ verify_failure_isolation() {
     || "${slot_one_routes}" == *'default dev '* ]]; then
     fail "Connection two did not retain its unreachable fail-closed route: ${slot_one_routes}"
   fi
-  if docker exec "${protected_container}" /command/s6-setuidgid transmission \
+  if docker exec "${protected_container}" /command/s6-applyuidgid -u 12345 -g 12345 -G 12345 \
     nc -z -w 3 -s 198.18.1.1 1.1.1.1 443; then
     fail 'Connection two reached its target while its WireGuard peer was down.'
   fi
@@ -805,9 +806,9 @@ verify_failure_isolation() {
     ! -i wg0 -s 10.99.1.2/32 -j RETURN
   docker exec "${peer_one}" iptables -w 5 -I INPUT 1 -j "${leak_chain}"
   docker exec "${peer_one}" iptables -w 5 -Z "${leak_chain}"
-  docker exec "${protected_container}" /command/s6-setuidgid transmission \
+  docker exec "${protected_container}" /command/s6-applyuidgid -u 12345 -g 12345 -G 12345 \
     nc -z -w 3 -s 198.18.1.1 "${peer_one_address}" 8081 > /dev/null 2>&1 || true
-  docker exec "${protected_container}" /command/s6-setuidgid transmission \
+  docker exec "${protected_container}" /command/s6-applyuidgid -u 12345 -g 12345 -G 12345 \
     nc -z -w 3 -s 10.99.1.2 "${peer_one_address}" 8081 > /dev/null 2>&1 || true
   local leaked_packets
   leaked_packets="$(docker exec "${peer_one}" iptables -w 5 \

@@ -1,4 +1,11 @@
-#!/command/with-contenv bash
-set -euo pipefail
-
-exec /usr/local/libexec/transmission-vpn/foundation-service-finish.sh web-proxy "$@"
+#!/command/with-contenv sh
+set -eu
+. /usr/local/libexec/nova-docker/log
+if ! /usr/local/libexec/transmission-vpn/foundation-service-finish.sh web-proxy "$@"; then
+  nova_log WARN 'web-proxy' 'The service finish command failed.'
+fi
+if [ "${1:-0}" -ne 0 ]; then
+  nova_log ERROR 'web-proxy' "Critical service exited abnormally with code ${1:-0} and signal ${2:-0}; halting the container."
+  exec /run/s6/basedir/bin/halt
+fi
+exit 0

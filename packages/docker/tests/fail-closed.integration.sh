@@ -19,6 +19,7 @@ cleanup() {
   docker rm --force --volumes "${unprivileged_container_name}" > /dev/null 2>&1 || true
   docker rm --force --volumes "${protected_container_name}" > /dev/null 2>&1 || true
   docker rm --force --volumes "${peer_container_name}" > /dev/null 2>&1 || true
+  docker volume rm "${protected_container_name}-config" > /dev/null 2>&1 || true
   docker network rm "${network_name}" > /dev/null 2>&1 || true
 
   if [[ -n "${claim_secret_path}" ]]; then
@@ -61,7 +62,7 @@ seed_default_connection() {
   docker stop --time 10 "${protected_container_name}" > /dev/null
   seed_database_path="$(mktemp "${TMPDIR:-/tmp}/transmission-vpn-state.XXXXXX")"
   docker cp \
-    "${protected_container_name}:/config/app/state.sqlite3" \
+    "${protected_container_name}:/config/database/state.sqlite3" \
     "${seed_database_path}"
   sqlite3 "${seed_database_path}" <<'SQL'
 PRAGMA foreign_keys = ON;
@@ -105,12 +106,12 @@ INSERT INTO vpn_connections (
 SQL
   docker cp \
     "${seed_database_path}" \
-    "${protected_container_name}:/config/app/state.sqlite3"
+    "${protected_container_name}:/config/database/state.sqlite3"
   docker run --rm \
     --volumes-from "${protected_container_name}" \
     --entrypoint /bin/sh \
     "${image_name}" \
-    -c 'chown control:control /config/app/state.sqlite3 && chmod 0600 /config/app/state.sqlite3'
+    -c 'chown 12345:12345 /config/database/state.sqlite3 && chmod 0660 /config/database/state.sqlite3'
   docker start "${protected_container_name}" > /dev/null
 }
 
@@ -128,7 +129,7 @@ wait_for_services() {
 
   for attempt in $(seq 1 30); do
     if health_output="$(docker exec "${protected_container_name}" \
-      /usr/local/libexec/transmission-vpn/healthcheck.sh 2>&1)"; then
+      /usr/local/libexec/nova-docker/healthcheck 2>&1)"; then
       return 0
     fi
 
@@ -146,24 +147,6 @@ wait_for_services() {
 }
 
 verify_runtime_identity() {
-  local actual_user_id
-  actual_user_id="$(docker exec "${protected_container_name}" id -u transmission)"
-
-  local actual_group_id
-  actual_group_id="$(docker exec "${protected_container_name}" id -g transmission)"
-
-  if [[ "${actual_user_id}" != "12345" || "${actual_group_id}" != "12345" ]]; then
-    fail "Expected Transmission identity 12345:12345, received ${actual_user_id}:${actual_group_id}."
-  fi
-
-  local web_proxy_user_id
-  web_proxy_user_id="$(docker exec "${protected_container_name}" id -u webproxy)"
-  local web_proxy_group_id
-  web_proxy_group_id="$(docker exec "${protected_container_name}" id -g webproxy)"
-  if [[ "${web_proxy_user_id}" != "65531" || "${web_proxy_group_id}" != "65531" ]]; then
-    fail "Expected web proxy identity 65531:65531, received ${web_proxy_user_id}:${web_proxy_group_id}."
-  fi
-
   local pid_one_user_id
   pid_one_user_id="$(docker exec "${protected_container_name}" \
     awk '/^Uid:/ { print $2; exit }' /proc/1/status)"
@@ -171,38 +154,24 @@ verify_runtime_identity() {
     fail "s6 PID 1 is running as UID ${pid_one_user_id}, expected root."
   fi
 
-  local control_api_process_id
-  control_api_process_id="$(docker exec "${protected_container_name}" \
-    pidof transmission-vpn-api)"
-  local control_api_user_id
-  control_api_user_id="$(docker exec "${protected_container_name}" \
-    awk '/^Uid:/ { print $2; exit }' "/proc/${control_api_process_id}/status")"
-  local control_api_group_id
-  control_api_group_id="$(docker exec "${protected_container_name}" \
-    awk '/^Gid:/ { print $2; exit }' "/proc/${control_api_process_id}/status")"
-  if [[ "${control_api_user_id}" != "12345" || "${control_api_group_id}" != "65532" ]]; then
-    fail "The control API is running as ${control_api_user_id}:${control_api_group_id}, expected 12345:65532."
-  fi
-
-  local directory_process_id
-  directory_process_id="$(docker exec "${protected_container_name}" \
-    pidof transmission-vpn-directory-controller)"
-  local directory_user_id
-  directory_user_id="$(docker exec "${protected_container_name}" \
-    awk '/^Uid:/ { print $2; exit }' "/proc/${directory_process_id}/status")"
-  if [[ "${directory_user_id}" != "12345" ]]; then
-    fail "The directory controller is running as UID ${directory_user_id}, expected 12345."
-  fi
-
-  local runner_process_id
-  runner_process_id="$(docker exec "${protected_container_name}" \
-    pidof transmission-vpn-transmission-runner)"
-  local runner_user_id
-  runner_user_id="$(docker exec "${protected_container_name}" \
-    awk '/^Uid:/ { print $2; exit }' "/proc/${runner_process_id}/status")"
-  if [[ "${runner_user_id}" != "12345" ]]; then
-    fail "The Transmission runner is running as UID ${runner_user_id}, expected 12345."
-  fi
+  local unprivileged_process
+  for unprivileged_process in \
+    transmission-vpn-api \
+    transmission-vpn-directory-controller \
+    transmission-vpn-transmission-runner \
+    transmission-vpn-web-proxy; do
+    local process_id
+    process_id="$(docker exec "${protected_container_name}" pidof "${unprivileged_process}")"
+    local process_user_id
+    process_user_id="$(docker exec "${protected_container_name}" \
+      awk '/^Uid:/ { print $2; exit }' "/proc/${process_id}/status")"
+    local process_group_id
+    process_group_id="$(docker exec "${protected_container_name}" \
+      awk '/^Gid:/ { print $2; exit }' "/proc/${process_id}/status")"
+    if [[ "${process_user_id}" != "12345" || "${process_group_id}" != "12345" ]]; then
+      fail "${unprivileged_process} is running as ${process_user_id}:${process_group_id}, expected 12345:12345."
+    fi
+  done
 
   local vpn_process_id
   vpn_process_id="$(docker exec "${protected_container_name}" \
@@ -214,35 +183,32 @@ verify_runtime_identity() {
     fail "The VPN controller is running as UID ${vpn_user_id}, expected root."
   fi
 
-  local web_proxy_process_id
-  web_proxy_process_id="$(docker exec "${protected_container_name}" \
-    pidof transmission-vpn-web-proxy)"
-  local web_proxy_process_user_id
-  web_proxy_process_user_id="$(docker exec "${protected_container_name}" \
-    awk '/^Uid:/ { print $2; exit }' "/proc/${web_proxy_process_id}/status")"
-  if [[ "${web_proxy_process_user_id}" != "65531" ]]; then
-    fail "The web proxy is running as UID ${web_proxy_process_user_id}, expected 65531."
-  fi
-
   local transmission_config_permissions
   transmission_config_permissions="$(docker exec "${protected_container_name}" \
     stat -c '%a %u %g' /run/transmission-vpn/transmission-config)"
-  if [[ "${transmission_config_permissions}" != "2750 12345 12345" ]]; then
+  if [[ "${transmission_config_permissions}" != "770 12345 12345" ]]; then
     fail "Unexpected Transmission config runtime permissions: ${transmission_config_permissions}"
   fi
 
   local transmission_state_permissions
   transmission_state_permissions="$(docker exec "${protected_container_name}" \
     stat -c '%a %u %g' /run/transmission-vpn/transmission-state)"
-  if [[ "${transmission_state_permissions}" != "2750 12345 65532" ]]; then
+  if [[ "${transmission_state_permissions}" != "770 12345 12345" ]]; then
     fail "Unexpected Transmission state runtime permissions: ${transmission_state_permissions}"
   fi
 
   local services_permissions
   services_permissions="$(docker exec "${protected_container_name}" \
     stat -c '%a %u %g' /run/transmission-vpn/services)"
-  if [[ "${services_permissions}" != "1777 0 0" ]]; then
-    fail "The shared readiness directory must remain root-owned mode 1777, received: ${services_permissions}"
+  if [[ "${services_permissions}" != "770 12345 12345" ]]; then
+    fail "The shared readiness directory must use PUID:PGID mode 0770, received: ${services_permissions}"
+  fi
+
+  local key_permissions
+  key_permissions="$(docker exec "${protected_container_name}" \
+    stat -c '%a %u %g' /config/keys/installation.key)"
+  if [[ "${key_permissions}" != "600 12345 12345" ]]; then
+    fail "Unexpected installation key permissions: ${key_permissions}"
   fi
 
   local daemon_list_mode
@@ -603,17 +569,17 @@ verify_dynamic_firewall_boundary() {
 # Owner-only modes stand in for that host while the claim below writes the console state.
 restrict_config_to_owner() {
   docker exec "${protected_container_name}" \
-    find /config/app /config/vpn -type d -exec chmod 0700 {} +
+    find /config/keys /config/database /config/transmission /config/vpn -type d -exec chmod 0700 {} +
   docker exec "${protected_container_name}" \
-    find /config/app /config/vpn -type f -exec chmod 0600 {} +
+    find /config/keys /config/database /config/transmission /config/vpn -type f -exec chmod 0600 {} +
 
   if ! docker exec "${protected_container_name}" \
-    /command/s6-setuidgid control \
-    touch /config/app/keys/.owner-only-probe; then
+    /command/s6-applyuidgid -u 12345 -g 12345 -G 12345 \
+    touch /config/keys/.owner-only-probe; then
     fail 'The control plane cannot write to its owner-only state folder.'
   fi
 
-  docker exec "${protected_container_name}" rm -f /config/app/keys/.owner-only-probe
+  docker exec "${protected_container_name}" rm -f /config/keys/.owner-only-probe
 }
 
 claim_and_verify_control_api() {
@@ -666,7 +632,7 @@ claim_and_verify_control_api() {
       pidof transmission-daemon 2> /dev/null || true)"
     if [[ -n "${current_process_id}" && "${current_process_id}" != "${previous_process_id}" ]]; then
       if docker exec "${protected_container_name}" \
-        /usr/local/libexec/transmission-vpn/healthcheck.sh > /dev/null 2>&1; then
+        /usr/local/libexec/nova-docker/healthcheck > /dev/null 2>&1; then
         return 0
       fi
     fi
@@ -703,48 +669,35 @@ verify_egress_is_fail_closed() {
   # and VPN catalogs still work while every VPN connection is down. The hostname also
   # proves the controller's marked lookups get answers from Docker's resolver.
   if docker exec "${protected_container_name}" \
-    /command/s6-setuidgid control \
+    /command/s6-applyuidgid -u 12345 -g 12345 -G 12345 \
     nc -z -w 2 "${peer_address}" 8080; then
     fail 'The control plane opened its own connection outside the VPN.'
   fi
   if docker exec "${protected_container_name}" \
     timeout 5 \
-    /command/s6-setuidgid control \
+    /command/s6-applyuidgid -u 12345 -g 12345 -G 12345 \
     getent ahostsv4 "${peer_container_name}" > /dev/null; then
     fail 'The control plane used the container resolver outside the VPN.'
   fi
   if ! docker exec "${protected_container_name}" \
-    /command/s6-setuidgid control \
+    /command/s6-applyuidgid -u 12345 -g 12345 -G 12345 \
     /usr/local/bin/transmission-vpn-api -probe-direct-dial "${peer_container_name}:8080"; then
     fail 'The control plane could not reach the test peer through the VPN controller.'
   fi
 
-  # The controller's sockets belong to the console's group. Transmission shares the
-  # console's user, but not its group, so it can't ask for a connection.
   if docker exec "${protected_container_name}" \
-    /command/s6-setuidgid transmission \
-    /usr/local/bin/transmission-vpn-api -probe-direct-dial "${peer_address}:8080" > /dev/null 2>&1; then
-    fail 'Transmission opened a connection outside the VPN through the VPN controller.'
-  fi
-  if docker exec "${protected_container_name}" \
-    /command/s6-setuidgid webproxy \
-    /usr/local/bin/transmission-vpn-api -probe-direct-dial "${peer_address}:8080" > /dev/null 2>&1; then
-    fail 'The web proxy opened a connection outside the VPN through the VPN controller.'
-  fi
-
-  if docker exec "${protected_container_name}" \
-    /command/s6-setuidgid transmission \
+    /command/s6-applyuidgid -u 12345 -g 12345 -G 12345 \
     nc -z -w 2 "${peer_address}" 8080; then
     fail 'Transmission reached a non-tunnel peer while protection was blocked.'
   fi
   if docker exec "${protected_container_name}" \
-    /command/s6-setuidgid transmission \
+    /command/s6-applyuidgid -u 12345 -g 12345 -G 12345 \
     nc -z -w 2 -s 198.18.0.1 "${peer_address}" 8080; then
     fail 'Slot-local Transmission traffic escaped its unreachable table while protection was blocked.'
   fi
 
   if docker exec "${protected_container_name}" \
-    /command/s6-setuidgid webproxy \
+    /command/s6-applyuidgid -u 12345 -g 12345 -G 12345 \
     nc -z -w 2 "${peer_address}" 8080; then
     fail 'The web proxy reached a non-tunnel peer while protection was blocked.'
   fi
@@ -752,14 +705,14 @@ verify_egress_is_fail_closed() {
   # A slot address may only leave through its own tunnel. The web proxy sends every
   # request from one, so its requests can't reach loopback services.
   if docker exec "${protected_container_name}" \
-    /command/s6-setuidgid webproxy \
+    /command/s6-applyuidgid -u 12345 -g 12345 -G 12345 \
     nc -z -w 2 -s 198.18.0.1 127.0.0.1 9092; then
     fail 'A slot-addressed web proxy request reached the loopback-only Transmission RPC listener.'
   fi
 
   if docker exec "${protected_container_name}" \
     timeout 5 \
-    /command/s6-setuidgid transmission \
+    /command/s6-applyuidgid -u 12345 -g 12345 -G 12345 \
     getent ahostsv4 "${peer_container_name}" > /dev/null; then
     fail 'Transmission reached the container resolver while protection was blocked.'
   fi
@@ -779,7 +732,7 @@ verify_shutdown_order() {
 
   local transmission_line
   transmission_line="$(printf '%s\n' "${container_logs}" \
-    | grep -n -F '"msg":"Transmission daemon is ready"' \
+    | grep -n -F 'transmission: Transmission daemon is ready' \
     | cut -d: -f1 \
     | tail -n 1)"
 
@@ -787,7 +740,7 @@ verify_shutdown_order() {
     fail 'A protected longrun started before the firewall boundary was ready.'
   fi
 
-  if [[ "${container_logs}" != *"firewall-down: fail-closed rules were removed after protected services stopped."* ]]; then
+  if [[ "${container_logs}" != *"firewall-down: Fail-closed rules were removed after protected services stopped."* ]]; then
     fail 'Firewall teardown did not run during reverse-order s6 shutdown.'
   fi
 }
@@ -795,6 +748,7 @@ verify_shutdown_order() {
 verify_firewall_failure_is_fatal() {
   docker run --detach \
     --name "${unprivileged_container_name}" \
+    --user 0:0 \
     --network "${network_name}" \
     --device /dev/net/tun \
     --env PGID=12346 \
@@ -819,8 +773,8 @@ verify_firewall_failure_is_fatal() {
   local container_logs
   container_logs="$(docker logs "${unprivileged_container_name}")"
 
-  if [[ "${container_logs}" == *'"msg":"Transmission daemon is ready"'* \
-    || "${container_logs}" == *'"msg":"VPN state changed"'* ]]; then
+  if [[ "${container_logs}" == *'transmission: Transmission daemon is ready'* \
+    || "${container_logs}" == *'vpn-controller: VPN state changed'* ]]; then
     fail 'A protected service started after firewall setup failed.'
   fi
 }
@@ -854,12 +808,14 @@ main() {
 
   docker run --detach \
     --name "${protected_container_name}" \
+    --user 0:0 \
     --network "${network_name}" \
     --cap-add NET_ADMIN \
     --device /dev/net/tun \
     --env PGID=12345 \
     --env PUID=12345 \
     --env TZ=UTC \
+    --mount "type=volume,source=${protected_container_name}-config,target=/config" \
     --mount "type=bind,source=${test_state_directory},target=/run/secrets,readonly" \
     "${image_name}" > /dev/null
 

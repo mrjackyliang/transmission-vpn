@@ -70,10 +70,22 @@ verify_dockerfile() {
   assert_file_contains "${dockerfile_path}" "sha256sum -c"
   assert_file_contains "${dockerfile_path}" "ENTRYPOINT [\"/init\"]"
   assert_file_contains "${dockerfile_path}" "iptables"
+  assert_file_contains "${dockerfile_path}" "curl"
+  assert_file_contains "${dockerfile_path}" "diffutils"
   assert_file_contains "${dockerfile_path}" "util-linux"
-  assert_file_contains "${dockerfile_path}" "PATH=\"/command:"
-  assert_file_contains "${dockerfile_path}" "HEALTHCHECK"
+  assert_file_contains "${dockerfile_path}" "S6_BEHAVIOUR_IF_STAGE2_FAILS=2"
+  assert_file_contains "${dockerfile_path}" "S6_KILL_FINISH_MAXTIME=1000"
+  assert_file_contains "${dockerfile_path}" "S6_KILL_GRACETIME=1000"
+  assert_file_contains "${dockerfile_path}" "S6_SERVICES_GRACETIME=6000"
+  assert_file_contains "${dockerfile_path}" "RUN mkdir -p /app/apps/transmission /config /data"
+  assert_file_contains \
+    "${dockerfile_path}" \
+    "HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3"
+  assert_file_contains "${dockerfile_path}" 'CMD ["/usr/local/libexec/nova-docker/healthcheck"]'
   assert_file_contains "${dockerfile_path}" "EXPOSE 22605"
+  assert_file_not_contains "${dockerfile_path}" "VOLUME"
+  assert_file_not_contains "${dockerfile_path}" "groupadd --gid"
+  assert_file_not_contains "${dockerfile_path}" "useradd"
 
   if grep -Fq -- "alpine" "${dockerfile_path}"; then
     fail 'The container build must not depend on Alpine Linux.'
@@ -91,6 +103,9 @@ verify_dockerfile() {
     "/usr/local/bin/transmission-vpn-directory-controller"
   assert_file_contains \
     "${assembly_directory}/rootfs/usr/local/libexec/transmission-vpn/config-init.sh" \
+    "--migrate-state-only"
+  assert_file_contains \
+    "${assembly_directory}/rootfs/usr/local/libexec/transmission-vpn/config-init.sh" \
     "--initialize-only"
   assert_file_contains \
     "${assembly_directory}/rootfs/etc/s6-overlay/s6-rc.d/vpn-controller/run" \
@@ -100,7 +115,7 @@ verify_dockerfile() {
     "/usr/local/bin/transmission-vpn-transmission-runner"
   assert_file_contains \
     "${assembly_directory}/rootfs/etc/s6-overlay/s6-rc.d/web-proxy/run" \
-    "exec /command/s6-setuidgid webproxy /usr/local/bin/transmission-vpn-web-proxy"
+    'exec /command/s6-applyuidgid -u "${PUID:-1000}" -g "${PGID:-1000}" -G "${PGID:-1000}" /usr/local/bin/transmission-vpn-web-proxy'
   assert_file_contains \
     "${application_directory}/control-api/cmd/transmission-runner/main.go" \
     '"/usr/local/bin/transmission-daemon"'
@@ -140,24 +155,26 @@ verify_dockerfile() {
   assert_file_contains \
     "${application_directory}/control-api/cmd/transmission-runner/settings.go" \
     'filepath.Join(runner.options.ConfigDirectory, entry.ConnectionID)'
+  local healthcheck_path="${assembly_directory}/rootfs/usr/local/libexec/nova-docker/healthcheck"
+  assert_file_contains "${healthcheck_path}" "/run/service/control-api"
+  assert_file_contains "${healthcheck_path}" "/run/service/directory-controller"
+  assert_file_contains "${healthcheck_path}" "/run/service/transmission"
+  assert_file_contains "${healthcheck_path}" "/run/service/vpn-controller"
+  assert_file_contains "${healthcheck_path}" "/run/service/web-proxy"
   assert_file_contains \
-    "${assembly_directory}/rootfs/usr/local/libexec/transmission-vpn/healthcheck.sh" \
-    'transmission-state/${default_connection_id}.json'
-  assert_file_contains \
-    "${assembly_directory}/rootfs/usr/local/libexec/transmission-vpn/healthcheck.sh" \
-    '127.0.0.1 "${rpc_port}"'
-  assert_file_contains \
-    "${assembly_directory}/rootfs/usr/local/libexec/transmission-vpn/healthcheck.sh" \
-    '"${transmission_phase}" == "no-connections"'
+    "${healthcheck_path}" \
+    'http://127.0.0.1:22602/api/v1/health/live'
 }
 
 verify_runtime_directory_ownership() {
   local config_init_path="${assembly_directory}/rootfs/usr/local/libexec/transmission-vpn/config-init.sh"
   local controller_path="${application_directory}/control-api/internal/controller/daemon.go"
 
-  assert_file_contains \
-    "${config_init_path}" \
-    'install -d -m 1777 -o root -g root "${runtime_directory}/services"'
+  assert_file_contains "${config_init_path}" '-o "${PUID}" -g "${PGID}"'
+  assert_file_contains "${config_init_path}" 'readonly state_directory="${NOVA_STATE_DIRECTORY}"'
+  assert_file_contains "${config_init_path}" '/command/s6-applyuidgid'
+  assert_file_not_contains "${config_init_path}" "groupmod"
+  assert_file_not_contains "${config_init_path}" "usermod"
 
   local prepare_runtime_directory
   prepare_runtime_directory="$(sed -n \
@@ -176,7 +193,6 @@ verify_firewall_variable_scopes() {
     "${firewall_directory}/firewall-protect.sh"
     "${firewall_directory}/firewall-block.sh"
     "${firewall_directory}/firewall-down.sh"
-    "${firewall_directory}/healthcheck.sh"
   )
   local readonly_name
   local declaring_script
@@ -209,12 +225,11 @@ verify_compose_contract() {
   assert_file_contains "${compose_path}" "config:/config"
   assert_file_contains "${compose_path}" "data:/data"
   assert_file_contains "${compose_path}" '"22605:22605"'
+  assert_file_contains "${compose_path}" 'user: "0:0"'
 
   if grep -Fq -- "init: true" "${compose_path}"; then
     fail 'Compose must allow s6-overlay to remain PID 1.'
   fi
-
-  docker compose --file "${compose_path}" config --quiet
 }
 
 verify_service_graph() {
@@ -223,30 +238,43 @@ verify_service_graph() {
 
   local required_files=(
     "${service_root}/config-init/dependencies.d/base"
+    "${service_root}/config-init/dependencies.d/nova-container-init"
     "${service_root}/config-init/type"
     "${service_root}/config-init/up"
     "${service_root}/control-api/dependencies.d/config-init"
     "${service_root}/control-api/dependencies.d/directory-controller"
+    "${service_root}/control-api/dependencies.d/nova-container-init"
+    "${service_root}/control-api/finish"
     "${service_root}/control-api/run"
     "${service_root}/control-api/type"
     "${service_root}/directory-controller/dependencies.d/config-init"
+    "${service_root}/directory-controller/dependencies.d/nova-container-init"
     "${service_root}/directory-controller/finish"
     "${service_root}/directory-controller/run"
     "${service_root}/directory-controller/type"
     "${service_root}/firewall-init/dependencies.d/config-init"
+    "${service_root}/firewall-init/dependencies.d/nova-container-init"
     "${service_root}/firewall-init/down"
     "${service_root}/firewall-init/type"
     "${service_root}/firewall-init/up"
+    "${service_root}/nova-container-init/type"
+    "${service_root}/nova-container-init/up"
     "${service_root}/transmission/dependencies.d/firewall-init"
+    "${service_root}/transmission/dependencies.d/nova-container-init"
+    "${service_root}/transmission/finish"
     "${service_root}/transmission/run"
     "${service_root}/transmission/type"
     "${service_root}/vpn-controller/dependencies.d/firewall-init"
+    "${service_root}/vpn-controller/dependencies.d/nova-container-init"
+    "${service_root}/vpn-controller/finish"
     "${service_root}/vpn-controller/run"
     "${service_root}/vpn-controller/type"
     "${service_root}/web-proxy/dependencies.d/firewall-init"
+    "${service_root}/web-proxy/dependencies.d/nova-container-init"
     "${service_root}/web-proxy/finish"
     "${service_root}/web-proxy/run"
     "${service_root}/web-proxy/type"
+    "${user_bundle_root}/nova-container-init"
     "${user_bundle_root}/control-api"
     "${user_bundle_root}/config-init"
     "${user_bundle_root}/directory-controller"
@@ -264,14 +292,40 @@ verify_service_graph() {
 
   assert_file_contains "${service_root}/config-init/type" "oneshot"
   assert_file_contains "${service_root}/firewall-init/type" "oneshot"
+  assert_file_contains "${service_root}/nova-container-init/type" "oneshot"
   assert_file_contains "${service_root}/control-api/type" "longrun"
   assert_file_contains "${service_root}/directory-controller/type" "longrun"
   assert_file_contains "${service_root}/transmission/type" "longrun"
   assert_file_contains "${service_root}/vpn-controller/type" "longrun"
   assert_file_contains "${service_root}/web-proxy/type" "longrun"
-  assert_file_contains \
-    "${service_root}/web-proxy/finish" \
-    "foundation-service-finish.sh web-proxy"
+  for critical_service in \
+    control-api \
+    directory-controller \
+    transmission \
+    web-proxy; do
+    assert_file_contains \
+      "${service_root}/${critical_service}/finish" \
+      "Critical service exited abnormally"
+    assert_file_contains \
+      "${service_root}/${critical_service}/finish" \
+      "exec /run/s6/basedir/bin/halt"
+  done
+
+  # Every longrun clears its ready marker when it stops; the VPN controller restarts in place.
+  for marked_service in \
+    control-api \
+    directory-controller \
+    transmission \
+    vpn-controller \
+    web-proxy; do
+    assert_file_contains \
+      "${service_root}/${marked_service}/finish" \
+      "foundation-service-finish.sh ${marked_service}"
+  done
+
+  if grep -q -F 'exec /run/s6/basedir/bin/halt' "${service_root}/vpn-controller/finish"; then
+    fail 'The VPN controller must restart in place instead of halting the container.'
+  fi
 
   if [[ -d "${service_root}/user" ]]; then
     fail 'Deprecated s6-rc.d/user compatibility content must not be present.'

@@ -9,7 +9,6 @@ import (
 	"log/slog"
 	"net"
 	"os"
-	"os/user"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -32,15 +31,7 @@ func TestControllerSocketStatus(testingObject *testing.T) {
 	}
 
 	daemon := newTestDaemon(testingObject)
-	currentUser, err := user.Current()
-	if err != nil {
-		testingObject.Fatalf("read current user: %v", err)
-	}
-	currentGroup, err := user.LookupGroupId(currentUser.Gid)
-	if err != nil {
-		testingObject.Fatalf("read current group: %v", err)
-	}
-	daemon.config.ControlGroup = currentGroup.Name
+	daemon.config.ControlGroupID = os.Getgid()
 	daemon.runIP = func(context.Context, ...string) ([]byte, error) { return nil, nil }
 	daemon.driverFactory = func(string, int) tunnelDriver { return inertTunnelDriver{} }
 
@@ -52,6 +43,7 @@ func TestControllerSocketStatus(testingObject *testing.T) {
 	// Serve opens the direct socket and sets its mode after the control socket is
 	// already listening, so the check waits for that final mode.
 	var directInfo os.FileInfo
+	var err error
 	for attempt := 0; attempt < 100; attempt++ {
 		directInfo, err = os.Stat(daemon.config.DirectSocketPath)
 		if err == nil && directInfo.Mode()&os.ModeSocket != 0 && directInfo.Mode().Perm() == 0o660 {
@@ -1017,7 +1009,7 @@ func newTestDaemon(testingObject *testing.T) *Daemon {
 		FirewallBlockPath:   helperPath,
 		FirewallProtectPath: helperPath,
 		ResolverPath:        resolverPath,
-		ControlGroup:        "root",
+		ControlGroupID:      1000,
 		ConnectTimeout:      2 * time.Second,
 		Logger:              slog.New(slog.NewTextHandler(io.Discard, nil)),
 	})

@@ -239,12 +239,19 @@ FROM debian-base AS runtime
 
 # The publish workflow adds org.opencontainers.image.version from the release tag.
 LABEL org.opencontainers.image.title="Transmission VPN" \
-  org.opencontainers.image.description="Fail-closed Transmission appliance with OpenVPN and WireGuard"
+  org.opencontainers.image.description="Fail-closed Transmission appliance with OpenVPN and WireGuard" \
+  org.opencontainers.image.url="https://mrjackyliang.github.io/transmission-vpn/" \
+  org.opencontainers.image.source="https://github.com/mrjackyliang/transmission-vpn" \
+  org.opencontainers.image.documentation="https://mrjackyliang.github.io/transmission-vpn/" \
+  org.opencontainers.image.licenses="MIT" \
+  org.opencontainers.image.vendor="Jacky Liang"
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
     bash \
     ca-certificates \
+    curl \
+    diffutils \
     iproute2 \
     iptables \
     libb64-0d \
@@ -256,7 +263,6 @@ RUN apt-get update \
     libstdc++6 \
     netcat-openbsd \
     openvpn \
-    passwd \
     sysvinit-utils \
     tzdata \
     util-linux \
@@ -265,30 +271,18 @@ RUN apt-get update \
     wireguard-tools \
   && rm -rf /var/lib/apt/lists/*
 
-RUN groupadd --gid 1000 transmission \
-  && useradd \
-    --gid transmission \
-    --home-dir /nonexistent \
-    --no-create-home \
-    --shell /usr/sbin/nologin \
-    --uid 1000 \
-    transmission \
-  && groupadd --gid 65531 webproxy \
-  && useradd \
-    --gid webproxy \
-    --home-dir /nonexistent \
-    --no-create-home \
-    --shell /usr/sbin/nologin \
-    --uid 65531 \
-    webproxy \
-  && groupadd --gid 65532 control \
-  && useradd \
-    --gid control \
-    --home-dir /nonexistent \
-    --no-create-home \
-    --shell /usr/sbin/nologin \
-    --uid 65532 \
-    control
+ENV NODE_ENV=production \
+  PATH="/command:${PATH}" \
+  PGID=1000 \
+  PUID=1000 \
+  S6_BEHAVIOUR_IF_STAGE2_FAILS=2 \
+  S6_CMD_WAIT_FOR_SERVICES_MAXTIME=0 \
+  S6_KILL_FINISH_MAXTIME=1000 \
+  S6_KILL_GRACETIME=1000 \
+  S6_SERVICES_GRACETIME=6000 \
+  TZ=UTC
+
+WORKDIR /app
 
 COPY --from=s6-overlay /s6-rootfs/ /
 COPY --from=transmission-build /build/install/usr/local/bin/transmission-daemon /usr/local/bin/transmission-daemon
@@ -300,35 +294,21 @@ COPY --from=control-api-build /out/transmission-vpn-web-proxy /usr/local/bin/tra
 COPY --from=web-interface-build /workspace/apps/transmission/build /usr/local/share/transmission-vpn/web
 COPY packages/docker/rootfs/ /
 
-RUN chmod 0755 \
-  /etc/s6-overlay/s6-rc.d/control-api/finish \
-  /etc/s6-overlay/s6-rc.d/control-api/run \
-  /etc/s6-overlay/s6-rc.d/directory-controller/finish \
-  /etc/s6-overlay/s6-rc.d/directory-controller/run \
-  /etc/s6-overlay/s6-rc.d/transmission/finish \
-  /etc/s6-overlay/s6-rc.d/transmission/run \
-  /etc/s6-overlay/s6-rc.d/vpn-controller/finish \
-  /etc/s6-overlay/s6-rc.d/vpn-controller/run \
-  /etc/s6-overlay/s6-rc.d/web-proxy/finish \
-  /etc/s6-overlay/s6-rc.d/web-proxy/run \
-  /usr/local/libexec/transmission-vpn/*.sh
+RUN find /usr/local/libexec/nova-docker -type f -exec sed -i 's/\r$//' {} \; \
+  && find /usr/local/libexec/nova-docker -type f -exec chmod 0755 {} \; \
+  && find /etc/s6-overlay/s6-rc.d -type f \( -name run -o -name finish \) -exec sed -i 's/\r$//' {} \; \
+  && find /etc/s6-overlay/s6-rc.d -type f \( -name run -o -name finish \) -exec chmod 0755 {} \; \
+  && find /usr/local/libexec/transmission-vpn -type f -name '*.sh' -exec sed -i 's/\r$//' {} \; \
+  && find /usr/local/libexec/transmission-vpn -type f -name '*.sh' -exec chmod 0755 {} \;
 
-ENV PGID="1000" \
-  PATH="/command:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" \
-  PUID="1000" \
-  S6_BEHAVIOUR_IF_STAGE2_FAILS="2" \
-  S6_CMD_WAIT_FOR_SERVICES_MAXTIME="0" \
-  S6_VERBOSITY="1" \
-  TZ="UTC"
-
-VOLUME ["/config", "/data"]
+RUN mkdir -p /app/apps/transmission /config /data
 
 EXPOSE 9091
 EXPOSE 22602
 EXPOSE 22605
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD ["/usr/local/libexec/transmission-vpn/healthcheck.sh"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+  CMD ["/usr/local/libexec/nova-docker/healthcheck"]
 
 STOPSIGNAL SIGTERM
 

@@ -95,11 +95,11 @@ verify_duplicate_wireguard_provider_addresses() {
 
   local probe_error=""
   if ! docker exec "${protected_container_name}" \
-    /command/s6-setuidgid transmission \
+    /command/s6-applyuidgid -u 12345 -g 12345 -G 12345 \
     nc -z -w 3 -s "${local_address_zero}" "${target_address}" "${target_port}"; then
     probe_error="slot zero could not reach its WireGuard peer"
   elif ! docker exec "${protected_container_name}" \
-    /command/s6-setuidgid transmission \
+    /command/s6-applyuidgid -u 12345 -g 12345 -G 12345 \
     nc -z -w 3 -s "${local_address_one}" "${target_address}" "${target_port}"; then
     probe_error="slot one could not reach its WireGuard peer"
   fi

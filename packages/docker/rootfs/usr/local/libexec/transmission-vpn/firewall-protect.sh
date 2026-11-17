@@ -11,7 +11,8 @@ source "${script_directory}/firewall-common.sh"
 main() {
   if [[ -z "${protected_interface}" || -z "${protected_local_address}" || \
     -z "${protected_provider_address}" ]]; then
-    printf 'firewall-protect: an interface, slot address, and provider address are required.\n' >&2
+    nova_log ERROR firewall-protect \
+      "An interface, slot address, and provider address are required."
 
     return 1
   fi
@@ -25,10 +26,8 @@ main() {
   verify_firewall_rules
   publish_firewall_ready
 
-  printf 'firewall-protect: Transmission egress is restricted to %s from %s with SNAT %s.\n' \
-    "${protected_interface}" \
-    "${protected_local_address}" \
-    "${protected_provider_address}"
+  nova_log INFO firewall-protect \
+    "Transmission egress is restricted to ${protected_interface} from ${protected_local_address} with SNAT ${protected_provider_address}."
 }
 
 main "$@"

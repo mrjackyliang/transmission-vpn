@@ -248,7 +248,7 @@ func TestPrepareInstallationKeyStopsOnAKeyFromAnotherDatabase(t *testing.T) {
 		t.Fatalf("write damaged key: %v", err)
 	}
 
-	if _, err := PrepareInstallationKey(ctx, store, keyPath); err == nil || !strings.Contains(err.Error(), "exactly 32 bytes") {
+	if _, err := PrepareInstallationKey(ctx, store, keyPath); err == nil || !strings.Contains(err.Error(), "lowercase hexadecimal") {
 		t.Fatalf("a damaged key = %v", err)
 	}
 }

@@ -11,6 +11,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/appstate"
+	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/logging"
 	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/transmissionrpc"
 )
 
@@ -38,9 +40,7 @@ type readinessState struct {
 
 // main runs the unprivileged multi-daemon supervisor and reports fatal errors.
 func main() {
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slog.LevelInfo,
-	}))
+	logger := logging.New(os.Stdout, "transmission", slog.LevelInfo)
 	if err := run(logger); err != nil {
 		logger.Error("Transmission runner stopped", "error", err)
 		os.Exit(1)
@@ -83,7 +83,7 @@ func parseOptions() options {
 	flag.StringVar(
 		&configuredOptions.ConfigDirectory,
 		"config-directory",
-		"/config/transmission",
+		appstate.TransmissionDirectory(),
 		"Transmission configuration root directory",
 	)
 	flag.StringVar(

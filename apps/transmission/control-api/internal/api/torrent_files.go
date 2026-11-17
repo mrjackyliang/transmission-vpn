@@ -86,7 +86,7 @@ func (server *Server) handleDownloadTorrentFiles(
 		}
 		metainfo, readError := server.directoryBrowser.ReadTorrent(
 			ctx,
-			filepath.Join("/config/transmission", location.ConnectionID, "torrents", hash+".torrent"),
+			filepath.Join(server.transmissionDirectory, location.ConnectionID, "torrents", hash+".torrent"),
 		)
 		if readError != nil {
 			// A torrent still fetching its metadata has no file yet; anything else is logged.

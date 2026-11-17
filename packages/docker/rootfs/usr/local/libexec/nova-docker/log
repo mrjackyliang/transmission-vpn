@@ -1,0 +1,26 @@
+#!/bin/sh
+set -eu
+nova_log() {
+  NOVA_LOG_LEVEL="${1:-INFO}"
+  NOVA_LOG_COMPONENT="${2:-nova-docker}"
+  NOVA_LOG_MESSAGE="${3:-}"
+  case "${NOVA_LOG_LEVEL}" in
+    DEBUG|INFO|WARN|ERROR) ;;
+    *)
+      NOVA_LOG_MESSAGE="Invalid log level ${NOVA_LOG_LEVEL}: ${NOVA_LOG_MESSAGE}"
+      NOVA_LOG_LEVEL=ERROR
+      ;;
+  esac
+  NOVA_LOG_TIMESTAMP="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+  case "${NOVA_LOG_LEVEL}" in
+    WARN|ERROR)
+      printf '%s %s %s: %s\n' "${NOVA_LOG_TIMESTAMP}" "${NOVA_LOG_LEVEL}" "${NOVA_LOG_COMPONENT}" "${NOVA_LOG_MESSAGE}" >&2
+      ;;
+    *)
+      printf '%s %s %s: %s\n' "${NOVA_LOG_TIMESTAMP}" "${NOVA_LOG_LEVEL}" "${NOVA_LOG_COMPONENT}" "${NOVA_LOG_MESSAGE}"
+      ;;
+  esac
+}
+if [ "${0##*/}" = log ]; then
+  nova_log "${1:-INFO}" "${2:-nova-docker}" "${3:-}"
+fi

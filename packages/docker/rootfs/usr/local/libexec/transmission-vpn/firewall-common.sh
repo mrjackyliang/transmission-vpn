@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+source /usr/local/libexec/nova-docker/log
+
 readonly egress_firewall_chain="TVPN_EGRESS"
 readonly tunnel_firewall_chain="TVPN_TUNNELS"
 readonly source_backstop_firewall_chain="TVPN_SOURCE_BACKSTOP"
@@ -89,14 +91,14 @@ detect_firewall_ipv6() {
 
 load_firewall_ipv6() {
   if [[ ! -f "${firewall_ipv6_path}" ]]; then
-    printf 'firewall: IPv6 state is missing.\n' >&2
+    nova_log ERROR firewall "IPv6 state is missing."
 
     return 1
   fi
 
   firewall_ipv6_enabled="$(< "${firewall_ipv6_path}")"
   if [[ "${firewall_ipv6_enabled}" != "0" && "${firewall_ipv6_enabled}" != "1" ]]; then
-    printf 'firewall: IPv6 state is invalid.\n' >&2
+    nova_log ERROR firewall "IPv6 state is invalid."
 
     return 1
   fi
@@ -123,7 +125,7 @@ configure_firewall_backend() {
       ;;
 
     *)
-      printf 'firewall: unsupported backend: %s\n' "${requested_backend}" >&2
+      nova_log ERROR firewall "Unsupported backend: ${requested_backend}."
 
       return 1
       ;;
@@ -170,14 +172,14 @@ select_firewall_backend() {
     fi
   done
 
-  printf 'firewall: no supported iptables backend is available.\n' >&2
+  nova_log ERROR firewall "No supported iptables backend is available."
 
   return 1
 }
 
 load_firewall_backend() {
   if [[ ! -f "${firewall_backend_path}" ]]; then
-    printf 'firewall: backend state is missing.\n' >&2
+    nova_log ERROR firewall "Backend state is missing."
 
     return 1
   fi
@@ -224,9 +226,8 @@ verify_firewall_family_matches() {
   remove_probe_chain "${firewall_command}"
 
   if [[ -n "${missing_match}" ]]; then
-    printf 'firewall: the kernel has no %s match for %s, so egress outside the VPN cannot be blocked.\n' \
-      "${missing_match}" \
-      "${firewall_command}" >&2
+    nova_log ERROR firewall \
+      "The kernel has no ${missing_match} match for ${firewall_command}, so egress outside the VPN cannot be blocked."
 
     return 1
   fi
@@ -399,10 +400,8 @@ verify_egress_family_rules() {
   local installed_rule_count
   installed_rule_count="$("${firewall_command}" -w 5 -S "${egress_firewall_chain}" | grep -c '^-A ')"
   if [[ "${installed_rule_count}" -ne "${expected_rule_count}" ]]; then
-    printf 'firewall: %s has %s rules, expected %s.\n' \
-      "${egress_firewall_chain}" \
-      "${installed_rule_count}" \
-      "${expected_rule_count}" >&2
+    nova_log ERROR firewall \
+      "${egress_firewall_chain} has ${installed_rule_count} rules, expected ${expected_rule_count}."
 
     return 1
   fi
@@ -410,9 +409,8 @@ verify_egress_family_rules() {
   local last_rule
   last_rule="$("${firewall_command}" -w 5 -S "${egress_firewall_chain}" | tail -n 1)"
   if [[ "${last_rule}" != "-A ${egress_firewall_chain} -j DROP" ]]; then
-    printf 'firewall: %s does not end by dropping egress: %s\n' \
-      "${egress_firewall_chain}" \
-      "${last_rule}" >&2
+    nova_log ERROR firewall \
+      "${egress_firewall_chain} does not end by dropping egress: ${last_rule}."
 
     return 1
   fi
@@ -440,7 +438,7 @@ verify_source_backstop_rules() {
   done < <("${firewall_ipv4_command}" -w 5 -S OUTPUT)
   if [[ "${backstop_line}" -eq 0 || "${egress_line}" -eq 0 \
     || "${backstop_line}" -ge "${egress_line}" ]]; then
-    printf 'firewall: the source backstop is not ahead of the egress chain.\n' >&2
+    nova_log ERROR firewall "The source backstop is not ahead of the egress chain."
 
     return 1
   fi
@@ -500,17 +498,17 @@ validate_protected_triplet() {
   local provider_address="${3}"
 
   if ! valid_protected_interface "${interface_name}"; then
-    printf 'firewall: protected interface name is invalid: %s\n' "${interface_name}" >&2
+    nova_log ERROR firewall "Protected interface name is invalid: ${interface_name}."
 
     return 1
   fi
   if ! valid_protected_address "${local_address}"; then
-    printf 'firewall: protected local IPv4 address is invalid: %s\n' "${local_address}" >&2
+    nova_log ERROR firewall "Protected local IPv4 address is invalid: ${local_address}."
 
     return 1
   fi
   if ! valid_protected_address "${provider_address}"; then
-    printf 'firewall: protected provider IPv4 address is invalid: %s\n' "${provider_address}" >&2
+    nova_log ERROR firewall "Protected provider IPv4 address is invalid: ${provider_address}."
 
     return 1
   fi
@@ -518,9 +516,7 @@ validate_protected_triplet() {
   local slot
   slot="$(protected_interface_slot "${interface_name}")"
   if [[ "${local_address}" != "198.18.${slot}.1" ]]; then
-    printf 'firewall: %s does not own local address %s.\n' \
-      "${interface_name}" \
-      "${local_address}" >&2
+    nova_log ERROR firewall "${interface_name} does not own local address ${local_address}."
 
     return 1
   fi
@@ -872,7 +868,7 @@ remove_protected_interface_rules() {
   local requested_interface="${1:-}"
 
   if [[ -n "${requested_interface}" ]] && ! valid_protected_interface "${requested_interface}"; then
-    printf 'firewall: protected interface name is invalid: %s\n' "${requested_interface}" >&2
+    nova_log ERROR firewall "Protected interface name is invalid: ${requested_interface}."
 
     return 1
   fi

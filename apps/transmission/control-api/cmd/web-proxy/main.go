@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/logging"
 	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/webproxy"
 )
 
@@ -28,9 +29,7 @@ type options struct {
 // The service closes its listener and active tunnels before returning so the firewall
 // can remain installed until all protected application traffic has stopped.
 func main() {
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slog.LevelInfo,
-	}))
+	logger := logging.New(os.Stdout, "web-proxy", slog.LevelInfo)
 	if err := run(logger); err != nil {
 		logger.Error("web proxy stopped", "error", err)
 		os.Exit(1)

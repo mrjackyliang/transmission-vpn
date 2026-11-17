@@ -1,0 +1,145 @@
+#!/command/with-contenv sh
+set -eu
+. /usr/local/libexec/nova-docker/log
+
+PUID_VALUE="${PUID:-1000}"
+PGID_VALUE="${PGID:-1000}"
+TZ_VALUE="${TZ:-UTC}"
+
+case "${PUID_VALUE}" in
+  ''|*[!0-9]*) nova_log ERROR init 'PUID must be an integer between 1 and 60000.'; exit 1 ;;
+esac
+case "${PGID_VALUE}" in
+  ''|*[!0-9]*) nova_log ERROR init 'PGID must be an integer between 1 and 60000.'; exit 1 ;;
+esac
+if [ "${PUID_VALUE}" -le 0 ] || [ "${PUID_VALUE}" -gt 60000 ]; then
+  nova_log ERROR init 'PUID must be an integer between 1 and 60000.'
+  exit 1
+fi
+if [ "${PGID_VALUE}" -le 0 ] || [ "${PGID_VALUE}" -gt 60000 ]; then
+  nova_log ERROR init 'PGID must be an integer between 1 and 60000.'
+  exit 1
+fi
+
+case "${TZ_VALUE}" in
+  ''|/*|*..*) nova_log ERROR init 'TZ must name an installed IANA timezone.'; exit 1 ;;
+esac
+if [ ! -f "/usr/share/zoneinfo/${TZ_VALUE}" ]; then
+  nova_log ERROR init "Unknown timezone: ${TZ_VALUE}"
+  exit 1
+fi
+if ln -snf "/usr/share/zoneinfo/${TZ_VALUE}" /etc/localtime 2>/dev/null \
+  && printf '%s\n' "${TZ_VALUE}" > /etc/timezone 2>/dev/null; then
+  :
+else
+  nova_log WARN init "The root filesystem is read-only, so the container clock files were not changed; services use TZ=${TZ_VALUE} from the environment."
+fi
+if ! getent group "${PGID_VALUE}" > /dev/null 2>&1; then
+  printf 'nova-%s:x:%s:\n' "${PGID_VALUE}" "${PGID_VALUE}" >> /etc/group 2>/dev/null \
+    || nova_log WARN init "The root filesystem is read-only, so no group entry was added for GID ${PGID_VALUE}."
+fi
+if ! getent passwd "${PUID_VALUE}" > /dev/null 2>&1; then
+  printf 'nova-%s:x:%s:%s::/config:/usr/sbin/nologin\n' "${PUID_VALUE}" "${PUID_VALUE}" "${PGID_VALUE}" >> /etc/passwd 2>/dev/null \
+    || nova_log WARN init "The root filesystem is read-only, so no user entry was added for UID ${PUID_VALUE}."
+fi
+
+mkdir -p /config /data /run/nova-docker
+CONFIG_HAS_STATE=0
+DATA_HAS_STATE=0
+while IFS= read -r legacy_path; do
+  [ -n "${legacy_path}" ] || continue
+  if [ -e "/config/${legacy_path}" ] || [ -L "/config/${legacy_path}" ]; then
+    CONFIG_HAS_STATE=1
+  fi
+  if [ -e "/data/${legacy_path}" ] || [ -L "/data/${legacy_path}" ]; then
+    DATA_HAS_STATE=1
+  fi
+done < /etc/nova-docker/legacy-state-paths
+
+STATE_DIRECTORY=/config
+if [ "${CONFIG_HAS_STATE}" -eq 1 ] && [ "${DATA_HAS_STATE}" -eq 1 ]; then
+  nova_log WARN init 'App state exists in both /config and deprecated /data; using /config without overwriting either location.'
+elif [ "${DATA_HAS_STATE}" -eq 1 ]; then
+  if mountpoint -q /config; then
+    while IFS= read -r legacy_path; do
+      [ -n "${legacy_path}" ] || continue
+      source_path="/data/${legacy_path}"
+      destination_path="/config/${legacy_path}"
+      if [ ! -e "${source_path}" ] && [ ! -L "${source_path}" ]; then
+        continue
+      fi
+      if [ -e "${destination_path}" ] || [ -L "${destination_path}" ]; then
+        nova_log ERROR init "Refusing to overwrite existing state path ${destination_path}."
+        exit 1
+      fi
+      destination_parent="$(dirname -- "${destination_path}")"
+      mkdir -p -- "${destination_parent}"
+      source_device="$(stat -c '%d' -- "${source_path}")"
+      destination_device="$(stat -c '%d' -- "${destination_parent}")"
+      if [ "${source_device}" = "${destination_device}" ]; then
+        mv -- "${source_path}" "${destination_path}"
+      else
+        temporary_destination="${destination_path}.nova-migration-$$"
+        if [ -e "${temporary_destination}" ] || [ -L "${temporary_destination}" ]; then
+          nova_log ERROR init "Refusing to overwrite migration path ${temporary_destination}."
+          exit 1
+        fi
+        cp -a -- "${source_path}" "${temporary_destination}"
+        if ! diff --brief --recursive --no-dereference -- "${source_path}" "${temporary_destination}" >/dev/null; then
+          nova_log ERROR init "State migration verification failed for ${legacy_path}."
+          exit 1
+        fi
+        mv -- "${temporary_destination}" "${destination_path}"
+        rm -rf -- "${source_path}"
+      fi
+      nova_log INFO init "Moved app state ${legacy_path} from /data to /config."
+    done < /etc/nova-docker/legacy-state-paths
+  else
+    STATE_DIRECTORY=/data
+    nova_log WARN init 'Using deprecated /data for app state; change the app-state mount from /data to /config.'
+  fi
+fi
+
+mkdir -p "${STATE_DIRECTORY}/keys" "${STATE_DIRECTORY}/database"
+chown -R "${PUID_VALUE}:${PGID_VALUE}" -- "${STATE_DIRECTORY}"
+while IFS= read -r writable_path; do
+  [ -n "${writable_path}" ] || continue
+  case "${writable_path}" in
+    /*) ;;
+    *) nova_log ERROR init "Writable path must be absolute: ${writable_path}"; exit 1 ;;
+  esac
+  case "${writable_path}" in
+    /|/bin|/bin/*|/dev|/dev/*|/etc|/etc/*|/lib|/lib/*|/lib64|/lib64/*|/proc|/proc/*|/run|/run/*|/sbin|/sbin/*|/sys|/sys/*|/usr|/usr/*|*/../*|*/./*)
+      nova_log ERROR init "Unsafe writable path: ${writable_path}"
+      exit 1
+      ;;
+  esac
+  mkdir -p -- "${writable_path}"
+  chown "${PUID_VALUE}:${PGID_VALUE}" -- "${writable_path}"
+done < /etc/nova-docker/writable-paths
+
+chmod 0700 "${STATE_DIRECTORY}/keys"
+find "${STATE_DIRECTORY}/keys" -type f -exec chmod 0600 {} +
+ENVIRONMENT_FILE=/run/nova-docker/environment
+ENVIRONMENT_TEMP="${ENVIRONMENT_FILE}.tmp.$$"
+umask 077
+{
+  printf 'export NOVA_STATE_DIRECTORY=%s\n' "${STATE_DIRECTORY}"
+  printf 'export NOVA_KEYS_DIRECTORY=%s/keys\n' "${STATE_DIRECTORY}"
+  printf 'export NOVA_INSTALLATION_KEY_FILE=%s/keys/installation.key\n' "${STATE_DIRECTORY}"
+  printf 'export NOVA_DATABASE_DIRECTORY=%s/database\n' "${STATE_DIRECTORY}"
+  printf 'export TRANSMISSION_VPN_STATE_DIRECTORY=%s\n' "${STATE_DIRECTORY}"
+} > "${ENVIRONMENT_TEMP}"
+chmod 0600 "${ENVIRONMENT_TEMP}"
+mv -- "${ENVIRONMENT_TEMP}" "${ENVIRONMENT_FILE}"
+if [ -d /run/s6/container_environment ]; then
+  umask 022
+  printf '%s' "${STATE_DIRECTORY}" > /run/s6/container_environment/NOVA_STATE_DIRECTORY
+  printf '%s/keys' "${STATE_DIRECTORY}" > /run/s6/container_environment/NOVA_KEYS_DIRECTORY
+  printf '%s/keys/installation.key' "${STATE_DIRECTORY}" > /run/s6/container_environment/NOVA_INSTALLATION_KEY_FILE
+  printf '%s/database' "${STATE_DIRECTORY}" > /run/s6/container_environment/NOVA_DATABASE_DIRECTORY
+  printf '%s' "${STATE_DIRECTORY}" > /run/s6/container_environment/TRANSMISSION_VPN_STATE_DIRECTORY
+  umask 077
+fi
+nova_log INFO init "Using ${STATE_DIRECTORY} for app state."
+nova_log INFO init "Initialized app state ownership for UID ${PUID_VALUE} and GID ${PGID_VALUE}."

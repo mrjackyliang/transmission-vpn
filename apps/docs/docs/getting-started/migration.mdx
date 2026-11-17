@@ -53,7 +53,7 @@ services:
 ```
 
 1. Stop the old Transmission so its `settings.json`, `torrents`, and `resume` files stay consistent while they are read.
-2. Set <Terminology title="Which user owns your downloads on the host" to="/docs/reference/terminology#storage-and-keys">`PUID`</Terminology> and <Terminology title="Which user owns your downloads on the host" to="/docs/reference/terminology#storage-and-keys">`PGID`</Terminology> to an account that can write to the mounted download folders, using IDs from 1000 to 60000.
+2. Set <Terminology title="Which user owns your downloads on the host" to="/docs/reference/terminology#storage-and-keys">`PUID`</Terminology> and <Terminology title="Which user owns your downloads on the host" to="/docs/reference/terminology#storage-and-keys">`PGID`</Terminology> to an account that can write to the mounted download folders, using IDs from 1 to 60000.
 3. Add and test a default VPN connection, as covered in [Connect to a VPN](/docs/vpn/connecting/).
 4. Open **Settings**, find **Backup**, select **Import…**, and choose **Another Transmission**.
 5. Use `/import` as the **Config folder**, map every old folder to its location under `/data`, and review the generated profiles and supported settings.
@@ -62,10 +62,6 @@ services:
 The old default download folder becomes the <Terminology title="Where torrents go when no named profile matches" to="/docs/reference/terminology#torrent-profiles">Default profile</Terminology>'s folder. Other download folders and any included empty sibling folders become named <Terminology title="Decides a torrent's folder and which VPN it uses" to="/docs/reference/terminology#torrent-profiles">profiles</Terminology>, and the old incomplete folder carries over separately.
 
 [Export and Import](/docs/configuration/export-and-import/#import-from-another-transmission) covers every wizard step, the supported settings, and the **Not brought over** list.
-
-:::info
-IDs below 1000 aren't accepted, so a NAS account or group with a lower ID needs a different user or group for the container.
-:::
 
 ## What the Legacy Script Doesn't Carry Over
 

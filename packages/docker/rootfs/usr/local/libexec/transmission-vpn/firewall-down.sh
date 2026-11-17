@@ -9,7 +9,7 @@ main() {
   acquire_firewall_lock
 
   if [[ ! -f "${firewall_backend_path}" ]]; then
-    printf 'firewall-down: no active firewall state was found.\n'
+    nova_log INFO firewall-down "No active firewall state was found."
 
     return 0
   fi
@@ -23,7 +23,8 @@ main() {
     "${firewall_ipv6_path}" \
     "${firewall_ready_path}"
 
-  printf 'firewall-down: fail-closed rules were removed after protected services stopped.\n'
+  nova_log INFO firewall-down \
+    "Fail-closed rules were removed after protected services stopped."
 }
 
 main "$@"

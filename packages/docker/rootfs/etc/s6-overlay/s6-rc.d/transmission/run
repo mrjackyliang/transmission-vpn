@@ -1,5 +1,13 @@
-#!/command/with-contenv bash
-set -euo pipefail
-
-exec /command/s6-setuidgid transmission \
-  /usr/local/bin/transmission-vpn-transmission-runner
+#!/command/with-contenv sh
+set -eu
+. /usr/local/libexec/nova-docker/log
+. /run/nova-docker/environment
+if [ -f /app/.pnp.cjs ]; then
+  export NODE_OPTIONS="--require=/app/.pnp.cjs${NODE_OPTIONS:+ ${NODE_OPTIONS}}"
+fi
+if [ -f /app/.pnp.loader.mjs ]; then
+  export NODE_OPTIONS="--experimental-loader=/app/.pnp.loader.mjs${NODE_OPTIONS:+ ${NODE_OPTIONS}}"
+fi
+cd '/app/apps/transmission'
+nova_log INFO 'transmission' 'Starting service.'
+exec /command/s6-applyuidgid -u "${PUID:-1000}" -g "${PGID:-1000}" -G "${PGID:-1000}" /usr/local/bin/transmission-vpn-transmission-runner

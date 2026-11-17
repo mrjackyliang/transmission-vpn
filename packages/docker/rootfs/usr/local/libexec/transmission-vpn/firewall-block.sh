@@ -9,7 +9,7 @@ source "${script_directory}/firewall-common.sh"
 
 main() {
   if [[ ! "${requested_block_reason}" =~ ^[A-Za-z0-9._:-]+$ ]]; then
-    printf 'firewall-block: the block reason contains unsupported characters.\n' >&2
+    nova_log ERROR firewall-block "The block reason contains unsupported characters."
 
     return 1
   fi
@@ -21,12 +21,11 @@ main() {
   publish_firewall_ready "${requested_block_reason}"
 
   if [[ -n "${protected_interface}" ]]; then
-    printf 'firewall-block: Transmission egress through %s is blocked (%s).\n' \
-      "${protected_interface}" \
-      "${requested_block_reason}"
+    nova_log INFO firewall-block \
+      "Transmission egress through ${protected_interface} is blocked (${requested_block_reason})."
   else
-    printf 'firewall-block: all Transmission VPN egress is blocked (%s).\n' \
-      "${requested_block_reason}"
+    nova_log INFO firewall-block \
+      "All Transmission VPN egress is blocked (${requested_block_reason})."
   fi
 }
 

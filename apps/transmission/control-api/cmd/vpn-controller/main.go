@@ -6,10 +6,13 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
+	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
 	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/controller"
+	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/logging"
 )
 
 // options contains fixed privileged runtime dependencies.
@@ -28,7 +31,7 @@ type options struct {
 	FirewallBlockPath       string
 	FirewallProtectPath     string
 	ResolverPath            string
-	ControlGroup            string
+	ControlGroupID          int
 	ConnectTimeout          time.Duration
 }
 
@@ -37,9 +40,7 @@ type options struct {
 // Signals cancel the daemon context, which blocks Transmission before stopping its
 // tunnel and returning control to s6.
 func main() {
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slog.LevelInfo,
-	}))
+	logger := logging.New(os.Stdout, "vpn-controller", slog.LevelInfo)
 	configuredOptions := parseOptions()
 
 	signalContext, cancelSignals := signal.NotifyContext(
@@ -61,7 +62,7 @@ func main() {
 		FirewallBlockPath:       configuredOptions.FirewallBlockPath,
 		FirewallProtectPath:     configuredOptions.FirewallProtectPath,
 		ResolverPath:            configuredOptions.ResolverPath,
-		ControlGroup:            configuredOptions.ControlGroup,
+		ControlGroupID:          configuredOptions.ControlGroupID,
 		ConnectTimeout:          configuredOptions.ConnectTimeout,
 		Logger:                  logger,
 	})
@@ -148,11 +149,11 @@ func parseOptions() options {
 		"/etc/resolv.conf",
 		"container resolver configuration path",
 	)
-	flag.StringVar(
-		&configuredOptions.ControlGroup,
-		"control-group",
-		"control",
-		"unprivileged API socket group",
+	flag.IntVar(
+		&configuredOptions.ControlGroupID,
+		"control-group-id",
+		groupIDFromEnvironment(),
+		"PUID service socket group identifier",
 	)
 	flag.DurationVar(
 		&configuredOptions.ConnectTimeout,
@@ -163,4 +164,24 @@ func parseOptions() options {
 	flag.Parse()
 
 	return configuredOptions
+}
+
+// groupIDFromEnvironment reads Nova's validated PGID for root-owned socket access.
+//
+// Invalid direct-process values become zero so daemon validation fails closed rather
+// than silently choosing a different identity from the rest of the appliance.
+//
+// Since: 2.4.0
+func groupIDFromEnvironment() int {
+	value := strings.TrimSpace(os.Getenv("PGID"))
+	if value == "" {
+		return 1000
+	}
+
+	groupID, err := strconv.Atoi(value)
+	if err != nil {
+		return 0
+	}
+
+	return groupID
 }

@@ -24,13 +24,13 @@ Plan the `/config` and `/data` folders so the container can start, keep its stat
 
 ```text title="Container paths"
 /config
-|-- app/                  # Control plane state, owned by PUID:PGID (2770)
-|   |-- state.sqlite3     # Database, with -wal and -shm files beside it
-|   `-- keys/             # Owned by PUID:PGID (2770)
-|       `-- installation.key
+|-- keys/                 # Mode 0700, owned by PUID:PGID
+|   `-- installation.key  # 64 lowercase hex characters plus newline, mode 0600
+|-- database/
+|   `-- state.sqlite3     # Database, with -wal and -shm files beside it
 |-- transmission/         # Transmission's configuration folder, owned by PUID:PGID (0750)
 |   `-- settings.json     # Rebuilt at every start
-|-- vpn/                  # Owned by PUID:PGID (2770), currently unused
+|-- vpn/                  # Reserved app state
 `-- managed.json          # Optional managed configuration
 /data
 |-- downloads/            # Default profile's download folder
@@ -43,31 +43,28 @@ Plan the `/config` and `/data` folders so the container can start, keep its stat
 
 ## Runtime Identity
 
-| Account        | IDs                                                                                                                                                                                                                                                                                                  | Runs                                                                                                                                                                                              |
-|----------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `transmission` | <Terminology title="Which user owns your downloads on the host" to="/docs/reference/terminology#storage-and-keys">`PUID`</Terminology> and <Terminology title="Which user owns your downloads on the host" to="/docs/reference/terminology#storage-and-keys">`PGID`</Terminology>, `1000` by default | Transmission and the <Terminology title="Backs the folder browser; it can't delete your files" to="/docs/reference/terminology#container-and-services">directory controller</Terminology>         |
-| `control`      | <Terminology title="Which user owns your downloads on the host" to="/docs/reference/terminology#storage-and-keys">`PUID`</Terminology>, with its own group, GID 65532                                                                                                                                | The <Terminology title="The web interface and API; it stays up when the VPN is down" to="/docs/reference/terminology#container-and-services">control plane</Terminology>                          |
-| `root`         | 0                                                                                                                                                                                                                                                                                                    | Startup checks, the firewall, and the <Terminology title="The only part allowed to bring tunnels up or down" to="/docs/reference/terminology#container-and-services">VPN controller</Terminology> |
+| Identity                                                                                                                                                                                                                                                                                              | Runs                                                                                                                                                                                                                                                                        |
+|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| <Terminology title="Which user owns your downloads on the host" to="/docs/reference/terminology#storage-and-keys">`PUID`</Terminology>:<Terminology title="Which user owns your downloads on the host" to="/docs/reference/terminology#storage-and-keys">`PGID`</Terminology>, `1000:1000` by default | The control API, directory controller, Transmission runner and daemons, and web proxy. s6 applies the numeric IDs directly; the image has no fixed service account with a different UID.                                                                                    |
+| `root` (`0:0`)                                                                                                                                                                                                                                                                                        | s6-overlay, Nova's initialization, firewall setup, and the <Terminology title="The only part allowed to bring tunnels up or down" to="/docs/reference/terminology#container-and-services">VPN controller</Terminology>. s6 drops every unprivileged service to `PUID:PGID`. |
 
-- <Terminology title="Which user owns your downloads on the host" to="/docs/reference/terminology#storage-and-keys">`PUID`</Terminology> and <Terminology title="Which user owns your downloads on the host" to="/docs/reference/terminology#storage-and-keys">`PGID`</Terminology> must be integers from 1000 to 60000, and they can't already belong to another account in the image.
-- At start, the container gives the built-in `transmission` account these IDs, so files that Transmission creates belong to them.
-- The `control` account gets the same `PUID`, so every service that writes to `/config` or `/data` owns what it writes. Hosts that ignore group permissions on shared folders, such as Synology, let only a folder's owner write, so these folders need only belong to `PUID`.
-- The `control` account keeps its own group, which opens the VPN controller's sockets to the control plane and not to Transmission.
-- IDs below 1000 aren't accepted, so a host account or group with a lower ID needs a different user or group for the container.
+- <Terminology title="Which user owns your downloads on the host" to="/docs/reference/terminology#storage-and-keys">`PUID`</Terminology> and <Terminology title="Which user owns your downloads on the host" to="/docs/reference/terminology#storage-and-keys">`PGID`</Terminology> must be integers from 1 to 60000.
+- Start the container as root, such as with `--user 0:0`. s6 needs root for initialization and networking, then runs every unprivileged service as the configured numeric IDs.
+- Use the host account and group that own the download folders. Every app-state file is also owned by those IDs.
 
 ## Ownership and Permissions
 
 At every start, the container prepares its folders before any service runs:
 
-1. It changes the owner of `/config` and `/data` themselves to the Transmission account, but only when they're owned by `root:root`.
-2. It gives `/config/app` and `/config/vpn`, with everything inside them, to `PUID:PGID`. Folders get mode `2770` and files `0660`.
-3. It creates `/config/transmission` for the Transmission account.
-4. It checks that `control` can write to `/config/app` and `/config/app/keys`, and that the Transmission account can write to `/config/transmission` and `/data`.
-5. It installs Transmission's settings file with mode `0600`, owned by the Transmission account.
+1. Nova resolves the app-state directory, normally `/config`, and creates `keys/` and `database/` there.
+2. It recursively changes the complete app-state directory to `PUID:PGID` on every start.
+3. It sets `keys/` to mode `0700` and every file in it to `0600`.
+4. It creates the app-specific `transmission/` and `vpn/` folders, then gives `/data` itself to `PUID:PGID` without recursively changing existing downloads.
+5. It checks that `PUID:PGID` can write `/data`, migrates an old app layout when present, and installs Transmission's settings file with mode `0600`.
 
-Every file the container keeps in `/config` belongs to `PUID:PGID`, while files you add outside its folders keep their owner, so a host tool that gives a whole folder tree to one account, such as a scheduled `chown -R`, keeps working as long as it uses the same IDs. New files that the control plane writes stay group-writable until that tool runs again.
+Every state file under `/config` belongs to `PUID:PGID`. Existing content below `/data` keeps its ownership, except during the temporary deprecated `/data` state fallback, where `/data` is the active state directory and Nova must own it recursively.
 
-When a check fails, the container stops with a message such as `config-init: /data is not writable by transmission.` It is recommended to give the host folder to the <Terminology title="Which user owns your downloads on the host" to="/docs/reference/terminology#storage-and-keys">`PUID`</Terminology> and <Terminology title="Which user owns your downloads on the host" to="/docs/reference/terminology#storage-and-keys">`PGID`</Terminology> account, or to set those IDs to the folder's current owner.
+When the download check fails, the container stops with a line ending in `/data is not writable by PUID <id> and PGID <id>.` It is recommended to give the host folder to those IDs, or set the variables to the folder's current owner.
 
 ## Download Folders
 
@@ -75,7 +72,7 @@ When a check fails, the container stops with a message such as `config-init: /da
 - Each profile owns one folder. The folder cannot be the incomplete folder, sit beneath it, or belong to another profile. No profile's folder can sit inside another profile's folder or contain one, the **Default profile**'s included.
 - The **Default profile**'s folder is `transmission.downloadDirectory`, `/data/downloads` by default. An edit applies without a restart and asks for **Save and move** when torrents use the profile.
 - Saving any profile creates its download folder and missing parents. The control API also creates the enabled incomplete folder when it is missing.
-- These automatic folders and folders created from the folder browser get mode `0775` and belong to the Transmission account.
+- These automatic folders and folders created from the folder browser get mode `0775` and belong to `PUID:PGID`.
 - The folder browser refuses symbolic links, even ones that point inside `/data`.
 
 :::tip
@@ -85,5 +82,5 @@ To keep downloads on more than one host folder, mount each one at its own path i
 ## Timezone
 
 - `TZ` sets the container's time zone, and the default is `UTC`.
-- It must name a zone installed in the image, such as `Europe/London`, using letters, digits, `.`, `_`, `+`, `-`, and `/`.
-- An unknown zone stops startup with `config-init: TZ does not identify an installed timezone: <value>.`
+- Nova's initialization links the matching zone into `/etc/localtime`, writes it to `/etc/timezone`, and also leaves `TZ` in the service environment.
+- It must name an installed IANA zone such as `Europe/London`. An unknown zone stops startup.

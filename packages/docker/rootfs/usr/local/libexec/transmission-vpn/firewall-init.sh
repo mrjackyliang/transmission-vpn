@@ -40,8 +40,8 @@ main() {
 
   trap - ERR
 
-  printf 'firewall-init: Transmission egress is blocked through the %s backend.\n' \
-    "${selected_backend}"
+  nova_log INFO firewall-init \
+    "Transmission egress is blocked through the ${selected_backend} backend."
 }
 
 main "$@"

@@ -377,6 +377,7 @@ start_protected_container() {
 
   docker run --detach \
     --name "${container_name}" \
+    --user 0:0 \
     --network "${network_name}" \
     --cap-add NET_ADMIN \
     --device /dev/net/tun \
@@ -410,7 +411,7 @@ wait_for_services() {
 
   for attempt in $(seq 1 30); do
     if docker exec "${container_name}" \
-      /usr/local/libexec/transmission-vpn/healthcheck.sh > /dev/null 2>&1; then
+      /usr/local/libexec/nova-docker/healthcheck > /dev/null 2>&1; then
       return 0
     fi
 
@@ -547,15 +548,15 @@ count_state_lines() {
   local state="${2}"
 
   docker logs "${container_name}" 2>&1 \
-    | grep -F '"msg":"VPN state changed"' \
-    | grep -c -F "\"state\":\"${state}\"" || true
+    | grep -F 'vpn-controller: VPN state changed' \
+    | grep -c -F "state=${state}" || true
 }
 
 count_startup_block_lines() {
   local container_name="${1}"
 
   docker logs "${container_name}" 2>&1 \
-    | grep -c -F '"msg":"VPN controller blocked all VPN egress at startup"' || true
+    | grep -c -F 'vpn-controller: VPN controller blocked all VPN egress at startup' || true
 }
 
 transmission_reaches_bound() {
@@ -565,7 +566,7 @@ transmission_reaches_bound() {
   local port="${4}"
 
   docker exec "${container_name}" \
-    /command/s6-setuidgid transmission \
+    /command/s6-applyuidgid -u 12345 -g 12345 -G 12345 \
     nc -z -w 3 -s "${source_address}" "${address}" "${port}" > /dev/null 2>&1
 }
 
@@ -575,7 +576,7 @@ transmission_reaches_unbound() {
   local port="${3}"
 
   docker exec "${container_name}" \
-    /command/s6-setuidgid transmission \
+    /command/s6-applyuidgid -u 12345 -g 12345 -G 12345 \
     nc -z -w 3 "${address}" "${port}" > /dev/null 2>&1
 }
 
@@ -1181,28 +1182,28 @@ verify_controller_crash_recovers() {
 verify_shutdown_order() {
   local container_name="${1}"
 
-  docker stop --time 20 "${container_name}" > /dev/null
+  docker stop --time 10 "${container_name}" > /dev/null
 
   local container_logs
   container_logs="$(docker logs "${container_name}" 2>&1)"
 
   local last_state_line
   last_state_line="$(printf '%s\n' "${container_logs}" \
-    | grep -F '"msg":"VPN state changed"' \
+    | grep -F 'vpn-controller: VPN state changed' \
     | tail -n 1 || true)"
-  if [[ "${last_state_line}" != *'"state":"blocked"'* ]]; then
+  if [[ "${last_state_line}" != *'state=blocked'* ]]; then
     fail "The controller did not end blocked: ${last_state_line}"
   fi
 
   local blocked_line
   blocked_line="$(printf '%s\n' "${container_logs}" \
-    | grep -n -F '"msg":"VPN state changed"' \
-    | grep -F '"state":"blocked"' \
+    | grep -n -F 'vpn-controller: VPN state changed' \
+    | grep -F 'state=blocked' \
     | tail -n 1 \
     | cut -d: -f1 || true)"
   local teardown_line
   teardown_line="$(printf '%s\n' "${container_logs}" \
-    | grep -n -F 'firewall-down: fail-closed rules were removed' \
+    | grep -n -F 'firewall-down: Fail-closed rules were removed' \
     | cut -d: -f1 || true)"
   if [[ -z "${blocked_line}" || -z "${teardown_line}" \
     || "${blocked_line}" -ge "${teardown_line}" ]]; then

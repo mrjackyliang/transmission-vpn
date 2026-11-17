@@ -1,0 +1,13 @@
+#!/command/with-contenv sh
+set -eu
+. /usr/local/libexec/nova-docker/log
+. /run/nova-docker/environment
+if [ -f /app/.pnp.cjs ]; then
+  export NODE_OPTIONS="--require=/app/.pnp.cjs${NODE_OPTIONS:+ ${NODE_OPTIONS}}"
+fi
+if [ -f /app/.pnp.loader.mjs ]; then
+  export NODE_OPTIONS="--experimental-loader=/app/.pnp.loader.mjs${NODE_OPTIONS:+ ${NODE_OPTIONS}}"
+fi
+cd '/app/apps/transmission'
+nova_log INFO 'config-init' 'Starting service.'
+exec /usr/local/libexec/transmission-vpn/config-init.sh

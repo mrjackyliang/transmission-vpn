@@ -9,7 +9,9 @@ import (
 	"path/filepath"
 	"syscall"
 
+	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/appstate"
 	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/directorybrowser"
+	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/logging"
 )
 
 // options contains the immutable directory-controller runtime boundaries.
@@ -27,9 +29,7 @@ type options struct {
 // s6 supervises this process under the Transmission identity so new folders inherit
 // the same ownership used by downloaded data.
 func main() {
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slog.LevelInfo,
-	}))
+	logger := logging.New(os.Stdout, "directory-controller", slog.LevelInfo)
 	if err := run(logger); err != nil {
 		logger.Error("directory controller stopped", "error", err)
 		os.Exit(1)
@@ -87,7 +87,7 @@ func parseOptions() options {
 	flag.StringVar(
 		&configuredOptions.TransmissionRootPath,
 		"transmission-root",
-		"/config/transmission",
+		appstate.TransmissionDirectory(),
 		"Transmission daemon state root",
 	)
 	flag.StringVar(

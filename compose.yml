@@ -18,6 +18,7 @@ services:
       - "22605:22605"
       - "9091:9091"
     restart: unless-stopped
+    user: "0:0"
     volumes:
       - config:/config
       - data:/data

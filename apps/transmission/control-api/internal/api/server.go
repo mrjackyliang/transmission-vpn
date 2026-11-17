@@ -124,19 +124,20 @@ func (reader *resilientCapacityReader) Current() (capacity.Snapshot, error) {
 // Privileged VPN operations are intentionally absent and will cross a restricted Unix
 // socket rather than receiving capabilities inside this process.
 type Config struct {
-	Store               *storage.Store
-	Registry            settings.Registry
-	InstallationKey     []byte
-	Controller          *controller.Client
-	Capacity            CapacityReader
-	DirectoryBrowser    DirectoryBrowser
-	Transmission        transmissionrpc.Caller
-	TransmissionClients *transmissionrpc.ClientSet
-	RuntimeDirectory    string
-	WebDirectory        string
-	Logger              *slog.Logger
-	Version             string
-	MountedSetupCode    bool
+	Store                 *storage.Store
+	Registry              settings.Registry
+	InstallationKey       []byte
+	Controller            *controller.Client
+	Capacity              CapacityReader
+	DirectoryBrowser      DirectoryBrowser
+	Transmission          transmissionrpc.Caller
+	TransmissionClients   *transmissionrpc.ClientSet
+	TransmissionDirectory string
+	RuntimeDirectory      string
+	WebDirectory          string
+	Logger                *slog.Logger
+	Version               string
+	MountedSetupCode      bool
 
 	// LogLevel is the level Logger's handler checks. The debug logging setting moves it
 	// between Info and Debug while the API runs; nil leaves the level alone.
@@ -166,6 +167,7 @@ type Server struct {
 	transmissionClients         *transmissionrpc.ClientSet
 	downloadCatalog             func(context.Context, provider.CatalogSource) ([]byte, error)
 	runtimeDirectory            string
+	transmissionDirectory       string
 	webProxyConfigPath          string
 	webProxyStatusPath          string
 	logger                      *slog.Logger
@@ -272,6 +274,9 @@ func NewServer(config Config) (*Server, error) {
 	if config.Logger == nil {
 		config.Logger = slog.Default()
 	}
+	if config.TransmissionDirectory == "" {
+		config.TransmissionDirectory = "/config/transmission"
+	}
 	if config.Capacity == nil {
 		if runtime.GOOS == "linux" {
 			config.Capacity = capacity.NewDetector(capacity.DefaultPaths(), time.Minute)
@@ -337,6 +342,7 @@ func NewServer(config Config) (*Server, error) {
 		transmissionClients:             config.TransmissionClients,
 		downloadCatalog:                 downloadCatalog,
 		runtimeDirectory:                config.RuntimeDirectory,
+		transmissionDirectory:           config.TransmissionDirectory,
 		webProxyConfigPath:              filepath.Join(config.RuntimeDirectory, "web-proxy", "config.json"),
 		webProxyStatusPath:              filepath.Join(config.RuntimeDirectory, "web-proxy-state", "status.json"),
 		logger:                          config.Logger,
