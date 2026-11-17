@@ -1049,7 +1049,22 @@ func decodeJSONBody(
 	request *http.Request,
 	target any,
 ) error {
-	request.Body = http.MaxBytesReader(responseWriter, request.Body, maximumRequestBytes)
+	return decodeLimitedJSONBody(responseWriter, request, target, maximumRequestBytes)
+}
+
+// decodeLimitedJSONBody reads one strict JSON request object up to maximumBytes.
+//
+// Routes that carry a file, such as a torrent add, pass their own larger cap while
+// every other route keeps the shared 1 MiB limit through decodeJSONBody.
+//
+// Since: 2.3.0
+func decodeLimitedJSONBody(
+	responseWriter http.ResponseWriter,
+	request *http.Request,
+	target any,
+	maximumBytes int64,
+) error {
+	request.Body = http.MaxBytesReader(responseWriter, request.Body, maximumBytes)
 	decoder := json.NewDecoder(request.Body)
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(target); err != nil {

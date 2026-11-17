@@ -12,6 +12,7 @@ import {
   previewTorrentLinks,
 } from '@/web/api.ts';
 import { FieldLabel } from '@/web/field-label.tsx';
+import { maximumTorrentFileBytes } from '@/web/form-validation.ts';
 import { LabelPicker } from '@/web/organization-controls.tsx';
 import {
   Button,
@@ -49,16 +50,6 @@ import type {
   Web_Components_AddTorrentResult,
   Web_Components_AddTorrentSource,
 } from '@/types/web/components.d.ts';
-
-/**
- * Add Torrent Dialog - Maximum torrent file bytes.
- *
- * Matches the browser-side metainfo ceiling used by form validation.
- * Files outside this range are rejected before conversion to base64.
- *
- * @since 2.0.0
- */
-const maximumTorrentFileBytes: number = 700 * 1024;
 
 /**
  * Add Torrent Dialog - Maximum preview batch size.
@@ -364,6 +355,11 @@ export const AddTorrentDialog = ({
     ),
   );
   const singleSource: Web_Components_AddTorrentSource | undefined = (sources.length === 1) ? sources[0] : undefined;
+  const sourceProfileIds: string[] = sources.map(
+    (source: Web_Components_AddTorrentSource): string => profileOverrides[source['key']] ?? automaticProfileSelectionValue(source),
+  );
+  // The shared select shows the profile every source uses, or its placeholder when they differ.
+  const sharedProfileId: string = (sourceProfileIds.length > 0 && sourceProfileIds.every((profileId: string): boolean => profileId === sourceProfileIds[0])) ? (sourceProfileIds[0] ?? '') : '';
   const selectedSingleProfileId: string = (singleSource === undefined) ? defaultProfileSelectionValue : profileOverrides[singleSource['key']]
     ?? automaticProfileSelectionValue(singleSource);
   const selectedSingleProfile: Web_Api_TorrentProfile | undefined = profiles.find(
@@ -542,7 +538,7 @@ export const AddTorrentDialog = ({
     setSourceMode('file');
     setResults({});
     setRequiresVPNConnection(false);
-    setError((validFiles.length === nextFiles.length) ? '' : 'Some files were skipped. Choose non-empty .torrent files smaller than 700 KiB.');
+    setError((validFiles.length === nextFiles.length) ? '' : 'Some files were skipped. Choose non-empty .torrent files up to 16 MiB.');
   };
 
   /**
@@ -558,6 +554,23 @@ export const AddTorrentDialog = ({
       ...currentOverrides,
       [sourceKey]: profileId,
     }));
+    setResults({});
+    setRequiresVPNConnection(false);
+  };
+
+  /**
+   * Add Torrent Dialog - Selects profile for every source.
+   *
+   * Applies one explicit choice to every source in the list at once.
+   * Each source's own select still changes it afterwards.
+   *
+   * @since 2.3.0
+   */
+  const selectProfileForEverySource = (profileId: string): void => {
+    setProfileOverrides(Object.fromEntries(sources.map((source: Web_Components_AddTorrentSource): [string, string] => [
+      source['key'],
+      profileId,
+    ])));
     setResults({});
     setRequiresVPNConnection(false);
   };
@@ -864,6 +877,24 @@ export const AddTorrentDialog = ({
               />
             </label>
           ) : null}
+
+          {(allProcessed || sources.length <= 1 || singleSource !== undefined) ? null : (
+            <label className="field">
+              <span>Profile for every source</span>
+              <select
+                className="select-control"
+                disabled={submitting}
+                onChange={(event): void => selectProfileForEverySource(event.currentTarget.value)}
+                value={sharedProfileId}
+              >
+                <option className="select-placeholder" disabled value="">— Select one —</option>
+                <option value={defaultProfileSelectionValue}>{defaultProfile['name']}</option>
+                {profiles.map((profile: Web_Api_TorrentProfile): ReactElement => (
+                  <option key={profile['id']} value={profile['id']}>{profile['name']}</option>
+                ))}
+              </select>
+            </label>
+          )}
 
           {(sources.length <= 1 || singleSource !== undefined) ? null : (
             <div className="torrent-file-list">

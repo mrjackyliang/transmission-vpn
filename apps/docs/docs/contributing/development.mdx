@@ -63,12 +63,13 @@ base
     |   `-- control-api (longrun)
     `-- firewall-init (oneshot)
         |-- vpn-controller (longrun)
+        |-- web-proxy (longrun)
         `-- transmission (longrun)
 ```
 
 - **`config-init`** — Validates <Terminology title="Which user owns your downloads on the host" to="/docs/reference/terminology#storage-and-keys">`PUID`</Terminology>, <Terminology title="Which user owns your downloads on the host" to="/docs/reference/terminology#storage-and-keys">`PGID`</Terminology>, `TZ`, and the <Terminology title="The /dev/net/tun device the container needs for tunnels" to="/docs/reference/terminology#container-and-services">TUN device</Terminology>, and prepares persistent folders.
 - **`firewall-init`** — Installs the <Terminology title="Firewall rules that drop anything not going through a VPN" to="/docs/reference/terminology#leak-protection">firewall boundary</Terminology>, and its down script removes the rules after the protected services stop.
-- **Go binaries** — `transmission-vpn-api`, `transmission-vpn-directory-controller`, `transmission-vpn-vpn-controller`, and `transmission-vpn-transmission-runner`, all built from `apps/transmission/control-api`.
+- **Go binaries** — `transmission-vpn-api`, `transmission-vpn-directory-controller`, `transmission-vpn-web-proxy`, `transmission-vpn-vpn-controller`, and `transmission-vpn-transmission-runner`, all built from `apps/transmission/control-api`.
 - **Web interface** — Built with Vite and served by `transmission-vpn-api` from `/usr/local/share/transmission-vpn/web`.
 
 ## Testing

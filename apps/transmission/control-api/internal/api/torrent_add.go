@@ -6,10 +6,39 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/directorybrowser"
 	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/settings"
 	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/storage"
 	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/transmissionrpc"
 )
+
+const (
+	// maximumTorrentAddRequestBytes caps one torrent add request body.
+	//
+	// A 16 MiB file is about 21.3 MiB in base64; the rest leaves room for labels, a
+	// profile, and the JSON around them on the console route and the RPC facade.
+	//
+	// Since: 2.3.0
+	maximumTorrentAddRequestBytes int64 = 23 * 1024 * 1024
+
+	// torrentFileTooLargeMessage answers a .torrent file over the 16 MiB limit.
+	//
+	// The console route and the RPC facade's torrent-add both use it, so a person
+	// sees the file limit whether the request body or the decoded file went over.
+	//
+	// Since: 2.3.0
+	torrentFileTooLargeMessage = "The .torrent file is larger than 16 MiB."
+)
+
+// torrentMetainfoTooLarge reports whether one decoded .torrent file is over 16 MiB.
+//
+// The limit matches what the directory controller reads back, so every added torrent
+// can later be downloaded as a file or included in a backup.
+//
+// Since: 2.3.0
+func torrentMetainfoTooLarge(metainfo []byte) bool {
+	return int64(len(metainfo)) > directorybrowser.MaximumTorrentMetainfoBytes
+}
 
 // prepareTorrentAddDownloadDirectory forces one validated profile destination.
 //

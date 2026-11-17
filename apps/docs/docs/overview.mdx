@@ -54,12 +54,12 @@ It replaces the <Terminology title="The old Synology script this Docker image re
 
 - It doesn't set up <Terminology title="Inbound ports for peers; this image never opens them" to="/docs/reference/terminology#vpn-connections">port forwarding</Terminology> through your VPN service or your router.
 - It doesn't serve HTTPS, because the web interface uses plain HTTP on port 22602.
-- It doesn't import settings, VPN connections, or torrents from the <Terminology title="The old Synology script this Docker image replaces" to="/docs/reference/terminology#container-and-services">legacy project</Terminology>.
+- It doesn't carry over the DSM VPN profile or Task Scheduler jobs of the <Terminology title="The old Synology script this Docker image replaces" to="/docs/reference/terminology#container-and-services">legacy project</Terminology>. The import wizard reads its Transmission 3 or 4 config and brings over supported settings, folders, and torrents.
 
 ## Project Status
 
 :::info
-Transmission VPN is pre-release software at version `0.0.1`. No container release has been tagged yet, so these docs cover building the image from source.
+Transmission VPN is at version `2.3.0`. Release tags publish multi-architecture images to Docker Hub and GHCR, and these docs cover building the image from source.
 :::
 
 ## Next Steps

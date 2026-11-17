@@ -14,9 +14,9 @@ services:
       PUID: "${PUID:-1000}"
       TZ: "${TZ:-UTC}"
     ports:
-      - "${TRANSMISSION_VPN_PORT:-22602}:22602"
-      - "${TRANSMISSION_VPN_PROXY_PORT:-22605}:22605"
-      - "${TRANSMISSION_VPN_RPC_PORT:-9091}:9091"
+      - "22602:22602"
+      - "22605:22605"
+      - "9091:9091"
     restart: unless-stopped
     volumes:
       - config:/config

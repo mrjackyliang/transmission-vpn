@@ -5,6 +5,7 @@ import {
 } from 'vitest';
 
 import {
+  maximumTorrentFileBytes,
   parseAddTorrentInput,
   parseClaimInput,
   parseCreateDirectoryInput,
@@ -102,6 +103,20 @@ describe('form validation', (): void => {
         }],
       });
     }).toThrow();
+  });
+
+  it('accepts .torrent files up to 16 MiB', (): void => {
+    const largestMetainfoLength: number = Math.ceil(maximumTorrentFileBytes / 3) * 4;
+
+    expect(maximumTorrentFileBytes).toBe(16_777_216);
+    expect(parseAddTorrentInput({
+      metainfo: 'A'.repeat(largestMetainfoLength),
+    })['metainfo']?.length).toBe(largestMetainfoLength);
+    expect((): void => {
+      parseAddTorrentInput({
+        metainfo: 'A'.repeat(largestMetainfoLength + 4),
+      });
+    }).toThrow('The .torrent file is larger than 16 MiB.');
   });
 
   it('rejects profile and settings folders inside the effective incomplete folder', (): void => {

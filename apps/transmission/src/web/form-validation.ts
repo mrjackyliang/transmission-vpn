@@ -33,14 +33,24 @@ import type {
 } from '@/types/web/api.d.ts';
 
 /**
+ * Form Validation - Maximum torrent file bytes.
+ *
+ * Matches the control API's 16 MiB limit for one added .torrent file. The add
+ * dialog skips larger files before reading them into base64.
+ *
+ * @since 2.3.0
+ */
+export const maximumTorrentFileBytes: number = 16 * 1024 * 1024;
+
+/**
  * Form Validation - Maximum metainfo length.
  *
- * Stores this module-level value in one named location.
- * Related code reuses it instead of duplicating the definition.
+ * Holds the base64 length of a .torrent file at the byte limit, so validation
+ * accepts exactly what the control API accepts after decoding.
  *
- * @since 2.0.0
+ * @since 2.3.0
  */
-const maximumMetainfoLength: number = 960_000;
+const maximumMetainfoLength: number = Math.ceil(maximumTorrentFileBytes / 3) * 4;
 
 /**
  * Form Validation - Maximum profile length.
@@ -645,7 +655,7 @@ const addTorrentInputSchema: Web_Api_Schema<Web_Api_AddTorrentInput> = z.object(
     .optional(),
   metainfo: z.base64('Choose a valid .torrent file.')
     .min(1, 'Choose a non-empty .torrent file.')
-    .max(maximumMetainfoLength, 'The .torrent file is too large.')
+    .max(maximumMetainfoLength, 'The .torrent file is larger than 16 MiB.')
     .optional(),
   paused: z.boolean().optional(),
   profileId: z.string()

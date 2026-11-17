@@ -69,17 +69,22 @@ Both protocols share port 22605:
 
 Each copy row puts **HTTP** or **SOCKS5** above its address. Long addresses wrap only after `://` or `/`, and copying keeps the address unchanged.
 
-The included Compose file publishes it. Set `TRANSMISSION_VPN_PROXY_PORT` when the host should use another port:
+The included Compose file publishes it as `"22605:22605"`. To use another host port, change the host side of the mapping in `compose.yml`:
 
-```bash
-TRANSMISSION_VPN_PROXY_PORT=8080 docker compose up --build --detach
+```yaml title="compose.yml"
+    ports:
+      - "22602:22602"
+      - "8080:22605"
+      - "9091:9091"
 ```
 
-With `docker run`, publish the container port directly:
+With `docker run`, publish the container port directly, changing the host side the same way when needed:
 
 ```bash
 -p 22605:22605
 ```
+
+With host networking, the proxy always uses port 22605.
 
 :::warning
 On a Docker network without IPv6, Docker can forward an outside IPv6 client from its private gateway address, which makes that client look local to the proxy. It is recommended to use the provided Compose file, whose network has IPv6, or bind `docker run` to the host's LAN address with `-p <LAN address>:22605:22605`.

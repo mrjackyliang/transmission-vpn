@@ -29,9 +29,26 @@ import (
 )
 
 const (
-	maximumRPCRequestBytes       int64 = 4 * 1024 * 1024
-	minimumTableFormatRPCVersion       = 16
-	rpcUnsupportedMethodResult         = "method not supported by transmission-vpn"
+	minimumTableFormatRPCVersion = 16
+	rpcUnsupportedMethodResult   = "method not supported by transmission-vpn"
+)
+
+const (
+	// maximumRPCRequestBytes caps one compatible RPC request body.
+	//
+	// The method is only known after the body is read, so every call shares the cap
+	// that fits a torrent-add carrying a 16 MiB .torrent file.
+	//
+	// Since: 2.3.0
+	maximumRPCRequestBytes = maximumTorrentAddRequestBytes
+
+	// rpcRequestTooLargeResult answers a compatible RPC body over the cap.
+	//
+	// Remote apps show the result string, so it names the .torrent file limit that
+	// a person adding a torrent can act on.
+	//
+	// Since: 2.3.0
+	rpcRequestTooLargeResult = "The request is larger than 23 MiB. A .torrent file can be up to 16 MiB."
 )
 
 // rpcFacadeRequest is the legacy Transmission envelope accepted on port 9091.
@@ -124,7 +141,6 @@ func (server *Server) handleRPCProxy(
 		return
 	}
 
-	request.Body = http.MaxBytesReader(responseWriter, request.Body, maximumRPCRequestBytes)
 	server.serveRPCFacade(responseWriter, request)
 }
 
@@ -135,18 +151,25 @@ func (server *Server) rpcSessionID(loginID string) string {
 	return hex.EncodeToString(digest.Sum(nil))
 }
 
+// serveRPCFacade reads one bounded compatible RPC call and answers it.
+//
+// A body over the cap gets a result string naming the limit instead of the generic
+// invalid-request answer, because remote apps show that string to the person.
+//
+// Since: 2.3.0
 func (server *Server) serveRPCFacade(responseWriter http.ResponseWriter, request *http.Request) {
+	request.Body = http.MaxBytesReader(responseWriter, request.Body, maximumRPCRequestBytes)
 	decoder := json.NewDecoder(request.Body)
 	decoder.UseNumber()
 	var envelope rpcFacadeRequest
 	if err := decoder.Decode(&envelope); err != nil {
-		server.writeRPCFacadeResponse(responseWriter, map[string]any{}, "invalid Transmission RPC request", nil)
+		server.writeRPCFacadeResponse(responseWriter, map[string]any{}, rpcDecodeResult(err), nil)
 
 		return
 	}
 	var trailing any
 	if err := decoder.Decode(&trailing); !errors.Is(err, io.EOF) {
-		server.writeRPCFacadeResponse(responseWriter, map[string]any{}, "invalid Transmission RPC request", envelope.Tag)
+		server.writeRPCFacadeResponse(responseWriter, map[string]any{}, rpcDecodeResult(err), envelope.Tag)
 
 		return
 	}
@@ -173,6 +196,21 @@ func (server *Server) serveRPCFacade(responseWriter http.ResponseWriter, request
 
 	responseArguments, result := server.callRPCFacade(request.Context(), envelope.Method, arguments)
 	server.writeRPCFacadeResponse(responseWriter, responseArguments, result, envelope.Tag)
+}
+
+// rpcDecodeResult names why a compatible RPC body couldn't be read.
+//
+// An oversized body names the size limit; anything else, including a nil error for
+// a second JSON value, keeps the generic invalid-request result.
+//
+// Since: 2.3.0
+func rpcDecodeResult(err error) string {
+	var maximumBytesError *http.MaxBytesError
+	if errors.As(err, &maximumBytesError) {
+		return rpcRequestTooLargeResult
+	}
+
+	return "invalid Transmission RPC request"
 }
 
 func (server *Server) writeRPCFacadeResponse(
@@ -850,6 +888,9 @@ func (server *Server) rpcFacadeTorrentAdd(
 		decodedMetainfo, err = base64.StdEncoding.DecodeString(metainfo)
 		if err != nil || len(decodedMetainfo) == 0 {
 			return map[string]any{}, "metainfo must be non-empty standard base64"
+		}
+		if torrentMetainfoTooLarge(decodedMetainfo) {
+			return map[string]any{}, torrentFileTooLargeMessage
 		}
 	}
 	if labelsValue, found := addArguments["labels"]; found {

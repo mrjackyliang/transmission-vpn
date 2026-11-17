@@ -58,13 +58,13 @@ const (
 	// Since: 2.0.0
 	directoryEntryScanBatchSize = 128
 
-	// maximumTorrentMetainfoBytes caps one torrent metainfo read.
+	// MaximumTorrentMetainfoBytes caps one torrent metainfo read and one added file.
 	//
-	// The fixed budget lets the controller serve daemon state without exposing an
-	// unbounded local-protocol response to the control API process.
+	// The control API refuses larger console and remote-app adds, so every torrent it
+	// adds can still be read back here for downloads and backups.
 	//
-	// Since: 2.0.0
-	maximumTorrentMetainfoBytes int64 = 16 * 1024 * 1024
+	// Since: 2.3.0
+	MaximumTorrentMetainfoBytes int64 = 16 * 1024 * 1024
 )
 
 // ServerConfig defines the immutable filesystem and local-socket boundaries.
@@ -322,7 +322,7 @@ func (server *Server) readTorrent(path string) ([]byte, error) {
 	if !information.Mode().IsRegular() {
 		return nil, newOperationError(ErrorCodeInvalidPath, "The torrent metainfo path is not a regular file.")
 	}
-	if information.Size() > maximumTorrentMetainfoBytes {
+	if information.Size() > MaximumTorrentMetainfoBytes {
 		return nil, newOperationError(ErrorCodeFileTooLarge, "The torrent metainfo exceeds 16 MiB.")
 	}
 
@@ -332,11 +332,11 @@ func (server *Server) readTorrent(path string) ([]byte, error) {
 	}
 	defer file.Close()
 
-	content, err := io.ReadAll(io.LimitReader(file, maximumTorrentMetainfoBytes+1))
+	content, err := io.ReadAll(io.LimitReader(file, MaximumTorrentMetainfoBytes+1))
 	if err != nil {
 		return nil, filesystemOperationError(err, "The torrent metainfo could not be read.")
 	}
-	if int64(len(content)) > maximumTorrentMetainfoBytes {
+	if int64(len(content)) > MaximumTorrentMetainfoBytes {
 		return nil, newOperationError(ErrorCodeFileTooLarge, "The torrent metainfo exceeds 16 MiB.")
 	}
 

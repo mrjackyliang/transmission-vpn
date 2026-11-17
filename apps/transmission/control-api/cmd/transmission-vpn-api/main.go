@@ -199,10 +199,12 @@ func run(logger *slog.Logger, logLevel *slog.LevelVar) error {
 	}
 	defer os.Remove(markerPath)
 
+	// ReadTimeout covers the whole request body, so it allows a 23 MiB torrent add on
+	// a slow link; the header timeout still drops stalled connections in 5 seconds.
 	httpServer := &http.Server{
 		Handler:           controlServer,
 		ReadHeaderTimeout: 5 * time.Second,
-		ReadTimeout:       15 * time.Second,
+		ReadTimeout:       2 * time.Minute,
 		WriteTimeout:      0,
 		IdleTimeout:       60 * time.Second,
 		MaxHeaderBytes:    32 * 1024,
@@ -210,7 +212,7 @@ func run(logger *slog.Logger, logLevel *slog.LevelVar) error {
 	rpcServer := &http.Server{
 		Handler:           controlServer.RPCHandler(),
 		ReadHeaderTimeout: 5 * time.Second,
-		ReadTimeout:       15 * time.Second,
+		ReadTimeout:       2 * time.Minute,
 		WriteTimeout:      0,
 		IdleTimeout:       60 * time.Second,
 		MaxHeaderBytes:    32 * 1024,

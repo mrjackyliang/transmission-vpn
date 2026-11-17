@@ -462,7 +462,18 @@ func (server *Server) handleAddTorrent(
 		Paused            *bool           `json:"paused"`
 		ProfileID         *string         `json:"profileId"`
 	}
-	if err := decodeJSONBody(responseWriter, request, &input); err != nil {
+	if err := decodeLimitedJSONBody(
+		responseWriter,
+		request,
+		&input,
+		maximumTorrentAddRequestBytes,
+	); err != nil {
+		var maximumBytesError *http.MaxBytesError
+		if errors.As(err, &maximumBytesError) {
+			writeError(responseWriter, http.StatusRequestEntityTooLarge, "payload_too_large", torrentFileTooLargeMessage)
+
+			return
+		}
 		writeDecodeError(responseWriter, err)
 
 		return
@@ -499,6 +510,16 @@ func (server *Server) handleAddTorrent(
 				http.StatusUnprocessableEntity,
 				"torrent_metainfo_invalid",
 				"metainfo must be non-empty standard base64.",
+			)
+
+			return
+		}
+		if torrentMetainfoTooLarge(decodedMetainfo) {
+			writeError(
+				responseWriter,
+				http.StatusRequestEntityTooLarge,
+				"torrent_metainfo_too_large",
+				torrentFileTooLargeMessage,
 			)
 
 			return

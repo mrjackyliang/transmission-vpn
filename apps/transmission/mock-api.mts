@@ -10245,7 +10245,7 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
       return true;
     }
     if (torrentAddOutcome === 'failed' || (torrentAddOutcome === 'mixed' && torrentAddAttempt % 2 === 0)) {
-      sendError(response, 422, 'torrent_add_failed', 'The mock rejected this torrent source.');
+      sendError(response, 422, 'transmission_rejected', 'Transmission rejected the requested operation.');
 
       return true;
     }

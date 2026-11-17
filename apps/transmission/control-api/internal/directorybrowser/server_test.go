@@ -74,7 +74,7 @@ func TestServerBrowsesAndCreatesDirectories(testingObject *testing.T) {
 	if err != nil {
 		testingObject.Fatalf("create oversized torrent metainfo: %v", err)
 	}
-	if err := oversizedFile.Truncate(maximumTorrentMetainfoBytes + 1); err != nil {
+	if err := oversizedFile.Truncate(MaximumTorrentMetainfoBytes + 1); err != nil {
 		_ = oversizedFile.Close()
 		testingObject.Fatalf("size oversized torrent metainfo: %v", err)
 	}

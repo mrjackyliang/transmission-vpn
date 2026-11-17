@@ -84,7 +84,7 @@ The list shows when each login was last used, or **Never used**. **Edit** change
 | Username       | The username from that app's <Terminology title="One app's own username and password for RPC" to="/docs/reference/terminology#remote-access">RPC login</Terminology>. |
 | Password       | The generated password for that login.                                                                                                                                |
 
-If an app asks for the host, port, and path separately, use the Docker host, port 9091 or your `TRANSMISSION_VPN_RPC_PORT`, and `/transmission/rpc`.
+If an app asks for the host, port, and path separately, use the Docker host, port 9091 or the host port you mapped to it, and `/transmission/rpc`.
 
 Each copy row puts its label above the address. Long addresses wrap only after `://` or `/`, and the copied address has no added spaces or line breaks.
 
@@ -159,5 +159,5 @@ The **Web proxy** card lets devices and containers use the VPN for HTTP and SOCK
 - **Refused methods** — `session-close` and methods outside the supported RPC view are refused.
 - **Blocklist updates** — `blocklist-update` requests the runner-owned multi-source merger, waits for up to 60 seconds, and returns the combined `blocklist-size`. It is never forwarded to a native daemon.
 - **Settings that don't last** — At every container start, Transmission's settings file is rebuilt from the [Settings](/docs/configuration/settings/#fixed-transmission-behavior) page, so session settings an app changes through RPC don't carry over a container restart.
-- **Request size** — Each request body can be up to 4 MiB.
+- **Request size** — Each request body can be up to 23 MiB, and a `.torrent` file sent with `torrent-add` can be up to 16 MiB.
 - **No direct access** — Native RPC listeners are never reachable from outside the container.

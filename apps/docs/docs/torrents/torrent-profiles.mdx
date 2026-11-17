@@ -140,7 +140,7 @@ A pattern must match the whole torrent name, and matching ignores letter case.
 - Everything else, dots and dashes included, must appear as typed. Put `*` on both sides to match a word anywhere in the name, such as `*2160p*`.
 - A `.torrent` file uses its file name without the `.torrent` ending.
 - A magnet link uses its `dn=` display name.
-- A web address uses the last part of its path.
+- A web address uses the torrent name inside the `.torrent` file it downloads. When that preview can't be read or is larger than 10 MiB, it uses the last part of the address's path.
 
 Select **How to write a pattern** under the patterns for the same rules with examples. Its **Try a name** box lists which of the profile's patterns match a name you paste, before you save.
 

@@ -91,20 +91,16 @@ On a Docker network without IPv6, wildcard publishing can forward outside IPv6 c
 
 ## Environment Variables
 
-| Variable                                                                                                                               | Default | Description                                                                                                 |
-|----------------------------------------------------------------------------------------------------------------------------------------|---------|-------------------------------------------------------------------------------------------------------------|
-| <Terminology title="Which user owns your downloads on the host" to="/docs/reference/terminology#storage-and-keys">`PUID`</Terminology> | `1000`  | User ID that runs Transmission and owns its files, from 1000 to 60000.                                      |
-| <Terminology title="Which user owns your downloads on the host" to="/docs/reference/terminology#storage-and-keys">`PGID`</Terminology> | `1000`  | Group ID for the same account, from 1000 to 60000.                                                          |
-| `TZ`                                                                                                                                   | `UTC`   | Time zone name, such as `Europe/London`, that matches a zone installed in the image.                        |
-| `TRANSMISSION_VPN_PORT`                                                                                                                | `22602` | Host port that Compose publishes for the web interface. The container itself always listens on 22602.       |
-| `TRANSMISSION_VPN_PROXY_PORT`                                                                                                          | `22605` | Host port that Compose publishes for the web proxy. The container itself always listens on 22605.           |
-| `TRANSMISSION_VPN_RPC_PORT`                                                                                                            | `9091`  | Host port that Compose publishes for the compatible RPC route. The container itself always listens on 9091. |
+| Variable                                                                                                                               | Default | Description                                                                          |
+|----------------------------------------------------------------------------------------------------------------------------------------|---------|--------------------------------------------------------------------------------------|
+| <Terminology title="Which user owns your downloads on the host" to="/docs/reference/terminology#storage-and-keys">`PUID`</Terminology> | `1000`  | User ID that runs Transmission and owns its files, from 1000 to 60000.               |
+| <Terminology title="Which user owns your downloads on the host" to="/docs/reference/terminology#storage-and-keys">`PGID`</Terminology> | `1000`  | Group ID for the same account, from 1000 to 60000.                                   |
+| `TZ`                                                                                                                                   | `UTC`   | Time zone name, such as `Europe/London`, that matches a zone installed in the image. |
 
 Compose reads these variables from your shell when it starts the container:
 
 ```bash
-TRANSMISSION_VPN_PORT=8091 TRANSMISSION_VPN_PROXY_PORT=8080 PUID=1001 PGID=1001 TZ=Europe/London \
-  docker compose up --build --detach
+PUID=1001 PGID=1001 TZ=Europe/London docker compose up --build --detach
 ```
 
 No environment variable selects the VPN provider or tunnel, holds VPN credentials or keys, or changes Transmission's settings. Those live in the web interface, and settings can also come from a <Terminology title="A JSON file that presets or locks settings at deploy" to="/docs/reference/terminology#settings-and-managed-configuration">managed configuration</Terminology> file.
@@ -119,6 +115,7 @@ No environment variable selects the VPN provider or tunnel, holds VPN credential
 | `22605/tcp`  | The optional <Terminology title="Lets other devices browse through your VPN on port 22605" to="/docs/reference/terminology#remote-access">web proxy</Terminology>, which carries authenticated HTTP and SOCKS5 traffic from private networks.                                                                                                                                                                                                                                                                                                                                                                  |
 | `9091/tcp`   | The <Terminology title="Port 9091, where remote apps connect" to="/docs/reference/terminology#container-and-services">RPC port</Terminology>, which carries only the optional <Terminology title="Makes all connections look like one Transmission to apps" to="/docs/reference/terminology#remote-access">compatible RPC</Terminology> route over plain HTTP.                                                                                                                                                                                                                                                 |
 
+- The container always listens on ports 22602, 22605, and 9091. To reach one on a different host port, change the host side of its mapping, such as `"8080:22602"` in `compose.yml` or `--publish 8080:22602` with `docker run`. With host networking, the ports are always 22602, 22605, and 9091.
 - The Compose file keeps `/config` and `/data` in named volumes called `config` and `data`.
 - The Compose file turns on IPv6 for the container's network, so the web interface sees each IPv6 visitor's own address. Docker Engine 27 or later picks the IPv6 subnet on its own, and on a host without IPv6, you can delete the `networks` block. IPv6 addresses are often reachable from the internet, so it is recommended to check that your router or host firewall blocks inbound connections to ports 22602, 22605, and 9091.
 - The <Terminology title="Unlocks your saved secrets; lose it and they're removed" to="/docs/reference/terminology#storage-and-keys">installation key</Terminology> in `/config` encrypts the authenticator app's secret, VPN profile contents and connection credentials, and notification secrets, so it is recommended to keep it with the database whenever you copy or move `/config`, as covered in [Updates and Backups](/docs/operations/updates-and-backups/#missing-installation-key).

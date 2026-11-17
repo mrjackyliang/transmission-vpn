@@ -1,5 +1,16 @@
 # transmission-vpn-app-transmission
 
+## 2.3.0 - 2026-11-17
+
+### FIXED
+- Torrent files up to 16 MiB can be added from the console and remote apps; the console used to skip anything over 700 KiB.
+
+### ADDED
+- A Profile for every source select when adding several torrents sets one profile for all of them at once, and each source can still be changed after.
+
+### REMOVED
+- The TRANSMISSION_VPN_PORT, TRANSMISSION_VPN_PROXY_PORT and TRANSMISSION_VPN_RPC_PORT variables in compose.yml; the ports are fixed at 22602, 22605 and 9091, and different host ports are set by editing the port mapping.
+
 ## 2.2.1 - 2026-11-16
 
 ### FIXED

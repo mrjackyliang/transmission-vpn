@@ -208,7 +208,7 @@ verify_compose_contract() {
   assert_file_contains "${compose_path}" "/dev/net/tun:/dev/net/tun"
   assert_file_contains "${compose_path}" "config:/config"
   assert_file_contains "${compose_path}" "data:/data"
-  assert_file_contains "${compose_path}" '${TRANSMISSION_VPN_PROXY_PORT:-22605}:22605'
+  assert_file_contains "${compose_path}" '"22605:22605"'
 
   if grep -Fq -- "init: true" "${compose_path}"; then
     fail 'Compose must allow s6-overlay to remain PID 1.'

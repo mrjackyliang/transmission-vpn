@@ -213,7 +213,7 @@ The <Terminology title="Where an alert goes, such as ntfy, Telegram, or email" t
 - **10-second limit** — Each send gets 10 seconds, and a slow service doesn't hold up the others.
 - **No retries** — A failed alert isn't sent again, and the row shows `Last attempt failed` in red with the reason.
 - **Plain-language transport errors** — Refused connections, failed name lookups, timeouts, certificate problems, and unreachable destinations name the host when the diagnostic contains one. Select **Details** under the failed row to read the original transport diagnostic.
-- **Outside the tunnels** — Alerts come from the <Terminology title="The web interface and API; it stays up when the VPN is down" to="/docs/reference/terminology#container-and-services">control plane</Terminology>, which the firewall doesn't restrict, so **VPN dropped** still goes out while that connection's Transmission is blocked.
+- **Outside the tunnels** — The <Terminology title="The web interface and API; it stays up when the VPN is down" to="/docs/reference/terminology#container-and-services">control plane</Terminology> asks the <Terminology title="The only part allowed to bring tunnels up or down" to="/docs/reference/terminology#container-and-services">VPN controller</Terminology> to open each alert's connection outside the VPN. The controller marks those connections so the firewall lets them out, so **VPN dropped** still goes out while that connection's Transmission is blocked.
 
 ## Webhook Payload
 

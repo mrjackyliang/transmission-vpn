@@ -65,7 +65,7 @@ At every start, the container prepares its folders before any service runs:
 4. It checks that `control` can write to `/config/app` and `/config/app/keys`, and that the Transmission account can write to `/config/transmission` and `/data`.
 5. It installs Transmission's settings file with mode `0600`, owned by the Transmission account.
 
-Every file in `/config` belongs to `PUID:PGID`, so a host tool that gives a whole folder tree to one account, such as a scheduled `chown -R`, keeps working as long as it uses the same IDs. New files that the control plane writes stay group-writable until that tool runs again.
+Every file the container keeps in `/config` belongs to `PUID:PGID`, while files you add outside its folders keep their owner, so a host tool that gives a whole folder tree to one account, such as a scheduled `chown -R`, keeps working as long as it uses the same IDs. New files that the control plane writes stay group-writable until that tool runs again.
 
 When a check fails, the container stops with a message such as `config-init: /data is not writable by transmission.` It is recommended to give the host folder to the <Terminology title="Which user owns your downloads on the host" to="/docs/reference/terminology#storage-and-keys">`PUID`</Terminology> and <Terminology title="Which user owns your downloads on the host" to="/docs/reference/terminology#storage-and-keys">`PGID`</Terminology> account, or to set those IDs to the folder's current owner.
 
