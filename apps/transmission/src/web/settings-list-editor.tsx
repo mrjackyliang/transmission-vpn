@@ -14,73 +14,121 @@ import {
   normalizeSettingListValues,
 } from '@/web/settings-list-editor.ts';
 
-import type { ReactElement } from 'react';
-
-import type { Web_BlocklistStatus_SourceLine } from '@/types/web/blocklist-status.d.ts';
-import type { Web_Components_SettingsListEditor_Props } from '@/types/web/components.d.ts';
-import type { Web_SettingsListEditor_GetSettingListEmptyState_Returns } from '@/types/web/settings-list-editor.d.ts';
+import type {
+  Web_SettingsListEditor_SettingsListEditor_AtLimit,
+  Web_SettingsListEditor_SettingsListEditor_Blocklist,
+  Web_SettingsListEditor_SettingsListEditor_BlocklistsEnabled,
+  Web_SettingsListEditor_SettingsListEditor_BlocklistStatus,
+  Web_SettingsListEditor_SettingsListEditor_Disabled,
+  Web_SettingsListEditor_SettingsListEditor_EditorVersion,
+  Web_SettingsListEditor_SettingsListEditor_EmptyState,
+  Web_SettingsListEditor_SettingsListEditor_FocusIndex,
+  Web_SettingsListEditor_SettingsListEditor_InputElements,
+  Web_SettingsListEditor_SettingsListEditor_InputRefs,
+  Web_SettingsListEditor_SettingsListEditor_Invalid,
+  Web_SettingsListEditor_SettingsListEditor_NextRows,
+  Web_SettingsListEditor_SettingsListEditor_OnChange,
+  Web_SettingsListEditor_SettingsListEditor_PendingFocusIndex,
+  Web_SettingsListEditor_SettingsListEditor_PendingFocusIndexRef,
+  Web_SettingsListEditor_SettingsListEditor_PendingInput,
+  Web_SettingsListEditor_SettingsListEditor_Props,
+  Web_SettingsListEditor_SettingsListEditor_Returns,
+  Web_SettingsListEditor_SettingsListEditor_Rows,
+  Web_SettingsListEditor_SettingsListEditor_RowsState,
+  Web_SettingsListEditor_SettingsListEditor_SavedRows,
+  Web_SettingsListEditor_SettingsListEditor_SavedRowsState,
+  Web_SettingsListEditor_SettingsListEditor_SetRows,
+  Web_SettingsListEditor_SettingsListEditor_SetSavedRows,
+  Web_SettingsListEditor_SettingsListEditor_SettingKey,
+  Web_SettingsListEditor_SettingsListEditor_SourceStatus,
+  Web_SettingsListEditor_SettingsListEditor_SourceStatusID,
+  Web_SettingsListEditor_SettingsListEditor_Title,
+  Web_SettingsListEditor_SettingsListEditor_UpdateRows,
+  Web_SettingsListEditor_SettingsListEditor_UpdateRows_NextRows,
+  Web_SettingsListEditor_SettingsListEditor_UpdateRows_NextSavedRows,
+  Web_SettingsListEditor_SettingsListEditor_UpdateRows_Returns,
+  Web_SettingsListEditor_SettingsListEditor_Values,
+  Web_SettingsListEditor_SettingsListEditor_ValuesRef,
+} from '@/types/web/settings-list-editor.d.ts';
 
 /**
- * Settings List Editor.
+ * Settings List Editor - Settings List Editor.
  *
  * Keeps blank editing rows local while publishing only normalized values.
  * This lets Discard and accepted snapshots reset the editor without losing drafts.
  *
+ * @param {Web_SettingsListEditor_SettingsListEditor_Props} props - Props.
+ *
+ * @returns {Web_SettingsListEditor_SettingsListEditor_Returns}
+ *
  * @since 2.0.0
  */
-export const SettingsListEditor = ({
-  blocklistStatus,
-  blocklistsEnabled,
-  disabled,
-  editorVersion,
-  onChange,
-  settingKey,
-  title,
-  values,
-}: Web_Components_SettingsListEditor_Props): ReactElement => {
-  const [
-    rows,
-    setRows,
-  ] = useState<string[]>(values);
-  const [
-    savedRows,
-    setSavedRows,
-  ] = useState<Array<string | null>>(values);
-  const valuesRef = useRef<string[]>(values);
-  const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
-  const pendingFocusIndexRef = useRef<number | null>(null);
-  const blocklist: boolean = settingKey === 'transmission.blocklistSources';
-  const atLimit: boolean = blocklist && rows.length >= 20;
-  const emptyState: Web_SettingsListEditor_GetSettingListEmptyState_Returns = getSettingListEmptyState(settingKey);
+export const SettingsListEditor = (props: Web_SettingsListEditor_SettingsListEditor_Props): Web_SettingsListEditor_SettingsListEditor_Returns => {
+  const blocklistStatus: Web_SettingsListEditor_SettingsListEditor_BlocklistStatus = props['blocklistStatus'];
+  const blocklistsEnabled: Web_SettingsListEditor_SettingsListEditor_BlocklistsEnabled = props['blocklistsEnabled'];
+  const disabled: Web_SettingsListEditor_SettingsListEditor_Disabled = props['disabled'];
+  const editorVersion: Web_SettingsListEditor_SettingsListEditor_EditorVersion = props['editorVersion'];
+  const onChange: Web_SettingsListEditor_SettingsListEditor_OnChange = props['onChange'];
+  const settingKey: Web_SettingsListEditor_SettingsListEditor_SettingKey = props['settingKey'];
+  const title: Web_SettingsListEditor_SettingsListEditor_Title = props['title'];
+  const values: Web_SettingsListEditor_SettingsListEditor_Values = props['values'];
+  const rowsState: Web_SettingsListEditor_SettingsListEditor_RowsState = useState<Web_SettingsListEditor_SettingsListEditor_Rows>(values);
+  const rows: Web_SettingsListEditor_SettingsListEditor_Rows = rowsState[0];
+  const setRows: Web_SettingsListEditor_SettingsListEditor_SetRows = rowsState[1];
+  const savedRowsState: Web_SettingsListEditor_SettingsListEditor_SavedRowsState = useState<Web_SettingsListEditor_SettingsListEditor_SavedRows>(values);
+  const savedRows: Web_SettingsListEditor_SettingsListEditor_SavedRows = savedRowsState[0];
+  const setSavedRows: Web_SettingsListEditor_SettingsListEditor_SetSavedRows = savedRowsState[1];
+  const valuesRef: Web_SettingsListEditor_SettingsListEditor_ValuesRef = useRef<Web_SettingsListEditor_SettingsListEditor_Values>(values);
+  const inputRefs: Web_SettingsListEditor_SettingsListEditor_InputRefs = useRef<Web_SettingsListEditor_SettingsListEditor_InputElements>([]);
+  const pendingFocusIndexRef: Web_SettingsListEditor_SettingsListEditor_PendingFocusIndexRef = useRef<Web_SettingsListEditor_SettingsListEditor_FocusIndex>(null);
+  const blocklist: Web_SettingsListEditor_SettingsListEditor_Blocklist = settingKey === 'transmission.blocklistSources';
+  const atLimit: Web_SettingsListEditor_SettingsListEditor_AtLimit = blocklist && rows.length >= 20;
+  const emptyState: Web_SettingsListEditor_SettingsListEditor_EmptyState = getSettingListEmptyState(settingKey);
 
   valuesRef.current = values;
 
-  useEffect((): void => {
+  useEffect(() => {
     setRows(valuesRef.current);
     setSavedRows(valuesRef.current);
     pendingFocusIndexRef.current = null;
+
+    return;
   }, [editorVersion]);
 
-  useEffect((): void => {
-    const pendingFocusIndex: number | null = pendingFocusIndexRef.current;
+  useEffect(() => {
+    const pendingFocusIndex: Web_SettingsListEditor_SettingsListEditor_PendingFocusIndex = pendingFocusIndexRef.current;
     if (pendingFocusIndex !== null) {
-      inputRefs.current[pendingFocusIndex]?.focus();
+      const pendingInput: Web_SettingsListEditor_SettingsListEditor_PendingInput = inputRefs.current[pendingFocusIndex];
+
+      if (pendingInput !== undefined && pendingInput !== null) {
+        pendingInput.focus();
+      }
+
       pendingFocusIndexRef.current = null;
     }
+
+    return;
   }, [rows]);
 
   /**
-   * Settings List Editor - Update rows.
+   * Settings List Editor - Update Rows.
    *
    * Stores exact editor text locally before normalizing the Settings draft.
    * Empty and whitespace-only rows therefore remain visible without being saved.
    *
+   * @param {Web_SettingsListEditor_SettingsListEditor_UpdateRows_NextRows}      nextRows        - Next rows.
+   * @param {Web_SettingsListEditor_SettingsListEditor_UpdateRows_NextSavedRows} [nextSavedRows] - Next saved rows.
+   *
+   * @returns {Web_SettingsListEditor_SettingsListEditor_UpdateRows_Returns}
+   *
    * @since 2.0.0
    */
-  const updateRows = (nextRows: string[], nextSavedRows: Array<string | null> = savedRows): void => {
+  const updateRows: Web_SettingsListEditor_SettingsListEditor_UpdateRows = (nextRows: Web_SettingsListEditor_SettingsListEditor_UpdateRows_NextRows, nextSavedRows: Web_SettingsListEditor_SettingsListEditor_UpdateRows_NextSavedRows = savedRows): Web_SettingsListEditor_SettingsListEditor_UpdateRows_Returns => {
     setRows(nextRows);
     setSavedRows(nextSavedRows);
     onChange(normalizeSettingListValues(nextRows));
+
+    return;
   };
 
   return (
@@ -92,17 +140,21 @@ export const SettingsListEditor = ({
               <strong>{emptyState['title']}</strong>
               {(emptyState['hint'] === null) ? null : <span>{emptyState['hint']}</span>}
             </div>
-          ) : rows.map((value: string, index: number): ReactElement => {
-            const invalid: boolean = blocklist && value.trim() !== '' && (
-              !value.startsWith('https://')
-              || value.includes('@')
+          ) : rows.map((value, index) => {
+            const invalid: Web_SettingsListEditor_SettingsListEditor_Invalid = (
+              blocklist === true
+              && value.trim() !== ''
+              && (
+                value.startsWith('https://') === false
+                || value.includes('@') === true
+              )
             );
-            const sourceStatus: Web_BlocklistStatus_SourceLine | null = (
-              blocklist
+            const sourceStatus: Web_SettingsListEditor_SettingsListEditor_SourceStatus = (
+              blocklist === true
               && blocklistStatus !== null
               && savedRows[index] === value
             ) ? formatBlocklistSourceLine(blocklistStatus, value, blocklistsEnabled) : null;
-            const sourceStatusID: string = `blocklist-source-${index + 1}-status`;
+            const sourceStatusID: Web_SettingsListEditor_SettingsListEditor_SourceStatusID = `blocklist-source-${index + 1}-status`;
 
             return (
               <div className="settings-list-item" key={index}>
@@ -111,37 +163,47 @@ export const SettingsListEditor = ({
                     aria-describedby={(sourceStatus === null) ? undefined : sourceStatusID}
                     aria-invalid={invalid}
                     aria-label={`${title} ${index + 1}`}
-                    autoComplete={(blocklist) ? 'off' : undefined}
+                    autoComplete={(blocklist === true) ? 'off' : undefined}
                     className="setting-input"
                     disabled={disabled}
-                    inputMode={(blocklist) ? 'url' : undefined}
-                    onChange={(event): void => {
-                      const nextRows: string[] = [...rows];
-                      nextRows[index] = event.currentTarget.value;
+                    inputMode={(blocklist === true) ? 'url' : undefined}
+                    onChange={(event) => {
+                      const nextRows: Web_SettingsListEditor_SettingsListEditor_NextRows = [...rows];
+
+                      Reflect.set(nextRows, index, event.currentTarget.value);
+
                       updateRows(nextRows);
+
+                      return;
                     }}
-                    placeholder={(blocklist) ? 'e.g. https://example.com/blocklist.gz' : undefined}
-                    ref={(input: HTMLInputElement | null): void => {
-                      inputRefs.current[index] = input;
+                    placeholder={(blocklist === true) ? 'e.g. https://example.com/blocklist.gz' : undefined}
+                    ref={(input) => {
+                      Reflect.set(inputRefs.current, index, input);
+
+                      return;
                     }}
-                    spellCheck={(blocklist) ? false : undefined}
-                    type={(blocklist) ? 'url' : 'text'}
+                    spellCheck={(blocklist === true) ? false : undefined}
+                    type={(blocklist === true) ? 'url' : 'text'}
                     value={value}
                   />
                   <button
                     aria-label={`Remove source ${index + 1}`}
                     className="icon-button settings-list-remove"
                     disabled={disabled}
-                    onClick={(): void => updateRows(
-                      rows.filter((_row: string, rowIndex: number): boolean => rowIndex !== index),
-                      savedRows.filter((_saved: string | null, rowIndex: number): boolean => rowIndex !== index),
-                    )}
+                    onClick={() => {
+                      updateRows(
+                        rows.filter((_row, rowIndex) => rowIndex !== index),
+                        savedRows.filter((_saved, rowIndex) => rowIndex !== index),
+                      );
+
+                      return;
+                    }}
                     type="button"
                   >
                     <Icon name="remove" size={16} />
                   </button>
                 </div>
-                {(invalid) ? <small className="field-error">Use an https:// address without a username or password.</small> : null}
+                {(invalid === true) ? <small className="field-error">Use an https:// address without a username or password.</small> : null}
                 {(sourceStatus === null) ? null : (
                   <small className={`source-status source-status-${sourceStatus['tone']}`} id={sourceStatusID}>
                     {sourceStatus['text']}
@@ -155,7 +217,7 @@ export const SettingsListEditor = ({
           <Button
             disabled={disabled || atLimit}
             icon="add"
-            onClick={(): void => {
+            onClick={() => {
               pendingFocusIndexRef.current = rows.length;
               updateRows([
                 ...rows,
@@ -164,11 +226,13 @@ export const SettingsListEditor = ({
                 ...savedRows,
                 null,
               ]);
+
+              return;
             }}
           >
             Add source
           </Button>
-          {(blocklist) ? <small className="settings-list-hint">Up to 20 sources.</small> : null}
+          {(blocklist === true) ? <small className="settings-list-hint">Up to 20 sources.</small> : null}
         </div>
       </div>
     </div>

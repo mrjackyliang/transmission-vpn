@@ -123,6 +123,33 @@ fail() {
   return 1
 }
 
+# The runner removes transmission.ready or holds the no-connections phase until
+# the default daemon is ready, so the connection identifier is polled. The
+# result goes into the caller's variable so fail runs outside a subshell.
+read_default_connection_id() {
+  local result_variable="${1}"
+  local timeout_seconds="${2:-30}"
+
+  local attempt
+  local connection_id=""
+  local marker=""
+  for attempt in $(seq 1 "${timeout_seconds}"); do
+    marker="$(docker exec "${protected_container_name}" \
+      cat /run/transmission-vpn/services/transmission.ready 2> /dev/null || true)"
+    connection_id="$(printf '%s\n' "${marker}" | sed -n \
+      's/.*"connectionId"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')"
+    if [[ "${connection_id}" =~ ^vpc-[0-9a-f]{16}$ ]]; then
+      printf -v "${result_variable}" '%s' "${connection_id}"
+
+      return 0
+    fi
+
+    sleep 1
+  done
+
+  fail "transmission.ready did not hold a default connection identifier within ${timeout_seconds} seconds: ${marker:-missing}"
+}
+
 wait_for_services() {
   local attempt
   local health_output=""
@@ -406,13 +433,8 @@ verify_transmission_runtime() {
     fail "Transmission is running as UID ${process_user_id}, expected 12345."
   fi
 
-  local default_connection_id
-  default_connection_id="$(docker exec "${protected_container_name}" sed -n \
-    's/.*"connectionId"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' \
-    /run/transmission-vpn/services/transmission.ready)"
-  if [[ ! "${default_connection_id}" =~ ^vpc-[0-9a-f]{16}$ ]]; then
-    fail "Invalid default Transmission connection identifier: ${default_connection_id}"
-  fi
+  local default_connection_id=""
+  read_default_connection_id default_connection_id
 
   local transmission_settings_path="/config/transmission/${default_connection_id}/settings.json"
 

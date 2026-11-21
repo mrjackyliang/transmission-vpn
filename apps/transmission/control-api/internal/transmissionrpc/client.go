@@ -136,7 +136,7 @@ func (client *Client) Call(
 
 	for attempt := 0; attempt < 2; attempt++ {
 		httpClient := client.httpClient
-		if method == "torrent-add" {
+		if method == MethodTorrentAdd.String() {
 			httpClient = client.torrentAddHTTPClient
 		}
 		response, requestError := client.send(ctx, httpClient, payload)

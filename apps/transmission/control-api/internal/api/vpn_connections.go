@@ -15,6 +15,7 @@ import (
 	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/runtimeinfo"
 	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/security"
 	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/storage"
+	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/transmissionrpc"
 )
 
 // fixedCapacityReader keeps non-Linux unit tests independent of Linux virtual files.
@@ -1081,7 +1082,11 @@ func (server *Server) readVPNConnectionViews(
 	}
 	counts := make(map[string]int, len(connections))
 	if len(connections) > 0 {
-		result := server.mergedTorrents(ctx, []string{"id", "hashString", "name"}, nil)
+		result := server.mergedTorrents(ctx, []transmissionrpc.TorrentField{
+			transmissionrpc.TorrentFieldID,
+			transmissionrpc.TorrentFieldHashString,
+			transmissionrpc.TorrentFieldName,
+		}, nil)
 		if strictTorrents && !result.Complete {
 			return nil, errors.New("one or more Transmission daemons did not answer")
 		}
@@ -1196,7 +1201,11 @@ func (server *Server) vpnConnectionView(
 }
 
 func (server *Server) torrentCountForConnection(ctx context.Context, connectionID string) int {
-	result := server.mergedTorrents(ctx, []string{"id", "hashString", "name"}, nil)
+	result := server.mergedTorrents(ctx, []transmissionrpc.TorrentField{
+		transmissionrpc.TorrentFieldID,
+		transmissionrpc.TorrentFieldHashString,
+		transmissionrpc.TorrentFieldName,
+	}, nil)
 	count := 0
 	for _, torrent := range result.Torrents {
 		if torrentConnectionID, _ := torrent["connectionId"].(string); torrentConnectionID == connectionID {

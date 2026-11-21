@@ -6,13 +6,13 @@ import {
 
 import { displayProtectionState } from '../src/web/protection-state.ts';
 
+import type { Tests_Web_ProtectionState_Snapshot_ProtectionState } from '../src/types/tests/web/protection-state.test.d.ts';
 import type {
   Web_Api_LiveSnapshot,
-  Web_Api_VpnProtection,
   Web_Api_VpnRuntimeState,
 } from '../src/types/web/api.d.ts';
 
-const snapshot = (vpnState: Web_Api_VpnRuntimeState, protectionState: Web_Api_VpnProtection['state']): Web_Api_LiveSnapshot => ({
+const snapshot = (vpnState: Web_Api_VpnRuntimeState, protectionState: Tests_Web_ProtectionState_Snapshot_ProtectionState): Web_Api_LiveSnapshot => ({
   capturedAt: '2026-10-27T12:00:00Z',
   connections: [],
   errors: [],
@@ -59,15 +59,24 @@ const snapshot = (vpnState: Web_Api_VpnRuntimeState, protectionState: Web_Api_Vp
   },
 });
 
-describe('protection state display', (): void => {
-  it('uses the VPN controller for connecting and reconnecting transitions', (): void => {
+describe('protection state display', () => {
+  it('uses the VPN controller for connecting and reconnecting transitions', () => {
     expect(displayProtectionState(snapshot('connecting', 'blocked'))).toBe('connecting');
+
     expect(displayProtectionState(snapshot('reconnecting', 'blocked'))).toBe('reconnecting');
+
+    return;
   });
 
-  it('uses the appliance protection state outside connection transitions', (): void => {
+  it('uses the appliance protection state outside connection transitions', () => {
     expect(displayProtectionState(snapshot('blocked', 'setup-required'))).toBe('setup-required');
+
     expect(displayProtectionState(snapshot('protected', 'protected'))).toBe('protected');
+
     expect(displayProtectionState(null)).toBe('blocked');
+
+    return;
   });
+
+  return;
 });

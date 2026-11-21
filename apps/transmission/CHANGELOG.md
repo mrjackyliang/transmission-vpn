@@ -1,5 +1,24 @@
 # transmission-vpn-app-transmission
 
+## 2.4.1 - 2026-11-21
+
+### UPDATED
+- Web console, mock API and test code, which now follows the full lint rule set and reads the Discord webhook placeholder from a chat platform helper, with no change in behavior.
+- Tests now report coverage through a `check:coverage` script, which fails when line, function, branch or statement coverage drops below the project minimum, and the README badges now include that coverage.
+- Notification services, which now each send through their own project-owned adapter without changing requests, timeouts, error messages, or saved destinations.
+- Nova 0.49.0, which brings the app's build, lint, type-check and test tooling up to date.
+- README badges, which now include Docker Hub pulls and image size.
+- README introduction, which now describes the project with its new long description.
+- Transmission RPC integration, which now keeps native methods and fields behind a project-owned typed adapter without changing requests or behavior.
+
+### FIXED
+- The image build's VPN controller socket test waits for the controller to report ready instead of for about one second, so a busy build host no longer fails it with "controller socket was not created".
+- The VPN controller keeps each connection it opens for the console until the console has picked it up, so a hand-over can no longer arrive already closed. The direct-dial test no longer fails about once in 300 runs on macOS with "read through the handed-over connection: EOF".
+- The image's WireGuard, OpenVPN and fail-closed integration tests wait up to 30 seconds for the Transmission readiness marker to name the default connection instead of reading it once, so a daemon that is still starting after the tunnel comes up no longer fails them with an invalid connection identifier.
+- The image build's VPN controller connect-order test gives its fake tunnel up to 30 seconds to come up instead of one, so a busy build host no longer fails it with "no VPN endpoint connected".
+- The image build's folder browser test waits for the directory server to report ready and gives each request up to 30 seconds instead of two, so a busy build host no longer fails it with "i/o timeout".
+- The image's WireGuard and OpenVPN integration tests wait up to 10 seconds for the test peer to record the tunnel source address instead of reading it right after the connection opens, so a peer that hasn't picked the connection up yet no longer fails them with "saw no source".
+
 ## 2.4.0 - 2026-11-17
 
 ### UPDATED

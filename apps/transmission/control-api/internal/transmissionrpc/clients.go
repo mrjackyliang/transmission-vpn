@@ -50,7 +50,7 @@ type Daemon struct {
 	Slot         int
 	PeerPort     int
 	Default      bool
-	Client       Caller
+	Client       *Adapter
 	endpoint     string
 }
 
@@ -140,7 +140,7 @@ func (clients *ClientSet) Replace(configurations []DaemonConfig) error {
 			if err != nil {
 				return fmt.Errorf("create Transmission client for %s: %w", configuration.ConnectionID, err)
 			}
-			daemon.Client = client
+			daemon.Client = NewAdapter(client)
 		}
 		daemon.ConnectionID = configuration.ConnectionID
 		daemon.Slot = configuration.Slot

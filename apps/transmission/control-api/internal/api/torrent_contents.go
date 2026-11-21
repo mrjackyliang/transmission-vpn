@@ -18,6 +18,7 @@ import (
 	"golang.org/x/sys/unix"
 
 	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/security"
+	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/transmissionrpc"
 )
 
 const (
@@ -106,12 +107,20 @@ func (server *Server) handlePrepareTorrentContents(
 
 	result := server.mergedTorrents(
 		request.Context(),
-		[]string{"downloadDir", "files", "hashString", "id", "leftUntilDone", "metadataPercentComplete", "name"},
+		[]transmissionrpc.TorrentField{
+			transmissionrpc.TorrentFieldDownloadDirectory,
+			transmissionrpc.TorrentFieldFiles,
+			transmissionrpc.TorrentFieldHashString,
+			transmissionrpc.TorrentFieldID,
+			transmissionrpc.TorrentFieldLeftUntilDone,
+			transmissionrpc.TorrentFieldMetadataPercentComplete,
+			transmissionrpc.TorrentFieldName,
+		},
 		hashes,
 	)
 	torrentsByHash := make(map[string]map[string]any, len(result.Torrents))
 	for _, torrent := range result.Torrents {
-		if hash, _ := torrent["hashString"].(string); hash != "" {
+		if hash, _ := torrent[string(transmissionrpc.TorrentFieldHashString)].(string); hash != "" {
 			torrentsByHash[strings.ToLower(hash)] = torrent
 		}
 	}
@@ -136,7 +145,7 @@ func (server *Server) handlePrepareTorrentContents(
 			}
 			unavailable++
 		default:
-			name, _ := torrent["name"].(string)
+			name, _ := torrent[string(transmissionrpc.TorrentFieldName)].(string)
 			finished = append(finished, finishedTorrent{name: name, files: files})
 		}
 	}
@@ -302,20 +311,20 @@ func (server *Server) handleDownloadTorrentContents(
 // done is false while the torrent still has bytes to download or nothing finished to
 // send. Files the torrent skips aren't complete, so they're left out.
 func (server *Server) finishedTorrentFiles(torrent map[string]any) ([]contentDownloadFile, bool, error) {
-	metadataComplete, _ := numericValue(torrent["metadataPercentComplete"])
-	leftUntilDone, leftKnown := numericValue(torrent["leftUntilDone"])
+	metadataComplete, _ := numericValue(torrent[string(transmissionrpc.TorrentFieldMetadataPercentComplete)])
+	leftUntilDone, leftKnown := numericValue(torrent[string(transmissionrpc.TorrentFieldLeftUntilDone)])
 	if metadataComplete < 1 || !leftKnown || leftUntilDone != 0 {
 		return nil, false, nil
 	}
 
-	downloadDirectory, _ := torrent["downloadDir"].(string)
-	torrentFiles, _ := torrent["files"].([]any)
+	downloadDirectory, _ := torrent[string(transmissionrpc.TorrentFieldDownloadDirectory)].(string)
+	torrentFiles, _ := torrent[string(transmissionrpc.TorrentFieldFiles)].([]any)
 	files := make([]contentDownloadFile, 0, len(torrentFiles))
 	for _, torrentFile := range torrentFiles {
 		fields, _ := torrentFile.(map[string]any)
-		name, _ := fields["name"].(string)
-		length, lengthKnown := numericValue(fields["length"])
-		completed, completedKnown := numericValue(fields["bytesCompleted"])
+		name, _ := fields[string(transmissionrpc.TorrentFileFieldName)].(string)
+		length, lengthKnown := numericValue(fields[string(transmissionrpc.TorrentFileFieldLength)])
+		completed, completedKnown := numericValue(fields[string(transmissionrpc.TorrentFileFieldBytesCompleted)])
 		if !lengthKnown || !completedKnown || completed != length {
 			continue
 		}

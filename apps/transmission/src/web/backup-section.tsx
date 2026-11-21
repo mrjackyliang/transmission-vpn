@@ -1,26 +1,38 @@
 import { Button } from '@/web/primitives.tsx';
 
-import type { ReactElement } from 'react';
-
-import type { Web_BackupComponents_Section_Props } from '@/types/web/backup-components.d.ts';
+import type {
+  Web_BackupSection_BackupSection_Description,
+  Web_BackupSection_BackupSection_ImportJob,
+  Web_BackupSection_BackupSection_OnExport,
+  Web_BackupSection_BackupSection_OnImport,
+  Web_BackupSection_BackupSection_OnOpenImport,
+  Web_BackupSection_BackupSection_Props,
+  Web_BackupSection_BackupSection_Returns,
+  Web_BackupSection_BackupSection_RowLabel,
+  Web_BackupSection_BackupSection_Title,
+} from '@/types/web/backup-section.d.ts';
 
 /**
- * Backup Section.
+ * Backup Section - Backup Section.
  *
  * Presents the portable export/import actions and reopens durable background work.
  * Its panel remains outside the Settings save bar because each action is immediate.
  *
+ * @param {Web_BackupSection_BackupSection_Props} props - Props.
+ *
+ * @returns {Web_BackupSection_BackupSection_Returns}
+ *
  * @since 2.0.0
  */
-export const BackupSection = ({
-  description,
-  importJob,
-  onExport,
-  onImport,
-  onOpenImport,
-  rowLabel,
-  title,
-}: Web_BackupComponents_Section_Props): ReactElement => {
+export const BackupSection = (props: Web_BackupSection_BackupSection_Props): Web_BackupSection_BackupSection_Returns => {
+  const description: Web_BackupSection_BackupSection_Description = props['description'];
+  const importJob: Web_BackupSection_BackupSection_ImportJob = props['importJob'];
+  const onExport: Web_BackupSection_BackupSection_OnExport = props['onExport'];
+  const onImport: Web_BackupSection_BackupSection_OnImport = props['onImport'];
+  const onOpenImport: Web_BackupSection_BackupSection_OnOpenImport = props['onOpenImport'];
+  const rowLabel: Web_BackupSection_BackupSection_RowLabel = props['rowLabel'];
+  const title: Web_BackupSection_BackupSection_Title = props['title'];
+
   return (
     <div className="panel backup-section">
       <h2>{title}</h2>

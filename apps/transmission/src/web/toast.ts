@@ -22,7 +22,7 @@ import type {
 } from '@/types/web/toast.d.ts';
 
 /**
- * Toast - Hide visible toasts.
+ * Toast - Hide Visible Toasts.
  *
  * Makes a replacement immediate and collects every outgoing element,
  * including leftovers hidden by an earlier replacement.
@@ -46,7 +46,7 @@ const hideVisibleToasts = (): Web_Toast_HideVisibleToasts_Returns => {
 };
 
 /**
- * Toast - Notyf instance.
+ * Toast - Notyf Instance.
  *
  * Created on the first toast, so every toast shares one container
  * instead of adding a new one to the page each time.
@@ -56,7 +56,7 @@ const hideVisibleToasts = (): Web_Toast_HideVisibleToasts_Returns => {
 let notyfInstance: Web_Toast_NotyfInstance = undefined;
 
 /**
- * Toast - Toast error formatter.
+ * Toast - Error Formatter.
  *
  * Holds an application-specific error text hook when the dashboard provides one.
  * Success messages never pass through this formatter.
@@ -70,6 +70,8 @@ let toastErrorFormatter: Web_Toast_ToastErrorFormatter = undefined;
  *
  * Returns the shared Notyf instance. The colors are theme variables,
  * so a toast follows the light or dark theme that is showing.
+ *
+ * @returns {Web_Toast_GetNotyf_Returns}
  *
  * @since 2.0.0
  */
@@ -97,7 +99,7 @@ const getNotyf = (): Web_Toast_GetNotyf_Returns => {
 };
 
 /**
- * Toast - Set toast error formatter.
+ * Toast - Set Toast Error Formatter.
  *
  * Registers application-specific error wording while leaving successful results
  * and dashboards without a formatter unchanged.
@@ -115,10 +117,15 @@ export const setToastErrorFormatter = (formatter: Web_Toast_SetToastErrorFormatt
 };
 
 /**
- * Toast - Show toast.
+ * Toast - Show Toast.
  *
  * Replaces the visible toast with one result that closes on its own or when
  * clicked. Registered error formatting runs before messages are safely escaped.
+ *
+ * @param {Web_Toast_ShowToast_Message} message - Message.
+ * @param {Web_Toast_ShowToast_Success} success - Success.
+ *
+ * @returns {Web_Toast_ShowToast_Returns}
  *
  * @since 2.0.0
  */
@@ -143,11 +150,13 @@ export const showToast = (message: Web_Toast_ShowToast_Message, success: Web_Toa
   }
 
   const safeMessage: Web_Toast_ShowToast_SafeMessage = displayMessage.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
-  const notification: Web_Toast_ShowToast_Notification = (success) ? notyf.success(safeMessage) : notyf.error(safeMessage);
+  const notification: Web_Toast_ShowToast_Notification = (success === true) ? notyf.success(safeMessage) : notyf.error(safeMessage);
 
-  notification.on(NotyfEvent.Click, (): void => {
+  notification.on(NotyfEvent.Click, () => {
     notyf.dismiss(notification);
 
     return;
   });
+
+  return;
 };

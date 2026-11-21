@@ -20,6 +20,8 @@ import (
 	"syscall"
 	"testing"
 	"time"
+
+	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/transmissionrpc"
 )
 
 const fakeDaemonSessionID = "runner-test-session"
@@ -442,6 +444,37 @@ func TestRunnerIsolatesRepeatedDaemonFailures(testingObject *testing.T) {
 			"ready sibling restarted %d times",
 			countFakeEvents(eventsPath, defaultEntry.ConnectionID, "start"),
 		)
+	}
+}
+
+// TestWaitForReadinessRequestsIdentityFields keeps the readiness probe narrow.
+//
+// The probe asks Transmission for only its version identity, so a refactor of the
+// typed adapter cannot silently widen it into a complete session read.
+//
+// Since: 2.4.1
+func TestWaitForReadinessRequestsIdentityFields(testingObject *testing.T) {
+	client := &blocklistTestRPC{LiveSettings: map[string]json.RawMessage{
+		"rpc-version":        json.RawMessage("17"),
+		"rpc-version-semver": json.RawMessage(`"5.3.0"`),
+		"version":            json.RawMessage(`"4.0.6 (38c164933e)"`),
+	}}
+	readiness, err := waitForReadiness(
+		context.Background(),
+		transmissionrpc.NewAdapter(client),
+		make(chan error),
+		time.Second,
+	)
+	if err != nil {
+		testingObject.Fatalf("wait for readiness: %v", err)
+	}
+	if readiness.RPCVersion != 17 || readiness.RPCVersionSemver != "5.3.0" ||
+		readiness.Version != "4.0.6 (38c164933e)" {
+		testingObject.Fatalf("readiness = %#v", readiness)
+	}
+	wantedArguments := `{"fields":["rpc-version","rpc-version-semver","version"]}`
+	if arguments, _ := client.LastArguments.Load().(string); arguments != wantedArguments {
+		testingObject.Fatalf("session-get arguments = %s, want %s", arguments, wantedArguments)
 	}
 }
 

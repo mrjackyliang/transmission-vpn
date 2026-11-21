@@ -24,12 +24,12 @@ type backupImportConfigurationResult struct {
 }
 
 type backupImportVerificationTorrent struct {
-	HashString      string  `json:"hashString"`
-	Status          int64   `json:"status"`
-	RecheckProgress float64 `json:"recheckProgress"`
-	PercentDone     float64 `json:"percentDone"`
-	Error           int64   `json:"error"`
-	ErrorString     string  `json:"errorString"`
+	HashString      string
+	Status          int64
+	RecheckProgress float64
+	PercentDone     float64
+	Error           int64
+	ErrorString     string
 }
 
 func (server *Server) resumeBackupImports() {
@@ -717,15 +717,19 @@ func (server *Server) importBackupTorrent(
 			return
 		}
 		server.torrentAddMutex.Lock()
-		var addResult torrentAddRPCResult
-		err = daemon.Client.Call(ctx, "torrent-add", map[string]any{
-			"download-dir": normalizedFolder,
-			"labels":       append([]string{}, torrent.Labels...),
-			"metainfo":     torrent.Metainfo,
-			"paused":       true,
-		}, &addResult)
+		labels := append([]string{}, torrent.Labels...)
+		paused := true
+		addResult, addError := daemon.Client.AddTorrent(
+			ctx,
+			transmissionrpc.AddTorrentRequest{
+				DownloadDirectory: &normalizedFolder,
+				Labels:            &labels,
+				Metainfo:          &torrent.Metainfo,
+				Paused:            &paused,
+			},
+		)
 		server.torrentAddMutex.Unlock()
-		if err != nil {
+		if addError != nil {
 			server.updateBackupImportItem(ctx, jobID, position, "failed", 1, "Transmission could not add this torrent.")
 
 			return
@@ -740,7 +744,7 @@ func (server *Server) importBackupTorrent(
 
 			return
 		}
-		if err := daemon.Client.Call(ctx, "torrent-set", backupTorrentSetArguments(torrent), nil); err != nil {
+		if err := daemon.Client.SetTorrents(ctx, backupTorrentSetArguments(torrent)); err != nil {
 			server.updateBackupImportItem(ctx, jobID, position, "failed", 1, "Transmission could not restore this torrent's limits.")
 
 			return
@@ -776,9 +780,10 @@ func (server *Server) importBackupTorrent(
 		return
 	}
 	server.updateBackupImportItem(ctx, jobID, position, "rechecking", 0, "")
-	if err := daemon.Client.Call(ctx, "torrent-verify", map[string]any{
-		"ids": []string{torrent.Hash},
-	}, nil); err != nil {
+	if err := daemon.Client.VerifyTorrents(
+		ctx,
+		transmissionrpc.TorrentSelectionRequest{IDs: []string{torrent.Hash}},
+	); err != nil {
 		server.updateBackupImportItem(ctx, jobID, position, "failed", 1, "Transmission could not start the data check.")
 
 		return
@@ -804,9 +809,10 @@ func (server *Server) importBackupTorrent(
 		return
 	}
 	if torrent.Paused {
-		if err := daemon.Client.Call(ctx, "torrent-stop", map[string]any{
-			"ids": []string{torrent.Hash},
-		}, nil); err != nil {
+		if err := daemon.Client.StopTorrents(
+			ctx,
+			transmissionrpc.TorrentSelectionRequest{IDs: []string{torrent.Hash}},
+		); err != nil {
 			server.updateBackupImportItem(ctx, jobID, position, "failed", 1, "The torrent could not be paused after checking.")
 
 			return
@@ -815,9 +821,10 @@ func (server *Server) importBackupTorrent(
 
 		return
 	}
-	if err := daemon.Client.Call(ctx, "torrent-start", map[string]any{
-		"ids": []string{torrent.Hash},
-	}, nil); err != nil {
+	if err := daemon.Client.StartTorrents(
+		ctx,
+		transmissionrpc.TorrentSelectionRequest{IDs: []string{torrent.Hash}},
+	); err != nil {
 		server.updateBackupImportItem(ctx, jobID, position, "failed", 1, "The torrent could not be started after checking.")
 
 		return
@@ -869,26 +876,52 @@ func (server *Server) backupTorrentTarget(
 	return daemon, profileID, err
 }
 
-func backupTorrentSetArguments(torrent backupTorrent) map[string]any {
-	arguments := map[string]any{
-		"bandwidthPriority":   torrent.Limits.BandwidthPriority,
-		"downloadLimit":       torrent.Limits.DownloadLimit,
-		"downloadLimited":     torrent.Limits.DownloadLimited,
-		"honorsSessionLimits": torrent.Limits.HonorsSessionLimits,
-		"ids":                 []string{torrent.Hash},
-		"peer-limit":          torrent.Limits.PeerLimit,
-		"seedIdleLimit":       torrent.Limits.SeedIdleLimit,
-		"seedIdleMode":        torrent.Limits.SeedIdleMode,
-		"seedRatioLimit":      torrent.Limits.SeedRatioLimit,
-		"seedRatioMode":       torrent.Limits.SeedRatioMode,
-		"uploadLimit":         torrent.Limits.UploadLimit,
-		"uploadLimited":       torrent.Limits.UploadLimited,
+func backupTorrentSetArguments(torrent backupTorrent) transmissionrpc.SetTorrentsRequest {
+	changes := map[transmissionrpc.TorrentArgument]any{
+		transmissionrpc.TorrentArgumentBandwidthPriority:   torrent.Limits.BandwidthPriority,
+		transmissionrpc.TorrentArgumentDownloadLimit:       torrent.Limits.DownloadLimit,
+		transmissionrpc.TorrentArgumentDownloadLimited:     torrent.Limits.DownloadLimited,
+		transmissionrpc.TorrentArgumentHonorsSessionLimits: torrent.Limits.HonorsSessionLimits,
+		transmissionrpc.TorrentArgumentPeerLimit:           torrent.Limits.PeerLimit,
+		transmissionrpc.TorrentArgumentSeedIdleLimit:       torrent.Limits.SeedIdleLimit,
+		transmissionrpc.TorrentArgumentSeedIdleMode:        torrent.Limits.SeedIdleMode,
+		transmissionrpc.TorrentArgumentSeedRatioLimit:      torrent.Limits.SeedRatioLimit,
+		transmissionrpc.TorrentArgumentSeedRatioMode:       torrent.Limits.SeedRatioMode,
+		transmissionrpc.TorrentArgumentUploadLimit:         torrent.Limits.UploadLimit,
+		transmissionrpc.TorrentArgumentUploadLimited:       torrent.Limits.UploadLimited,
 	}
 	if torrent.AddedDate > 0 {
-		arguments["addedDate"] = torrent.AddedDate
+		changes[transmissionrpc.TorrentArgumentAddedDate] = torrent.AddedDate
 	}
 
-	return arguments
+	return transmissionrpc.SetTorrentsRequest{
+		IDs:     []string{torrent.Hash},
+		Changes: changes,
+	}
+}
+
+func decodeBackupImportVerificationTorrent(
+	torrent transmissionrpc.Torrent,
+) (backupImportVerificationTorrent, error) {
+	var decoded backupImportVerificationTorrent
+	fields := []struct {
+		field  transmissionrpc.TorrentField
+		target any
+	}{
+		{field: transmissionrpc.TorrentFieldHashString, target: &decoded.HashString},
+		{field: transmissionrpc.TorrentFieldStatus, target: &decoded.Status},
+		{field: transmissionrpc.TorrentFieldRecheckProgress, target: &decoded.RecheckProgress},
+		{field: transmissionrpc.TorrentFieldPercentDone, target: &decoded.PercentDone},
+		{field: transmissionrpc.TorrentFieldError, target: &decoded.Error},
+		{field: transmissionrpc.TorrentFieldErrorString, target: &decoded.ErrorString},
+	}
+	for _, field := range fields {
+		if err := torrent.DecodeValue(field.field, field.target); err != nil {
+			return backupImportVerificationTorrent{}, err
+		}
+	}
+
+	return decoded, nil
 }
 
 func (server *Server) waitForBackupTorrentVerification(
@@ -899,26 +932,30 @@ func (server *Server) waitForBackupTorrentVerification(
 	hash string,
 ) (backupImportVerificationTorrent, error) {
 	for {
-		var response struct {
-			Torrents []backupImportVerificationTorrent `json:"torrents"`
-		}
-		if err := daemon.Client.Call(ctx, "torrent-get", map[string]any{
-			"fields": []string{
-				"error",
-				"errorString",
-				"hashString",
-				"percentDone",
-				"recheckProgress",
-				"status",
+		response, err := daemon.Client.ListTorrents(
+			ctx,
+			transmissionrpc.ListTorrentsRequest{
+				Fields: []transmissionrpc.TorrentField{
+					transmissionrpc.TorrentFieldError,
+					transmissionrpc.TorrentFieldErrorString,
+					transmissionrpc.TorrentFieldHashString,
+					transmissionrpc.TorrentFieldPercentDone,
+					transmissionrpc.TorrentFieldRecheckProgress,
+					transmissionrpc.TorrentFieldStatus,
+				},
+				IDs: []string{hash},
 			},
-			"ids": []string{hash},
-		}, &response); err != nil {
+		)
+		if err != nil {
 			return backupImportVerificationTorrent{}, err
 		}
-		if len(response.Torrents) != 1 || !strings.EqualFold(response.Torrents[0].HashString, hash) {
+		if len(response.Torrents) != 1 {
 			return backupImportVerificationTorrent{}, errors.New("torrent disappeared during verification")
 		}
-		torrent := response.Torrents[0]
+		torrent, err := decodeBackupImportVerificationTorrent(response.Torrents[0])
+		if err != nil || !strings.EqualFold(torrent.HashString, hash) {
+			return backupImportVerificationTorrent{}, errors.New("torrent disappeared during verification")
+		}
 		progress := torrent.RecheckProgress
 		if progress < 0 {
 			progress = 0

@@ -11,10 +11,14 @@ import {
   formatBlocklistSummary,
 } from '../src/web/blocklist-status.ts';
 
+import type {
+  Tests_Web_BlocklistStatus_BlocklistSourceStatusText_Now,
+  Tests_Web_BlocklistStatus_BlocklistStatusText_Now,
+} from '../src/types/tests/web/blocklist-status.test.d.ts';
 import type { Web_Api_BlocklistStatus } from '../src/types/web/api.d.ts';
 
-describe('blocklist status text', (): void => {
-  it('maps every aggregate state to its approved summary', (): void => {
+describe('blocklist status text', () => {
+  it('maps every aggregate state to its approved summary', () => {
     const idleStatus: Web_Api_BlocklistStatus = {
       sources: [
         {
@@ -58,14 +62,14 @@ describe('blocklist status text', (): void => {
       totalRanges: 841_203,
     };
     const waitingStatus: Web_Api_BlocklistStatus = {
-      sources: idleStatus.sources,
+      sources: idleStatus['sources'],
       state: 'waiting-for-vpn',
-      totalRanges: idleStatus.totalRanges,
+      totalRanges: idleStatus['totalRanges'],
     };
     const disabledStatus: Web_Api_BlocklistStatus = {
-      sources: idleStatus.sources,
+      sources: idleStatus['sources'],
       state: 'disabled',
-      totalRanges: idleStatus.totalRanges,
+      totalRanges: idleStatus['totalRanges'],
     };
     const noSourcesStatus: Web_Api_BlocklistStatus = {
       sources: [],
@@ -74,14 +78,20 @@ describe('blocklist status text', (): void => {
     };
 
     expect(formatBlocklistSummary(idleStatus)).toBe('Blocking 1,234,567 address ranges from 3 sources.');
+
     expect(formatBlocklistSummary(updatingStatus)).toBe('Updating… 2 of 3');
+
     expect(formatBlocklistSummary(waitingStatus)).toBe('Waiting for the VPN to update blocklists.');
+
     expect(formatBlocklistSummary(disabledStatus)).toBe('Turn on blocklists to download these sources.');
+
     expect(formatBlocklistSummary(noSourcesStatus)).toBe('Add a source to start blocking.');
+
+    return;
   });
 
-  it('formats aggregate timestamps and omits unknown ones', (): void => {
-    const now: number = Date.parse('2026-11-05T12:00:00Z');
+  it('formats aggregate timestamps and omits unknown ones', () => {
+    const now: Tests_Web_BlocklistStatus_BlocklistStatusText_Now = Date.parse('2026-11-05T12:00:00Z');
     const status: Web_Api_BlocklistStatus = {
       lastSuccessAt: '2026-11-05T10:00:00Z',
       nextUpdateAt: '2026-11-06T10:00:00Z',
@@ -91,21 +101,28 @@ describe('blocklist status text', (): void => {
     };
 
     expect(formatBlocklistLastUpdated(status, now)).toBe('Last updated 2 hours ago');
+
     expect(formatBlocklistNextUpdate(status, now)).toBe('Next update in 22 hours');
+
     expect(formatBlocklistLastUpdated({
       ...status,
       lastSuccessAt: null,
     }, now)).toBeNull();
+
     expect(formatBlocklistNextUpdate({
       ...status,
       nextUpdateAt: undefined,
     }, now)).toBeNull();
+
+    return;
   });
+
+  return;
 });
 
-describe('blocklist source status text', (): void => {
-  it('formats ok, pending, and copied error results', (): void => {
-    const now: number = Date.parse('2026-11-05T12:00:00Z');
+describe('blocklist source status text', () => {
+  it('formats ok, pending, and copied error results', () => {
+    const now: Tests_Web_BlocklistStatus_BlocklistSourceStatusText_Now = Date.parse('2026-11-05T12:00:00Z');
     const status: Web_Api_BlocklistStatus = {
       sources: [
         {
@@ -135,19 +152,24 @@ describe('blocklist source status text', (): void => {
       text: '841,203 ranges · Updated 2 hours ago',
       tone: 'default',
     });
+
     expect(formatBlocklistSourceLine(status, 'https://example.com/two.gz', true, now)).toEqual({
       text: 'Waiting for the first update',
       tone: 'default',
     });
+
     expect(formatBlocklistSourceLine(status, 'https://example.com/three.gz', true, now)).toEqual({
       text: 'Couldn\'t download: the server answered 404. Using the copy from Nov 4.',
       tone: 'danger',
     });
+
     expect(formatBlocklistSourceLine(status, 'https://example.com/unsaved.gz', true, now)).toBeNull();
+
+    return;
   });
 
-  it('shows the completed, active, and waiting rows during an update', (): void => {
-    const now: number = Date.parse('2026-11-05T12:00:00Z');
+  it('shows the completed, active, and waiting rows during an update', () => {
+    const now: Tests_Web_BlocklistStatus_BlocklistSourceStatusText_Now = Date.parse('2026-11-05T12:00:00Z');
     const status: Web_Api_BlocklistStatus = {
       sources: [
         {
@@ -175,17 +197,21 @@ describe('blocklist source status text', (): void => {
       text: '841,203 ranges · Updated just now',
       tone: 'default',
     });
+
     expect(formatBlocklistSourceLine(status, 'https://example.com/two.gz', true, now)).toEqual({
       text: 'Downloading…',
       tone: 'active',
     });
+
     expect(formatBlocklistSourceLine(status, 'https://example.com/three.gz', true, now)).toEqual({
       text: 'Waiting',
       tone: 'default',
     });
+
+    return;
   });
 
-  it('mutes plain results while the toggle is off but keeps errors in the danger tone', (): void => {
+  it('mutes plain results while the toggle is off but keeps errors in the danger tone', () => {
     const status: Web_Api_BlocklistStatus = {
       sources: [
         {
@@ -208,8 +234,13 @@ describe('blocklist source status text', (): void => {
     expect(formatBlocklistSourceLine(status, 'https://example.com/one.gz', false)).toMatchObject({
       tone: 'danger',
     });
+
     expect(formatBlocklistSourceLine(status, 'https://example.com/two.gz', false)).toMatchObject({
       tone: 'muted',
     });
+
+    return;
   });
+
+  return;
 });

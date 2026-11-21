@@ -1,7 +1,12 @@
 import type {
+  Web_AppNavigation_AppRouteForVpnTarget_ConnectionPath,
   Web_AppNavigation_Items,
   Web_AppNavigation_PathMatch,
   Web_AppNavigation_Paths,
+  Web_AppNavigation_ResolveAppNavigationPath_ConnectionId,
+  Web_AppNavigation_ResolveAppNavigationPath_ConnectionPrefix,
+  Web_AppNavigation_ResolveAppNavigationPath_EncodedConnectionId,
+  Web_AppNavigation_ResolveAppNavigationPath_Pathname,
   Web_AppNavigation_Route,
 } from '@/types/web/app-navigation.d.ts';
 import type {
@@ -10,7 +15,7 @@ import type {
 } from '@/types/web/components.d.ts';
 
 /**
- * App Navigation - Paths.
+ * App Navigation - App Navigation Paths.
  *
  * Owns every bookmarkable console address, including the reserved dynamic VPN
  * connection segment. Shared history code consumes routes produced here.
@@ -30,7 +35,7 @@ export const appNavigationPaths: Web_AppNavigation_Paths = {
 };
 
 /**
- * App Navigation - Items.
+ * App Navigation - App Navigation Items.
  *
  * Defines Transmission VPN navigation separately from the shared shell and
  * helpers. Desktop keeps this full order while phones derive their four tabs.
@@ -109,7 +114,7 @@ export const appNavigationItems: Web_AppNavigation_Items = [
 ];
 
 /**
- * App Navigation - Route for view.
+ * App Navigation - App Route For View.
  *
  * Returns the canonical path used by shell navigation. The root address is a
  * valid Torrents alias, while an explicit Torrents navigation uses /torrents.
@@ -168,7 +173,7 @@ export const appRouteForView = (view: Web_Components_View): Web_AppNavigation_Ro
 };
 
 /**
- * App Navigation - Route for VPN target.
+ * App Navigation - App Route For Vpn Target.
  *
  * Builds the list, new-connection, or encoded connection editor address.
  * Connection identifiers remain opaque to the browser route.
@@ -191,7 +196,7 @@ export const appRouteForVPNTarget = (
   }
 
   if (target['kind'] === 'connection') {
-    const connectionPath: string = `${appNavigationPaths['vpn']}/${encodeURIComponent(target['connectionID'])}`;
+    const connectionPath: Web_AppNavigation_AppRouteForVpnTarget_ConnectionPath = `${appNavigationPaths['vpn']}/${encodeURIComponent(target['connectionID'])}`;
 
     return {
       path: connectionPath,
@@ -204,18 +209,18 @@ export const appRouteForVPNTarget = (
 };
 
 /**
- * App Navigation - Resolve path.
+ * App Navigation - Resolve App Navigation Path.
  *
  * Parses static pages and the VPN editor segment. Unknown or malformed paths
  * fall back to the first page and request a History API replacement.
  *
- * @param {string} pathname - Pathname.
+ * @param {Web_AppNavigation_ResolveAppNavigationPath_Pathname} pathname - Pathname.
  *
  * @returns {Web_AppNavigation_PathMatch}
  *
  * @since 2.0.0
  */
-export const resolveAppNavigationPath = (pathname: string): Web_AppNavigation_PathMatch => {
+export const resolveAppNavigationPath = (pathname: Web_AppNavigation_ResolveAppNavigationPath_Pathname): Web_AppNavigation_PathMatch => {
   if (pathname === appNavigationPaths['root']) {
     return {
       path: pathname,
@@ -255,12 +260,15 @@ export const resolveAppNavigationPath = (pathname: string): Web_AppNavigation_Pa
     }
   }
 
-  const connectionPrefix: string = `${appNavigationPaths['vpn']}/`;
-  if (pathname.startsWith(connectionPrefix)) {
-    const encodedConnectionID: string = pathname.slice(connectionPrefix.length);
-    if (encodedConnectionID !== '' && !encodedConnectionID.includes('/')) {
+  const connectionPrefix: Web_AppNavigation_ResolveAppNavigationPath_ConnectionPrefix = `${appNavigationPaths['vpn']}/`;
+
+  if (pathname.startsWith(connectionPrefix) === true) {
+    const encodedConnectionID: Web_AppNavigation_ResolveAppNavigationPath_EncodedConnectionId = pathname.slice(connectionPrefix.length);
+
+    if (encodedConnectionID !== '' && encodedConnectionID.includes('/') === false) {
       try {
-        const connectionID: string = decodeURIComponent(encodedConnectionID);
+        const connectionID: Web_AppNavigation_ResolveAppNavigationPath_ConnectionId = decodeURIComponent(encodedConnectionID);
+
         if (connectionID !== '' && connectionID !== 'new') {
           const route: Web_AppNavigation_Route = appRouteForVPNTarget({
             connectionID,

@@ -1,38 +1,21 @@
-import type { Web_Components_TorrentProfileDialog_Mode } from '@/types/web/components.d.ts';
+import type {
+  Web_TorrentProfileFields_TorrentProfileDialogFields_Mode,
+  Web_TorrentProfileFields_TorrentProfileDialogFields_Returns,
+} from '@/types/web/torrent-profile-fields.d.ts';
 
 /**
- * Torrent Profile Fields - Editor field.
- *
- * Names every input that can be rendered by the shared profile editor.
- * Default and named modes select ordered subsets of this vocabulary.
- *
- * @since 2.0.0
- */
-export type TorrentProfileField
-  = | 'bandwidthPriority'
-    | 'connectionId'
-    | 'downloadDirectory'
-    | 'downloadLimitKBps'
-    | 'labels'
-    | 'matchPatterns'
-    | 'name'
-    | 'peerLimit'
-    | 'queue'
-    | 'seeding'
-    | 'startPaused'
-    | 'uploadLimitKBps';
-
-/**
- * Torrent Profile Fields - Gets editor field set.
+ * Torrent Profile Fields - Torrent Profile Dialog Fields.
  *
  * Keeps the Default profile's reduced field set explicit and shared with the
  * editor render conditions. Named profiles add identity, VPN, and matching.
  *
+ * @param {Web_TorrentProfileFields_TorrentProfileDialogFields_Mode} mode - Mode.
+ *
+ * @returns {Web_TorrentProfileFields_TorrentProfileDialogFields_Returns}
+ *
  * @since 2.0.0
  */
-export const torrentProfileDialogFields = (
-  mode: Web_Components_TorrentProfileDialog_Mode,
-): TorrentProfileField[] => [
+export const torrentProfileDialogFields = (mode: Web_TorrentProfileFields_TorrentProfileDialogFields_Mode): Web_TorrentProfileFields_TorrentProfileDialogFields_Returns => [
   'name',
   'downloadDirectory',
   'labels',

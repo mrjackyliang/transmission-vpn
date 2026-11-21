@@ -33,9 +33,9 @@ type options struct {
 
 // readinessState is the identity returned by a ready Transmission daemon.
 type readinessState struct {
-	RPCVersion       int    `json:"rpc-version"`
-	RPCVersionSemver string `json:"rpc-version-semver"`
-	Version          string `json:"version"`
+	RPCVersion       int
+	RPCVersionSemver string
+	Version          string
 }
 
 // main runs the unprivileged multi-daemon supervisor and reports fatal errors.
@@ -124,7 +124,7 @@ func parseOptions() options {
 // waitForReadiness polls one loopback adapter until the daemon answers or exits.
 func waitForReadiness(
 	ctx context.Context,
-	client transmissionrpc.Caller,
+	client *transmissionrpc.Adapter,
 	exited <-chan error,
 	timeout time.Duration,
 ) (readinessState, error) {
@@ -136,9 +136,32 @@ func waitForReadiness(
 	for {
 		callContext, cancelCall := context.WithTimeout(ctx, 2*time.Second)
 		var readiness readinessState
-		err := client.Call(callContext, "session-get", map[string]any{
-			"fields": []string{"rpc-version", "rpc-version-semver", "version"},
-		}, &readiness)
+		session, err := client.GetSession(
+			callContext,
+			transmissionrpc.GetSessionRequest{Fields: []transmissionrpc.SessionField{
+				transmissionrpc.SessionFieldRPCVersion,
+				transmissionrpc.SessionFieldRPCVersionSemantic,
+				transmissionrpc.SessionFieldVersion,
+			}},
+		)
+		if err == nil {
+			err = session.DecodeValue(
+				transmissionrpc.SessionFieldRPCVersion,
+				&readiness.RPCVersion,
+			)
+		}
+		if err == nil {
+			err = session.DecodeValue(
+				transmissionrpc.SessionFieldRPCVersionSemantic,
+				&readiness.RPCVersionSemver,
+			)
+		}
+		if err == nil {
+			err = session.DecodeValue(
+				transmissionrpc.SessionFieldVersion,
+				&readiness.Version,
+			)
+		}
 		cancelCall()
 		if err == nil && readiness.RPCVersion > 0 && readiness.Version != "" {
 			return readiness, nil

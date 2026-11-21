@@ -28,10 +28,21 @@ import {
   validateProviderCredentials,
 } from '../src/web/form-validation.ts';
 
-import type { Web_Api_ProviderTunnel } from '../src/types/web/api.d.ts';
+import type {
+  Tests_Web_FormValidation_Configuration,
+  Tests_Web_FormValidation_IncompleteDirectory,
+  Tests_Web_FormValidation_LargestMetainfoLength,
+  Tests_Web_FormValidation_Message,
+  Tests_Web_FormValidation_MullvadTunnel,
+  Tests_Web_FormValidation_ParsedInput,
+  Tests_Web_FormValidation_ParsedMetainfo,
+  Tests_Web_FormValidation_PrivateKey,
+  Tests_Web_FormValidation_Profile,
+  Tests_Web_FormValidation_ValidProfile,
+} from '../src/types/tests/web/form-validation.test.d.ts';
 
-describe('form validation', (): void => {
-  it('normalizes authentication fields and enforces account policy', (): void => {
+describe('form validation', () => {
+  it('normalizes authentication fields and enforces account policy', () => {
     expect(parseClaimInput({
       claimCode: ' ABCDE-23456-FGHIJ ',
       password: 'a secure local password',
@@ -41,22 +52,30 @@ describe('form validation', (): void => {
       password: 'a secure local password',
       username: 'administrator',
     });
-    expect((): void => {
+
+    expect(() => {
       parseClaimInput({
         claimCode: 'short',
         password: 'short',
         username: '_invalid',
       });
+
+      return;
     }).toThrow();
-    expect((): void => {
+
+    expect(() => {
       parseLoginInput({
         password: '',
         username: '',
       });
+
+      return;
     }).toThrow('Enter your username.');
+
+    return;
   });
 
-  it('requires one safe torrent source and valid organization values', (): void => {
+  it('requires one safe torrent source and valid organization values', () => {
     expect(parseAddTorrentInput({
       filename: 'magnet:?xt=urn:btih:abcdef',
       labels: ['Archive'],
@@ -64,24 +83,34 @@ describe('form validation', (): void => {
     })).toMatchObject({
       filename: 'magnet:?xt=urn:btih:abcdef',
     });
-    expect((): void => {
+
+    expect(() => {
       parseAddTorrentInput({
         filename: 'file:///tmp/example.torrent',
       });
+
+      return;
     }).toThrow('Enter a valid HTTP, HTTPS, or magnet URL.');
-    expect((): void => {
+
+    expect(() => {
       parseAddTorrentInput({
         filename: 'https://example.com/example.torrent',
         metainfo: 'YWJj',
       });
+
+      return;
     }).toThrow('Provide exactly one torrent URL, magnet link, or .torrent file.');
-    expect((): void => {
+
+    expect(() => {
       parseAddTorrentInput({
         filename: 'https://example.com/example.torrent',
         labels: ['tv,hd'],
       });
+
+      return;
     }).toThrow('Labels can\'t contain commas.');
-    expect((): void => {
+
+    expect(() => {
       parseUpdateTorrentOrganizationInput({
         expectedRevision: 1,
         labels: [
@@ -91,8 +120,11 @@ describe('form validation', (): void => {
         removedLabels: [],
         renamedLabels: [],
       });
+
+      return;
     }).toThrow();
-    expect((): void => {
+
+    expect(() => {
       parseUpdateTorrentOrganizationInput({
         expectedRevision: 1,
         labels: [],
@@ -102,28 +134,41 @@ describe('form validation', (): void => {
           to: 'Movies',
         }],
       });
+
+      return;
     }).toThrow();
+
+    return;
   });
 
-  it('accepts .torrent files up to 16 MiB', (): void => {
-    const largestMetainfoLength: number = Math.ceil(maximumTorrentFileBytes / 3) * 4;
+  it('accepts .torrent files up to 16 MiB', () => {
+    const largestMetainfoLength: Tests_Web_FormValidation_LargestMetainfoLength = Math.ceil(maximumTorrentFileBytes / 3) * 4;
 
     expect(maximumTorrentFileBytes).toBe(16_777_216);
-    expect(parseAddTorrentInput({
+
+    const parsedInput: Tests_Web_FormValidation_ParsedInput = parseAddTorrentInput({
       metainfo: 'A'.repeat(largestMetainfoLength),
-    })['metainfo']?.length).toBe(largestMetainfoLength);
-    expect((): void => {
+    });
+    const parsedMetainfo: Tests_Web_FormValidation_ParsedMetainfo = parsedInput['metainfo'];
+
+    expect((parsedMetainfo !== undefined) ? parsedMetainfo.length : undefined).toBe(largestMetainfoLength);
+
+    expect(() => {
       parseAddTorrentInput({
         metainfo: 'A'.repeat(largestMetainfoLength + 4),
       });
+
+      return;
     }).toThrow('The .torrent file is larger than 16 MiB.');
+
+    return;
   });
 
-  it('rejects profile and settings folders inside the effective incomplete folder', (): void => {
-    const incompleteDirectory: string = '/data/incomplete';
-    const message: string = 'Choose a folder outside the incomplete folder, /data/incomplete.';
+  it('rejects profile and settings folders inside the effective incomplete folder', () => {
+    const incompleteDirectory: Tests_Web_FormValidation_IncompleteDirectory = '/data/incomplete';
+    const message: Tests_Web_FormValidation_Message = 'Choose a folder outside the incomplete folder, /data/incomplete.';
 
-    const profile = {
+    const profile: Tests_Web_FormValidation_Profile = {
       connectionId: null,
       downloadDirectory: '/data/incomplete/profile',
       labels: [],
@@ -143,24 +188,35 @@ describe('form validation', (): void => {
       },
       startPaused: false,
     };
-    expect((): void => {
+
+    expect(() => {
       parseTorrentProfileInput(profile, incompleteDirectory);
+
+      return;
     }).toThrow(message);
-    expect((): void => {
+
+    expect(() => {
       parseUpdateTorrentProfileInput(profile, incompleteDirectory);
+
+      return;
     }).toThrow(message);
-    expect((): void => {
+
+    expect(() => {
       parseUpdateSettingsInput({
         changes: {
           'transmission.downloadDirectory': '/data/incomplete/default',
         },
         expectedRevision: 3,
       }, incompleteDirectory);
+
+      return;
     }).toThrow(message);
+
+    return;
   });
 
-  it('validates torrent profiles with server-compatible option limits', (): void => {
-    const validProfile = {
+  it('validates torrent profiles with server-compatible option limits', () => {
+    const validProfile: Tests_Web_FormValidation_ValidProfile = {
       connectionId: null,
       downloadDirectory: '/data/tv',
       labels: ['TV'],
@@ -190,13 +246,17 @@ describe('form validation', (): void => {
         peerLimit: 50,
       },
     });
-    expect((): void => {
+
+    expect(() => {
       parseTorrentProfileInput({
         ...validProfile,
         labels: ['tv,hd'],
       });
+
+      return;
     }).toThrow('Labels can\'t contain commas.');
-    expect((): void => {
+
+    expect(() => {
       parseTorrentProfileInput({
         ...validProfile,
         options: {
@@ -208,8 +268,11 @@ describe('form validation', (): void => {
           },
         },
       });
+
+      return;
     }).toThrow('Enter a ratio, idle minutes, or both');
-    expect((): void => {
+
+    expect(() => {
       parseTorrentProfileInput({
         ...validProfile,
         options: {
@@ -217,46 +280,66 @@ describe('form validation', (): void => {
           peerLimit: 10_001,
         },
       });
+
+      return;
     }).toThrow('Peer limit cannot exceed 10,000.');
-    expect((): void => {
+
+    expect(() => {
       parseTorrentProfileInput({
         ...validProfile,
         downloadDirectory: '/data',
       });
+
+      return;
     }).toThrow('Choose a folder inside /data, not /data itself.');
-    expect((): void => {
+
+    expect(() => {
       parseUpdateTorrentProfileInput({
         ...validProfile,
         downloadDirectory: '/data',
       });
+
+      return;
     }).toThrow('Choose a folder inside /data, not /data itself.');
+
+    return;
   });
 
-  it('rejects unsafe folders and torrent edits', (): void => {
-    expect((): void => {
+  it('rejects unsafe folders and torrent edits', () => {
+    expect(() => {
       parseCreateDirectoryInput({
         name: '../outside',
         parentPath: '/data',
       });
+
+      return;
     }).toThrow('Folder names cannot contain path separators');
-    expect((): void => {
+
+    expect(() => {
       parseRenameTorrentPathInput({
         hashes: ['a'.repeat(40)],
         name: 'bad/name',
         path: 'current-name',
       });
+
+      return;
     }).toThrow('Torrent names cannot contain path separators');
-    expect((): void => {
+
+    expect(() => {
       parseUpdateTorrentsInput({
         changes: {
           peerLimit: 0,
         },
         hashes: ['a'.repeat(40)],
       });
+
+      return;
     }).toThrow();
+
+    return;
   });
 
-  it('validates settings with the same key-specific ranges as the server', (): void => {
+  it('validates settings with the same key-specific ranges as the server', () => {
     expect(parseUpdateSettingsInput({
       changes: {
         'transmission.peerPortRandomHigh': 1024,
@@ -266,55 +349,72 @@ describe('form validation', (): void => {
     })).toMatchObject({
       expectedRevision: 3,
     });
-    expect((): void => {
+
+    expect(() => {
       parseUpdateSettingsInput({
         changes: {
           'transmission.peerPortRandomLow': 1023,
         },
         expectedRevision: 3,
       });
+
+      return;
     }).toThrow('Random port low: Enter a number from 1,024 to 65,535.');
-    expect((): void => {
+
+    expect(() => {
       parseUpdateSettingsInput({
         changes: {
           'transmission.peerPortRandomHigh': 65_536,
         },
         expectedRevision: 3,
       });
+
+      return;
     }).toThrow('Random port high: Enter a number from 1,024 to 65,535.');
-    expect((): void => {
+
+    expect(() => {
       parseUpdateSettingsInput({
         changes: {
           'unknown.setting': true,
         },
         expectedRevision: 3,
       });
+
+      return;
     }).toThrow('That setting is not supported.');
-    expect((): void => {
+
+    expect(() => {
       parseUpdateSettingsInput({
         changes: {
           'access.compatibleRPCEnabled': true,
         },
         expectedRevision: 3,
       });
+
+      return;
     }).toThrow('That setting is not supported.');
+
     for (const key of [
       'transmission.downloadDirectory',
       'transmission.incompleteDirectory',
     ]) {
-      expect((): void => {
+      expect(() => {
         parseUpdateSettingsInput({
           changes: {
             [key]: '/data',
           },
           expectedRevision: 3,
         });
+
+        return;
       }).toThrow('Choose a folder inside /data, not /data itself.');
     }
+
+    return;
   });
 
-  it('validates VPN pools, DNS addresses, and credential metadata', (): void => {
-    const configuration = {
+  it('validates VPN pools, DNS addresses, and credential metadata', () => {
+    const configuration: Tests_Web_FormValidation_Configuration = {
       credentials: {
         password: 'password',
         username: 'username',
@@ -326,6 +426,7 @@ describe('form validation', (): void => {
       retryIntervalSeconds: 10,
       tunnel: 'openvpn' as const,
     };
+
     expect(parseCreateVpnConnectionInput({
       ...configuration,
       name: ' PureVPN Toronto ',
@@ -336,6 +437,7 @@ describe('form validation', (): void => {
       providerId: 'purevpn',
       tunnel: 'openvpn',
     });
+
     expect(parseUpdateVpnConnectionInput({
       expectedRevision: 2,
       name: 'Renamed',
@@ -345,8 +447,11 @@ describe('form validation', (): void => {
       name: 'Renamed',
       peerPort: 42_371,
     });
+
     expect(parseDeleteVpnConnectionInput({ moveTo: 'vpc-0123456789abcdef' })).toEqual({ moveTo: 'vpc-0123456789abcdef' });
+
     expect(parseSetDefaultVpnConnectionInput({ connectionId: 'vpc-fedcba9876543210' })).toEqual({ connectionId: 'vpc-fedcba9876543210' });
+
     expect(parseSetDefaultVpnConnectionInput({
       connectionId: 'vpc-fedcba9876543210',
       moveTorrents: true,
@@ -354,14 +459,18 @@ describe('form validation', (): void => {
       connectionId: 'vpc-fedcba9876543210',
       moveTorrents: true,
     });
-    expect((): void => {
+
+    expect(() => {
       parseCreateVpnConnectionInput({
         ...configuration,
         name: 'Office',
         providerId: '',
       });
+
+      return;
     }).toThrow('Choose a provider.');
-    expect((): void => {
+
+    expect(() => {
       parseUpdateVpnConnectionInput({
         configuration: {
           ...configuration,
@@ -369,15 +478,21 @@ describe('form validation', (): void => {
         },
         expectedRevision: 2,
       });
+
+      return;
     }).toThrow('Choose a provider.');
-    expect((): void => {
+
+    expect(() => {
       parseCreateVpnConnectionInput({
         ...configuration,
         name: 'Office',
         peerPort: 80,
       });
+
+      return;
     }).toThrow('Enter a number from 1,024 to 65,535.');
-    expect((): void => {
+
+    expect(() => {
       parseCreateVpnConnectionInput({
         ...configuration,
         dnsServers: ['dns.example.com'],
@@ -388,37 +503,54 @@ describe('form validation', (): void => {
         ],
         retryIntervalSeconds: 1,
       });
+
+      return;
     }).toThrow();
-    expect((): void => {
+
+    expect(() => {
       parseCreateVpnConnectionInput({
         ...configuration,
         dnsServers: ['2001:db8::1'],
         name: 'Office',
       });
+
+      return;
     }).toThrow('Enter one IPv4 address per line.');
-    expect((): void => {
+
+    expect(() => {
       parseCreateVpnConnectionInput({
         ...configuration,
         dnsServers: ['::ffff:1.2.3.4'],
         name: 'Office',
       });
+
+      return;
     }).toThrow('Enter one IPv4 address per line.');
-    expect((): void => {
+
+    expect(() => {
       parseCreateVpnConnectionInput({
         ...configuration,
         credentials: {
-          privateKey: 'line one\nline two',
+          privateKey: [
+            'line one',
+            'line two',
+          ].join('\n'),
         },
         name: 'Mullvad',
         profileIds: ['mullvad:wg-se-sto-wg-001:000000000001'],
         providerId: 'mullvad',
         tunnel: 'wireguard',
       });
+
+      return;
     }).toThrow('A VPN credential contains unsupported characters.');
+
+    return;
   });
 
-  it('validates remote logins and VPN connection controls', (): void => {
+  it('validates remote logins and VPN connection controls', () => {
     expect(parseRPCLoginInput({ username: ' living-room.tv ' })).toEqual({ username: 'living-room.tv' });
+
     expect(parseWebProxyLoginInput({
       connectionId: null,
       username: 'tablet',
@@ -426,6 +558,7 @@ describe('form validation', (): void => {
       connectionId: null,
       username: 'tablet',
     });
+
     expect(parseUpdateWebProxyLoginInput({
       connectionId: 'vpc-0123456789abcdef',
       regeneratePassword: true,
@@ -433,6 +566,7 @@ describe('form validation', (): void => {
       connectionId: 'vpc-0123456789abcdef',
       regeneratePassword: true,
     });
+
     expect(parseUpdateTorrentProfileInput({
       connectionId: null,
       downloadDirectory: '/data/tv',
@@ -454,6 +588,7 @@ describe('form validation', (): void => {
       },
       startPaused: false,
     })).toMatchObject({ moveTorrents: true });
+
     expect(parseVPNConnectionInput({
       dnsServers: [
         '10.64.0.1',
@@ -462,30 +597,42 @@ describe('form validation', (): void => {
       retryIntervalSeconds: 10,
     })).toMatchObject({ retryIntervalSeconds: 10 });
 
-    expect((): void => {
+    expect(() => {
       parseRPCLoginInput({ username: 'not allowed' });
+
+      return;
     }).toThrow('Use only letters, numbers, periods, underscores, and hyphens.');
-    expect((): void => {
+
+    expect(() => {
       parseVPNConnectionInput({
         dnsServers: ['2001:db8::1'],
         retryIntervalSeconds: 10,
       });
+
+      return;
     }).toThrow('Enter one IPv4 address per line.');
-    expect((): void => {
+
+    expect(() => {
       parseVPNConnectionInput({
         dnsServers: [],
         retryIntervalSeconds: 2,
       });
+
+      return;
     }).toThrow('Enter a number from 3 to 600.');
+
+    return;
   });
 
-  it('validates RPC login updates', (): void => {
+  it('validates RPC login updates', () => {
     expect(parseUpdateRPCLoginInput({ username: ' living-room.tv ' })).toEqual({
       username: 'living-room.tv',
     });
+
     expect(parseUpdateRPCLoginInput({ regeneratePassword: true })).toEqual({
       regeneratePassword: true,
     });
+
     expect(parseUpdateRPCLoginInput({
       regeneratePassword: true,
       username: 'tablet',
@@ -493,13 +640,18 @@ describe('form validation', (): void => {
       regeneratePassword: true,
       username: 'tablet',
     });
-    expect((): void => {
+
+    expect(() => {
       parseUpdateRPCLoginInput({ username: 'not allowed' });
+
+      return;
     }).toThrow('Use only letters, numbers, periods, underscores, and hyphens.');
+
+    return;
   });
 
-  it('checks WireGuard keys and tunnel addresses by field kind', (): void => {
-    const mullvadTunnel: Web_Api_ProviderTunnel = {
+  it('checks WireGuard keys and tunnel addresses by field kind', () => {
+    const mullvadTunnel: Tests_Web_FormValidation_MullvadTunnel = {
       catalogSource: 'https://api.mullvad.net/www/relays/all/',
       credentialFields: [
         {
@@ -524,43 +676,67 @@ describe('form validation', (): void => {
       supportsCatalogRefresh: true,
       supportsProfileUpload: false,
     };
-    const privateKey: string = 'yAnz5TF+lXXJte14tji3zlMNq+hd2rYUIgJBgB3fBmk=';
+    const privateKey: Tests_Web_FormValidation_PrivateKey = 'yAnz5TF+lXXJte14tji3zlMNq+hd2rYUIgJBgB3fBmk=';
 
-    expect((): void => {
+    expect(() => {
       validateProviderCredentials(mullvadTunnel, {
         address: '10.68.12.34/32',
         privateKey,
       });
+
+      return;
     }).not.toThrow();
-    expect((): void => {
+
+    expect(() => {
       validateProviderCredentials(mullvadTunnel, {
         address: '10.68.12.34',
         privateKey: ` ${privateKey} `,
       });
+
+      return;
     }).not.toThrow();
-    expect((): void => {
+
+    expect(() => {
       validateProviderCredentials(mullvadTunnel, {}, [
         'privateKey',
         'address',
       ]);
+
+      return;
     }).not.toThrow();
-    expect((): void => {
+
+    expect(() => {
       validateProviderCredentials(mullvadTunnel, {}, ['privateKey']);
+
+      return;
     }).toThrow('Tunnel address is required.');
-    expect((): void => {
+
+    expect(() => {
       validateProviderCredentials(mullvadTunnel, { privateKey });
+
+      return;
     }).toThrow('Tunnel address is required.');
-    expect((): void => {
+
+    expect(() => {
       validateProviderCredentials(mullvadTunnel, {
         address: '10.68.12.34/32',
         privateKey: 'not-a-key',
       });
+
+      return;
     }).toThrow('Private key must be a WireGuard key: 44 characters of base64 ending in =.');
-    expect((): void => {
+
+    expect(() => {
       validateProviderCredentials(mullvadTunnel, {
         address: 'fd00::2/128',
         privateKey,
       });
+
+      return;
     }).toThrow('Tunnel address must be an IPv4 address such as 10.68.12.34/32.');
+
+    return;
   });
+
+  return;
 });

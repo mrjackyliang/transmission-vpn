@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/storage"
+	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/transmissionrpc"
 )
 
 // Matches storage.MaximumTorrentLabels so automatically saved labels never exceed what the Edit dialog can send back.
@@ -254,16 +255,22 @@ func (server *Server) applyTorrentLabelOperations(
 		return 0, nil
 	}
 
-	result := server.mergedTorrents(ctx, []string{"hashString", "id", "labels"}, nil)
+	result := server.mergedTorrents(ctx, []transmissionrpc.TorrentField{
+		transmissionrpc.TorrentFieldHashString,
+		transmissionrpc.TorrentFieldID,
+		transmissionrpc.TorrentFieldLabels,
+	}, nil)
 	if !result.Complete {
 		return 0, errors.New("one or more Transmission daemons did not answer")
 	}
 
 	changed := 0
 	for _, torrent := range result.Torrents {
-		hash, _ := torrent["hashString"].(string)
+		hash, _ := torrent[string(transmissionrpc.TorrentFieldHashString)].(string)
 		connectionID, _ := torrent["connectionId"].(string)
-		currentLabels, valid := rpcStringList(torrent["labels"])
+		currentLabels, valid := rpcStringList(
+			torrent[string(transmissionrpc.TorrentFieldLabels)],
+		)
 		if hash == "" || connectionID == "" || !valid {
 			return changed, errors.New("Transmission omitted torrent label state")
 		}
@@ -279,10 +286,10 @@ func (server *Server) applyTorrentLabelOperations(
 		if !found {
 			return changed, errors.New("a Transmission daemon is unavailable")
 		}
-		if err := daemon.Client.Call(ctx, "torrent-set", map[string]any{
-			"ids":    []string{hash},
-			"labels": updatedLabels,
-		}, nil); err != nil {
+		if err := daemon.Client.SetTorrentLabels(ctx, transmissionrpc.SetTorrentLabelsRequest{
+			IDs:    []string{hash},
+			Labels: updatedLabels,
+		}); err != nil {
 			return changed, fmt.Errorf("set labels for torrent %s: %w", hash, err)
 		}
 		changed++
@@ -368,7 +375,9 @@ func (server *Server) saveTorrentLabelsFromTorrents(
 	}
 	missing := []string{}
 	for _, torrent := range torrents {
-		labels, valid := rpcStringList(torrent["labels"])
+		labels, valid := rpcStringList(
+			torrent[string(transmissionrpc.TorrentFieldLabels)],
+		)
 		if !valid {
 			continue
 		}

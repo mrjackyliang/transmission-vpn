@@ -11,7 +11,6 @@ import (
 	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/settings"
 	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/storage"
 	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/transmissionconfig"
-	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/transmissionrpc"
 )
 
 // settingsSnapshotResponse adds runtime-only restart state to durable settings.
@@ -140,13 +139,7 @@ func (server *Server) applyLiveTransmissionSettings(
 		}
 	}
 
-	failures := server.callEveryTransmission(
-		request.Context(),
-		"session-set",
-		func(transmissionrpc.Daemon) (any, error) {
-			return arguments, nil
-		},
-	)
+	failures := server.setSessionEveryTransmission(request.Context(), arguments)
 	if len(failures) > 0 {
 		for connectionID, err := range failures {
 			server.logInternalError(

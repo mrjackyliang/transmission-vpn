@@ -6,9 +6,14 @@ import {
 
 import { parseBackupDocument } from '../src/web/backup-format.ts';
 
-describe('backup format', (): void => {
-  it('accepts a complete version-one document', (): void => {
-    const document: Record<string, unknown> = {
+import type {
+  Tests_Web_BackupFormat_Document,
+  Tests_Web_BackupFormat_MissingVersion,
+} from '../src/types/tests/web/backup-format.test.d.ts';
+
+describe('backup format', () => {
+  it('accepts a complete version-one document', () => {
+    const document: Tests_Web_BackupFormat_Document = {
       appVersion: '2.0.0',
       exportedAt: '2026-11-08T12:00:00Z',
       format: 'transmission-vpn-export',
@@ -17,17 +22,19 @@ describe('backup format', (): void => {
     };
 
     expect(parseBackupDocument(document)).toEqual(document);
+
+    return;
   });
 
-  it('rejects bad format, version, missing fields and unknown keys', (): void => {
-    const document: Record<string, unknown> = {
+  it('rejects bad format, version, missing fields and unknown keys', () => {
+    const document: Tests_Web_BackupFormat_Document = {
       appVersion: '2.0.0',
       exportedAt: '2026-11-08T12:00:00Z',
       format: 'transmission-vpn-export',
       labels: [],
       version: 1,
     };
-    const missingVersion: Record<string, unknown> = { ...document };
+    const missingVersion: Tests_Web_BackupFormat_MissingVersion = { ...document };
     delete missingVersion['version'];
 
     for (const invalid of [
@@ -54,9 +61,15 @@ describe('backup format', (): void => {
         unexpected: true,
       },
     ]) {
-      expect((): void => {
+      expect(() => {
         parseBackupDocument(invalid);
+
+        return;
       }).toThrow();
     }
+
+    return;
   });
+
+  return;
 });

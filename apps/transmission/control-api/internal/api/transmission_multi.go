@@ -37,7 +37,7 @@ type mergedTorrentResult struct {
 // daemonTorrentResult owns one indexed parallel RPC result.
 type daemonTorrentResult struct {
 	Daemon   transmissionrpc.Daemon
-	Torrents []map[string]any
+	Torrents []transmissionrpc.Torrent
 	Removed  []int64
 	Error    error
 }
@@ -62,6 +62,17 @@ type torrentCallGroup struct {
 	Identifiers any
 	Indexes     []int
 	Labels      []string
+}
+
+// torrentSelectionOperation invokes one typed mutation for a routed selection.
+//
+// It retains the native method token for error reporting while routing the actual
+// call through an Adapter operation.
+//
+// Since: 2.4.1
+type torrentSelectionOperation struct {
+	Method transmissionrpc.Method
+	Run    func(*transmissionrpc.Adapter, any) error
 }
 
 // transmissionDaemons returns the current multi-client set or the legacy test client.
@@ -91,11 +102,14 @@ func (server *Server) transmissionDaemons(ctx context.Context) []transmissionrpc
 // mergedTorrents queries the selected daemons in parallel and applies facade IDs.
 func (server *Server) mergedTorrents(
 	ctx context.Context,
-	fields []string,
+	fields []transmissionrpc.TorrentField,
 	selection any,
 ) mergedTorrentResult {
 	daemons := server.transmissionDaemons(ctx)
-	argumentsByConnection := make(map[string]map[string]any, len(daemons))
+	requestsByConnection := make(
+		map[string]transmissionrpc.ListTorrentsRequest,
+		len(daemons),
+	)
 	selectedDaemons := make([]transmissionrpc.Daemon, 0, len(daemons))
 	result := mergedTorrentResult{
 		Torrents:      []map[string]any{},
@@ -124,9 +138,9 @@ func (server *Server) mergedTorrents(
 				continue
 			}
 			selectedDaemons = append(selectedDaemons, daemon)
-			argumentsByConnection[daemon.ConnectionID] = map[string]any{
-				"fields": fields,
-				"ids":    localIDs,
+			requestsByConnection[daemon.ConnectionID] = transmissionrpc.ListTorrentsRequest{
+				Fields: fields,
+				IDs:    localIDs,
 			}
 			delete(localIDsBySlot, daemon.Slot)
 		}
@@ -140,23 +154,25 @@ func (server *Server) mergedTorrents(
 	case []string:
 		selectedDaemons = append(selectedDaemons, daemons...)
 		for _, daemon := range selectedDaemons {
-			argumentsByConnection[daemon.ConnectionID] = map[string]any{
-				"fields": fields,
-				"ids":    identifiers,
+			requestsByConnection[daemon.ConnectionID] = transmissionrpc.ListTorrentsRequest{
+				Fields: fields,
+				IDs:    identifiers,
 			}
 		}
 	case string:
 		selectedDaemons = append(selectedDaemons, daemons...)
 		for _, daemon := range selectedDaemons {
-			argumentsByConnection[daemon.ConnectionID] = map[string]any{
-				"fields": fields,
-				"ids":    identifiers,
+			requestsByConnection[daemon.ConnectionID] = transmissionrpc.ListTorrentsRequest{
+				Fields: fields,
+				IDs:    identifiers,
 			}
 		}
 	default:
 		selectedDaemons = append(selectedDaemons, daemons...)
 		for _, daemon := range selectedDaemons {
-			argumentsByConnection[daemon.ConnectionID] = map[string]any{"fields": fields}
+			requestsByConnection[daemon.ConnectionID] = transmissionrpc.ListTorrentsRequest{
+				Fields: fields,
+			}
 		}
 	}
 
@@ -167,15 +183,9 @@ func (server *Server) mergedTorrents(
 		go func() {
 			defer waitGroup.Done()
 
-			var response struct {
-				Torrents []map[string]any `json:"torrents"`
-				Removed  []int64          `json:"removed"`
-			}
-			err := daemon.Client.Call(
+			response, err := daemon.Client.ListTorrents(
 				ctx,
-				"torrent-get",
-				argumentsByConnection[daemon.ConnectionID],
-				&response,
+				requestsByConnection[daemon.ConnectionID],
 			)
 			results[index] = daemonTorrentResult{
 				Daemon:   daemon,
@@ -208,7 +218,7 @@ func (server *Server) mergedTorrents(
 		daemonLocations := make(map[string]torrentLocation, len(daemonResult.Torrents))
 		conversionFailed := false
 		for _, torrent := range daemonResult.Torrents {
-			daemonID, valid := integerValue(torrent["id"])
+			daemonID, valid := integerValue(torrent.Value(transmissionrpc.TorrentFieldID))
 			if !valid {
 				server.logger.Error(
 					"Transmission returned an invalid torrent ID",
@@ -235,13 +245,13 @@ func (server *Server) mergedTorrents(
 				break
 			}
 
-			torrent["id"] = facadeID
+			torrent.SetValue(transmissionrpc.TorrentFieldID, facadeID)
 			torrent["connectionId"] = daemonResult.Daemon.ConnectionID
-			converted = append(converted, torrent)
-			hash, _ := torrent["hashString"].(string)
+			converted = append(converted, map[string]any(torrent))
+			hash, _ := torrent.Value(transmissionrpc.TorrentFieldHashString).(string)
 			if hash != "" {
 				hash = strings.ToLower(hash)
-				name, _ := torrent["name"].(string)
+				name, _ := torrent.Value(transmissionrpc.TorrentFieldName).(string)
 				location := torrentLocation{
 					ConnectionID: daemonResult.Daemon.ConnectionID,
 					FacadeID:     facadeID,
@@ -303,8 +313,7 @@ func (server *Server) mergedTorrents(
 // callTransmissionBySelection routes IDs or hashes and invokes one RPC per daemon.
 func (server *Server) callTransmissionBySelection(
 	ctx context.Context,
-	method string,
-	arguments map[string]any,
+	operation torrentSelectionOperation,
 	identifiers []int64,
 	hashes []string,
 ) ([]torrentOperationFailure, error) {
@@ -321,12 +330,7 @@ func (server *Server) callTransmissionBySelection(
 		go func() {
 			defer waitGroup.Done()
 
-			localArguments := make(map[string]any, len(arguments)+1)
-			for key, value := range arguments {
-				localArguments[key] = value
-			}
-			localArguments["ids"] = group.Identifiers
-			callError := group.Daemon.Client.Call(ctx, method, localArguments, nil)
+			callError := operation.Run(group.Daemon.Client, group.Identifiers)
 			if callError == nil {
 				return
 			}
@@ -356,7 +360,10 @@ func (server *Server) resolveRPCFacadeIDGroups(
 	method string,
 	identifiers []int64,
 ) []torrentCallGroup {
-	result := server.mergedTorrents(ctx, []string{"hashString", "id"}, identifiers)
+	result := server.mergedTorrents(ctx, []transmissionrpc.TorrentField{
+		transmissionrpc.TorrentFieldHashString,
+		transmissionrpc.TorrentFieldID,
+	}, identifiers)
 	for _, errorCode := range result.Errors {
 		server.logger.Warn(
 			"compatible RPC skipped unavailable torrent selection",
@@ -376,7 +383,7 @@ func (server *Server) resolveRPCFacadeIDGroups(
 	groupsByConnection := map[string]*facadeGroup{}
 	found := map[int64]struct{}{}
 	for _, torrent := range result.Torrents {
-		facadeID, valid := integerValue(torrent["id"])
+		facadeID, valid := integerValue(torrent[string(transmissionrpc.TorrentFieldID)])
 		connectionID, _ := torrent["connectionId"].(string)
 		daemon, daemonFound := daemonsByConnection[connectionID]
 		if !valid || !daemonFound {
@@ -428,7 +435,10 @@ func (server *Server) resolveRPCFacadeHashGroups(
 	method string,
 	hashes []string,
 ) []torrentCallGroup {
-	result := server.mergedTorrents(ctx, []string{"hashString", "id"}, hashes)
+	result := server.mergedTorrents(ctx, []transmissionrpc.TorrentField{
+		transmissionrpc.TorrentFieldHashString,
+		transmissionrpc.TorrentFieldID,
+	}, hashes)
 	for _, errorCode := range result.Errors {
 		server.logger.Warn(
 			"compatible RPC skipped unavailable torrent selection",
@@ -452,7 +462,7 @@ func (server *Server) resolveRPCFacadeHashGroups(
 	groupsByConnection := map[string]*hashGroup{}
 	found := map[string]struct{}{}
 	for _, torrent := range result.Torrents {
-		hash, _ := torrent["hashString"].(string)
+		hash, _ := torrent[string(transmissionrpc.TorrentFieldHashString)].(string)
 		hash = strings.ToLower(hash)
 		_, wasRequested := requested[hash]
 		connectionID, _ := torrent["connectionId"].(string)
@@ -549,7 +559,10 @@ func (server *Server) resolveTorrentHashGroups(
 	ctx context.Context,
 	hashes []string,
 ) ([]torrentCallGroup, error) {
-	result := server.mergedTorrents(ctx, []string{"hashString", "id"}, hashes)
+	result := server.mergedTorrents(ctx, []transmissionrpc.TorrentField{
+		transmissionrpc.TorrentFieldHashString,
+		transmissionrpc.TorrentFieldID,
+	}, hashes)
 	if !result.Complete {
 		return nil, errTorrentSelectionUnavailable
 	}
@@ -571,7 +584,7 @@ func (server *Server) resolveTorrentHashGroups(
 	groupsByConnection := map[string]*hashGroup{}
 	found := make(map[string]struct{}, len(hashes))
 	for _, torrent := range result.Torrents {
-		hash, _ := torrent["hashString"].(string)
+		hash, _ := torrent[string(transmissionrpc.TorrentFieldHashString)].(string)
 		hash = strings.ToLower(hash)
 		index, requested := requestedIndexes[hash]
 		connectionID, _ := torrent["connectionId"].(string)
@@ -626,7 +639,10 @@ func (server *Server) torrentHashesForSelection(
 		return nil, err
 	}
 
-	result := server.mergedTorrents(ctx, []string{"hashString", "id"}, selection)
+	result := server.mergedTorrents(ctx, []transmissionrpc.TorrentField{
+		transmissionrpc.TorrentFieldHashString,
+		transmissionrpc.TorrentFieldID,
+	}, selection)
 	if !result.Complete {
 		return nil, errTorrentSelectionUnavailable
 	}
@@ -634,7 +650,7 @@ func (server *Server) torrentHashesForSelection(
 	if hashes != nil {
 		found := make(map[string]struct{}, len(result.Torrents))
 		for _, torrent := range result.Torrents {
-			hash, _ := torrent["hashString"].(string)
+			hash, _ := torrent[string(transmissionrpc.TorrentFieldHashString)].(string)
 			if hash != "" {
 				found[strings.ToLower(hash)] = struct{}{}
 			}
@@ -650,8 +666,10 @@ func (server *Server) torrentHashesForSelection(
 
 	hashesByID := make(map[int64]string, len(result.Torrents))
 	for _, torrent := range result.Torrents {
-		identifier, identifierValid := integerValue(torrent["id"])
-		hash, _ := torrent["hashString"].(string)
+		identifier, identifierValid := integerValue(
+			torrent[string(transmissionrpc.TorrentFieldID)],
+		)
+		hash, _ := torrent[string(transmissionrpc.TorrentFieldHashString)].(string)
 		if identifierValid && hash != "" {
 			hashesByID[identifier] = strings.ToLower(hash)
 		}
@@ -697,7 +715,7 @@ func normalizeTorrentHashes(hashes []string) ([]string, error) {
 // writeTorrentOperationFailures emits one issue for every target that failed.
 func (server *Server) writeTorrentOperationFailures(
 	responseWriter http.ResponseWriter,
-	method string,
+	method transmissionrpc.Method,
 	field string,
 	failures []torrentOperationFailure,
 ) bool {
@@ -722,7 +740,7 @@ func (server *Server) writeTorrentOperationFailures(
 		server.logger.Warn(
 			"Transmission torrent operation failed",
 			"method",
-			method,
+			method.String(),
 			"torrent",
 			failure.Identifier,
 			"error",
@@ -742,10 +760,9 @@ func (server *Server) writeTorrentOperationFailures(
 }
 
 // callEveryTransmission invokes one session-wide method on all current daemons.
-func (server *Server) callEveryTransmission(
+func (server *Server) setSessionEveryTransmission(
 	ctx context.Context,
-	method string,
-	arguments func(transmissionrpc.Daemon) (any, error),
+	values map[string]any,
 ) map[string]error {
 	daemons := server.transmissionDaemons(ctx)
 	failures := map[string]error{}
@@ -756,10 +773,12 @@ func (server *Server) callEveryTransmission(
 		go func() {
 			defer waitGroup.Done()
 
-			callArguments, err := arguments(daemon)
-			if err == nil {
-				err = daemon.Client.Call(ctx, method, callArguments, nil)
-			}
+			err := daemon.Client.SetSession(
+				ctx,
+				transmissionrpc.SetSessionRequest{
+					Values: transmissionrpc.SessionValuesFromNative(values),
+				},
+			)
 			if err != nil {
 				failureMutex.Lock()
 				failures[daemon.ConnectionID] = err
@@ -775,7 +794,7 @@ func (server *Server) callEveryTransmission(
 // writeTransmissionDaemonFailures reports one session-wide failure per connection.
 func (server *Server) writeTransmissionDaemonFailures(
 	responseWriter http.ResponseWriter,
-	method string,
+	method transmissionrpc.Method,
 	failures map[string]error,
 ) bool {
 	if len(failures) == 0 {
@@ -805,7 +824,7 @@ func (server *Server) writeTransmissionDaemonFailures(
 		server.logger.Warn(
 			"Transmission session operation failed",
 			"method",
-			method,
+			method.String(),
 			"connectionId",
 			connectionID,
 			"error",
@@ -827,19 +846,15 @@ func (server *Server) writeTransmissionDaemonFailures(
 // summedTransmissionStatistics adds numeric fields from every answering daemon.
 func (server *Server) summedTransmissionStatistics(ctx context.Context) (map[string]any, []string) {
 	daemons := server.transmissionDaemons(ctx)
-	statisticsByDaemon := make([]map[string]any, len(daemons))
+	statisticsByDaemon := make([]transmissionrpc.SessionStatistics, len(daemons))
 	errorsByDaemon := make([]error, len(daemons))
 	var waitGroup sync.WaitGroup
 	for index, daemon := range daemons {
 		waitGroup.Add(1)
 		go func() {
 			defer waitGroup.Done()
-			errorsByDaemon[index] = daemon.Client.Call(
-				ctx,
-				"session-stats",
-				nil,
-				&statisticsByDaemon[index],
-			)
+			statisticsByDaemon[index], errorsByDaemon[index] =
+				daemon.Client.GetSessionStatistics(ctx)
 		}()
 	}
 	waitGroup.Wait()
@@ -856,7 +871,7 @@ func (server *Server) summedTransmissionStatistics(ctx context.Context) (map[str
 
 			continue
 		}
-		mergeNumericMaps(summed, statisticsByDaemon[index])
+		mergeNumericMaps(summed, map[string]any(statisticsByDaemon[index]))
 	}
 	sort.Strings(errorCodes)
 
@@ -1026,7 +1041,11 @@ func (server *Server) rememberTorrentLocation(hash string, location torrentLocat
 func (server *Server) refreshTorrentHashIndex(
 	ctx context.Context,
 ) (map[string]torrentLocation, []string) {
-	result := server.mergedTorrents(ctx, []string{"hashString", "id", "name"}, nil)
+	result := server.mergedTorrents(ctx, []transmissionrpc.TorrentField{
+		transmissionrpc.TorrentFieldHashString,
+		transmissionrpc.TorrentFieldID,
+		transmissionrpc.TorrentFieldName,
+	}, nil)
 
 	return result.HashLocations, result.UnansweredConnections
 }

@@ -31,88 +31,13 @@ type transmissionRestartResult struct {
 	Error        string `json:"error,omitempty"`
 }
 
-var torrentSummaryFields = []string{
-	"activityDate",
-	"addedDate",
-	"downloadDir",
-	"downloadedEver",
-	"error",
-	"errorString",
-	"eta",
-	"hashString",
-	"id",
-	"isFinished",
-	"isPrivate",
-	"isStalled",
-	"labels",
-	"leftUntilDone",
-	"metadataPercentComplete",
-	"name",
-	"peersConnected",
-	"peersGettingFromUs",
-	"peersSendingToUs",
-	"percentDone",
-	"queuePosition",
-	"rateDownload",
-	"rateUpload",
-	"recheckProgress",
-	"sizeWhenDone",
-	"status",
-	"totalSize",
-	"uploadedEver",
-	"uploadRatio",
-}
+var torrentSummaryFields = transmissionrpc.SummaryTorrentFields()
 
-var torrentDetailFields = append(append([]string{}, torrentSummaryFields...),
-	"availability",
-	"bandwidthPriority",
-	"comment",
-	"creator",
-	"dateCreated",
-	"doneDate",
-	"downloadLimit",
-	"downloadLimited",
-	"fileStats",
-	"files",
-	"honorsSessionLimits",
-	"magnetLink",
-	"manualAnnounceTime",
-	"maxConnectedPeers",
-	"peer-limit",
-	"peers",
-	"peersFrom",
-	"pieceCount",
-	"pieceSize",
-	"pieces",
-	"priorities",
-	"secondsDownloading",
-	"secondsSeeding",
-	"seedIdleLimit",
-	"seedIdleMode",
-	"seedRatioLimit",
-	"seedRatioMode",
-	"startDate",
-	"trackerList",
-	"trackers",
-	"trackerStats",
-	"uploadLimit",
-	"uploadLimited",
-	"wanted",
-	"webseeds",
-)
+var torrentDetailFields = transmissionrpc.DetailTorrentFields()
 
-// torrentAddRPCItem is Transmission's added or duplicate torrent summary.
-type torrentAddRPCItem struct {
-	ID         int64  `json:"id"`
-	HashString string `json:"hashString"`
-	Name       string `json:"name"`
-}
+type torrentAddRPCItem = transmissionrpc.AddedTorrent
 
-// torrentAddRPCResult distinguishes a new torrent from Transmission's duplicate reply.
-type torrentAddRPCResult struct {
-	Added     *torrentAddRPCItem `json:"torrent-added"`
-	Duplicate *torrentAddRPCItem `json:"torrent-duplicate"`
-}
+type torrentAddRPCResult = transmissionrpc.AddTorrentResponse
 
 // torrentAddResponse is the stable application-facing result for every add attempt.
 type torrentAddResponse struct {
@@ -135,19 +60,25 @@ func (server *Server) handleTransmissionSession(
 	responseWriter http.ResponseWriter,
 	request *http.Request,
 ) {
-	var arguments map[string]any
-	if !server.callTransmission(
+	var session transmissionrpc.Session
+	if !server.callTransmissionOperation(
 		responseWriter,
-		request,
-		"session-get",
-		nil,
-		&arguments,
+		transmissionrpc.MethodSessionGet,
+		func(client *transmissionrpc.Adapter) error {
+			var err error
+			session, err = client.GetSession(
+				request.Context(),
+				transmissionrpc.GetSessionRequest{},
+			)
+
+			return err
+		},
 		http.StatusBadGateway,
 	) {
 		return
 	}
 
-	writeJSON(responseWriter, http.StatusOK, arguments)
+	writeJSON(responseWriter, http.StatusOK, session)
 }
 
 // handleTransmissionStatistics returns aggregate and lifetime transfer statistics.
@@ -191,19 +122,25 @@ func (server *Server) handleTransmissionFreeSpace(
 		return
 	}
 
-	var arguments map[string]any
-	if !server.callTransmission(
+	var freeSpace transmissionrpc.FreeSpace
+	if !server.callTransmissionOperation(
 		responseWriter,
-		request,
-		"free-space",
-		map[string]any{"path": normalizedPath},
-		&arguments,
+		transmissionrpc.MethodFreeSpace,
+		func(client *transmissionrpc.Adapter) error {
+			var err error
+			freeSpace, err = client.GetFreeSpace(
+				request.Context(),
+				transmissionrpc.FreeSpaceRequest{Path: normalizedPath},
+			)
+
+			return err
+		},
 		http.StatusUnprocessableEntity,
 	) {
 		return
 	}
 
-	writeJSON(responseWriter, http.StatusOK, arguments)
+	writeJSON(responseWriter, http.StatusOK, freeSpace)
 }
 
 // handleTransmissionRestart applies the accepted snapshot and requests graceful exit.
@@ -293,13 +230,13 @@ func (server *Server) handleTransmissionRestart(
 				ConnectionID: daemon.ConnectionID,
 				Status:       "restarting",
 			}
-			if callError := daemon.Client.Call(
+			if callError := daemon.Client.SetSession(
 				request.Context(),
-				"session-set",
-				arguments,
-				nil,
+				transmissionrpc.SetSessionRequest{
+					Values: transmissionrpc.SessionValuesFromNative(arguments),
+				},
 			); callError == nil {
-				callError = daemon.Client.Call(request.Context(), "session-close", nil, nil)
+				callError = daemon.Client.CloseSession(request.Context())
 				if callError == nil {
 					results[index] = result
 
@@ -492,7 +429,7 @@ func (server *Server) handleAddTorrent(
 		return
 	}
 
-	arguments := map[string]any{}
+	addRequest := transmissionrpc.AddTorrentRequest{}
 	var decodedMetainfo []byte
 	var err error
 	if input.Filename != "" {
@@ -501,7 +438,7 @@ func (server *Server) handleAddTorrent(
 
 			return
 		}
-		arguments["filename"] = input.Filename
+		addRequest.Filename = &input.Filename
 	} else {
 		decodedMetainfo, err = base64.StdEncoding.DecodeString(input.Metainfo)
 		if err != nil || len(decodedMetainfo) == 0 {
@@ -524,7 +461,7 @@ func (server *Server) handleAddTorrent(
 
 			return
 		}
-		arguments["metainfo"] = input.Metainfo
+		addRequest.Metainfo = &input.Metainfo
 	}
 	sourceHash, hashKnown, err := torrentSourceHash(input.Filename, decodedMetainfo)
 	if err != nil {
@@ -619,7 +556,7 @@ func (server *Server) handleAddTorrent(
 		return
 	}
 	if err := prepareTorrentAddDownloadDirectory(
-		arguments,
+		&addRequest,
 		profile,
 		downloadPolicy,
 	); err != nil {
@@ -629,14 +566,16 @@ func (server *Server) handleAddTorrent(
 		return
 	}
 	if clientLabels {
-		arguments["labels"] = requestedLabels
+		addRequest.Labels = &requestedLabels
 	} else {
-		arguments["labels"] = nonNilStrings(profile.Labels)
+		labels := nonNilStrings(profile.Labels)
+		addRequest.Labels = &labels
 	}
 	if input.Paused != nil {
-		arguments["paused"] = *input.Paused
+		addRequest.Paused = input.Paused
 	} else {
-		arguments["paused"] = profile.StartPaused
+		paused := profile.StartPaused
+		addRequest.Paused = &paused
 	}
 
 	targetDaemon, err := server.defaultTransmissionDaemon(request.Context())
@@ -714,7 +653,7 @@ func (server *Server) handleAddTorrent(
 	startAfterDuplicateCheck, err := prepareTorrentAddStart(
 		request.Context(),
 		targetDaemon.Client,
-		arguments,
+		&addRequest,
 		hashKnown,
 	)
 	if err != nil {
@@ -729,22 +668,33 @@ func (server *Server) handleAddTorrent(
 		return
 	}
 
-	var result torrentAddRPCResult
-	if !server.callTransmissionClient(
+	var result transmissionrpc.AddTorrentResponse
+	if !server.callTransmissionClientOperation(
 		responseWriter,
-		request,
 		targetDaemon.Client,
-		"torrent-add",
-		arguments,
-		&result,
+		transmissionrpc.MethodTorrentAdd,
+		func(client *transmissionrpc.Adapter) error {
+			var callError error
+			result, callError = client.AddTorrent(request.Context(), addRequest)
+
+			return callError
+		},
 		http.StatusUnprocessableEntity,
 	) {
 		return
 	}
 
 	if result.Added == nil && result.Duplicate == nil || result.Added != nil && result.Duplicate != nil {
-		server.logInternalError("decode Transmission torrent-add result", errors.New("torrent-add returned neither or both result variants"))
-		writeError(responseWriter, http.StatusBadGateway, "transmission_invalid_response", "Transmission returned an invalid torrent-add response.")
+		server.logInternalError(
+			"decode Transmission "+transmissionrpc.MethodTorrentAdd.String()+" result",
+			errors.New(transmissionrpc.MethodTorrentAdd.String()+" returned neither or both result variants"),
+		)
+		writeError(
+			responseWriter,
+			http.StatusBadGateway,
+			"transmission_invalid_response",
+			"Transmission returned an invalid "+transmissionrpc.MethodTorrentAdd.String()+" response.",
+		)
 
 		return
 	}
@@ -756,8 +706,16 @@ func (server *Server) handleAddTorrent(
 		duplicate = true
 	}
 	if added.ID <= 0 || strings.TrimSpace(added.HashString) == "" {
-		server.logInternalError("decode Transmission torrent-add result", errors.New("torrent-add omitted the torrent identifier or hash"))
-		writeError(responseWriter, http.StatusBadGateway, "transmission_invalid_response", "Transmission returned an invalid torrent-add response.")
+		server.logInternalError(
+			"decode Transmission "+transmissionrpc.MethodTorrentAdd.String()+" result",
+			errors.New(transmissionrpc.MethodTorrentAdd.String()+" omitted the torrent identifier or hash"),
+		)
+		writeError(
+			responseWriter,
+			http.StatusBadGateway,
+			"transmission_invalid_response",
+			"Transmission returned an invalid "+transmissionrpc.MethodTorrentAdd.String()+" response.",
+		)
 
 		return
 	}
@@ -785,14 +743,12 @@ func (server *Server) handleAddTorrent(
 
 	if existing, found := refreshedLocations[added.HashString]; found &&
 		existing.ConnectionID != targetDaemon.ConnectionID {
-		removeError := targetDaemon.Client.Call(
+		removeError := targetDaemon.Client.RemoveTorrents(
 			request.Context(),
-			"torrent-remove",
-			map[string]any{
-				"ids":               []int64{added.ID},
-				"delete-local-data": false,
+			transmissionrpc.RemoveTorrentsRequest{
+				IDs:             []int64{added.ID},
+				DeleteLocalData: false,
 			},
-			nil,
 		)
 		if removeError != nil {
 			server.logInternalError("remove cross-daemon duplicate torrent", removeError)
@@ -825,7 +781,10 @@ func (server *Server) handleAddTorrent(
 		return
 	}
 	if !duplicate {
-		labels, _ := rpcStringList(arguments["labels"])
+		labels := []string{}
+		if addRequest.Labels != nil {
+			labels = *addRequest.Labels
+		}
 		if _, err := server.saveTorrentLabels(request.Context(), labels); err != nil {
 			server.logInternalError("save labels used by torrent add", err)
 			writeInternalError(responseWriter)
@@ -846,13 +805,20 @@ func (server *Server) handleAddTorrent(
 		profileRequest := request.Clone(profileContext)
 		startRequest = profileRequest
 
-		if !server.callTransmissionClient(
+		if !server.callTransmissionClientOperation(
 			responseWriter,
-			profileRequest,
 			targetDaemon.Client,
-			"torrent-set",
-			torrentProfileSetArguments(profile, []int64{added.ID}, duplicate && !clientLabels),
-			nil,
+			transmissionrpc.MethodTorrentSet,
+			func(client *transmissionrpc.Adapter) error {
+				return client.SetTorrents(
+					profileContext,
+					torrentProfileSetArguments(
+						profile,
+						[]int64{added.ID},
+						duplicate && !clientLabels,
+					),
+				)
+			},
 			http.StatusUnprocessableEntity,
 		) {
 			return
@@ -865,13 +831,16 @@ func (server *Server) handleAddTorrent(
 				return
 			}
 		}
-		if profile.Options.Queue == "top" && !server.callTransmissionClient(
+		if profile.Options.Queue == "top" && !server.callTransmissionClientOperation(
 			responseWriter,
-			profileRequest,
 			targetDaemon.Client,
-			"queue-move-top",
-			map[string]any{"ids": []int64{added.ID}},
-			nil,
+			transmissionrpc.MethodQueueMoveTop,
+			func(client *transmissionrpc.Adapter) error {
+				return client.MoveTorrentsToQueueTop(
+					profileContext,
+					transmissionrpc.TorrentSelectionRequest{IDs: []int64{added.ID}},
+				)
+			},
 			http.StatusUnprocessableEntity,
 		) {
 			return
@@ -898,13 +867,16 @@ func (server *Server) handleAddTorrent(
 			return
 		}
 	}
-	if startAfterDuplicateCheck && !duplicate && !server.callTransmissionClient(
+	if startAfterDuplicateCheck && !duplicate && !server.callTransmissionClientOperation(
 		responseWriter,
-		startRequest,
 		targetDaemon.Client,
-		"torrent-start",
-		map[string]any{"ids": []int64{added.ID}},
-		nil,
+		transmissionrpc.MethodTorrentStart,
+		func(client *transmissionrpc.Adapter) error {
+			return client.StartTorrents(
+				startRequest.Context(),
+				transmissionrpc.TorrentSelectionRequest{IDs: []int64{added.ID}},
+			)
+		},
 		http.StatusUnprocessableEntity,
 	) {
 		return
@@ -1071,8 +1043,7 @@ func (server *Server) handleSetTorrentProfile(
 		arguments := torrentProfileSetArguments(profile, nil, !preserveExistingLabels)
 		failures, callError := server.callTransmissionBySelection(
 			request.Context(),
-			"torrent-set",
-			arguments,
+			torrentSetSelectionOperation(request.Context(), arguments.Changes),
 			input.IDs,
 			normalizedHashes,
 		)
@@ -1083,7 +1054,7 @@ func (server *Server) handleSetTorrentProfile(
 		}
 		if server.writeTorrentOperationFailures(
 			responseWriter,
-			"torrent-set",
+			transmissionrpc.MethodTorrentSet,
 			selectionField,
 			failures,
 		) {
@@ -1112,8 +1083,7 @@ func (server *Server) handleSetTorrentProfile(
 				}
 				failures, callError = server.callTransmissionBySelection(
 					request.Context(),
-					"torrent-set",
-					map[string]any{"labels": labels},
+					torrentLabelSelectionOperation(request.Context(), labels),
 					nil,
 					[]string{hash},
 				)
@@ -1124,7 +1094,7 @@ func (server *Server) handleSetTorrentProfile(
 				}
 				if server.writeTorrentOperationFailures(
 					responseWriter,
-					"torrent-set",
+					transmissionrpc.MethodTorrentSet,
 					selectionField,
 					failures,
 				) {
@@ -1141,8 +1111,7 @@ func (server *Server) handleSetTorrentProfile(
 			if len(normalHashes) > 0 {
 				failures, callError = server.callTransmissionBySelection(
 					request.Context(),
-					"torrent-set",
-					map[string]any{"labels": profile.Labels},
+					torrentLabelSelectionOperation(request.Context(), profile.Labels),
 					nil,
 					normalHashes,
 				)
@@ -1153,7 +1122,7 @@ func (server *Server) handleSetTorrentProfile(
 				}
 				if server.writeTorrentOperationFailures(
 					responseWriter,
-					"torrent-set",
+					transmissionrpc.MethodTorrentSet,
 					selectionField,
 					failures,
 				) {
@@ -1177,8 +1146,10 @@ func (server *Server) handleSetTorrentProfile(
 		if profile.Options.Queue == "top" {
 			failures, callError = server.callTransmissionBySelection(
 				request.Context(),
-				"queue-move-top",
-				map[string]any{},
+				torrentActionSelectionOperation(
+					request.Context(),
+					transmissionrpc.MethodQueueMoveTop,
+				),
 				input.IDs,
 				normalizedHashes,
 			)
@@ -1189,7 +1160,7 @@ func (server *Server) handleSetTorrentProfile(
 			}
 			if server.writeTorrentOperationFailures(
 				responseWriter,
-				"queue-move-top",
+				transmissionrpc.MethodQueueMoveTop,
 				selectionField,
 				failures,
 			) {
@@ -1232,10 +1203,8 @@ func (server *Server) handleSetTorrentProfile(
 			}
 		}
 		if len(stateHashes) > 0 {
-			method := "torrent-start"
 			operation := "start resolved torrent profiles"
 			if profile.StartPaused {
-				method = "torrent-stop"
 				operation = "pause resolved torrent profiles"
 			}
 			// A folder move or verification can briefly hide the torrent from a fresh
@@ -1243,10 +1212,22 @@ func (server *Server) handleSetTorrentProfile(
 			target, found := server.transmissionDaemonForConnection(moveContext, targetConnectionID)
 			if !found {
 				server.logInternalError(operation, errors.New("the selected profile's Transmission daemon is unavailable"))
-			} else if stateError := target.Client.Call(moveContext, method, map[string]any{
-				"ids": stateHashes,
-			}, nil); stateError != nil {
-				server.logInternalError(operation, stateError)
+			} else {
+				var stateError error
+				if profile.StartPaused {
+					stateError = target.Client.StopTorrents(
+						moveContext,
+						transmissionrpc.TorrentSelectionRequest{IDs: stateHashes},
+					)
+				} else {
+					stateError = target.Client.StartTorrents(
+						moveContext,
+						transmissionrpc.TorrentSelectionRequest{IDs: stateHashes},
+					)
+				}
+				if stateError != nil {
+					server.logInternalError(operation, stateError)
+				}
 			}
 		}
 	}
@@ -1263,44 +1244,46 @@ func torrentProfileSetArguments(
 	profile storage.TorrentProfile,
 	ids []int64,
 	includeLabels bool,
-) map[string]any {
-	arguments := map[string]any{
-		"ids":               ids,
-		"bandwidthPriority": profile.Options.BandwidthPriority,
-		"peer-limit":        profile.Options.PeerLimit,
+) transmissionrpc.SetTorrentsRequest {
+	changes := map[transmissionrpc.TorrentArgument]any{
+		transmissionrpc.TorrentArgumentBandwidthPriority: profile.Options.BandwidthPriority,
+		transmissionrpc.TorrentArgumentPeerLimit:         profile.Options.PeerLimit,
 	}
 	if includeLabels {
-		arguments["labels"] = profile.Labels
+		changes[transmissionrpc.TorrentArgumentLabels] = profile.Labels
 	}
 
 	if profile.Options.Seeding.Mode == "limit" {
 		if profile.Options.Seeding.Ratio != nil {
-			arguments["seedRatioMode"] = 1
-			arguments["seedRatioLimit"] = *profile.Options.Seeding.Ratio
+			changes[transmissionrpc.TorrentArgumentSeedRatioMode] = 1
+			changes[transmissionrpc.TorrentArgumentSeedRatioLimit] = *profile.Options.Seeding.Ratio
 		} else {
-			arguments["seedRatioMode"] = 2
+			changes[transmissionrpc.TorrentArgumentSeedRatioMode] = 2
 		}
 		if profile.Options.Seeding.IdleMinutes != nil {
-			arguments["seedIdleMode"] = 1
-			arguments["seedIdleLimit"] = *profile.Options.Seeding.IdleMinutes
+			changes[transmissionrpc.TorrentArgumentSeedIdleMode] = 1
+			changes[transmissionrpc.TorrentArgumentSeedIdleLimit] = *profile.Options.Seeding.IdleMinutes
 		} else {
-			arguments["seedIdleMode"] = 2
+			changes[transmissionrpc.TorrentArgumentSeedIdleMode] = 2
 		}
 	} else {
-		arguments["seedRatioMode"] = 2
-		arguments["seedIdleMode"] = 2
+		changes[transmissionrpc.TorrentArgumentSeedRatioMode] = 2
+		changes[transmissionrpc.TorrentArgumentSeedIdleMode] = 2
 	}
 
-	arguments["downloadLimited"] = profile.Options.DownloadLimitKBps != nil
+	changes[transmissionrpc.TorrentArgumentDownloadLimited] = profile.Options.DownloadLimitKBps != nil
 	if profile.Options.DownloadLimitKBps != nil {
-		arguments["downloadLimit"] = *profile.Options.DownloadLimitKBps
+		changes[transmissionrpc.TorrentArgumentDownloadLimit] = *profile.Options.DownloadLimitKBps
 	}
-	arguments["uploadLimited"] = profile.Options.UploadLimitKBps != nil
+	changes[transmissionrpc.TorrentArgumentUploadLimited] = profile.Options.UploadLimitKBps != nil
 	if profile.Options.UploadLimitKBps != nil {
-		arguments["uploadLimit"] = *profile.Options.UploadLimitKBps
+		changes[transmissionrpc.TorrentArgumentUploadLimit] = *profile.Options.UploadLimitKBps
 	}
 
-	return arguments
+	return transmissionrpc.SetTorrentsRequest{
+		IDs:     ids,
+		Changes: changes,
+	}
 }
 
 // handleTorrentAction maps a closed action vocabulary to Transmission RPC methods.
@@ -1325,16 +1308,16 @@ func (server *Server) handleTorrentAction(
 		return
 	}
 
-	methods := map[string]string{
-		"queue-bottom": "queue-move-bottom",
-		"queue-down":   "queue-move-down",
-		"queue-top":    "queue-move-top",
-		"queue-up":     "queue-move-up",
-		"reannounce":   "torrent-reannounce",
-		"start":        "torrent-start",
-		"start-now":    "torrent-start-now",
-		"stop":         "torrent-stop",
-		"verify":       "torrent-verify",
+	methods := map[string]transmissionrpc.Method{
+		"queue-bottom": transmissionrpc.MethodQueueMoveBottom,
+		"queue-down":   transmissionrpc.MethodQueueMoveDown,
+		"queue-top":    transmissionrpc.MethodQueueMoveTop,
+		"queue-up":     transmissionrpc.MethodQueueMoveUp,
+		"reannounce":   transmissionrpc.MethodTorrentReannounce,
+		"start":        transmissionrpc.MethodTorrentStart,
+		"start-now":    transmissionrpc.MethodTorrentStartNow,
+		"stop":         transmissionrpc.MethodTorrentStop,
+		"verify":       transmissionrpc.MethodTorrentVerify,
 	}
 	method, found := methods[input.Action]
 	if !found {
@@ -1349,8 +1332,7 @@ func (server *Server) handleTorrentAction(
 	}
 	failures, err := server.callTransmissionBySelection(
 		request.Context(),
-		method,
-		map[string]any{},
+		torrentActionSelectionOperation(request.Context(), method),
 		input.IDs,
 		normalizedHashes,
 	)
@@ -1400,7 +1382,7 @@ func (server *Server) handleUpdateTorrents(
 		return
 	}
 
-	arguments := map[string]any{}
+	arguments := map[transmissionrpc.TorrentArgument]any{}
 	for key, value := range input.Changes {
 		rpcKey, decodedValue, err := validateTorrentChange(key, value)
 		if err != nil {
@@ -1413,8 +1395,7 @@ func (server *Server) handleUpdateTorrents(
 
 	failures, err := server.callTransmissionBySelection(
 		request.Context(),
-		"torrent-set",
-		arguments,
+		torrentSetSelectionOperation(request.Context(), arguments),
 		input.IDs,
 		normalizedHashes,
 	)
@@ -1427,7 +1408,7 @@ func (server *Server) handleUpdateTorrents(
 	if normalizedHashes != nil {
 		selectionCount = len(normalizedHashes)
 	}
-	if labels, changed := arguments["labels"].([]string); changed &&
+	if labels, changed := arguments[transmissionrpc.TorrentArgumentLabels].([]string); changed &&
 		len(failures) < selectionCount {
 		if _, err := server.saveTorrentLabels(request.Context(), labels); err != nil {
 			server.logInternalError("save labels used by torrent update", err)
@@ -1438,7 +1419,7 @@ func (server *Server) handleUpdateTorrents(
 	}
 	if server.writeTorrentOperationFailures(
 		responseWriter,
-		"torrent-set",
+		transmissionrpc.MethodTorrentSet,
 		selectionField,
 		failures,
 	) {
@@ -1482,8 +1463,7 @@ func (server *Server) handleRemoveTorrents(
 
 	failures, err := server.callTransmissionBySelection(
 		request.Context(),
-		"torrent-remove",
-		map[string]any{"delete-local-data": input.DeleteLocalData},
+		torrentRemoveSelectionOperation(request.Context(), input.DeleteLocalData),
 		input.IDs,
 		normalizedHashes,
 	)
@@ -1494,7 +1474,7 @@ func (server *Server) handleRemoveTorrents(
 	}
 	if server.writeTorrentOperationFailures(
 		responseWriter,
-		"torrent-remove",
+		transmissionrpc.MethodTorrentRemove,
 		selectionField,
 		failures,
 	) {
@@ -1558,17 +1538,15 @@ func (server *Server) handleRenameTorrentPath(
 		return
 	}
 	group := groups[0]
-	var result map[string]any
-	if err := group.Daemon.Client.Call(
+	result, err := group.Daemon.Client.RenameTorrentPath(
 		request.Context(),
-		"torrent-rename-path",
-		map[string]any{
-			"ids":  group.Identifiers,
-			"name": input.Name,
-			"path": input.Path,
+		transmissionrpc.RenameTorrentPathRequest{
+			IDs:  group.Identifiers,
+			Name: input.Name,
+			Path: input.Path,
 		},
-		&result,
-	); err != nil {
+	)
+	if err != nil {
 		var resultError *transmissionrpc.ResultError
 		if errors.As(err, &resultError) {
 			writeError(
@@ -1601,13 +1579,11 @@ func (server *Server) handleRenameTorrentPath(
 	writeJSON(responseWriter, http.StatusOK, result)
 }
 
-// callTransmission centralizes daemon availability and safe error translation.
-func (server *Server) callTransmission(
+// callTransmissionOperation centralizes daemon availability and safe error translation.
+func (server *Server) callTransmissionOperation(
 	responseWriter http.ResponseWriter,
-	request *http.Request,
-	method string,
-	arguments any,
-	result any,
+	method transmissionrpc.Method,
+	operation func(*transmissionrpc.Adapter) error,
 	rejectionStatus int,
 ) bool {
 	if server.transmission == nil {
@@ -1621,36 +1597,31 @@ func (server *Server) callTransmission(
 		return false
 	}
 
-	return server.callTransmissionClient(
+	return server.callTransmissionClientOperation(
 		responseWriter,
-		request,
 		server.transmission,
 		method,
-		arguments,
-		result,
+		operation,
 		rejectionStatus,
 	)
 }
 
-// callTransmissionClient translates one explicitly routed daemon operation.
-func (server *Server) callTransmissionClient(
+// callTransmissionClientOperation translates one explicitly routed daemon operation.
+func (server *Server) callTransmissionClientOperation(
 	responseWriter http.ResponseWriter,
-	request *http.Request,
-	client transmissionrpc.Caller,
-	method string,
-	arguments any,
-	result any,
+	client *transmissionrpc.Adapter,
+	method transmissionrpc.Method,
+	operation func(*transmissionrpc.Adapter) error,
 	rejectionStatus int,
 ) bool {
-
-	err := client.Call(request.Context(), method, arguments, result)
+	err := operation(client)
 	if err == nil {
 		return true
 	}
 
 	var resultError *transmissionrpc.ResultError
 	if errors.As(err, &resultError) {
-		server.logger.Warn("Transmission rejected an RPC operation", "method", method)
+		server.logger.Warn("Transmission rejected an RPC operation", "method", method.String())
 		writeError(
 			responseWriter,
 			rejectionStatus,
@@ -1661,7 +1632,7 @@ func (server *Server) callTransmissionClient(
 		return false
 	}
 
-	server.logInternalError("call Transmission RPC method "+method, err)
+	server.logInternalError("call Transmission RPC method "+method.String(), err)
 	writeError(
 		responseWriter,
 		http.StatusServiceUnavailable,
@@ -1670,6 +1641,85 @@ func (server *Server) callTransmissionClient(
 	)
 
 	return false
+}
+
+func torrentSetSelectionOperation(
+	ctx context.Context,
+	changes map[transmissionrpc.TorrentArgument]any,
+) torrentSelectionOperation {
+	return torrentSelectionOperation{
+		Method: transmissionrpc.MethodTorrentSet,
+		Run: func(client *transmissionrpc.Adapter, ids any) error {
+			return client.SetTorrents(ctx, transmissionrpc.SetTorrentsRequest{
+				IDs:     ids,
+				Changes: changes,
+			})
+		},
+	}
+}
+
+func torrentLabelSelectionOperation(
+	ctx context.Context,
+	labels []string,
+) torrentSelectionOperation {
+	return torrentSelectionOperation{
+		Method: transmissionrpc.MethodTorrentSet,
+		Run: func(client *transmissionrpc.Adapter, ids any) error {
+			return client.SetTorrentLabels(ctx, transmissionrpc.SetTorrentLabelsRequest{
+				IDs:    ids,
+				Labels: labels,
+			})
+		},
+	}
+}
+
+func torrentRemoveSelectionOperation(
+	ctx context.Context,
+	deleteLocalData bool,
+) torrentSelectionOperation {
+	return torrentSelectionOperation{
+		Method: transmissionrpc.MethodTorrentRemove,
+		Run: func(client *transmissionrpc.Adapter, ids any) error {
+			return client.RemoveTorrents(ctx, transmissionrpc.RemoveTorrentsRequest{
+				IDs:             ids,
+				DeleteLocalData: deleteLocalData,
+			})
+		},
+	}
+}
+
+func torrentActionSelectionOperation(
+	ctx context.Context,
+	method transmissionrpc.Method,
+) torrentSelectionOperation {
+	return torrentSelectionOperation{
+		Method: method,
+		Run: func(client *transmissionrpc.Adapter, ids any) error {
+			request := transmissionrpc.TorrentSelectionRequest{IDs: ids}
+			switch method {
+			case transmissionrpc.MethodQueueMoveBottom:
+				return client.MoveTorrentsToQueueBottom(ctx, request)
+			case transmissionrpc.MethodQueueMoveDown:
+				return client.MoveTorrentsDown(ctx, request)
+			case transmissionrpc.MethodQueueMoveTop:
+				return client.MoveTorrentsToQueueTop(ctx, request)
+			case transmissionrpc.MethodQueueMoveUp:
+				return client.MoveTorrentsUp(ctx, request)
+			case transmissionrpc.MethodTorrentReannounce:
+				return client.ReannounceTorrents(ctx, request)
+			case transmissionrpc.MethodTorrentStart:
+				return client.StartTorrents(ctx, request)
+			case transmissionrpc.MethodTorrentStartNow:
+				return client.StartTorrentsNow(ctx, request)
+			case transmissionrpc.MethodTorrentStop:
+				return client.StopTorrents(ctx, request)
+			case transmissionrpc.MethodTorrentVerify:
+				return client.VerifyTorrents(ctx, request)
+			default:
+				return errors.New("unsupported typed torrent action")
+			}
+		},
+	}
 }
 
 func parseTorrentSelection(value string, allowRecentlyActive bool) (any, error) {
@@ -1838,45 +1888,64 @@ func mergeTorrentLabels(existing []string, profileLabels []string) ([]string, er
 	return merged, nil
 }
 
-func validateTorrentChange(key string, value json.RawMessage) (string, any, error) {
+func validateTorrentChange(
+	key string,
+	value json.RawMessage,
+) (transmissionrpc.TorrentArgument, any, error) {
 	switch key {
 	case "bandwidthPriority":
-		return integerTorrentChange(key, key, value, -1, 1)
-	case "downloadLimit", "uploadLimit":
-		return integerTorrentChange(key, key, value, 0, 1_000_000_000)
+		return integerTorrentChange(
+			key,
+			transmissionrpc.TorrentArgumentBandwidthPriority,
+			value,
+			-1,
+			1,
+		)
+	case "downloadLimit":
+		return integerTorrentChange(key, transmissionrpc.TorrentArgumentDownloadLimit, value, 0, 1_000_000_000)
+	case "uploadLimit":
+		return integerTorrentChange(key, transmissionrpc.TorrentArgumentUploadLimit, value, 0, 1_000_000_000)
 	case "peerLimit":
-		return integerTorrentChange(key, "peer-limit", value, 1, 10000)
+		return integerTorrentChange(key, transmissionrpc.TorrentArgumentPeerLimit, value, 1, 10000)
 	case "queuePosition":
-		return integerTorrentChange(key, key, value, 0, 1_000_000)
+		return integerTorrentChange(key, transmissionrpc.TorrentArgumentQueuePosition, value, 0, 1_000_000)
 	case "seedIdleLimit":
-		return integerTorrentChange(key, key, value, 1, 525600)
-	case "seedIdleMode", "seedRatioMode":
-		return integerTorrentChange(key, key, value, 0, 2)
-	case "downloadLimited", "honorsSessionLimits", "uploadLimited":
+		return integerTorrentChange(key, transmissionrpc.TorrentArgumentSeedIdleLimit, value, 1, 525600)
+	case "seedIdleMode":
+		return integerTorrentChange(key, transmissionrpc.TorrentArgumentSeedIdleMode, value, 0, 2)
+	case "seedRatioMode":
+		return integerTorrentChange(key, transmissionrpc.TorrentArgumentSeedRatioMode, value, 0, 2)
+	case "downloadLimited":
 		decoded, err := decodeRawBoolean(value)
-		return key, decoded, wrapTorrentChangeError(key, err)
+		return transmissionrpc.TorrentArgumentDownloadLimited, decoded, wrapTorrentChangeError(key, err)
+	case "honorsSessionLimits":
+		decoded, err := decodeRawBoolean(value)
+		return transmissionrpc.TorrentArgumentHonorsSessionLimits, decoded, wrapTorrentChangeError(key, err)
+	case "uploadLimited":
+		decoded, err := decodeRawBoolean(value)
+		return transmissionrpc.TorrentArgumentUploadLimited, decoded, wrapTorrentChangeError(key, err)
 	case "seedRatioLimit":
 		decoded, err := decodeRawNumber(value, 0, 10000)
-		return key, decoded, wrapTorrentChangeError(key, err)
+		return transmissionrpc.TorrentArgumentSeedRatioLimit, decoded, wrapTorrentChangeError(key, err)
 	case "labels":
 		decoded, err := decodeRawStringList(value)
 		if err == nil {
 			err = validateLabels(decoded)
 		}
-		return key, decoded, wrapTorrentChangeError(key, err)
+		return transmissionrpc.TorrentArgumentLabels, decoded, wrapTorrentChangeError(key, err)
 	case "trackerList":
 		decoded, err := decodeRawString(value)
 		if err == nil && len(decoded) > 256*1024 {
 			err = errors.New("must not exceed 256 KiB")
 		}
-		return key, decoded, wrapTorrentChangeError(key, err)
+		return transmissionrpc.TorrentArgumentTrackerList, decoded, wrapTorrentChangeError(key, err)
 	case "filesWanted", "filesUnwanted", "priorityHigh", "priorityLow", "priorityNormal":
-		rpcKeys := map[string]string{
-			"filesWanted":    "files-wanted",
-			"filesUnwanted":  "files-unwanted",
-			"priorityHigh":   "priority-high",
-			"priorityLow":    "priority-low",
-			"priorityNormal": "priority-normal",
+		rpcKeys := map[string]transmissionrpc.TorrentArgument{
+			"filesWanted":    transmissionrpc.TorrentArgumentFilesWanted,
+			"filesUnwanted":  transmissionrpc.TorrentArgumentFilesUnwanted,
+			"priorityHigh":   transmissionrpc.TorrentArgumentPriorityHigh,
+			"priorityLow":    transmissionrpc.TorrentArgumentPriorityLow,
+			"priorityNormal": transmissionrpc.TorrentArgumentPriorityNormal,
 		}
 		decoded, err := decodeRawIndices(value)
 		return rpcKeys[key], decoded, wrapTorrentChangeError(key, err)
@@ -1887,11 +1956,11 @@ func validateTorrentChange(key string, value json.RawMessage) (string, any, erro
 
 func integerTorrentChange(
 	key string,
-	rpcKey string,
+	rpcKey transmissionrpc.TorrentArgument,
 	value json.RawMessage,
 	minimum int64,
 	maximum int64,
-) (string, any, error) {
+) (transmissionrpc.TorrentArgument, any, error) {
 	decoded, err := decodeRawInteger(value, minimum, maximum)
 
 	return rpcKey, decoded, wrapTorrentChangeError(key, err)

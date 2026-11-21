@@ -29,7 +29,7 @@ import type {
 } from '../src/types/tests/web/toast.test.d.ts';
 
 /**
- * Tests - Web - Toast - Notyf Mocks.
+ * Toast - Notyf Mocks.
  *
  * Records each toast operation without creating browser DOM elements.
  * The real toast module still owns replacement and click behavior.
@@ -59,7 +59,7 @@ vi.mock('notyf', () => ({
 }));
 
 /**
- * Tests - Web - Toast - Toast.
+ * Toast - Toast.
  *
  * Verifies the dashboard keeps only its latest result visible.
  * The suite also preserves the existing click-to-dismiss behavior.

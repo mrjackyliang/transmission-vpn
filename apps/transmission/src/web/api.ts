@@ -33,139 +33,407 @@ import {
   createPasskey,
   getPasskey,
 } from '@/web/passkeys.ts';
+import {
+  bareFilenamePattern,
+  contentDispositionFilenamePattern,
+  encodedFilenamePattern,
+  escapedCharacterPattern,
+  infoHashPattern,
+  quotedFilenamePattern,
+} from '@/web/regex.js';
 
 import type {
-  Web_Api_AccountSecurity,
+  Web_Api_AccountSecuritySchema,
+  Web_Api_AddPasskey_Credential,
+  Web_Api_AddPasskey_Name,
+  Web_Api_AddPasskey_Password,
+  Web_Api_AddPasskey_Returns,
+  Web_Api_AddTorrent_Returns,
   Web_Api_AddTorrentInput,
-  Web_Api_Administrator,
-  Web_Api_AuthenticationResponse,
-  Web_Api_BlocklistSourceStatus,
-  Web_Api_BlocklistStatus,
+  Web_Api_AdministratorSchema,
+  Web_Api_ApiError_Code,
+  Web_Api_ApiError_Constructor_Code,
+  Web_Api_ApiError_Constructor_Details,
+  Web_Api_ApiError_Constructor_Issues,
+  Web_Api_ApiError_Constructor_Message,
+  Web_Api_ApiError_Constructor_Status,
+  Web_Api_ApiError_Details,
+  Web_Api_ApiError_Issues,
+  Web_Api_ApiError_Status,
+  Web_Api_AuthenticationResponseSchema,
+  Web_Api_BackupGrantSchema,
+  Web_Api_BackupImportJobSchema,
+  Web_Api_BackupImportPreviewSchema,
+  Web_Api_BackupSourceDirectorySchema,
+  Web_Api_BlocklistSourceStatusSchema,
+  Web_Api_BlocklistStatusSchema,
+  Web_Api_ChangePassword_CurrentPassword,
+  Web_Api_ChangePassword_NewPassword,
+  Web_Api_ChangePassword_Returns,
+  Web_Api_ChangeUsername_Password,
+  Web_Api_ChangeUsername_Returns,
+  Web_Api_ChangeUsername_Username,
   Web_Api_ClaimInput,
+  Web_Api_ClaimInstallation_Returns,
+  Web_Api_ConfirmBackupOperation_Code,
+  Web_Api_ConfirmBackupOperation_Password,
+  Web_Api_ConfirmBackupOperation_Returns,
+  Web_Api_ConfirmBackupOperationWithPasskey_Credential,
+  Web_Api_ConfirmBackupOperationWithPasskey_Returns,
+  Web_Api_ConnectionBeingRemovedMessage_CaughtError,
+  Web_Api_ConnectionBeingRemovedMessage_ConnectionName,
+  Web_Api_ConnectionBeingRemovedMessage_Returns,
   Web_Api_ConnectLiveEvents_OnSnapshot,
+  Web_Api_ConnectLiveEvents_ParsedSnapshot,
   Web_Api_ConnectLiveEvents_Returns,
+  Web_Api_ConnectLiveEvents_Value,
+  Web_Api_CreateBackupImport_Grant,
+  Web_Api_CreateBackupImport_Response,
+  Web_Api_CreateBackupImport_Returns,
+  Web_Api_CreateDirectory_ProfileId,
+  Web_Api_CreateDirectory_Returns,
   Web_Api_CreateDirectoryInput,
-  Web_Api_CreatedToken,
+  Web_Api_CreatedTokenSchema,
+  Web_Api_CreateNotification_Returns,
+  Web_Api_CreateRpcLogin_Returns,
+  Web_Api_CreateToken_Returns,
   Web_Api_CreateTokenInput,
+  Web_Api_CreateTorrentProfile_IncompleteDirectory,
+  Web_Api_CreateTorrentProfile_Returns,
+  Web_Api_CreateVpnConnection_Returns,
   Web_Api_CreateVpnConnectionInput,
+  Web_Api_CreateWebProxyLogin_Returns,
   Web_Api_CustomProfileInput,
   Web_Api_CustomProfileResponse,
-  Web_Api_DefaultTorrentProfile,
+  Web_Api_CustomProfileResponseSchema,
   Web_Api_DefaultTorrentProfileInput,
+  Web_Api_DefaultTorrentProfileSchema,
+  Web_Api_DefaultTorrentProfileUpdateResponseSchema,
+  Web_Api_DeleteDirectory_Path,
+  Web_Api_DeleteDirectory_ProfileId,
+  Web_Api_DeleteDirectory_Query,
+  Web_Api_DeleteDirectory_Returns,
+  Web_Api_DeleteDirectory_ValidatedPath,
+  Web_Api_DeleteRpcLogin_LoginId,
+  Web_Api_DeleteRpcLogin_Returns,
+  Web_Api_DeleteRpcLogin_ValidatedLoginId,
+  Web_Api_DeleteTorrentProfile_MoveTorrents,
+  Web_Api_DeleteTorrentProfile_Path,
+  Web_Api_DeleteTorrentProfile_ProfileId,
+  Web_Api_DeleteTorrentProfile_Returns,
   Web_Api_DeleteTorrentProfileInput,
-  Web_Api_DeleteTorrentProfileResponse,
+  Web_Api_DeleteTorrentProfileResponseSchema,
+  Web_Api_DeleteVpnConnection_ConnectionId,
+  Web_Api_DeleteVpnConnection_Returns,
+  Web_Api_DeleteVpnConnection_ValidatedConnectionId,
   Web_Api_DeleteVpnConnectionInput,
-  Web_Api_DeleteVpnConnectionResponse,
-  Web_Api_Directory,
+  Web_Api_DeleteVpnConnectionResponseSchema,
+  Web_Api_DeleteWebProxyLogin_LoginId,
+  Web_Api_DeleteWebProxyLogin_Returns,
+  Web_Api_DeleteWebProxyLogin_ValidatedLoginId,
   Web_Api_DirectoryPurpose,
-  Web_Api_ErrorEnvelope,
-  Web_Api_ErrorIssue,
-  Web_Api_JsonValue,
-  Web_Api_LiveSnapshot,
+  Web_Api_DirectorySchema,
+  Web_Api_DisableTotp_Password,
+  Web_Api_DisableTotp_Returns,
+  Web_Api_DisconnectVpnConnection_ConnectionId,
+  Web_Api_DisconnectVpnConnection_Returns,
+  Web_Api_DisconnectVpnConnection_ValidatedConnectionId,
+  Web_Api_DismissRemovedSecrets_Returns,
+  Web_Api_DispositionFileName_BareMatch,
+  Web_Api_DispositionFileName_BareName,
+  Web_Api_DispositionFileName_Disposition,
+  Web_Api_DispositionFileName_EncodedMatch,
+  Web_Api_DispositionFileName_EncodedName,
+  Web_Api_DispositionFileName_Fallback,
+  Web_Api_DispositionFileName_QuotedMatch,
+  Web_Api_DispositionFileName_QuotedName,
+  Web_Api_DispositionFileName_Returns,
+  Web_Api_DownloadBackupExport_CsrfToken,
+  Web_Api_DownloadBackupExport_Disposition,
+  Web_Api_DownloadBackupExport_Filename,
+  Web_Api_DownloadBackupExport_FilenameMatch,
+  Web_Api_DownloadBackupExport_Grant,
+  Web_Api_DownloadBackupExport_MatchedFilename,
+  Web_Api_DownloadBackupExport_Returns,
+  Web_Api_DownloadBackupExport_Url,
+  Web_Api_DownloadFinishedFiles_Hashes,
+  Web_Api_DownloadFinishedFiles_Returns,
+  Web_Api_DownloadTorrentFiles_CsrfToken,
+  Web_Api_DownloadTorrentFiles_FallbackName,
+  Web_Api_DownloadTorrentFiles_Filename,
+  Web_Api_DownloadTorrentFiles_Hashes,
+  Web_Api_DownloadTorrentFiles_Returns,
+  Web_Api_DownloadTorrentFiles_Url,
+  Web_Api_EnableTotp_Code,
+  Web_Api_EnableTotp_Returns,
+  Web_Api_ErrorEnvelopeSchema,
+  Web_Api_GetAccountSecurity_Returns,
+  Web_Api_GetBackupImport_ImportId,
+  Web_Api_GetBackupImport_Response,
+  Web_Api_GetBackupImport_Returns,
+  Web_Api_GetBackupSourceDirectory_Path,
+  Web_Api_GetBackupSourceDirectory_Response,
+  Web_Api_GetBackupSourceDirectory_Returns,
+  Web_Api_GetBlocklistStatus_Returns,
+  Web_Api_GetCurrentAdministrator_ResponseValue,
+  Web_Api_GetCurrentAdministrator_Returns,
+  Web_Api_GetCurrentBackupImport_Response,
+  Web_Api_GetCurrentBackupImport_Returns,
+  Web_Api_GetDirectory_Path,
+  Web_Api_GetDirectory_ProfileId,
+  Web_Api_GetDirectory_Query,
+  Web_Api_GetDirectory_Returns,
+  Web_Api_GetDirectory_ValidatedPath,
+  Web_Api_GetNotificationEvents_Response,
+  Web_Api_GetNotificationEvents_Returns,
+  Web_Api_GetNotifications_Response,
+  Web_Api_GetNotifications_Returns,
+  Web_Api_GetProfiles_ProviderId,
+  Web_Api_GetProfiles_Query,
+  Web_Api_GetProfiles_Response,
+  Web_Api_GetProfiles_Returns,
+  Web_Api_GetProfiles_ValidatedProviderId,
+  Web_Api_GetProviders_Response,
+  Web_Api_GetProviders_Returns,
+  Web_Api_GetRpcLogins_Response,
+  Web_Api_GetRpcLogins_Returns,
+  Web_Api_GetSettings_Returns,
+  Web_Api_GetSetupStatus_Returns,
+  Web_Api_GetTokens_Response,
+  Web_Api_GetTokens_Returns,
+  Web_Api_GetTorrentDetail_Returns,
+  Web_Api_GetTorrentDetail_TorrentId,
+  Web_Api_GetTorrentOrganization_Returns,
+  Web_Api_GetTorrentProfiles_Returns,
+  Web_Api_GetTorrents_Returns,
+  Web_Api_GetTransmissionFreeSpace_Path,
+  Web_Api_GetTransmissionFreeSpace_Query,
+  Web_Api_GetTransmissionFreeSpace_Returns,
+  Web_Api_GetTransmissionFreeSpace_ValidatedPath,
+  Web_Api_GetVpnConnection_ConnectionId,
+  Web_Api_GetVpnConnection_Returns,
+  Web_Api_GetVpnConnection_ValidatedConnectionId,
+  Web_Api_GetVpnConnections_Returns,
+  Web_Api_GetWebProxy_Returns,
+  Web_Api_IssueFor_CaughtError,
+  Web_Api_IssueFor_Field,
+  Web_Api_IssueFor_Issue,
+  Web_Api_IssueFor_Returns,
+  Web_Api_IsVpnConnectionRequiredError_CaughtError,
+  Web_Api_IsVpnConnectionRequiredError_Returns,
+  Web_Api_JsonValueSchema,
+  Web_Api_LiveSnapshotSchema,
+  Web_Api_Login_Returns,
   Web_Api_LoginInput,
-  Web_Api_LoginResult,
-  Web_Api_MovedTorrent,
-  Web_Api_Passkey,
+  Web_Api_LoginResultSchema,
+  Web_Api_Logout_Returns,
+  Web_Api_MessageForApiError_Code,
+  Web_Api_MessageForApiError_Details,
+  Web_Api_MessageForApiError_Limit,
+  Web_Api_MessageForApiError_Message,
+  Web_Api_MessageForApiError_NormalizedMessage,
+  Web_Api_MessageForApiError_Returns,
+  Web_Api_MessageForApiError_Status,
+  Web_Api_MovedTorrentSchema,
+  Web_Api_NotificationTargetSchema,
+  Web_Api_NotificationTestSchema,
   Web_Api_PasskeyCeremony,
-  Web_Api_Provider,
-  Web_Api_RecoveryCodes,
-  Web_Api_RemovedSecret,
+  Web_Api_PasskeyCeremonySchema,
+  Web_Api_PasskeySchema,
+  Web_Api_PreviewAnotherTransmissionImport_ConfigPath,
+  Web_Api_PreviewAnotherTransmissionImport_FolderMappings,
+  Web_Api_PreviewAnotherTransmissionImport_Response,
+  Web_Api_PreviewAnotherTransmissionImport_Returns,
+  Web_Api_PreviewBackupImport_FolderMappings,
+  Web_Api_PreviewBackupImport_ProfileActions,
+  Web_Api_PreviewBackupImport_Response,
+  Web_Api_PreviewBackupImport_Returns,
+  Web_Api_PreviewTorrentLinks_Links,
+  Web_Api_PreviewTorrentLinks_Returns,
+  Web_Api_ReadCookie_MatchingPart,
+  Web_Api_ReadCookie_Name,
+  Web_Api_ReadCookie_Parts,
+  Web_Api_ReadCookie_Prefix,
+  Web_Api_ReadCookie_Returns,
+  Web_Api_ReconnectVpnConnection_ConnectionId,
+  Web_Api_ReconnectVpnConnection_Returns,
+  Web_Api_ReconnectVpnConnection_ValidatedConnectionId,
+  Web_Api_RecoveryCodesSchema,
+  Web_Api_RefreshVpnCatalog_ProviderId,
+  Web_Api_RefreshVpnCatalog_Returns,
+  Web_Api_RefreshVpnCatalog_ValidatedProviderId,
+  Web_Api_RegenerateRecoveryCodes_Password,
+  Web_Api_RegenerateRecoveryCodes_Returns,
+  Web_Api_RemovedSecretSchema,
+  Web_Api_RemoveNotification_NotificationId,
+  Web_Api_RemoveNotification_Returns,
+  Web_Api_RemovePasskey_PasskeyId,
+  Web_Api_RemovePasskey_Password,
+  Web_Api_RemovePasskey_Returns,
+  Web_Api_RemoveTorrents_DeleteLocalData,
+  Web_Api_RemoveTorrents_Hashes,
+  Web_Api_RemoveTorrents_Returns,
   Web_Api_RemoveTorrentsInput,
+  Web_Api_RenameTorrentPath_Returns,
   Web_Api_RenameTorrentPathInput,
   Web_Api_Request_Options,
-  Web_Api_RPCCredential,
-  Web_Api_RPCLogin,
+  Web_Api_RequestBlocklistUpdate_Returns,
+  Web_Api_RequestJson_BaseOptions,
+  Web_Api_RequestJson_CsrfToken,
+  Web_Api_RequestJson_ParsedResponse,
+  Web_Api_RequestJson_Path,
+  Web_Api_RequestJson_RequestBody,
+  Web_Api_RequestJson_ResponseValue,
+  Web_Api_RequestVoid_BaseOptions,
+  Web_Api_RequestVoid_CsrfToken,
+  Web_Api_RequestVoid_Path,
+  Web_Api_RequestVoid_RequestBody,
+  Web_Api_RequestVoid_Returns,
+  Web_Api_ResponseArraySchema_Returns,
+  Web_Api_ResponseError_Details,
+  Web_Api_ResponseError_ParsedError,
+  Web_Api_ResponseError_ResponseValue,
+  Web_Api_ResponseError_Returns,
+  Web_Api_RestartTransmission_Returns,
+  Web_Api_RevokeToken_Returns,
+  Web_Api_RevokeToken_TokenId,
+  Web_Api_RevokeToken_ValidatedTokenId,
+  Web_Api_RpcCredentialSchema,
   Web_Api_RPCLoginInput,
+  Web_Api_RpcLoginSchema,
+  Web_Api_RunTorrentAction_Hashes,
+  Web_Api_RunTorrentAction_Returns,
   Web_Api_Schema,
-  Web_Api_Scope,
+  Web_Api_ScopeSchema,
+  Web_Api_SetDefaultVpnConnection_Returns,
   Web_Api_SetDefaultVpnConnectionInput,
-  Web_Api_SettingsSnapshot,
+  Web_Api_SetTorrentProfile_Returns,
   Web_Api_SetTorrentProfileInput,
-  Web_Api_SetTorrentProfileResponse,
-  Web_Api_SetupStatus,
-  Web_Api_Token,
+  Web_Api_SetupStatusSchema,
+  Web_Api_SignInWithPasskey_Credential,
+  Web_Api_SignInWithPasskey_Returns,
+  Web_Api_StartTotpSetup_Password,
+  Web_Api_StartTotpSetup_Returns,
+  Web_Api_SubmitSecondFactor_Challenge,
+  Web_Api_SubmitSecondFactor_Code,
+  Web_Api_SubmitSecondFactor_Returns,
+  Web_Api_SummaryFor_CaughtError,
+  Web_Api_SummaryFor_Fallback,
+  Web_Api_SummaryFor_Returns,
+  Web_Api_SummaryFor_ShownFields,
+  Web_Api_TestNotification_NotificationId,
+  Web_Api_TestNotification_Returns,
+  Web_Api_TokenSchema,
   Web_Api_Torrent,
   Web_Api_TorrentAction,
   Web_Api_TorrentActionInput,
-  Web_Api_TorrentAddResult,
+  Web_Api_TorrentAddResultSchema,
   Web_Api_TorrentChanges,
   Web_Api_TorrentContentsDownload,
-  Web_Api_TorrentDetail,
-  Web_Api_TorrentLinkPreview,
-  Web_Api_TorrentLinkPreviewResponse,
-  Web_Api_TorrentListResponse,
-  Web_Api_TorrentOrganization,
-  Web_Api_TorrentProfile,
+  Web_Api_TorrentContentsDownloadSchema,
+  Web_Api_TorrentLinkPreviewResponseSchema,
+  Web_Api_TorrentLinkPreviewSchema,
+  Web_Api_TorrentListResponseSchema,
+  Web_Api_TorrentProfileAssignmentResponseSchema,
   Web_Api_TorrentProfileInput,
-  Web_Api_TorrentProfilesResponse,
-  Web_Api_TotpSetup,
+  Web_Api_TorrentProfileSchema,
+  Web_Api_TorrentProfileUpdateResponseSchema,
+  Web_Api_TotpSetupSchema,
   Web_Api_TransmissionFreeSpace,
-  Web_Api_TransmissionRestartResponse,
+  Web_Api_TransmissionFreeSpaceSchema,
+  Web_Api_TransmissionRestartResponseSchema,
+  Web_Api_UpdateDefaultTorrentProfile_IncompleteDirectory,
+  Web_Api_UpdateDefaultTorrentProfile_MoveTorrents,
+  Web_Api_UpdateDefaultTorrentProfile_Returns,
   Web_Api_UpdateDefaultTorrentProfileInput,
-  Web_Api_UpdateDefaultTorrentProfileResponse,
+  Web_Api_UpdateNotification_NotificationId,
+  Web_Api_UpdateNotification_Returns,
+  Web_Api_UpdateRpcLogin_LoginId,
+  Web_Api_UpdateRpcLogin_Returns,
+  Web_Api_UpdateRpcLogin_ValidatedLoginId,
   Web_Api_UpdateRPCLoginInput,
+  Web_Api_UpdateSettings_IncompleteDirectory,
+  Web_Api_UpdateSettings_Returns,
   Web_Api_UpdateSettingsInput,
+  Web_Api_UpdateToken_Returns,
+  Web_Api_UpdateToken_TokenId,
+  Web_Api_UpdateToken_ValidatedTokenId,
   Web_Api_UpdateTokenInput,
+  Web_Api_UpdateTorrentOrganization_Returns,
   Web_Api_UpdateTorrentOrganizationInput,
-  Web_Api_UpdateTorrentOrganizationResponse,
+  Web_Api_UpdateTorrentOrganizationResponseSchema,
+  Web_Api_UpdateTorrentProfile_IncompleteDirectory,
+  Web_Api_UpdateTorrentProfile_MoveTorrents,
+  Web_Api_UpdateTorrentProfile_ProfileId,
+  Web_Api_UpdateTorrentProfile_Returns,
   Web_Api_UpdateTorrentProfileInput,
-  Web_Api_UpdateTorrentProfileResponse,
+  Web_Api_UpdateTorrents_Hashes,
+  Web_Api_UpdateTorrents_Returns,
   Web_Api_UpdateTorrentsInput,
+  Web_Api_UpdateVpnConnection_ConnectionId,
+  Web_Api_UpdateVpnConnection_Returns,
+  Web_Api_UpdateVpnConnection_ValidatedConnectionId,
   Web_Api_UpdateVpnConnectionInput,
+  Web_Api_UpdateWebProxy_Enabled,
+  Web_Api_UpdateWebProxy_Returns,
+  Web_Api_UpdateWebProxyLogin_LoginId,
+  Web_Api_UpdateWebProxyLogin_Returns,
+  Web_Api_UpdateWebProxyLogin_ValidatedLoginId,
   Web_Api_UpdateWebProxyLoginInput,
-  Web_Api_VpnConnection,
+  Web_Api_UploadCustomProfile_Profile,
+  Web_Api_UploadCustomProfile_ProfileName,
+  Web_Api_UploadCustomProfile_Returns,
   Web_Api_VpnConnectionResponse,
-  Web_Api_VpnConnectionsResponse,
-  Web_Api_VpnDefaultResponse,
-  Web_Api_VpnProfile,
+  Web_Api_VpnConnectionResponseSchema,
+  Web_Api_VpnConnectionSchema,
+  Web_Api_VpnConnectionsResponseSchema,
+  Web_Api_VpnDefaultResponseSchema,
   Web_Api_VpnTunnel,
-  Web_Api_WebProxy,
-  Web_Api_WebProxyCredential,
-  Web_Api_WebProxyLogin,
+  Web_Api_WebProxyCredentialSchema,
   Web_Api_WebProxyLoginInput,
+  Web_Api_WebProxyLoginSchema,
+  Web_Api_WebProxySchema,
 } from '@/types/web/api.d.ts';
 import type {
   Web_Backup_Document,
   Web_Backup_ExportSections,
   Web_Backup_Grant,
-  Web_Backup_ImportJob,
   Web_Backup_ImportPlan,
-  Web_Backup_ImportPreview,
   Web_Backup_Purpose,
-  Web_Backup_SourceDirectory,
 } from '@/types/web/backup.d.ts';
 import type {
   Web_Notifications_CreateInput,
-  Web_Notifications_Event,
-  Web_Notifications_Target,
-  Web_Notifications_TestResult,
   Web_Notifications_UpdateInput,
 } from '@/types/web/notifications.d.ts';
 
 /**
- * API - Response array schema.
+ * API - Response Array Schema.
  *
  * Treats a legacy or unexpected null response list as empty while retaining the
  * element schema. Request parsers remain strict in form-validation.ts.
+ *
+ * @param {Web_Api_Schema<Value>} elementSchema - Element schema.
+ *
+ * @returns {Web_Api_ResponseArraySchema_Returns<Value>}
  *
  * @since 2.0.0
  */
 const responseArraySchema = <Value>(
   elementSchema: Web_Api_Schema<Value>,
-): Web_Api_Schema<Value[]> => z.preprocess(
-  (value: unknown): unknown => (value === null) ? [] : value,
+): Web_Api_ResponseArraySchema_Returns<Value> => z.preprocess(
+  (value) => (value === null) ? [] : value,
   z.array(elementSchema),
 );
 
 /**
- * API - JSON value schema.
+ * API - JSON Value Schema.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
  * @since 2.0.0
  */
-const jsonValueSchema: Web_Api_Schema<Web_Api_JsonValue> = z.lazy(() => z.union([
+const jsonValueSchema: Web_Api_JsonValueSchema = z.lazy(() => z.union([
   z.boolean(),
   z.number(),
   z.string(),
@@ -175,7 +443,7 @@ const jsonValueSchema: Web_Api_Schema<Web_Api_JsonValue> = z.lazy(() => z.union(
 ]));
 
 /**
- * API - Service state schema.
+ * API - Service State Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
@@ -188,7 +456,7 @@ const serviceStateSchema = z.object({
 });
 
 /**
- * API - VPN tunnel schema.
+ * API - Vpn Tunnel Schema.
  *
  * Stores the two tunnel implementations accepted and returned by the API.
  * Request and response schemas reuse this closed vocabulary.
@@ -201,7 +469,7 @@ const vpnTunnelSchema = z.enum([
 ]);
 
 /**
- * API - VPN runtime state schema.
+ * API - Vpn Runtime State Schema.
  *
  * Matches every controller transition exposed by stored and live connection
  * responses.
@@ -216,7 +484,7 @@ const vpnRuntimeStateSchema = z.enum([
 ]);
 
 /**
- * API - VPN endpoint strategy schema.
+ * API - Vpn Endpoint Strategy Schema.
  *
  * Shares the controller's closed endpoint selection vocabulary.
  * Stored configuration and runtime state use the same three values.
@@ -230,7 +498,7 @@ const vpnEndpointStrategySchema = z.enum([
 ]);
 
 /**
- * API - VPN implementation schema.
+ * API - Vpn Implementation Schema.
  *
  * WireGuard reports whether the kernel or userspace engine is active.
  * OpenVPN omits this field.
@@ -243,7 +511,7 @@ const vpnImplementationSchema = z.enum([
 ]);
 
 /**
- * API - VPN daemon schema.
+ * API - Vpn Daemon Schema.
  *
  * Validates the per-connection Transmission process state returned with every
  * stored connection and live snapshot entry.
@@ -263,7 +531,7 @@ const vpnDaemonSchema = z.object({
 });
 
 /**
- * API - VPN protection schema.
+ * API - Vpn Protection Schema.
  *
  * Keeps the aggregate protection contract shared by status and live events in
  * one schema.
@@ -283,7 +551,7 @@ const vpnProtectionSchema = z.object({
 });
 
 /**
- * API - Stored VPN runtime schema.
+ * API - Vpn Connection Runtime Schema.
  *
  * The stored connection handler deliberately returns empty required fields for
  * unavailable controller values. Only implementation and handshake time are
@@ -311,7 +579,7 @@ const vpnConnectionRuntimeSchema = z.object({
 });
 
 /**
- * API - Live VPN connection schema.
+ * API - Live Vpn Connection Schema.
  *
  * Status and event snapshots omit unavailable controller details but always
  * include durable identity, address, timing, and daemon state.
@@ -343,7 +611,7 @@ const liveVpnConnectionSchema = z.object({
 });
 
 /**
- * API - Status schema.
+ * API - Status Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
@@ -381,7 +649,7 @@ const statusSchema = z.object({
 });
 
 /**
- * API - VPN status schema.
+ * API - Vpn Status Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
@@ -413,7 +681,7 @@ const vpnStatusSchema = z.object({
 });
 
 /**
- * API - Torrent schema.
+ * API - Torrent Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
@@ -458,7 +726,7 @@ const torrentSchema = z.object({
 }).loose();
 
 /**
- * API - Torrent profile options response schema.
+ * API - Torrent Profile Options Response Schema.
  *
  * Validates the complete application-owned profile returned by the control API.
  * The same schema is reused for list, create, and update responses.
@@ -489,14 +757,14 @@ const torrentProfileOptionsResponseSchema = z.object({
 });
 
 /**
- * API - Torrent profile schema.
+ * API - Torrent Profile Schema.
  *
  * Validates the complete application-owned named profile returned by the API.
  * Profile list, create, and update responses reuse this contract.
  *
  * @since 2.0.0
  */
-const torrentProfileSchema: Web_Api_Schema<Web_Api_TorrentProfile> = z.object({
+const torrentProfileSchema: Web_Api_TorrentProfileSchema = z.object({
   connectionId: z.string().nullable(),
   createdAt: z.string(),
   downloadDirectory: z.string(),
@@ -516,14 +784,14 @@ const torrentProfileSchema: Web_Api_Schema<Web_Api_TorrentProfile> = z.object({
 });
 
 /**
- * API - Default torrent profile schema.
+ * API - Default Torrent Profile Schema.
  *
  * Validates the complete Default profile returned with profile configuration.
  * Its folder lock and option defaults remain available to every profile screen.
  *
  * @since 2.0.0
  */
-const defaultTorrentProfileSchema: Web_Api_Schema<Web_Api_DefaultTorrentProfile> = z.object({
+const defaultTorrentProfileSchema: Web_Api_DefaultTorrentProfileSchema = z.object({
   downloadDirectory: z.string().min(1),
   downloadDirectoryLocked: z.boolean(),
   labels: responseArraySchema(z.string()),
@@ -533,7 +801,7 @@ const defaultTorrentProfileSchema: Web_Api_Schema<Web_Api_DefaultTorrentProfile>
 });
 
 /**
- * API - Torrent profiles response schema.
+ * API - Torrent Profiles Response Schema.
  *
  * Validates the profile list envelope.
  * Nested profiles reuse the full response schemas above.
@@ -551,14 +819,14 @@ const torrentProfilesResponseSchema = z.object({
 });
 
 /**
- * API - Torrent add result schema.
+ * API - Torrent Add Result Schema.
  *
  * Captures both newly-added and duplicate results from Transmission.
  * Callers use the duplicate flag to label each processed source.
  *
  * @since 2.0.0
  */
-const torrentAddResultSchema: Web_Api_Schema<Web_Api_TorrentAddResult> = z.object({
+const torrentAddResultSchema: Web_Api_TorrentAddResultSchema = z.object({
   connectionName: z.string(),
   duplicate: z.boolean(),
   hash: z.string(),
@@ -568,59 +836,59 @@ const torrentAddResultSchema: Web_Api_Schema<Web_Api_TorrentAddResult> = z.objec
 });
 
 /**
- * API - Torrent link preview schema.
+ * API - Torrent Link Preview Schema.
  *
  * Validates the metainfo fields resolved through the protected default route.
  * Magnet previews omit total size because their URI does not carry it.
  *
  * @since 2.0.0
  */
-const torrentLinkPreviewSchema: Web_Api_Schema<Web_Api_TorrentLinkPreview> = z.object({
-  hash: z.string().regex(/^[0-9a-f]{40}$/u),
+const torrentLinkPreviewSchema: Web_Api_TorrentLinkPreviewSchema = z.object({
+  hash: z.string().regex(new RegExp(infoHashPattern, 'u')),
   index: z.number().int().nonnegative(),
   name: z.string().min(1),
   totalSize: z.number().nonnegative().optional(),
 });
 
 /**
- * API - Torrent link preview response schema.
+ * API - Torrent Link Preview Response Schema.
  *
  * Missing indexes intentionally represent quiet preview failures and retain the
  * console's URL-derived fallback name.
  *
  * @since 2.0.0
  */
-const torrentLinkPreviewResponseSchema: Web_Api_Schema<Web_Api_TorrentLinkPreviewResponse> = z.object({
+const torrentLinkPreviewResponseSchema: Web_Api_TorrentLinkPreviewResponseSchema = z.object({
   items: responseArraySchema(torrentLinkPreviewSchema),
 });
 
 /**
- * API - Torrent list response schema.
+ * API - Torrent List Response Schema.
  *
  * Validates an explicit torrent refresh used after organization-wide label
  * mutations.
  *
  * @since 2.0.0
  */
-const torrentListResponseSchema: Web_Api_Schema<Web_Api_TorrentListResponse> = z.object({
+const torrentListResponseSchema: Web_Api_TorrentListResponseSchema = z.object({
   errors: responseArraySchema(z.string()),
   items: responseArraySchema(torrentSchema),
 });
 
 /**
- * API - Transmission free-space schema.
+ * API - Transmission Free Space Schema.
  *
  * Mirrors Transmission's free-space response without renaming its stable key.
  * The wrapper converts the byte value for display after parsing.
  *
  * @since 2.0.0
  */
-const transmissionFreeSpaceSchema: Web_Api_Schema<Web_Api_TransmissionFreeSpace> = z.object({
+const transmissionFreeSpaceSchema: Web_Api_TransmissionFreeSpaceSchema = z.object({
   'size-bytes': z.number().nonnegative(),
 });
 
 /**
- * API - Torrent file schema.
+ * API - Torrent File Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
@@ -634,7 +902,7 @@ const torrentFileSchema = z.object({
 });
 
 /**
- * API - Torrent file stats schema.
+ * API - Torrent File Stats Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
@@ -652,7 +920,7 @@ const torrentFileStatsSchema = z.object({
 });
 
 /**
- * API - Torrent peer schema.
+ * API - Torrent Peer Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
@@ -672,7 +940,7 @@ const torrentPeerSchema = z.object({
 }).loose();
 
 /**
- * API - Torrent tracker schema.
+ * API - Torrent Tracker Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
@@ -688,7 +956,7 @@ const torrentTrackerSchema = z.object({
 }).loose();
 
 /**
- * API - Torrent tracker stats schema.
+ * API - Torrent Tracker Stats Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
@@ -710,7 +978,7 @@ const torrentTrackerStatsSchema = z.object({
 }).loose();
 
 /**
- * API - Torrent detail schema.
+ * API - Torrent Detail Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
@@ -773,12 +1041,12 @@ const torrentDetailSchema = torrentSchema.extend({
     z.boolean(),
     z.literal(0),
     z.literal(1),
-  ]).transform((value: boolean | 0 | 1): boolean => value === true || value === 1)).optional(),
+  ]).transform((value) => value === true || value === 1)).optional(),
   'webseeds': responseArraySchema(z.string()).optional(),
 }).loose();
 
 /**
- * API - Statistics period schema.
+ * API - Statistics Period Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
@@ -794,7 +1062,7 @@ const statisticsPeriodSchema = z.object({
 });
 
 /**
- * API - Statistics schema.
+ * API - Statistics Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
@@ -812,14 +1080,14 @@ const statisticsSchema = z.object({
 }).loose();
 
 /**
- * API - Blocklist source status schema.
+ * API - Blocklist Source Status Schema.
  *
  * Validates one saved source's current result and optional last-good copy.
  * The parent status schema preserves the saved source order for the console.
  *
  * @since 2.0.0
  */
-const blocklistSourceStatusSchema: Web_Api_Schema<Web_Api_BlocklistSourceStatus> = z.object({
+const blocklistSourceStatusSchema: Web_Api_BlocklistSourceStatusSchema = z.object({
   copyFrom: z.string().nullable().optional(),
   error: z.string().nullable().optional(),
   ranges: z.number().nonnegative(),
@@ -833,14 +1101,14 @@ const blocklistSourceStatusSchema: Web_Api_Schema<Web_Api_BlocklistSourceStatus>
 });
 
 /**
- * API - Blocklist status schema.
+ * API - Blocklist Status Schema.
  *
  * Validates the merger state displayed beside the global blocklist settings.
  * Null source lists are normalized like every other API response collection.
  *
  * @since 2.0.0
  */
-const blocklistStatusSchema: Web_Api_Schema<Web_Api_BlocklistStatus> = z.object({
+const blocklistStatusSchema: Web_Api_BlocklistStatusSchema = z.object({
   lastAttemptAt: z.string().nullable().optional(),
   lastSuccessAt: z.string().nullable().optional(),
   nextUpdateAt: z.string().nullable().optional(),
@@ -856,7 +1124,7 @@ const blocklistStatusSchema: Web_Api_Schema<Web_Api_BlocklistStatus> = z.object(
 });
 
 /**
- * API - Setting schema.
+ * API - Setting Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
@@ -880,7 +1148,7 @@ const settingSchema = z.object({
 });
 
 /**
- * API - Settings schema.
+ * API - Settings Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
@@ -915,7 +1183,7 @@ const settingsSchema = z.object({
 });
 
 /**
- * API - Torrent organization schema.
+ * API - Torrent Organization Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
@@ -928,19 +1196,19 @@ const torrentOrganizationSchema = z.object({
 });
 
 /**
- * API - Torrent organization update response schema.
+ * API - Update Torrent Organization Response Schema.
  *
  * Retains the changed-torrent count returned after label removals and renames.
  * The saved revision and normalized labels share the ordinary organization shape.
  *
  * @since 2.0.0
  */
-const updateTorrentOrganizationResponseSchema: Web_Api_Schema<Web_Api_UpdateTorrentOrganizationResponse> = torrentOrganizationSchema.extend({
+const updateTorrentOrganizationResponseSchema: Web_Api_UpdateTorrentOrganizationResponseSchema = torrentOrganizationSchema.extend({
   changedTorrents: z.number().int().nonnegative(),
 });
 
 /**
- * API - Directory entry schema.
+ * API - Directory Entry Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
@@ -962,14 +1230,14 @@ const directoryEntrySchema = z.object({
 });
 
 /**
- * API - Directory schema.
+ * API - Directory Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
  * @since 2.0.0
  */
-const directorySchema: Web_Api_Schema<Web_Api_Directory> = z.object({
+const directorySchema: Web_Api_DirectorySchema = z.object({
   downloadAllowed: z.boolean(),
   downloadUnavailableReason: z.string().optional(),
   path: z.string(),
@@ -978,14 +1246,14 @@ const directorySchema: Web_Api_Schema<Web_Api_Directory> = z.object({
 });
 
 /**
- * API - VPN connection schema.
+ * API - Vpn Connection Schema.
  *
  * Covers the complete stored, runtime, daemon, and usage contract for one
  * independently managed connection.
  *
  * @since 2.0.0
  */
-const vpnConnectionSchema: Web_Api_Schema<Web_Api_VpnConnection> = z.object({
+const vpnConnectionSchema: Web_Api_VpnConnectionSchema = z.object({
   id: z.string(),
   name: z.string(),
   slot: z.number(),
@@ -1010,14 +1278,14 @@ const vpnConnectionSchema: Web_Api_Schema<Web_Api_VpnConnection> = z.object({
 });
 
 /**
- * API - VPN connections response schema.
+ * API - Vpn Connections Response Schema.
  *
  * Validates the sorted collection and its resource-derived capacity metadata.
  * The global change flag gates create, delete, and default actions.
  *
  * @since 2.0.0
  */
-const vpnConnectionsResponseSchema: Web_Api_Schema<Web_Api_VpnConnectionsResponse> = z.object({
+const vpnConnectionsResponseSchema: Web_Api_VpnConnectionsResponseSchema = z.object({
   connections: responseArraySchema(vpnConnectionSchema),
   capacity: z.object({
     limit: z.number(),
@@ -1035,26 +1303,26 @@ const vpnConnectionsResponseSchema: Web_Api_Schema<Web_Api_VpnConnectionsRespons
 });
 
 /**
- * API - VPN connection response schema.
+ * API - Vpn Connection Response Schema.
  *
  * Wraps create, read, update, reconnect, and disconnect responses exactly as
  * the connection routes return them.
  *
  * @since 2.0.0
  */
-const vpnConnectionResponseSchema: Web_Api_Schema<Web_Api_VpnConnectionResponse> = z.object({
+const vpnConnectionResponseSchema: Web_Api_VpnConnectionResponseSchema = z.object({
   connection: vpnConnectionSchema,
 });
 
 /**
- * API - Moved torrent schema.
+ * API - Moved Torrent Schema.
  *
  * Describes both successful and failed moves shared by connection removal,
  * profile updates, and torrent reassignment responses.
  *
  * @since 2.0.0
  */
-const movedTorrentSchema: Web_Api_Schema<Web_Api_MovedTorrent> = z.object({
+const movedTorrentSchema: Web_Api_MovedTorrentSchema = z.object({
   hash: z.string(),
   id: z.number().optional(),
   name: z.string(),
@@ -1068,79 +1336,79 @@ const movedTorrentSchema: Web_Api_Schema<Web_Api_MovedTorrent> = z.object({
 });
 
 /**
- * API - VPN default response schema.
+ * API - Vpn Default Response Schema.
  *
  * Validates the updated connection list and every attempted Default-profile
  * torrent move returned after the default changes.
  *
  * @since 2.0.0
  */
-const vpnDefaultResponseSchema: Web_Api_Schema<Web_Api_VpnDefaultResponse> = z.object({
+const vpnDefaultResponseSchema: Web_Api_VpnDefaultResponseSchema = z.object({
   connections: responseArraySchema(vpnConnectionSchema),
   moved: responseArraySchema(movedTorrentSchema),
 });
 
 /**
- * API - Delete torrent profile response schema.
+ * API - Delete Torrent Profile Response Schema.
  *
  * Validates each move attempted after a named profile becomes Default.
  * Failed moves remain visible without treating the completed deletion as failed.
  *
  * @since 2.0.0
  */
-const deleteTorrentProfileResponseSchema: Web_Api_Schema<Web_Api_DeleteTorrentProfileResponse> = z.object({
+const deleteTorrentProfileResponseSchema: Web_Api_DeleteTorrentProfileResponseSchema = z.object({
   moved: responseArraySchema(movedTorrentSchema),
 });
 
 /**
- * API - Delete VPN connection response schema.
+ * API - Delete Vpn Connection Response Schema.
  *
  * Validates the move results and the profile/login totals returned when a
  * non-default connection is removed.
  *
  * @since 2.0.0
  */
-const deleteVpnConnectionResponseSchema: Web_Api_Schema<Web_Api_DeleteVpnConnectionResponse> = z.object({
+const deleteVpnConnectionResponseSchema: Web_Api_DeleteVpnConnectionResponseSchema = z.object({
   moved: responseArraySchema(movedTorrentSchema),
   profiles: z.number(),
   logins: z.number(),
 });
 
 /**
- * API - Torrent profile update response schema.
+ * API - Torrent Profile Update Response Schema.
  *
  * Keeps the regular profile response while validating move results returned
  * after an owner confirms a cross-connection profile change.
  *
  * @since 2.0.0
  */
-const torrentProfileUpdateResponseSchema: Web_Api_Schema<Web_Api_UpdateTorrentProfileResponse> = z.intersection(
+const torrentProfileUpdateResponseSchema: Web_Api_TorrentProfileUpdateResponseSchema = z.intersection(
   torrentProfileSchema,
   z.object({ moved: responseArraySchema(movedTorrentSchema) }),
 );
 
 /**
- * API - Default torrent profile update response schema.
+ * API - Default Torrent Profile Update Response Schema.
  *
  * Adds per-torrent move results to the saved Default profile fields.
  * Callers can refresh profile state and render movement outcomes from one reply.
  *
  * @since 2.0.0
  */
-const defaultTorrentProfileUpdateResponseSchema: Web_Api_Schema<Web_Api_UpdateDefaultTorrentProfileResponse> = z.intersection(
+const defaultTorrentProfileUpdateResponseSchema: Web_Api_DefaultTorrentProfileUpdateResponseSchema = z.intersection(
   defaultTorrentProfileSchema,
   z.object({ moved: responseArraySchema(movedTorrentSchema) }),
 );
 
 /**
- * API - Torrent profile assignment response schema.
+ * API - Torrent Profile Assignment Response Schema.
  *
  * Validates identifiers and any cross-connection torrent moves produced by the
  * detail drawer's profile assignment action.
  *
  * @since 2.0.0
  */
-const torrentProfileAssignmentResponseSchema: Web_Api_Schema<Web_Api_SetTorrentProfileResponse> = z.object({
+const torrentProfileAssignmentResponseSchema: Web_Api_TorrentProfileAssignmentResponseSchema = z.object({
   hashes: responseArraySchema(z.string()).optional(),
   ids: responseArraySchema(z.number()).optional(),
   profileId: z.string().nullable(),
@@ -1149,14 +1417,14 @@ const torrentProfileAssignmentResponseSchema: Web_Api_Schema<Web_Api_SetTorrentP
 });
 
 /**
- * API - Transmission restart response schema.
+ * API - Transmission Restart Response Schema.
  *
  * A restart is accepted per daemon, so the aggregate status and every
  * connection result are retained even when only part of the fleet restarts.
  *
  * @since 2.0.0
  */
-const transmissionRestartResponseSchema: Web_Api_Schema<Web_Api_TransmissionRestartResponse> = z.object({
+const transmissionRestartResponseSchema: Web_Api_TransmissionRestartResponseSchema = z.object({
   status: z.enum([
     'restarting',
     'partial',
@@ -1173,7 +1441,7 @@ const transmissionRestartResponseSchema: Web_Api_Schema<Web_Api_TransmissionRest
 });
 
 /**
- * API - VPN catalog schema.
+ * API - Vpn Catalog Schema.
  *
  * Validates the catalog status nested beneath provider tunnels and returned by
  * a successful refresh.
@@ -1189,7 +1457,7 @@ const vpnCatalogSchema = z.object({
 });
 
 /**
- * API - Provider tunnel schema.
+ * API - Provider Tunnel Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
@@ -1219,7 +1487,7 @@ const providerTunnelSchema = z.object({
 });
 
 /**
- * API - Provider P2P schema.
+ * API - Provider P2 P Schema.
  *
  * Reads a provider's note about which servers allow P2P traffic.
  * Only HTTPS links pass, since the console renders them as links.
@@ -1234,7 +1502,7 @@ const providerP2PSchema = z.object({
 });
 
 /**
- * API - Provider schema.
+ * API - Provider Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
@@ -1251,7 +1519,7 @@ const providerSchema = z.object({
 });
 
 /**
- * API - VPN profile schema.
+ * API - Vpn Profile Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
@@ -1276,26 +1544,26 @@ const vpnProfileSchema = z.object({
 });
 
 /**
- * API - Custom profile response schema.
+ * API - Custom Profile Response Schema.
  *
  * Keeps the first endpoint flattened for compatibility and validates the full
  * ordered pool selected by the current console.
  *
  * @since 2.0.0
  */
-const customProfileResponseSchema: Web_Api_Schema<Web_Api_CustomProfileResponse> = vpnProfileSchema.extend({
+const customProfileResponseSchema: Web_Api_CustomProfileResponseSchema = vpnProfileSchema.extend({
   profiles: responseArraySchema(vpnProfileSchema),
 });
 
 /**
- * API - Scope schema.
+ * API - Scope Schema.
  *
  * Encapsulates the related behavior behind one reusable interface.
  * Callers share the same lifecycle and state management.
  *
  * @since 2.0.0
  */
-const scopeSchema: Web_Api_Schema<Web_Api_Scope> = z.enum([
+const scopeSchema: Web_Api_ScopeSchema = z.enum([
   'settings:read',
   'settings:write',
   'torrents:read',
@@ -1305,14 +1573,14 @@ const scopeSchema: Web_Api_Schema<Web_Api_Scope> = z.enum([
 ]);
 
 /**
- * API - Token schema.
+ * API - Token Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
  * @since 2.0.0
  */
-const tokenSchema: Web_Api_Schema<Web_Api_Token> = z.object({
+const tokenSchema: Web_Api_TokenSchema = z.object({
   id: z.string(),
   name: z.string(),
   scopes: responseArraySchema(scopeSchema),
@@ -1322,14 +1590,14 @@ const tokenSchema: Web_Api_Schema<Web_Api_Token> = z.object({
 });
 
 /**
- * API - Error envelope schema.
+ * API - Error Envelope Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
  * @since 2.0.0
  */
-const errorEnvelopeSchema: Web_Api_Schema<Web_Api_ErrorEnvelope> = z.object({
+const errorEnvelopeSchema: Web_Api_ErrorEnvelopeSchema = z.object({
   error: z.object({
     code: z.string(),
     message: z.string(),
@@ -1343,27 +1611,27 @@ const errorEnvelopeSchema: Web_Api_Schema<Web_Api_ErrorEnvelope> = z.object({
 });
 
 /**
- * API - Setup status schema.
+ * API - Setup Status Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
  * @since 2.0.0
  */
-const setupStatusSchema: Web_Api_Schema<Web_Api_SetupStatus> = z.object({
+const setupStatusSchema: Web_Api_SetupStatusSchema = z.object({
   claimRequired: z.boolean(),
   claimExpiresAt: z.string().optional(),
 });
 
 /**
- * API - Removed secret schema.
+ * API - Removed Secret Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
  * @since 2.0.0
  */
-const removedSecretSchema: Web_Api_Schema<Web_Api_RemovedSecret> = z.object({
+const removedSecretSchema: Web_Api_RemovedSecretSchema = z.object({
   kind: z.enum([
     'authenticator',
     'notification',
@@ -1375,14 +1643,14 @@ const removedSecretSchema: Web_Api_Schema<Web_Api_RemovedSecret> = z.object({
 });
 
 /**
- * API - Administrator schema.
+ * API - Administrator Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
  * @since 2.0.0
  */
-const administratorSchema: Web_Api_Schema<Web_Api_Administrator> = z.object({
+const administratorSchema: Web_Api_AdministratorSchema = z.object({
   authenticationType: z.enum([
     'session',
     'token',
@@ -1396,14 +1664,14 @@ const administratorSchema: Web_Api_Schema<Web_Api_Administrator> = z.object({
 });
 
 /**
- * API - Authentication response schema.
+ * API - Authentication Response Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
  * @since 2.0.0
  */
-const authenticationResponseSchema: Web_Api_Schema<Web_Api_AuthenticationResponse> = z.object({
+const authenticationResponseSchema: Web_Api_AuthenticationResponseSchema = z.object({
   status: z.literal('authenticated'),
   administrator: z.object({
     id: z.number(),
@@ -1414,14 +1682,14 @@ const authenticationResponseSchema: Web_Api_Schema<Web_Api_AuthenticationRespons
 });
 
 /**
- * API - Login result schema.
+ * API - Login Result Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
  * @since 2.0.0
  */
-const loginResultSchema: Web_Api_Schema<Web_Api_LoginResult> = z.union([
+const loginResultSchema: Web_Api_LoginResultSchema = z.union([
   authenticationResponseSchema,
   z.object({
     status: z.literal('second_factor_required'),
@@ -1431,14 +1699,14 @@ const loginResultSchema: Web_Api_Schema<Web_Api_LoginResult> = z.union([
 ]);
 
 /**
- * API - Passkey schema.
+ * API - Passkey Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
  * @since 2.0.0
  */
-const passkeySchema: Web_Api_Schema<Web_Api_Passkey> = z.object({
+const passkeySchema: Web_Api_PasskeySchema = z.object({
   id: z.string(),
   name: z.string(),
   hostname: z.string(),
@@ -1447,14 +1715,14 @@ const passkeySchema: Web_Api_Schema<Web_Api_Passkey> = z.object({
 });
 
 /**
- * API - Account security schema.
+ * API - Account Security Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
  * @since 2.0.0
  */
-const accountSecuritySchema: Web_Api_Schema<Web_Api_AccountSecurity> = z.object({
+const accountSecuritySchema: Web_Api_AccountSecuritySchema = z.object({
   username: z.string(),
   totpEnabled: z.boolean(),
   recoveryCodesRemaining: z.number(),
@@ -1464,53 +1732,53 @@ const accountSecuritySchema: Web_Api_Schema<Web_Api_AccountSecurity> = z.object(
 });
 
 /**
- * API - TOTP setup schema.
+ * API - Totp Setup Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
  * @since 2.0.0
  */
-const totpSetupSchema: Web_Api_Schema<Web_Api_TotpSetup> = z.object({
+const totpSetupSchema: Web_Api_TotpSetupSchema = z.object({
   secret: z.string(),
   uri: z.string(),
   qrCode: z.string(),
 });
 
 /**
- * API - Recovery codes schema.
+ * API - Recovery Codes Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
  * @since 2.0.0
  */
-const recoveryCodesSchema: Web_Api_Schema<Web_Api_RecoveryCodes> = z.object({
+const recoveryCodesSchema: Web_Api_RecoveryCodesSchema = z.object({
   recoveryCodes: responseArraySchema(z.string()),
 });
 
 /**
- * API - Passkey ceremony schema.
+ * API - Passkey Ceremony Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
  * @since 2.0.0
  */
-const passkeyCeremonySchema: Web_Api_Schema<Web_Api_PasskeyCeremony> = z.object({
+const passkeyCeremonySchema: Web_Api_PasskeyCeremonySchema = z.object({
   ceremonyId: z.string(),
   options: z.record(z.string(), z.unknown()),
 });
 
 /**
- * API - Live snapshot schema.
+ * API - Live Snapshot Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
  * @since 2.0.0
  */
-const liveSnapshotSchema: Web_Api_Schema<Web_Api_LiveSnapshot> = z.object({
+const liveSnapshotSchema: Web_Api_LiveSnapshotSchema = z.object({
   sequence: z.number(),
   capturedAt: z.string(),
   status: statusSchema.optional(),
@@ -1524,7 +1792,7 @@ const liveSnapshotSchema: Web_Api_Schema<Web_Api_LiveSnapshot> = z.object({
 });
 
 /**
- * API - Providers response schema.
+ * API - Providers Response Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
@@ -1536,7 +1804,7 @@ const providersResponseSchema = z.object({
 });
 
 /**
- * API - Profiles response schema.
+ * API - Profiles Response Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
@@ -1548,7 +1816,7 @@ const profilesResponseSchema = z.object({
 });
 
 /**
- * API - Tokens response schema.
+ * API - Tokens Response Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
@@ -1560,27 +1828,27 @@ const tokensResponseSchema = z.object({
 });
 
 /**
- * API - Created token schema.
+ * API - Created Token Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
  * @since 2.0.0
  */
-const createdTokenSchema: Web_Api_Schema<Web_Api_CreatedToken> = z.object({
+const createdTokenSchema: Web_Api_CreatedTokenSchema = z.object({
   token: tokenSchema,
   plaintext: z.string(),
 });
 
 /**
- * API - RPC login schema.
+ * API - Rpc Login Schema.
  *
  * Describes one independently revocable Transmission-compatible RPC login.
  * Password material is intentionally absent from list responses.
  *
  * @since 2.0.0
  */
-const rpcLoginSchema: Web_Api_Schema<Web_Api_RPCLogin> = z.object({
+const rpcLoginSchema: Web_Api_RpcLoginSchema = z.object({
   id: z.string(),
   username: z.string(),
   createdAt: z.string(),
@@ -1588,20 +1856,20 @@ const rpcLoginSchema: Web_Api_Schema<Web_Api_RPCLogin> = z.object({
 });
 
 /**
- * API - RPC credential schema.
+ * API - Rpc Credential Schema.
  *
  * A generated password is present only in the create or regenerate response.
  * The surrounding login metadata always uses the safe schema above.
  *
  * @since 2.0.0
  */
-const rpcCredentialSchema: Web_Api_Schema<Web_Api_RPCCredential> = z.object({
+const rpcCredentialSchema: Web_Api_RpcCredentialSchema = z.object({
   login: rpcLoginSchema,
   password: z.string().optional(),
 });
 
 /**
- * API - RPC logins response schema.
+ * API - Rpc Logins Response Schema.
  *
  * Wraps the login list using the backend response contract.
  * Keeping the wrapper explicit prevents response-shape drift.
@@ -1613,14 +1881,14 @@ const rpcLoginsResponseSchema = z.object({
 });
 
 /**
- * API - Web proxy login schema.
+ * API - Web Proxy Login Schema.
  *
  * Describes a login without returning its stored password verifier.
  * PasswordSet communicates usability without exposing a secret.
  *
  * @since 2.0.0
  */
-const webProxyLoginSchema: Web_Api_Schema<Web_Api_WebProxyLogin> = z.object({
+const webProxyLoginSchema: Web_Api_WebProxyLoginSchema = z.object({
   id: z.string(),
   username: z.string(),
   passwordSet: z.boolean(),
@@ -1629,27 +1897,27 @@ const webProxyLoginSchema: Web_Api_Schema<Web_Api_WebProxyLogin> = z.object({
 });
 
 /**
- * API - Web proxy credential schema.
+ * API - Web Proxy Credential Schema.
  *
  * A generated password is present only in the create or regenerate response.
  * The surrounding login metadata always uses the safe schema above.
  *
  * @since 2.0.0
  */
-const webProxyCredentialSchema: Web_Api_Schema<Web_Api_WebProxyCredential> = z.object({
+const webProxyCredentialSchema: Web_Api_WebProxyCredentialSchema = z.object({
   login: webProxyLoginSchema,
   password: z.string().optional(),
 });
 
 /**
- * API - Web proxy schema.
+ * API - Web Proxy Schema.
  *
  * Combines desired state, observed runtime state, and login metadata.
  * The state enum matches every value emitted by the proxy process.
  *
  * @since 2.0.0
  */
-const webProxySchema: Web_Api_Schema<Web_Api_WebProxy> = z.object({
+const webProxySchema: Web_Api_WebProxySchema = z.object({
   enabled: z.boolean(),
   port: z.number(),
   state: z.enum([
@@ -1663,14 +1931,14 @@ const webProxySchema: Web_Api_Schema<Web_Api_WebProxy> = z.object({
 });
 
 /**
- * API - Notification target schema.
+ * API - Notification Target Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
  * @since 2.0.0
  */
-const notificationTargetSchema: Web_Api_Schema<Web_Notifications_Target> = z.object({
+const notificationTargetSchema: Web_Api_NotificationTargetSchema = z.object({
   createdAt: z.string(),
   events: responseArraySchema(z.string()),
   id: z.string(),
@@ -1698,7 +1966,7 @@ const notificationTargetSchema: Web_Api_Schema<Web_Notifications_Target> = z.obj
 });
 
 /**
- * API - Notification targets response schema.
+ * API - Notification Targets Response Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
@@ -1710,7 +1978,7 @@ const notificationTargetsResponseSchema = z.object({
 });
 
 /**
- * API - Notification events response schema.
+ * API - Notification Events Response Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
@@ -1727,124 +1995,34 @@ const notificationEventsResponseSchema = z.object({
 });
 
 /**
- * API - Notification test schema.
+ * API - Notification Test Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
  * @since 2.0.0
  */
-const notificationTestSchema: Web_Api_Schema<Web_Notifications_TestResult> = z.object({
+const notificationTestSchema: Web_Api_NotificationTestSchema = z.object({
   delivered: z.boolean(),
   details: z.string().optional(),
   message: z.string().optional(),
 });
 
 /**
- * API - Torrent contents download schema.
+ * API - Torrent Contents Download Schema.
  *
  * Reads the link a prepared download of finished files is fetched from, and how many
  * selected torrents it left out.
  *
  * @since 2.2.0
  */
-const torrentContentsDownloadSchema: Web_Api_Schema<Web_Api_TorrentContentsDownload> = z.object({
+const torrentContentsDownloadSchema: Web_Api_TorrentContentsDownloadSchema = z.object({
   fileName: z.string(),
   path: z.string().startsWith('/api/v1/torrents/contents/'),
   size: z.number(),
   unavailable: z.number(),
   unfinished: z.number(),
 });
-
-// requestJSON performs one same-origin request and validates its response contract.
-
-/**
- * API - Request JSON.
- *
- * Stores this module-level value in one named location.
- * Related code reuses it instead of duplicating the definition.
- *
- * @since 2.0.0
- */
-const requestJSON = async <ResponseValue>(
-  path: string,
-  schema: Web_Api_Schema<ResponseValue>,
-  options: Web_Api_Request_Options = {},
-): Promise<ResponseValue> => {
-  const { body: requestBody, ...baseOptions } = options;
-  const headers: Headers = new Headers(options.headers);
-  if (requestBody !== undefined) {
-    headers.set('Content-Type', 'application/json');
-  }
-  if (options.method !== undefined && options.method !== 'GET' && options.method !== 'HEAD') {
-    const csrfToken: string | undefined = readCookie('tvpn_csrf');
-    if (csrfToken !== undefined) {
-      headers.set('X-CSRF-Token', csrfToken);
-    }
-  }
-
-  const requestOptions: RequestInit = {
-    ...baseOptions,
-    credentials: 'same-origin',
-    headers,
-  };
-  if (requestBody !== undefined) {
-    requestOptions.body = JSON.stringify(requestBody);
-  }
-  const response: Response = await fetch(path, requestOptions);
-  if (!response.ok) {
-    throw await responseError(response);
-  }
-
-  const responseValue: unknown = await response.json();
-  const parsedResponse = schema.safeParse(responseValue);
-
-  // A request can succeed even when its reply doesn't match, so point to a reload rather than a retry.
-  if (!parsedResponse.success) {
-    throw new ApiError('The server\'s reply couldn\'t be read. Reload the page to see the latest state.', 'invalid_response', response.status, []);
-  }
-
-  return parsedResponse.data;
-};
-
-// requestVoid performs one mutation whose successful response has no body.
-
-/**
- * API - Request void.
- *
- * Stores this module-level value in one named location.
- * Related code reuses it instead of duplicating the definition.
- *
- * @since 2.0.0
- */
-const requestVoid = async (
-  path: string,
-  options: Web_Api_Request_Options,
-): Promise<void> => {
-  const { body: requestBody, ...baseOptions } = options;
-  const headers: Headers = new Headers(options.headers);
-  const csrfToken: string | undefined = readCookie('tvpn_csrf');
-  if (csrfToken !== undefined) {
-    headers.set('X-CSRF-Token', csrfToken);
-  }
-  if (requestBody !== undefined) {
-    headers.set('Content-Type', 'application/json');
-  }
-
-  const requestOptions: RequestInit = {
-    ...baseOptions,
-    credentials: 'same-origin',
-    headers,
-  };
-  if (requestBody !== undefined) {
-    requestOptions.body = JSON.stringify(requestBody);
-  }
-
-  const response: Response = await fetch(path, requestOptions);
-  if (!response.ok) {
-    throw await responseError(response);
-  }
-};
 
 /**
  * API.
@@ -1863,7 +2041,7 @@ export class ApiError extends Error {
    *
    * @since 2.0.0
    */
-  public readonly code: string;
+  public readonly code: Web_Api_ApiError_Code;
 
   /**
    * API - Status.
@@ -1873,7 +2051,7 @@ export class ApiError extends Error {
    *
    * @since 2.0.0
    */
-  public readonly status: number;
+  public readonly status: Web_Api_ApiError_Status;
 
   /**
    * API - Issues.
@@ -1883,7 +2061,7 @@ export class ApiError extends Error {
    *
    * @since 2.0.0
    */
-  public readonly issues: Web_Api_ErrorIssue[];
+  public readonly issues: Web_Api_ApiError_Issues;
 
   /**
    * API - Details.
@@ -1893,7 +2071,7 @@ export class ApiError extends Error {
    *
    * @since 2.0.0
    */
-  public readonly details: Record<string, unknown>;
+  public readonly details: Web_Api_ApiError_Details;
 
   /**
    * API - Constructor.
@@ -1904,11 +2082,11 @@ export class ApiError extends Error {
    * @since 2.0.0
    */
   public constructor(
-    message: string,
-    code: string,
-    status: number,
-    issues: Web_Api_ErrorIssue[],
-    details: Record<string, unknown> = {},
+    message: Web_Api_ApiError_Constructor_Message,
+    code: Web_Api_ApiError_Constructor_Code,
+    status: Web_Api_ApiError_Constructor_Status,
+    issues: Web_Api_ApiError_Constructor_Issues,
+    details: Web_Api_ApiError_Constructor_Details = {},
   ) {
     super(message);
     this.name = 'ApiError';
@@ -1916,38 +2094,49 @@ export class ApiError extends Error {
     this.status = status;
     this.issues = issues;
     this.details = details;
+
+    return;
   }
 }
 
 /**
- * API - Is VPN connection required error.
+ * API - Is Vpn Connection Required Error.
  *
  * Lets add surfaces pair first-run guidance with navigation to the VPN page.
  * Other API failures remain ordinary errors.
  *
+ * @param {Web_Api_IsVpnConnectionRequiredError_CaughtError} caughtError - Caught error.
+ *
+ * @returns {Web_Api_IsVpnConnectionRequiredError_Returns}
+ *
  * @since 2.0.0
  */
-export const isVPNConnectionRequiredError = (caughtError: unknown): boolean => (
+export const isVPNConnectionRequiredError = (caughtError: Web_Api_IsVpnConnectionRequiredError_CaughtError): Web_Api_IsVpnConnectionRequiredError_Returns => (
   caughtError instanceof ApiError && caughtError['code'] === 'vpn_connection_required'
 );
 
 // issueFor returns the message the API attached to one form field, if any.
 
 /**
- * API - Issue for.
+ * API - Issue For.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @param {Web_Api_IssueFor_CaughtError} caughtError - Caught error.
+ * @param {Web_Api_IssueFor_Field}       field       - Field.
+ *
+ * @returns {Web_Api_IssueFor_Returns}
+ *
  * @since 2.0.0
  */
-export const issueFor = (caughtError: unknown, field: string): string => {
+export const issueFor = (caughtError: Web_Api_IssueFor_CaughtError, field: Web_Api_IssueFor_Field): Web_Api_IssueFor_Returns => {
   if (!(caughtError instanceof ApiError)) {
     return '';
   }
 
-  const issue: Web_Api_ErrorIssue | undefined = caughtError.issues.find(
-    (candidate: Web_Api_ErrorIssue): boolean => candidate['field'] === field,
+  const issue: Web_Api_IssueFor_Issue = caughtError.issues.find(
+    (candidate) => candidate['field'] === field,
   );
 
   return (issue === undefined) ? '' : formatConsoleError(issue['message']);
@@ -1956,21 +2145,30 @@ export const issueFor = (caughtError: unknown, field: string): string => {
 // summaryFor returns the banner text for an error, or nothing when a shown field already carries it.
 
 /**
- * API - Summary for.
+ * API - Summary For.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @param {Web_Api_SummaryFor_CaughtError} caughtError - Caught error.
+ * @param {Web_Api_SummaryFor_ShownFields} shownFields - Shown fields.
+ * @param {Web_Api_SummaryFor_Fallback}    fallback    - Fallback.
+ *
+ * @returns {Web_Api_SummaryFor_Returns}
+ *
  * @since 2.0.0
  */
-export const summaryFor = (caughtError: unknown, shownFields: string[], fallback: string): string => {
+export const summaryFor = (caughtError: Web_Api_SummaryFor_CaughtError, shownFields: Web_Api_SummaryFor_ShownFields, fallback: Web_Api_SummaryFor_Fallback): Web_Api_SummaryFor_Returns => {
   if (caughtError === null || caughtError === undefined) {
     return '';
   }
 
-  if (caughtError instanceof ApiError && caughtError.issues.some(
-    (issue: Web_Api_ErrorIssue): boolean => shownFields.includes(issue['field']),
-  )) {
+  if (
+    caughtError instanceof ApiError
+    && caughtError.issues.some(
+      (issue) => shownFields.includes(issue['field']),
+    ) === true
+  ) {
     return '';
   }
 
@@ -1986,65 +2184,87 @@ export const summaryFor = (caughtError: unknown, shownFields: string[], fallback
 };
 
 /**
- * API - Message for API error.
+ * API - Message For API Error.
  *
  * Converts stable machine codes into console wording that names the field or
  * choice the owner can correct. Controller diagnostics and resource IDs never
  * become user-visible text.
  *
+ * @param {Web_Api_MessageForApiError_Code}    code      - Code.
+ * @param {Web_Api_MessageForApiError_Status}  status    - Status.
+ * @param {Web_Api_MessageForApiError_Message} message   - Message.
+ * @param {Web_Api_MessageForApiError_Details} [details] - Details.
+ *
+ * @returns {Web_Api_MessageForApiError_Returns}
+ *
  * @since 2.0.0
  */
 export const messageForAPIError = (
-  code: string,
-  status: number,
-  message: string,
-  details: Record<string, unknown> = {},
-): string => {
-  const normalizedMessage: string = message.toLowerCase();
-  if (status === 503 && normalizedMessage.includes('transmission') && normalizedMessage.includes('still starting')) {
+  code: Web_Api_MessageForApiError_Code,
+  status: Web_Api_MessageForApiError_Status,
+  message: Web_Api_MessageForApiError_Message,
+  details: Web_Api_MessageForApiError_Details = {},
+): Web_Api_MessageForApiError_Returns => {
+  const normalizedMessage: Web_Api_MessageForApiError_NormalizedMessage = message.toLowerCase();
+
+  if (
+    status === 503
+    && normalizedMessage.includes('transmission') === true
+    && normalizedMessage.includes('still starting') === true
+  ) {
     return formatConsoleError(message);
   }
 
   switch (code) {
     case 'capacity_reached': {
-      const limit: unknown = details['limit'];
-      if (typeof limit === 'number' && Number.isFinite(limit)) {
+      const limit: Web_Api_MessageForApiError_Limit = details['limit'];
+
+      if (typeof limit === 'number' && Number.isFinite(limit) === true) {
         return `This container allows up to ${String(limit)} VPN connections. Remove one before adding another.`;
       }
 
       return 'This container has reached its VPN connection limit. Remove one before adding another.';
     }
+
     case 'name_taken': {
       return 'Enter a different connection name. That name is already in use.';
     }
+
     case 'vpn_test_failed': {
       return formatConsoleError(message);
     }
+
     case 'revision_conflict': {
       return 'This page is out of date. Reload it, then try again.';
     }
+
     case 'change_running': {
       return 'Wait for the current VPN connection change to finish, then try again.';
     }
+
     case 'default_connection': {
       return 'Choose a different default VPN connection before removing this one.';
     }
+
     case 'connection_in_use': {
       return 'Choose where to move this connection\'s torrents, profiles, and proxy logins before removing it.';
     }
+
     case 'connection_being_removed': {
       return 'The selected connection is being removed. Pick another connection.';
     }
+
     case 'move_failed': {
       return 'One or more torrents couldn\'t be moved. The VPN connection was kept.';
     }
+
     case 'torrents_must_move': {
       if (
-        message.endsWith('\'s torrents must move to its download folder.')
-        || message.endsWith('\'s torrents must move to the new default VPN connection.')
+        message.endsWith('\'s torrents must move to its download folder.') === true
+        || message.endsWith('\'s torrents must move to the new default VPN connection.') === true
         || (
-          message.startsWith('The profile\'s torrents must move to ')
-          && message.endsWith(' before it can be deleted.')
+          message.startsWith('The profile\'s torrents must move to ') === true
+          && message.endsWith(' before it can be deleted.') === true
         )
         || message === 'The profile\'s torrents must move to its selected VPN connection and download folder.'
       ) {
@@ -2053,18 +2273,23 @@ export const messageForAPIError = (
 
       return 'Confirm moving this profile\'s torrents to its selected VPN connection.';
     }
+
     case 'torrent_not_found': {
       return 'One or more selected torrents are no longer available. Refresh the list and try again.';
     }
+
     case 'daemon_unavailable': {
       return 'Transmission isn\'t ready for the selected VPN connection. Wait a moment and try again.';
     }
+
     case 'vpn_connection_required': {
       return 'Add a VPN connection before adding torrents.';
     }
+
     case 'web_proxy_connection_invalid': {
       return 'Choose an existing VPN connection, or set up a default connection first.';
     }
+
     default: {
       return formatConsoleError(message);
     }
@@ -2072,22 +2297,22 @@ export const messageForAPIError = (
 };
 
 /**
- * API - Connection being removed message.
+ * API - Connection Being Removed Message.
  *
  * Adds the console's visible connection name to the backend's stable conflict.
  * Mutation screens use it without exposing the machine-readable error code.
  *
- * @param {unknown} caughtError    - Caught error.
- * @param {string}  connectionName - Connection name.
+ * @param {Web_Api_ConnectionBeingRemovedMessage_CaughtError}    caughtError    - Caught error.
+ * @param {Web_Api_ConnectionBeingRemovedMessage_ConnectionName} connectionName - Connection name.
  *
- * @returns {string | null}
+ * @returns {Web_Api_ConnectionBeingRemovedMessage_Returns}
  *
  * @since 2.0.0
  */
 export const connectionBeingRemovedMessage = (
-  caughtError: unknown,
-  connectionName: string,
-): string | null => {
+  caughtError: Web_Api_ConnectionBeingRemovedMessage_CaughtError,
+  connectionName: Web_Api_ConnectionBeingRemovedMessage_ConnectionName,
+): Web_Api_ConnectionBeingRemovedMessage_Returns => {
   if (!(caughtError instanceof ApiError) || caughtError['code'] !== 'connection_being_removed') {
     return null;
   }
@@ -2098,18 +2323,24 @@ export const connectionBeingRemovedMessage = (
 // responseError converts the stable API error envelope into an ApiError.
 
 /**
- * API - Response error.
+ * API - Response Error.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @param {Response} response - Response.
+ *
+ * @returns {Web_Api_ResponseError_Returns}
+ *
  * @since 2.0.0
  */
-const responseError = async (response: Response): Promise<ApiError> => {
-  const responseValue: unknown = await response.json().catch(() => undefined);
-  const parsedError = errorEnvelopeSchema.safeParse(responseValue);
-  if (parsedError.success) {
-    const details: Record<string, unknown> = parsedError.data['error']['details'] ?? {};
+const responseError = async (response: Response): Web_Api_ResponseError_Returns => {
+  const responseValue: Web_Api_ResponseError_ResponseValue = await response.json().catch(() => undefined);
+  const parsedError: Web_Api_ResponseError_ParsedError = errorEnvelopeSchema.safeParse(responseValue);
+
+  if (parsedError.success === true) {
+    const details: Web_Api_ResponseError_Details = parsedError.data['error']['details'] ?? {};
+
     return new ApiError(
       messageForAPIError(
         parsedError.data['error']['code'],
@@ -2130,71 +2361,210 @@ const responseError = async (response: Response): Promise<ApiError> => {
 // readCookie returns one non-HTTP-only same-origin cookie.
 
 /**
- * API - Reads cookie.
+ * API - Read Cookie.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @param {Web_Api_ReadCookie_Name} name - Name.
+ *
+ * @returns {Web_Api_ReadCookie_Returns}
+ *
  * @since 2.0.0
  */
-const readCookie = (name: string): string | undefined => {
-  const prefix: string = `${name}=`;
-  const parts: string[] = document.cookie.split(';');
-  const matchingPart: string | undefined = parts
-    .map((part: string): string => part.trim())
-    .find((part: string): boolean => part.startsWith(prefix));
+const readCookie = (name: Web_Api_ReadCookie_Name): Web_Api_ReadCookie_Returns => {
+  const prefix: Web_Api_ReadCookie_Prefix = `${name}=`;
+  const parts: Web_Api_ReadCookie_Parts = document.cookie.split(';');
+  const matchingPart: Web_Api_ReadCookie_MatchingPart = parts
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(prefix));
 
   return (matchingPart === undefined) ? undefined : decodeURIComponent(matchingPart.slice(prefix.length));
 };
 
+// requestJSON performs one same-origin request and validates its response contract.
+
 /**
- * API - Gets setup status.
+ * API - Request JSON.
+ *
+ * Stores this module-level value in one named location.
+ * Related code reuses it instead of duplicating the definition.
+ *
+ * @param {Web_Api_RequestJson_Path}      path      - Path.
+ * @param {Web_Api_Schema<ResponseValue>} schema    - Schema.
+ * @param {Web_Api_Request_Options}       [options] - Options.
+ *
+ * @returns {Promise<ResponseValue>}
+ *
+ * @since 2.0.0
+ */
+const requestJSON = async <ResponseValue>(
+  path: Web_Api_RequestJson_Path,
+  schema: Web_Api_Schema<ResponseValue>,
+  options: Web_Api_Request_Options = {},
+): Promise<ResponseValue> => {
+  const requestBody: Web_Api_RequestJson_RequestBody = options['body'];
+  const baseOptions: Web_Api_RequestJson_BaseOptions = { ...options };
+
+  Reflect.deleteProperty(baseOptions, 'body');
+
+  const headers: Headers = new Headers(options.headers);
+
+  if (requestBody !== undefined) {
+    headers.set('Content-Type', 'application/json');
+  }
+
+  if (
+    options.method !== undefined
+    && options.method !== 'GET'
+    && options.method !== 'HEAD'
+  ) {
+    const csrfToken: Web_Api_RequestJson_CsrfToken = readCookie('tvpn_csrf');
+
+    if (csrfToken !== undefined) {
+      headers.set('X-CSRF-Token', csrfToken);
+    }
+  }
+
+  const requestOptions: RequestInit = {
+    ...baseOptions,
+    credentials: 'same-origin',
+    headers,
+  };
+
+  if (requestBody !== undefined) {
+    requestOptions.body = JSON.stringify(requestBody);
+  }
+
+  const response: Response = await fetch(path, requestOptions);
+
+  if (response.ok === false) {
+    throw await responseError(response);
+  }
+
+  const responseValue: Web_Api_RequestJson_ResponseValue = await response.json();
+  const parsedResponse: Web_Api_RequestJson_ParsedResponse<ResponseValue> = schema.safeParse(responseValue);
+
+  // A request can succeed even when its reply doesn't match, so point to a reload rather than a retry.
+  if (parsedResponse.success === false) {
+    throw new ApiError('The server\'s reply couldn\'t be read. Reload the page to see the latest state.', 'invalid_response', response.status, []);
+  }
+
+  return parsedResponse.data;
+};
+
+// requestVoid performs one mutation whose successful response has no body.
+
+/**
+ * API - Request Void.
+ *
+ * Stores this module-level value in one named location.
+ * Related code reuses it instead of duplicating the definition.
+ *
+ * @param {Web_Api_RequestVoid_Path} path    - Path.
+ * @param {Web_Api_Request_Options}  options - Options.
+ *
+ * @returns {Web_Api_RequestVoid_Returns}
+ *
+ * @since 2.0.0
+ */
+const requestVoid = async (
+  path: Web_Api_RequestVoid_Path,
+  options: Web_Api_Request_Options,
+): Web_Api_RequestVoid_Returns => {
+  const requestBody: Web_Api_RequestVoid_RequestBody = options['body'];
+  const baseOptions: Web_Api_RequestVoid_BaseOptions = { ...options };
+
+  Reflect.deleteProperty(baseOptions, 'body');
+
+  const headers: Headers = new Headers(options.headers);
+  const csrfToken: Web_Api_RequestVoid_CsrfToken = readCookie('tvpn_csrf');
+
+  if (csrfToken !== undefined) {
+    headers.set('X-CSRF-Token', csrfToken);
+  }
+
+  if (requestBody !== undefined) {
+    headers.set('Content-Type', 'application/json');
+  }
+
+  const requestOptions: RequestInit = {
+    ...baseOptions,
+    credentials: 'same-origin',
+    headers,
+  };
+
+  if (requestBody !== undefined) {
+    requestOptions.body = JSON.stringify(requestBody);
+  }
+
+  const response: Response = await fetch(path, requestOptions);
+
+  if (response.ok === false) {
+    throw await responseError(response);
+  }
+
+  return;
+};
+
+/**
+ * API - Get Setup Status.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @returns {Web_Api_GetSetupStatus_Returns}
+ *
  * @since 2.0.0
  */
-export const getSetupStatus = async (): Promise<Web_Api_SetupStatus> => requestJSON(
+export const getSetupStatus = async (): Web_Api_GetSetupStatus_Returns => requestJSON(
   '/api/v1/setup/status',
   setupStatusSchema,
 );
 
 /**
- * API - Gets current administrator.
+ * API - Get Current Administrator.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @returns {Web_Api_GetCurrentAdministrator_Returns}
+ *
  * @since 2.0.0
  */
-export const getCurrentAdministrator = async (): Promise<Web_Api_Administrator | null> => {
+export const getCurrentAdministrator = async (): Web_Api_GetCurrentAdministrator_Returns => {
   const response: Response = await fetch('/api/v1/auth/me', {
     credentials: 'same-origin',
   });
+
   if (response.status === 401) {
     return null;
   }
-  if (!response.ok) {
+
+  if (response.ok === false) {
     throw await responseError(response);
   }
 
-  const responseValue: unknown = await response.json();
+  const responseValue: Web_Api_GetCurrentAdministrator_ResponseValue = await response.json();
 
   return administratorSchema.parse(responseValue);
 };
 
 /**
- * API - Claim installation.
+ * API - Claim Installation.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
+ *
+ * @param {Web_Api_ClaimInput} input - Input.
+ *
+ * @returns {Web_Api_ClaimInstallation_Returns}
  *
  * @since 2.0.0
  */
 export const claimInstallation = async (
   input: Web_Api_ClaimInput,
-): Promise<Web_Api_AuthenticationResponse> => {
+): Web_Api_ClaimInstallation_Returns => {
   const validatedInput: Web_Api_ClaimInput = parseClaimInput(input);
 
   return requestJSON(
@@ -2213,11 +2583,15 @@ export const claimInstallation = async (
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
+ * @param {Web_Api_LoginInput} input - Input.
+ *
+ * @returns {Web_Api_Login_Returns}
+ *
  * @since 2.0.0
  */
 export const login = async (
   input: Web_Api_LoginInput,
-): Promise<Web_Api_LoginResult> => {
+): Web_Api_Login_Returns => {
   const validatedInput: Web_Api_LoginInput = parseLoginInput(input);
 
   return requestJSON(
@@ -2236,81 +2610,92 @@ export const login = async (
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @returns {Web_Api_Logout_Returns}
+ *
  * @since 2.0.0
  */
-export const logout = async (): Promise<void> => requestVoid(
+export const logout = async (): Web_Api_Logout_Returns => requestVoid(
   '/api/v1/auth/logout',
   { method: 'POST' },
 );
 
 /**
- * API - Dismiss removed secrets.
+ * API - Dismiss Removed Secrets.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @returns {Web_Api_DismissRemovedSecrets_Returns}
+ *
  * @since 2.0.0
  */
-export const dismissRemovedSecrets = async (): Promise<void> => requestVoid(
+export const dismissRemovedSecrets = async (): Web_Api_DismissRemovedSecrets_Returns => requestVoid(
   '/api/v1/auth/removed-secrets',
   { method: 'DELETE' },
 );
 
 /**
- * API - Gets blocklist status.
+ * API - Get Blocklist Status.
  *
  * Reads the merger's aggregate and per-source state for the Settings page.
  * Response parsing keeps unexpected null source lists safe for rendering.
  *
- * @returns {Promise<Web_Api_BlocklistStatus>}
+ * @returns {Web_Api_GetBlocklistStatus_Returns}
  *
  * @since 2.0.0
  */
-export const getBlocklistStatus = async (): Promise<Web_Api_BlocklistStatus> => requestJSON(
+export const getBlocklistStatus = async (): Web_Api_GetBlocklistStatus_Returns => requestJSON(
   '/api/v1/blocklists',
   blocklistStatusSchema,
 );
 
 /**
- * API - Requests blocklist update.
+ * API - Request Blocklist Update.
  *
  * Queues one merger run and accepts the endpoint's empty 202 response.
  * The Settings page polls status until the requested run is observed.
  *
- * @returns {Promise<void>}
+ * @returns {Web_Api_RequestBlocklistUpdate_Returns}
  *
  * @since 2.0.0
  */
-export const requestBlocklistUpdate = async (): Promise<void> => requestVoid(
+export const requestBlocklistUpdate = async (): Web_Api_RequestBlocklistUpdate_Returns => requestVoid(
   '/api/v1/blocklists/update',
   { method: 'POST' },
 );
 
 /**
- * API - Gets settings.
+ * API - Get Settings.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @returns {Web_Api_GetSettings_Returns}
+ *
  * @since 2.0.0
  */
-export const getSettings = async (): Promise<Web_Api_SettingsSnapshot> => requestJSON(
+export const getSettings = async (): Web_Api_GetSettings_Returns => requestJSON(
   '/api/v1/settings',
   settingsSchema,
 );
 
 /**
- * API - Update settings.
+ * API - Update Settings.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
+ *
+ * @param {Web_Api_UpdateSettingsInput}                input                 - Input.
+ * @param {Web_Api_UpdateSettings_IncompleteDirectory} [incompleteDirectory] - Incomplete directory.
+ *
+ * @returns {Web_Api_UpdateSettings_Returns}
  *
  * @since 2.0.0
  */
 export const updateSettings = async (
   input: Web_Api_UpdateSettingsInput,
-  incompleteDirectory?: string,
-): Promise<Web_Api_SettingsSnapshot> => {
+  incompleteDirectory?: Web_Api_UpdateSettings_IncompleteDirectory,
+): Web_Api_UpdateSettings_Returns => {
   const validatedInput: Web_Api_UpdateSettingsInput = parseUpdateSettingsInput(
     input,
     incompleteDirectory,
@@ -2327,14 +2712,16 @@ export const updateSettings = async (
 };
 
 /**
- * API - Restarts Transmission.
+ * API - Restart Transmission.
  *
  * Applies pending restart settings after an explicit confirmation from the settings view.
  * The caller refreshes settings after the accepted restart request.
  *
+ * @returns {Web_Api_RestartTransmission_Returns}
+ *
  * @since 2.0.0
  */
-export const restartTransmission = async (): Promise<void> => {
+export const restartTransmission = async (): Web_Api_RestartTransmission_Returns => {
   await requestJSON(
     '/api/v1/transmission/restart',
     transmissionRestartResponseSchema,
@@ -2343,32 +2730,38 @@ export const restartTransmission = async (): Promise<void> => {
       body: { confirm: true },
     },
   );
+
+  return;
 };
 
 /**
- * API - Gets torrent organization.
+ * API - Get Torrent Organization.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @returns {Web_Api_GetTorrentOrganization_Returns}
+ *
  * @since 2.0.0
  */
-export const getTorrentOrganization = async (): Promise<Web_Api_TorrentOrganization> => requestJSON(
+export const getTorrentOrganization = async (): Web_Api_GetTorrentOrganization_Returns => requestJSON(
   '/api/v1/torrent-organization',
   torrentOrganizationSchema,
 );
 
 /**
- * API - Update torrent organization.
+ * API - Update Torrent Organization.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
+ *
+ * @returns {Web_Api_UpdateTorrentOrganization_Returns}
  *
  * @since 2.0.0
  */
 export const updateTorrentOrganization = async (
   input: Web_Api_UpdateTorrentOrganizationInput,
-): Promise<Web_Api_UpdateTorrentOrganizationResponse> => {
+): Web_Api_UpdateTorrentOrganization_Returns => {
   const validatedInput: Web_Api_UpdateTorrentOrganizationInput = parseUpdateTorrentOrganizationInput(input);
 
   return requestJSON(
@@ -2382,30 +2775,34 @@ export const updateTorrentOrganization = async (
 };
 
 /**
- * API - Gets torrent profiles.
+ * API - Get Torrent Profiles.
  *
  * Returns the effective Default profile and alphabetically sorted named profiles.
  * Pattern matching can therefore report every match without using display order.
  *
+ * @returns {Web_Api_GetTorrentProfiles_Returns}
+ *
  * @since 2.0.0
  */
-export const getTorrentProfiles = async (): Promise<Web_Api_TorrentProfilesResponse> => requestJSON(
+export const getTorrentProfiles = async (): Web_Api_GetTorrentProfiles_Returns => requestJSON(
   '/api/v1/torrent-profiles',
   torrentProfilesResponseSchema,
 );
 
 /**
- * API - Creates torrent profile.
+ * API - Create Torrent Profile.
  *
  * Validates editor values before creating a server-owned profile.
  * The returned profile includes its generated identity and pattern overlaps.
+ *
+ * @returns {Web_Api_CreateTorrentProfile_Returns}
  *
  * @since 2.0.0
  */
 export const createTorrentProfile = async (
   input: Web_Api_TorrentProfileInput,
-  incompleteDirectory?: string,
-): Promise<Web_Api_TorrentProfile> => {
+  incompleteDirectory?: Web_Api_CreateTorrentProfile_IncompleteDirectory,
+): Web_Api_CreateTorrentProfile_Returns => {
   const validatedInput: Web_Api_TorrentProfileInput = parseTorrentProfileInput(
     input,
     incompleteDirectory,
@@ -2422,22 +2819,24 @@ export const createTorrentProfile = async (
 };
 
 /**
- * API - Updates torrent profile.
+ * API - Update Torrent Profile.
  *
  * Replaces the editable values of one existing profile.
  * Identity remains controlled by the server; named profiles display alphabetically.
  *
+ * @returns {Web_Api_UpdateTorrentProfile_Returns}
+ *
  * @since 2.0.0
  */
 export const updateTorrentProfile = async (
-  profileId: string,
+  profileId: Web_Api_UpdateTorrentProfile_ProfileId,
   input: Web_Api_TorrentProfileInput,
-  moveTorrents: boolean = false,
-  incompleteDirectory?: string,
-): Promise<Web_Api_UpdateTorrentProfileResponse> => {
+  moveTorrents: Web_Api_UpdateTorrentProfile_MoveTorrents = false,
+  incompleteDirectory?: Web_Api_UpdateTorrentProfile_IncompleteDirectory,
+): Web_Api_UpdateTorrentProfile_Returns => {
   const updateInput: Web_Api_UpdateTorrentProfileInput = {
     ...input,
-    ...((moveTorrents) ? { moveTorrents: true as const } : {}),
+    ...((moveTorrents === true) ? { moveTorrents: true as const } : {}),
   };
   const validatedInput: Web_Api_UpdateTorrentProfileInput = parseUpdateTorrentProfileInput(
     updateInput,
@@ -2455,21 +2854,23 @@ export const updateTorrentProfile = async (
 };
 
 /**
- * API - Updates the Default torrent profile.
+ * API - Update Default Torrent Profile.
  *
  * Saves the Default profile fields and optionally confirms moving its assigned
  * torrents when the download directory changes.
+ *
+ * @returns {Web_Api_UpdateDefaultTorrentProfile_Returns}
  *
  * @since 2.0.0
  */
 export const updateDefaultTorrentProfile = async (
   input: Web_Api_DefaultTorrentProfileInput,
-  moveTorrents: boolean = false,
-  incompleteDirectory?: string,
-): Promise<Web_Api_UpdateDefaultTorrentProfileResponse> => {
+  moveTorrents: Web_Api_UpdateDefaultTorrentProfile_MoveTorrents = false,
+  incompleteDirectory?: Web_Api_UpdateDefaultTorrentProfile_IncompleteDirectory,
+): Web_Api_UpdateDefaultTorrentProfile_Returns => {
   const updateInput: Web_Api_UpdateDefaultTorrentProfileInput = {
     ...input,
-    ...((moveTorrents) ? { moveTorrents: true as const } : {}),
+    ...((moveTorrents === true) ? { moveTorrents: true as const } : {}),
   };
   const validatedInput: Web_Api_UpdateDefaultTorrentProfileInput = parseUpdateDefaultTorrentProfileInput(
     updateInput,
@@ -2487,19 +2888,22 @@ export const updateDefaultTorrentProfile = async (
 };
 
 /**
- * API - Deletes torrent profile.
+ * API - Delete Torrent Profile.
  *
  * Confirms moving assigned torrents through the Default profile's existing
  * folder and connection path without applying its labels or limits.
  *
+ * @returns {Web_Api_DeleteTorrentProfile_Returns}
+ *
  * @since 2.0.0
  */
 export const deleteTorrentProfile = async (
-  profileId: string,
-  moveTorrents: boolean = false,
-): Promise<Web_Api_DeleteTorrentProfileResponse> => {
-  const path: string = `/api/v1/torrent-profiles/${encodeURIComponent(profileId)}`;
-  if (!moveTorrents) {
+  profileId: Web_Api_DeleteTorrentProfile_ProfileId,
+  moveTorrents: Web_Api_DeleteTorrentProfile_MoveTorrents = false,
+): Web_Api_DeleteTorrentProfile_Returns => {
+  const path: Web_Api_DeleteTorrentProfile_Path = `/api/v1/torrent-profiles/${encodeURIComponent(profileId)}`;
+
+  if (moveTorrents === false) {
     await requestVoid(path, { method: 'DELETE' });
 
     return { moved: [] };
@@ -2518,24 +2922,27 @@ export const deleteTorrentProfile = async (
 };
 
 /**
- * API - Gets directory.
+ * API - Get Directory.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @returns {Web_Api_GetDirectory_Returns}
+ *
  * @since 2.0.0
  */
 export const getDirectory = async (
-  path: string,
+  path: Web_Api_GetDirectory_Path,
   purpose: Web_Api_DirectoryPurpose = 'download',
-  profileId?: string,
-): Promise<Web_Api_Directory> => {
-  const validatedPath: string = parseDataPath(path);
-  const query: string = new URLSearchParams({
+  profileId?: Web_Api_GetDirectory_ProfileId,
+): Web_Api_GetDirectory_Returns => {
+  const validatedPath: Web_Api_GetDirectory_ValidatedPath = parseDataPath(path);
+  const query: Web_Api_GetDirectory_Query = new URLSearchParams({
     path: validatedPath,
     purpose,
   }).toString();
   const searchParameters: URLSearchParams = new URLSearchParams(query);
+
   if (profileId !== undefined) {
     searchParameters.set('profileId', profileId);
   }
@@ -2544,29 +2951,30 @@ export const getDirectory = async (
 };
 
 /**
- * API - Deletes directory.
+ * API - Delete Directory.
  *
  * Removes one empty, unassigned folder after the server repeats every safety
  * check. Success has no response body, so callers refresh the parent listing.
  *
- * @param {string}                   path    - Path.
- * @param {Web_Api_DirectoryPurpose} purpose - Purpose.
+ * @param {Web_Api_DeleteDirectory_Path} path    - Path.
+ * @param {Web_Api_DirectoryPurpose}     purpose - Purpose.
  *
- * @returns {Promise<void>}
+ * @returns {Web_Api_DeleteDirectory_Returns}
  *
  * @since 2.0.0
  */
 export const deleteDirectory = async (
-  path: string,
+  path: Web_Api_DeleteDirectory_Path,
   purpose: Web_Api_DirectoryPurpose = 'download',
-  profileId?: string,
-): Promise<void> => {
-  const validatedPath: string = parseDataPath(path);
-  const query: string = new URLSearchParams({
+  profileId?: Web_Api_DeleteDirectory_ProfileId,
+): Web_Api_DeleteDirectory_Returns => {
+  const validatedPath: Web_Api_DeleteDirectory_ValidatedPath = parseDataPath(path);
+  const query: Web_Api_DeleteDirectory_Query = new URLSearchParams({
     path: validatedPath,
     purpose,
   }).toString();
   const searchParameters: URLSearchParams = new URLSearchParams(query);
+
   if (profileId !== undefined) {
     searchParameters.set('profileId', profileId);
   }
@@ -2578,16 +2986,18 @@ export const deleteDirectory = async (
 };
 
 /**
- * API - Gets Transmission free space.
+ * API - Get Transmission Free Space.
  *
  * Returns the available byte count for one validated data path.
  * A caller may hide this optional information if the request fails.
  *
+ * @returns {Web_Api_GetTransmissionFreeSpace_Returns}
+ *
  * @since 2.0.0
  */
-export const getTransmissionFreeSpace = async (path: string): Promise<number> => {
-  const validatedPath: string = parseDataPath(path);
-  const query: string = new URLSearchParams({ path: validatedPath }).toString();
+export const getTransmissionFreeSpace = async (path: Web_Api_GetTransmissionFreeSpace_Path): Web_Api_GetTransmissionFreeSpace_Returns => {
+  const validatedPath: Web_Api_GetTransmissionFreeSpace_ValidatedPath = parseDataPath(path);
+  const query: Web_Api_GetTransmissionFreeSpace_Query = new URLSearchParams({ path: validatedPath }).toString();
   const response: Web_Api_TransmissionFreeSpace = await requestJSON(
     `/api/v1/transmission/free-space?${query}`,
     transmissionFreeSpaceSchema,
@@ -2597,20 +3007,23 @@ export const getTransmissionFreeSpace = async (path: string): Promise<number> =>
 };
 
 /**
- * API - Create directory.
+ * API - Create Directory.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
+ *
+ * @returns {Web_Api_CreateDirectory_Returns}
  *
  * @since 2.0.0
  */
 export const createDirectory = async (
   input: Web_Api_CreateDirectoryInput,
   purpose: Web_Api_DirectoryPurpose = 'download',
-  profileId?: string,
-): Promise<Web_Api_Directory> => {
+  profileId?: Web_Api_CreateDirectory_ProfileId,
+): Web_Api_CreateDirectory_Returns => {
   const validatedInput: Web_Api_CreateDirectoryInput = parseCreateDirectoryInput(input);
   const searchParameters: URLSearchParams = new URLSearchParams({ purpose });
+
   if (profileId !== undefined) {
     searchParameters.set('profileId', profileId);
   }
@@ -2626,42 +3039,48 @@ export const createDirectory = async (
 };
 
 /**
- * API - Gets providers.
+ * API - Get Providers.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @returns {Web_Api_GetProviders_Returns}
+ *
  * @since 2.0.0
  */
-export const getProviders = async (): Promise<Web_Api_Provider[]> => {
-  const response = await requestJSON('/api/v1/vpn/providers', providersResponseSchema);
+export const getProviders = async (): Web_Api_GetProviders_Returns => {
+  const response: Web_Api_GetProviders_Response = await requestJSON('/api/v1/vpn/providers', providersResponseSchema);
 
   return response['items'];
 };
 
 /**
- * API - Gets VPN connections.
+ * API - Get Vpn Connections.
  *
  * Reads every stored connection with runtime, daemon, usage, and capacity state.
  * The server returns rows in slot order for a stable list.
  *
+ * @returns {Web_Api_GetVpnConnections_Returns}
+ *
  * @since 2.0.0
  */
-export const getVPNConnections = async (): Promise<Web_Api_VpnConnectionsResponse> => requestJSON(
+export const getVPNConnections = async (): Web_Api_GetVpnConnections_Returns => requestJSON(
   '/api/v1/vpn/connections',
   vpnConnectionsResponseSchema,
 );
 
 /**
- * API - Gets VPN connection.
+ * API - Get Vpn Connection.
  *
  * Reads one connection when a direct editor refresh needs the latest revision.
  * The collection remains the source for capacity and list ordering.
  *
+ * @returns {Web_Api_GetVpnConnection_Returns}
+ *
  * @since 2.0.0
  */
-export const getVPNConnection = async (connectionId: string): Promise<Web_Api_VpnConnection> => {
-  const validatedConnectionID: string = parseProviderID(connectionId);
+export const getVPNConnection = async (connectionId: Web_Api_GetVpnConnection_ConnectionId): Web_Api_GetVpnConnection_Returns => {
+  const validatedConnectionID: Web_Api_GetVpnConnection_ValidatedConnectionId = parseProviderID(connectionId);
   const response: Web_Api_VpnConnectionResponse = await requestJSON(
     `/api/v1/vpn/connections/${encodeURIComponent(validatedConnectionID)}`,
     vpnConnectionResponseSchema,
@@ -2671,34 +3090,38 @@ export const getVPNConnection = async (connectionId: string): Promise<Web_Api_Vp
 };
 
 /**
- * API - Gets profiles.
+ * API - Get Profiles.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @returns {Web_Api_GetProfiles_Returns}
+ *
  * @since 2.0.0
  */
-export const getProfiles = async (providerId: string): Promise<Web_Api_VpnProfile[]> => {
-  const validatedProviderID: string = parseProviderID(providerId);
-  const query: string = new URLSearchParams({ provider: validatedProviderID }).toString();
-  const response = await requestJSON(`/api/v1/vpn/profiles?${query}`, profilesResponseSchema);
+export const getProfiles = async (providerId: Web_Api_GetProfiles_ProviderId): Web_Api_GetProfiles_Returns => {
+  const validatedProviderID: Web_Api_GetProfiles_ValidatedProviderId = parseProviderID(providerId);
+  const query: Web_Api_GetProfiles_Query = new URLSearchParams({ provider: validatedProviderID }).toString();
+  const response: Web_Api_GetProfiles_Response = await requestJSON(`/api/v1/vpn/profiles?${query}`, profilesResponseSchema);
 
   return response['items'];
 };
 
 /**
- * API - Upload custom profile.
+ * API - Upload Custom Profile.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
+ *
+ * @returns {Web_Api_UploadCustomProfile_Returns}
  *
  * @since 2.0.0
  */
 export const uploadCustomProfile = async (
   tunnel: Web_Api_VpnTunnel,
-  profileName: string,
-  profile: string,
-): Promise<Web_Api_VpnProfile[]> => {
+  profileName: Web_Api_UploadCustomProfile_ProfileName,
+  profile: Web_Api_UploadCustomProfile_Profile,
+): Web_Api_UploadCustomProfile_Returns => {
   const validatedInput: Web_Api_CustomProfileInput = parseCustomProfileInput({
     tunnel,
     profileName,
@@ -2718,15 +3141,17 @@ export const uploadCustomProfile = async (
 };
 
 /**
- * API - Refresh VPN catalog.
+ * API - Refresh Vpn Catalog.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @returns {Web_Api_RefreshVpnCatalog_Returns}
+ *
  * @since 2.0.0
  */
-export const refreshVPNCatalog = async (providerId: string, tunnel: Web_Api_VpnTunnel): Promise<void> => {
-  const validatedProviderID: string = parseProviderID(providerId);
+export const refreshVPNCatalog = async (providerId: Web_Api_RefreshVpnCatalog_ProviderId, tunnel: Web_Api_VpnTunnel): Web_Api_RefreshVpnCatalog_Returns => {
+  const validatedProviderID: Web_Api_RefreshVpnCatalog_ValidatedProviderId = parseProviderID(providerId);
   const validatedTunnel: Web_Api_VpnTunnel = vpnTunnelSchema.parse(tunnel);
 
   await requestJSON(
@@ -2734,19 +3159,23 @@ export const refreshVPNCatalog = async (providerId: string, tunnel: Web_Api_VpnT
     vpnCatalogSchema,
     { method: 'POST' },
   );
+
+  return;
 };
 
 /**
- * API - Creates VPN connection.
+ * API - Create Vpn Connection.
  *
  * Tests and connects a named candidate before the server commits it.
  * The returned connection includes its assigned slot and initial revision.
+ *
+ * @returns {Web_Api_CreateVpnConnection_Returns}
  *
  * @since 2.0.0
  */
 export const createVPNConnection = async (
   input: Web_Api_CreateVpnConnectionInput,
-): Promise<Web_Api_VpnConnection> => {
+): Web_Api_CreateVpnConnection_Returns => {
   const validatedInput: Web_Api_CreateVpnConnectionInput = parseCreateVpnConnectionInput(input);
   const response: Web_Api_VpnConnectionResponse = await requestJSON(
     '/api/v1/vpn/connections',
@@ -2761,18 +3190,20 @@ export const createVPNConnection = async (
 };
 
 /**
- * API - Updates VPN connection.
+ * API - Update Vpn Connection.
  *
  * Sends rename-only fields without configuration so the tunnel stays up.
  * Configuration changes use the server's test-and-connect transaction.
  *
+ * @returns {Web_Api_UpdateVpnConnection_Returns}
+ *
  * @since 2.0.0
  */
 export const updateVPNConnection = async (
-  connectionId: string,
+  connectionId: Web_Api_UpdateVpnConnection_ConnectionId,
   input: Web_Api_UpdateVpnConnectionInput,
-): Promise<Web_Api_VpnConnection> => {
-  const validatedConnectionID: string = parseProviderID(connectionId);
+): Web_Api_UpdateVpnConnection_Returns => {
+  const validatedConnectionID: Web_Api_UpdateVpnConnection_ValidatedConnectionId = parseProviderID(connectionId);
   const validatedInput: Web_Api_UpdateVpnConnectionInput = parseUpdateVpnConnectionInput(input);
   const response: Web_Api_VpnConnectionResponse = await requestJSON(
     `/api/v1/vpn/connections/${encodeURIComponent(validatedConnectionID)}`,
@@ -2787,15 +3218,17 @@ export const updateVPNConnection = async (
 };
 
 /**
- * API - Reconnects VPN connection.
+ * API - Reconnect Vpn Connection.
  *
  * Restarts only the named connection and returns its latest runtime state.
  * Other tunnels and Transmission daemons remain untouched.
  *
+ * @returns {Web_Api_ReconnectVpnConnection_Returns}
+ *
  * @since 2.0.0
  */
-export const reconnectVPNConnection = async (connectionId: string): Promise<Web_Api_VpnConnection> => {
-  const validatedConnectionID: string = parseProviderID(connectionId);
+export const reconnectVPNConnection = async (connectionId: Web_Api_ReconnectVpnConnection_ConnectionId): Web_Api_ReconnectVpnConnection_Returns => {
+  const validatedConnectionID: Web_Api_ReconnectVpnConnection_ValidatedConnectionId = parseProviderID(connectionId);
   const response: Web_Api_VpnConnectionResponse = await requestJSON(
     `/api/v1/vpn/connections/${encodeURIComponent(validatedConnectionID)}/reconnect`,
     vpnConnectionResponseSchema,
@@ -2806,15 +3239,17 @@ export const reconnectVPNConnection = async (connectionId: string): Promise<Web_
 };
 
 /**
- * API - Disconnects VPN connection.
+ * API - Disconnect Vpn Connection.
  *
  * Blocks only the named connection while preserving its torrent list.
  * The returned row supplies the new disabled and runtime state.
  *
+ * @returns {Web_Api_DisconnectVpnConnection_Returns}
+ *
  * @since 2.0.0
  */
-export const disconnectVPNConnection = async (connectionId: string): Promise<Web_Api_VpnConnection> => {
-  const validatedConnectionID: string = parseProviderID(connectionId);
+export const disconnectVPNConnection = async (connectionId: Web_Api_DisconnectVpnConnection_ConnectionId): Web_Api_DisconnectVpnConnection_Returns => {
+  const validatedConnectionID: Web_Api_DisconnectVpnConnection_ValidatedConnectionId = parseProviderID(connectionId);
   const response: Web_Api_VpnConnectionResponse = await requestJSON(
     `/api/v1/vpn/connections/${encodeURIComponent(validatedConnectionID)}/disconnect`,
     vpnConnectionResponseSchema,
@@ -2825,16 +3260,18 @@ export const disconnectVPNConnection = async (connectionId: string): Promise<Web
 };
 
 /**
- * API - Sets default VPN connection.
+ * API - Set Default Vpn Connection.
  *
  * Switches DNS and Default-profile ownership after any required confirmation.
  * The response includes both changed rows and one result per attempted move.
+ *
+ * @returns {Web_Api_SetDefaultVpnConnection_Returns}
  *
  * @since 2.0.0
  */
 export const setDefaultVPNConnection = async (
   input: Web_Api_SetDefaultVpnConnectionInput,
-): Promise<Web_Api_VpnDefaultResponse> => {
+): Web_Api_SetDefaultVpnConnection_Returns => {
   const validatedInput: Web_Api_SetDefaultVpnConnectionInput = parseSetDefaultVpnConnectionInput(input);
 
   return requestJSON(
@@ -2848,18 +3285,20 @@ export const setDefaultVPNConnection = async (
 };
 
 /**
- * API - Deletes VPN connection.
+ * API - Delete Vpn Connection.
  *
  * An omitted destination probes dependency usage; a supplied destination moves
  * torrents, profiles, and logins before removing the connection.
  *
+ * @returns {Web_Api_DeleteVpnConnection_Returns}
+ *
  * @since 2.0.0
  */
 export const deleteVPNConnection = async (
-  connectionId: string,
+  connectionId: Web_Api_DeleteVpnConnection_ConnectionId,
   input: Web_Api_DeleteVpnConnectionInput,
-): Promise<Web_Api_DeleteVpnConnectionResponse> => {
-  const validatedConnectionID: string = parseProviderID(connectionId);
+): Web_Api_DeleteVpnConnection_Returns => {
+  const validatedConnectionID: Web_Api_DeleteVpnConnection_ValidatedConnectionId = parseProviderID(connectionId);
   const validatedInput: Web_Api_DeleteVpnConnectionInput = parseDeleteVpnConnectionInput(input);
 
   return requestJSON(
@@ -2873,42 +3312,48 @@ export const deleteVPNConnection = async (
 };
 
 /**
- * API - Gets torrent detail.
+ * API - Get Torrent Detail.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @returns {Web_Api_GetTorrentDetail_Returns}
+ *
  * @since 2.0.0
  */
-export const getTorrentDetail = async (torrentId: number): Promise<Web_Api_TorrentDetail> => requestJSON(
+export const getTorrentDetail = async (torrentId: Web_Api_GetTorrentDetail_TorrentId): Web_Api_GetTorrentDetail_Returns => requestJSON(
   `/api/v1/torrents/${torrentId}`,
   torrentDetailSchema,
 );
 
 /**
- * API - Gets torrents.
+ * API - Get Torrents.
  *
  * Refreshes the complete torrent list outside the live-event cadence.
  * Organization saves use it to display renamed or removed labels immediately.
  *
+ * @returns {Web_Api_GetTorrents_Returns}
+ *
  * @since 2.0.0
  */
-export const getTorrents = async (): Promise<Web_Api_TorrentListResponse> => requestJSON(
+export const getTorrents = async (): Web_Api_GetTorrents_Returns => requestJSON(
   '/api/v1/torrents',
   torrentListResponseSchema,
 );
 
 /**
- * API - Adds torrent.
+ * API - Add Torrent.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
+ *
+ * @returns {Web_Api_AddTorrent_Returns}
  *
  * @since 2.0.0
  */
 export const addTorrent = async (
   input: Web_Api_AddTorrentInput,
-): Promise<Web_Api_TorrentAddResult> => {
+): Web_Api_AddTorrent_Returns => {
   const validatedInput: Web_Api_AddTorrentInput = parseAddTorrentInput(input);
 
   return requestJSON(
@@ -2922,16 +3367,18 @@ export const addTorrent = async (
 };
 
 /**
- * API - Previews torrent links.
+ * API - Preview Torrent Links.
  *
  * Resolves up to twenty links through the server's fail-closed protected route.
  * The console batches larger pastes and treats omitted items as quiet fallbacks.
  *
+ * @returns {Web_Api_PreviewTorrentLinks_Returns}
+ *
  * @since 2.0.0
  */
 export const previewTorrentLinks = async (
-  links: string[],
-): Promise<Web_Api_TorrentLinkPreviewResponse> => requestJSON(
+  links: Web_Api_PreviewTorrentLinks_Links,
+): Web_Api_PreviewTorrentLinks_Returns => requestJSON(
   '/api/v1/torrents/preview',
   torrentLinkPreviewResponseSchema,
   {
@@ -2941,17 +3388,19 @@ export const previewTorrentLinks = async (
 );
 
 /**
- * API - Run torrent action.
+ * API - Run Torrent Action.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
+ *
+ * @returns {Web_Api_RunTorrentAction_Returns}
  *
  * @since 2.0.0
  */
 export const runTorrentAction = async (
   action: Web_Api_TorrentAction,
-  hashes: string[],
-): Promise<void> => {
+  hashes: Web_Api_RunTorrentAction_Hashes,
+): Web_Api_RunTorrentAction_Returns => {
   const validatedInput: Web_Api_TorrentActionInput = parseTorrentActionInput({
     action,
     hashes,
@@ -2968,20 +3417,24 @@ export const runTorrentAction = async (
       body: validatedInput,
     },
   );
+
+  return;
 };
 
 /**
- * API - Remove torrents.
+ * API - Remove Torrents.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
+ * @returns {Web_Api_RemoveTorrents_Returns}
+ *
  * @since 2.0.0
  */
 export const removeTorrents = async (
-  hashes: string[],
-  deleteLocalData: boolean,
-): Promise<void> => {
+  hashes: Web_Api_RemoveTorrents_Hashes,
+  deleteLocalData: Web_Api_RemoveTorrents_DeleteLocalData,
+): Web_Api_RemoveTorrents_Returns => {
   const validatedInput: Web_Api_RemoveTorrentsInput = parseRemoveTorrentsInput({
     deleteLocalData,
     hashes,
@@ -2997,17 +3450,19 @@ export const removeTorrents = async (
 };
 
 /**
- * API - Update torrents.
+ * API - Update Torrents.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
+ * @returns {Web_Api_UpdateTorrents_Returns}
+ *
  * @since 2.0.0
  */
 export const updateTorrents = async (
-  hashes: string[],
+  hashes: Web_Api_UpdateTorrents_Hashes,
   changes: Web_Api_TorrentChanges,
-): Promise<void> => {
+): Web_Api_UpdateTorrents_Returns => {
   const validatedInput: Web_Api_UpdateTorrentsInput = parseUpdateTorrentsInput({
     changes,
     hashes,
@@ -3021,19 +3476,23 @@ export const updateTorrents = async (
       body: validatedInput,
     },
   );
+
+  return;
 };
 
 /**
- * API - Sets torrent profile.
+ * API - Set Torrent Profile.
  *
  * Assigns or clears a profile and optionally applies its labels and limits.
  * The selected torrent identifiers are returned only as mutation confirmation.
+ *
+ * @returns {Web_Api_SetTorrentProfile_Returns}
  *
  * @since 2.0.0
  */
 export const setTorrentProfile = async (
   input: Web_Api_SetTorrentProfileInput,
-): Promise<Web_Api_SetTorrentProfileResponse> => {
+): Web_Api_SetTorrentProfile_Returns => {
   const validatedInput: Web_Api_SetTorrentProfileInput = parseSetTorrentProfileInput(input);
 
   return requestJSON(
@@ -3047,16 +3506,18 @@ export const setTorrentProfile = async (
 };
 
 /**
- * API - Rename torrent path.
+ * API - Rename Torrent Path.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
+ *
+ * @returns {Web_Api_RenameTorrentPath_Returns}
  *
  * @since 2.0.0
  */
 export const renameTorrentPath = async (
   input: Web_Api_RenameTorrentPathInput,
-): Promise<void> => {
+): Web_Api_RenameTorrentPath_Returns => {
   const validatedInput: Web_Api_RenameTorrentPathInput = parseRenameTorrentPathInput(input);
 
   await requestJSON(
@@ -3067,33 +3528,39 @@ export const renameTorrentPath = async (
       body: validatedInput,
     },
   );
+
+  return;
 };
 
 /**
- * API - Gets RPC logins.
+ * API - Get Rpc Logins.
  *
  * Returns login metadata without reusable passwords.
  * The response is safe to retain in application state.
  *
+ * @returns {Web_Api_GetRpcLogins_Returns}
+ *
  * @since 2.0.0
  */
-export const getRPCLogins = async (): Promise<Web_Api_RPCLogin[]> => {
-  const response = await requestJSON('/api/v1/rpc/logins', rpcLoginsResponseSchema);
+export const getRPCLogins = async (): Web_Api_GetRpcLogins_Returns => {
+  const response: Web_Api_GetRpcLogins_Response = await requestJSON('/api/v1/rpc/logins', rpcLoginsResponseSchema);
 
   return response['logins'];
 };
 
 /**
- * API - Creates an RPC login.
+ * API - Create Rpc Login.
  *
  * Returns the generated password exactly once with the created login.
  * Later list responses contain only login metadata.
+ *
+ * @returns {Web_Api_CreateRpcLogin_Returns}
  *
  * @since 2.0.0
  */
 export const createRPCLogin = async (
   input: Web_Api_RPCLoginInput,
-): Promise<Web_Api_RPCCredential> => {
+): Web_Api_CreateRpcLogin_Returns => {
   const validatedInput: Web_Api_RPCLoginInput = parseRPCLoginInput(input);
 
   return requestJSON(
@@ -3107,18 +3574,20 @@ export const createRPCLogin = async (
 };
 
 /**
- * API - Updates an RPC login.
+ * API - Update Rpc Login.
  *
  * Edits its username and optionally returns one regenerated password.
  * Omitting regeneration retains the saved verifier.
  *
+ * @returns {Web_Api_UpdateRpcLogin_Returns}
+ *
  * @since 2.0.0
  */
 export const updateRPCLogin = async (
-  loginId: string,
+  loginId: Web_Api_UpdateRpcLogin_LoginId,
   input: Web_Api_UpdateRPCLoginInput,
-): Promise<Web_Api_RPCCredential> => {
-  const validatedLoginID: string = parseTokenID(loginId);
+): Web_Api_UpdateRpcLogin_Returns => {
+  const validatedLoginID: Web_Api_UpdateRpcLogin_ValidatedLoginId = parseTokenID(loginId);
   const validatedInput: Web_Api_UpdateRPCLoginInput = parseUpdateRPCLoginInput(input);
 
   return requestJSON(
@@ -3132,15 +3601,17 @@ export const updateRPCLogin = async (
 };
 
 /**
- * API - Deletes an RPC login.
+ * API - Delete Rpc Login.
  *
  * Revokes one compatible-RPC login immediately.
  * Remote clients using it stop authenticating at once.
  *
+ * @returns {Web_Api_DeleteRpcLogin_Returns}
+ *
  * @since 2.0.0
  */
-export const deleteRPCLogin = async (loginId: string): Promise<void> => {
-  const validatedLoginID: string = parseTokenID(loginId);
+export const deleteRPCLogin = async (loginId: Web_Api_DeleteRpcLogin_LoginId): Web_Api_DeleteRpcLogin_Returns => {
+  const validatedLoginID: Web_Api_DeleteRpcLogin_ValidatedLoginId = parseTokenID(loginId);
 
   return requestVoid(
     `/api/v1/rpc/logins/${encodeURIComponent(validatedLoginID)}`,
@@ -3149,27 +3620,31 @@ export const deleteRPCLogin = async (loginId: string): Promise<void> => {
 };
 
 /**
- * API - Gets web proxy.
+ * API - Get Web Proxy.
  *
  * Returns its desired state, observed state, and safe login metadata.
  * Runtime errors remain human-readable for the state card.
  *
+ * @returns {Web_Api_GetWebProxy_Returns}
+ *
  * @since 2.0.0
  */
-export const getWebProxy = async (): Promise<Web_Api_WebProxy> => requestJSON(
+export const getWebProxy = async (): Web_Api_GetWebProxy_Returns => requestJSON(
   '/api/v1/web-proxy',
   webProxySchema,
 );
 
 /**
- * API - Updates web proxy state.
+ * API - Update Web Proxy.
  *
  * Enables or disables the proxy while preserving its login collection.
  * An enabled proxy with no logins refuses every authentication attempt.
  *
+ * @returns {Web_Api_UpdateWebProxy_Returns}
+ *
  * @since 2.0.0
  */
-export const updateWebProxy = async (enabled: boolean): Promise<Web_Api_WebProxy> => requestJSON(
+export const updateWebProxy = async (enabled: Web_Api_UpdateWebProxy_Enabled): Web_Api_UpdateWebProxy_Returns => requestJSON(
   '/api/v1/web-proxy',
   webProxySchema,
   {
@@ -3179,16 +3654,18 @@ export const updateWebProxy = async (enabled: boolean): Promise<Web_Api_WebProxy
 );
 
 /**
- * API - Creates a web proxy login.
+ * API - Create Web Proxy Login.
  *
  * Returns the generated password exactly once with the created login.
  * Later web proxy reads contain only login metadata.
+ *
+ * @returns {Web_Api_CreateWebProxyLogin_Returns}
  *
  * @since 2.0.0
  */
 export const createWebProxyLogin = async (
   input: Web_Api_WebProxyLoginInput,
-): Promise<Web_Api_WebProxyCredential> => {
+): Web_Api_CreateWebProxyLogin_Returns => {
   const validatedInput: Web_Api_WebProxyLoginInput = parseWebProxyLoginInput(input);
 
   return requestJSON(
@@ -3202,18 +3679,20 @@ export const createWebProxyLogin = async (
 };
 
 /**
- * API - Updates a web proxy login.
+ * API - Update Web Proxy Login.
  *
  * Edits its metadata and optionally returns one regenerated password.
  * Omitting regeneration retains the saved verifier.
  *
+ * @returns {Web_Api_UpdateWebProxyLogin_Returns}
+ *
  * @since 2.0.0
  */
 export const updateWebProxyLogin = async (
-  loginId: string,
+  loginId: Web_Api_UpdateWebProxyLogin_LoginId,
   input: Web_Api_UpdateWebProxyLoginInput,
-): Promise<Web_Api_WebProxyCredential> => {
-  const validatedLoginID: string = parseTokenID(loginId);
+): Web_Api_UpdateWebProxyLogin_Returns => {
+  const validatedLoginID: Web_Api_UpdateWebProxyLogin_ValidatedLoginId = parseTokenID(loginId);
   const validatedInput: Web_Api_UpdateWebProxyLoginInput = parseUpdateWebProxyLoginInput(input);
 
   return requestJSON(
@@ -3227,15 +3706,17 @@ export const updateWebProxyLogin = async (
 };
 
 /**
- * API - Deletes a web proxy login.
+ * API - Delete Web Proxy Login.
  *
  * Revokes one login and returns after the proxy configuration is republished.
  * Removing the final login leaves the proxy switch unchanged.
  *
+ * @returns {Web_Api_DeleteWebProxyLogin_Returns}
+ *
  * @since 2.0.0
  */
-export const deleteWebProxyLogin = async (loginId: string): Promise<void> => {
-  const validatedLoginID: string = parseTokenID(loginId);
+export const deleteWebProxyLogin = async (loginId: Web_Api_DeleteWebProxyLogin_LoginId): Web_Api_DeleteWebProxyLogin_Returns => {
+  const validatedLoginID: Web_Api_DeleteWebProxyLogin_ValidatedLoginId = parseTokenID(loginId);
 
   return requestVoid(
     `/api/v1/web-proxy/logins/${encodeURIComponent(validatedLoginID)}`,
@@ -3244,30 +3725,34 @@ export const deleteWebProxyLogin = async (loginId: string): Promise<void> => {
 };
 
 /**
- * API - Gets tokens.
+ * API - Get Tokens.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @returns {Web_Api_GetTokens_Returns}
+ *
  * @since 2.0.0
  */
-export const getTokens = async (): Promise<Web_Api_Token[]> => {
-  const response = await requestJSON('/api/v1/auth/tokens', tokensResponseSchema);
+export const getTokens = async (): Web_Api_GetTokens_Returns => {
+  const response: Web_Api_GetTokens_Response = await requestJSON('/api/v1/auth/tokens', tokensResponseSchema);
 
   return response['items'];
 };
 
 /**
- * API - Create token.
+ * API - Create Token.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
+ *
+ * @returns {Web_Api_CreateToken_Returns}
  *
  * @since 2.0.0
  */
 export const createToken = async (
   input: Web_Api_CreateTokenInput,
-): Promise<Web_Api_CreatedToken> => requestJSON(
+): Web_Api_CreateToken_Returns => requestJSON(
   '/api/v1/auth/tokens',
   createdTokenSchema,
   {
@@ -3281,18 +3766,20 @@ export const createToken = async (
 );
 
 /**
- * API - Update token.
+ * API - Update Token.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
+ * @returns {Web_Api_UpdateToken_Returns}
+ *
  * @since 2.0.0
  */
 export const updateToken = async (
-  tokenId: string,
+  tokenId: Web_Api_UpdateToken_TokenId,
   input: Web_Api_UpdateTokenInput,
-): Promise<Web_Api_Token> => {
-  const validatedTokenID: string = parseTokenID(tokenId);
+): Web_Api_UpdateToken_Returns => {
+  const validatedTokenID: Web_Api_UpdateToken_ValidatedTokenId = parseTokenID(tokenId);
 
   return requestJSON(
     `/api/v1/auth/tokens/${encodeURIComponent(validatedTokenID)}`,
@@ -3309,15 +3796,17 @@ export const updateToken = async (
 };
 
 /**
- * API - Revoke token.
+ * API - Revoke Token.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @returns {Web_Api_RevokeToken_Returns}
+ *
  * @since 2.0.0
  */
-export const revokeToken = async (tokenId: string): Promise<void> => {
-  const validatedTokenID: string = parseTokenID(tokenId);
+export const revokeToken = async (tokenId: Web_Api_RevokeToken_TokenId): Web_Api_RevokeToken_Returns => {
+  const validatedTokenID: Web_Api_RevokeToken_ValidatedTokenId = parseTokenID(tokenId);
 
   return requestVoid(
     `/api/v1/auth/tokens/${encodeURIComponent(validatedTokenID)}`,
@@ -3326,44 +3815,50 @@ export const revokeToken = async (tokenId: string): Promise<void> => {
 };
 
 /**
- * API - Gets notifications.
+ * API - Get Notifications.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @returns {Web_Api_GetNotifications_Returns}
+ *
  * @since 2.0.0
  */
-export const getNotifications = async (): Promise<Web_Notifications_Target[]> => {
-  const response = await requestJSON('/api/v1/notifications', notificationTargetsResponseSchema);
+export const getNotifications = async (): Web_Api_GetNotifications_Returns => {
+  const response: Web_Api_GetNotifications_Response = await requestJSON('/api/v1/notifications', notificationTargetsResponseSchema);
 
   return response['items'];
 };
 
 /**
- * API - Gets notification events.
+ * API - Get Notification Events.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @returns {Web_Api_GetNotificationEvents_Returns}
+ *
  * @since 2.0.0
  */
-export const getNotificationEvents = async (): Promise<Web_Notifications_Event[]> => {
-  const response = await requestJSON('/api/v1/notifications/events', notificationEventsResponseSchema);
+export const getNotificationEvents = async (): Web_Api_GetNotificationEvents_Returns => {
+  const response: Web_Api_GetNotificationEvents_Response = await requestJSON('/api/v1/notifications/events', notificationEventsResponseSchema);
 
   return response['items'];
 };
 
 /**
- * API - Create notification.
+ * API - Create Notification.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
+ *
+ * @returns {Web_Api_CreateNotification_Returns}
  *
  * @since 2.0.0
  */
 export const createNotification = async (
   input: Web_Notifications_CreateInput,
-): Promise<Web_Notifications_Target> => requestJSON(
+): Web_Api_CreateNotification_Returns => requestJSON(
   '/api/v1/notifications',
   notificationTargetSchema,
   {
@@ -3378,17 +3873,19 @@ export const createNotification = async (
 );
 
 /**
- * API - Update notification.
+ * API - Update Notification.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
+ * @returns {Web_Api_UpdateNotification_Returns}
+ *
  * @since 2.0.0
  */
 export const updateNotification = async (
-  notificationId: string,
+  notificationId: Web_Api_UpdateNotification_NotificationId,
   input: Web_Notifications_UpdateInput,
-): Promise<Web_Notifications_Target> => requestJSON(
+): Web_Api_UpdateNotification_Returns => requestJSON(
   `/api/v1/notifications/${encodeURIComponent(notificationId)}`,
   notificationTargetSchema,
   {
@@ -3403,44 +3900,50 @@ export const updateNotification = async (
 );
 
 /**
- * API - Removes notification.
+ * API - Remove Notification.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @returns {Web_Api_RemoveNotification_Returns}
+ *
  * @since 2.0.0
  */
-export const removeNotification = async (notificationId: string): Promise<void> => requestVoid(
+export const removeNotification = async (notificationId: Web_Api_RemoveNotification_NotificationId): Web_Api_RemoveNotification_Returns => requestVoid(
   `/api/v1/notifications/${encodeURIComponent(notificationId)}`,
   { method: 'DELETE' },
 );
 
 /**
- * API - Test notification.
+ * API - Test Notification.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @returns {Web_Api_TestNotification_Returns}
+ *
  * @since 2.0.0
  */
-export const testNotification = async (notificationId: string): Promise<Web_Notifications_TestResult> => requestJSON(
+export const testNotification = async (notificationId: Web_Api_TestNotification_NotificationId): Web_Api_TestNotification_Returns => requestJSON(
   `/api/v1/notifications/${encodeURIComponent(notificationId)}/test`,
   notificationTestSchema,
   { method: 'POST' },
 );
 
 /**
- * API - Submit second factor.
+ * API - Submit Second Factor.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
+ * @returns {Web_Api_SubmitSecondFactor_Returns}
+ *
  * @since 2.0.0
  */
 export const submitSecondFactor = async (
-  challenge: string,
-  code: string,
-): Promise<Web_Api_AuthenticationResponse> => requestJSON(
+  challenge: Web_Api_SubmitSecondFactor_Challenge,
+  code: Web_Api_SubmitSecondFactor_Code,
+): Web_Api_SubmitSecondFactor_Returns => requestJSON(
   '/api/v1/auth/login/second-factor',
   authenticationResponseSchema,
   {
@@ -3453,20 +3956,22 @@ export const submitSecondFactor = async (
 );
 
 /**
- * API - Sign in with passkey.
+ * API - Sign In With Passkey.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @returns {Web_Api_SignInWithPasskey_Returns}
+ *
  * @since 2.0.0
  */
-export const signInWithPasskey = async (): Promise<Web_Api_AuthenticationResponse> => {
+export const signInWithPasskey = async (): Web_Api_SignInWithPasskey_Returns => {
   const ceremony: Web_Api_PasskeyCeremony = await requestJSON(
     '/api/v1/auth/passkeys/login/options',
     passkeyCeremonySchema,
     { method: 'POST' },
   );
-  const credential: Record<string, unknown> = await getPasskey(ceremony['options']);
+  const credential: Web_Api_SignInWithPasskey_Credential = await getPasskey(ceremony['options']);
 
   return requestJSON(
     '/api/v1/auth/passkeys/login/verify',
@@ -3482,30 +3987,34 @@ export const signInWithPasskey = async (): Promise<Web_Api_AuthenticationRespons
 };
 
 /**
- * API - Gets account security.
+ * API - Get Account Security.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @returns {Web_Api_GetAccountSecurity_Returns}
+ *
  * @since 2.0.0
  */
-export const getAccountSecurity = async (): Promise<Web_Api_AccountSecurity> => requestJSON(
+export const getAccountSecurity = async (): Web_Api_GetAccountSecurity_Returns => requestJSON(
   '/api/v1/auth/security',
   accountSecuritySchema,
 );
 
 /**
- * API - Change password.
+ * API - Change Password.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
+ * @returns {Web_Api_ChangePassword_Returns}
+ *
  * @since 2.0.0
  */
 export const changePassword = async (
-  currentPassword: string,
-  newPassword: string,
-): Promise<void> => requestVoid(
+  currentPassword: Web_Api_ChangePassword_CurrentPassword,
+  newPassword: Web_Api_ChangePassword_NewPassword,
+): Web_Api_ChangePassword_Returns => requestVoid(
   '/api/v1/auth/password',
   {
     method: 'POST',
@@ -3517,17 +4026,19 @@ export const changePassword = async (
 );
 
 /**
- * API - Change username.
+ * API - Change Username.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
+ * @returns {Web_Api_ChangeUsername_Returns}
+ *
  * @since 2.0.0
  */
 export const changeUsername = async (
-  username: string,
-  password: string,
-): Promise<void> => {
+  username: Web_Api_ChangeUsername_Username,
+  password: Web_Api_ChangeUsername_Password,
+): Web_Api_ChangeUsername_Returns => {
   await requestJSON(
     '/api/v1/auth/username',
     z.object({
@@ -3544,17 +4055,21 @@ export const changeUsername = async (
       },
     },
   );
+
+  return;
 };
 
 /**
- * API - Starts TOTP setup.
+ * API - Start Totp Setup.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @returns {Web_Api_StartTotpSetup_Returns}
+ *
  * @since 2.0.0
  */
-export const startTotpSetup = async (password: string): Promise<Web_Api_TotpSetup> => requestJSON(
+export const startTotpSetup = async (password: Web_Api_StartTotpSetup_Password): Web_Api_StartTotpSetup_Returns => requestJSON(
   '/api/v1/auth/totp/setup',
   totpSetupSchema,
   {
@@ -3564,14 +4079,16 @@ export const startTotpSetup = async (password: string): Promise<Web_Api_TotpSetu
 );
 
 /**
- * API - Enable TOTP.
+ * API - Enable Totp.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @returns {Web_Api_EnableTotp_Returns}
+ *
  * @since 2.0.0
  */
-export const enableTotp = async (code: string): Promise<Web_Api_RecoveryCodes> => requestJSON(
+export const enableTotp = async (code: Web_Api_EnableTotp_Code): Web_Api_EnableTotp_Returns => requestJSON(
   '/api/v1/auth/totp/enable',
   recoveryCodesSchema,
   {
@@ -3581,14 +4098,16 @@ export const enableTotp = async (code: string): Promise<Web_Api_RecoveryCodes> =
 );
 
 /**
- * API - Disable TOTP.
+ * API - Disable Totp.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @returns {Web_Api_DisableTotp_Returns}
+ *
  * @since 2.0.0
  */
-export const disableTotp = async (password: string): Promise<void> => requestVoid(
+export const disableTotp = async (password: Web_Api_DisableTotp_Password): Web_Api_DisableTotp_Returns => requestVoid(
   '/api/v1/auth/totp/disable',
   {
     method: 'POST',
@@ -3597,14 +4116,16 @@ export const disableTotp = async (password: string): Promise<void> => requestVoi
 );
 
 /**
- * API - Regenerate recovery codes.
+ * API - Regenerate Recovery Codes.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @returns {Web_Api_RegenerateRecoveryCodes_Returns}
+ *
  * @since 2.0.0
  */
-export const regenerateRecoveryCodes = async (password: string): Promise<Web_Api_RecoveryCodes> => requestJSON(
+export const regenerateRecoveryCodes = async (password: Web_Api_RegenerateRecoveryCodes_Password): Web_Api_RegenerateRecoveryCodes_Returns => requestJSON(
   '/api/v1/auth/recovery-codes',
   recoveryCodesSchema,
   {
@@ -3614,14 +4135,16 @@ export const regenerateRecoveryCodes = async (password: string): Promise<Web_Api
 );
 
 /**
- * API - Adds passkey.
+ * API - Add Passkey.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @returns {Web_Api_AddPasskey_Returns}
+ *
  * @since 2.0.0
  */
-export const addPasskey = async (name: string, password: string): Promise<Web_Api_Passkey> => {
+export const addPasskey = async (name: Web_Api_AddPasskey_Name, password: Web_Api_AddPasskey_Password): Web_Api_AddPasskey_Returns => {
   const ceremony: Web_Api_PasskeyCeremony = await requestJSON(
     '/api/v1/auth/passkeys/register/options',
     passkeyCeremonySchema,
@@ -3633,7 +4156,7 @@ export const addPasskey = async (name: string, password: string): Promise<Web_Ap
       },
     },
   );
-  const credential: Record<string, unknown> = await createPasskey(ceremony['options']);
+  const credential: Web_Api_AddPasskey_Credential = await createPasskey(ceremony['options']);
 
   return requestJSON(
     '/api/v1/auth/passkeys/register/verify',
@@ -3650,14 +4173,16 @@ export const addPasskey = async (name: string, password: string): Promise<Web_Ap
 };
 
 /**
- * API - Removes passkey.
+ * API - Remove Passkey.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @returns {Web_Api_RemovePasskey_Returns}
+ *
  * @since 2.0.0
  */
-export const removePasskey = async (passkeyId: string, password: string): Promise<void> => requestVoid(
+export const removePasskey = async (passkeyId: Web_Api_RemovePasskey_PasskeyId, password: Web_Api_RemovePasskey_Password): Web_Api_RemovePasskey_Returns => requestVoid(
   `/api/v1/auth/passkeys/${encodeURIComponent(passkeyId)}`,
   {
     method: 'DELETE',
@@ -3666,20 +4191,20 @@ export const removePasskey = async (passkeyId: string, password: string): Promis
 );
 
 /**
- * API - Backup grant schema.
+ * API - Backup Grant Schema.
  *
  * Validates the short-lived confirmation returned by either ceremony.
  * The plaintext grant exists only until its matching mutation consumes it.
  *
  * @since 2.0.0
  */
-const backupGrantSchema: Web_Api_Schema<Web_Backup_Grant> = z.object({
+const backupGrantSchema: Web_Api_BackupGrantSchema = z.object({
   grant: z.string(),
   expiresAt: z.string(),
 });
 
 /**
- * API - Backup import item schema.
+ * API - Backup Import Item Schema.
  *
  * Validates persisted torrent progress used by both the dialog and Settings panel.
  * Stable state names keep reloads consistent with the running server job.
@@ -3706,14 +4231,14 @@ const backupImportItemSchema = z.object({
 });
 
 /**
- * API - Backup import job schema.
+ * API - Backup Import Job Schema.
  *
  * Validates the durable progress envelope returned on create and subsequent polls.
  * Secret source material is intentionally absent from this response.
  *
  * @since 2.0.0
  */
-const backupImportJobSchema: Web_Api_Schema<Web_Backup_ImportJob> = z.object({
+const backupImportJobSchema: Web_Api_BackupImportJobSchema = z.object({
   id: z.string(),
   source: z.enum([
     'another-transmission',
@@ -3737,14 +4262,14 @@ const backupImportJobSchema: Web_Api_Schema<Web_Backup_ImportJob> = z.object({
 });
 
 /**
- * API - Backup import preview schema.
+ * API - Backup Import Preview Schema.
  *
  * Validates every mapping choice prepared before re-authentication is requested.
  * The console uses this safe projection instead of interpreting server state itself.
  *
  * @since 2.0.0
  */
-const backupImportPreviewSchema: Web_Api_Schema<Web_Backup_ImportPreview> = z.object({
+const backupImportPreviewSchema: Web_Api_BackupImportPreviewSchema = z.object({
   exportedAt: z.string(),
   appVersion: z.string(),
   actions: responseArraySchema(z.string()),
@@ -3814,14 +4339,14 @@ const backupImportPreviewSchema: Web_Api_Schema<Web_Backup_ImportPreview> = z.ob
 });
 
 /**
- * API - Backup source directory schema.
+ * API - Backup Source Directory Schema.
  *
  * Validates the read-only directory listing used by the mounted-source picker.
  * Only directory metadata crosses this boundary; source file contents never do.
  *
  * @since 2.0.0
  */
-const backupSourceDirectorySchema: Web_Api_Schema<Web_Backup_SourceDirectory> = z.object({
+const backupSourceDirectorySchema: Web_Api_BackupSourceDirectorySchema = z.object({
   path: z.string(),
   parentPath: z.string().optional(),
   directories: responseArraySchema(z.object({
@@ -3832,24 +4357,24 @@ const backupSourceDirectorySchema: Web_Api_Schema<Web_Backup_SourceDirectory> = 
 });
 
 /**
- * API - Confirms a sensitive backup operation.
+ * API - Confirm Backup Operation.
  *
  * Exchanges current account proof for a short-lived, single-use grant.
  * The caller keeps the grant only long enough to submit its export or import.
  *
- * @param {Web_Backup_Purpose} purpose  - Purpose.
- * @param {string}             password - Password.
- * @param {string}             code     - Code.
+ * @param {Web_Backup_Purpose}                      purpose  - Purpose.
+ * @param {Web_Api_ConfirmBackupOperation_Password} password - Password.
+ * @param {Web_Api_ConfirmBackupOperation_Code}     code     - Code.
  *
- * @returns {Promise<string>}
+ * @returns {Web_Api_ConfirmBackupOperation_Returns}
  *
  * @since 2.0.0
  */
 export const confirmBackupOperation = async (
   purpose: Web_Backup_Purpose,
-  password: string,
-  code: string,
-): Promise<string> => {
+  password: Web_Api_ConfirmBackupOperation_Password,
+  code: Web_Api_ConfirmBackupOperation_Code,
+): Web_Api_ConfirmBackupOperation_Returns => {
   const confirmation: Web_Backup_Grant = await requestJSON(
     '/api/v1/backup/confirmation',
     backupGrantSchema,
@@ -3868,20 +4393,20 @@ export const confirmBackupOperation = async (
 };
 
 /**
- * API - Confirms a backup operation with a passkey.
+ * API - Confirm Backup Operation With Passkey.
  *
  * Runs the existing browser passkey ceremony for the current signed-in account.
  * Successful user verification yields the same scoped grant as password confirmation.
  *
  * @param {Web_Backup_Purpose} purpose - Purpose.
  *
- * @returns {Promise<string>}
+ * @returns {Web_Api_ConfirmBackupOperationWithPasskey_Returns}
  *
  * @since 2.0.0
  */
 export const confirmBackupOperationWithPasskey = async (
   purpose: Web_Backup_Purpose,
-): Promise<string> => {
+): Web_Api_ConfirmBackupOperationWithPasskey_Returns => {
   const ceremony: Web_Api_PasskeyCeremony = await requestJSON(
     '/api/v1/backup/confirmation/passkey/options',
     passkeyCeremonySchema,
@@ -3891,7 +4416,7 @@ export const confirmBackupOperationWithPasskey = async (
       body: { purpose },
     },
   );
-  const credential: Record<string, unknown> = await getPasskey(ceremony['options']);
+  const credential: Web_Api_ConfirmBackupOperationWithPasskey_Credential = await getPasskey(ceremony['options']);
   const confirmation: Web_Backup_Grant = await requestJSON(
     '/api/v1/backup/confirmation/passkey/verify',
     backupGrantSchema,
@@ -3910,27 +4435,29 @@ export const confirmBackupOperationWithPasskey = async (
 };
 
 /**
- * API - Downloads an export.
+ * API - Download Backup Export.
  *
  * Streams the secret-bearing response into a local download without parsing its body.
  * No export contents are written to browser storage or application state.
  *
- * @param {Web_Backup_ExportSections} sections - Sections.
- * @param {string}                    grant    - Grant.
+ * @param {Web_Backup_ExportSections}          sections - Sections.
+ * @param {Web_Api_DownloadBackupExport_Grant} grant    - Grant.
  *
- * @returns {Promise<void>}
+ * @returns {Web_Api_DownloadBackupExport_Returns}
  *
  * @since 2.0.0
  */
 export const downloadBackupExport = async (
   sections: Web_Backup_ExportSections,
-  grant: string,
-): Promise<void> => {
+  grant: Web_Api_DownloadBackupExport_Grant,
+): Web_Api_DownloadBackupExport_Returns => {
   const headers: Headers = new Headers({ 'Content-Type': 'application/json' });
-  const csrfToken: string | undefined = readCookie('tvpn_csrf');
+  const csrfToken: Web_Api_DownloadBackupExport_CsrfToken = readCookie('tvpn_csrf');
+
   if (csrfToken !== undefined) {
     headers.set('X-CSRF-Token', csrfToken);
   }
+
   const response: Response = await fetch('/api/v1/backup/export', {
     body: JSON.stringify({
       grant,
@@ -3941,34 +4468,44 @@ export const downloadBackupExport = async (
     headers,
     method: 'POST',
   });
-  if (!response.ok) {
+
+  if (response.ok === false) {
     throw await responseError(response);
   }
-  const disposition: string = response.headers.get('Content-Disposition') ?? '';
-  const filename: string = /filename="([^"]+)"/u.exec(disposition)?.[1] ?? `transmission-vpn-export-${new Date().toISOString().slice(0, 10)}.json`;
-  const url: string = URL.createObjectURL(await response.blob());
+
+  const disposition: Web_Api_DownloadBackupExport_Disposition = response.headers.get('Content-Disposition') ?? '';
+  const filenameMatch: Web_Api_DownloadBackupExport_FilenameMatch = new RegExp(contentDispositionFilenamePattern, 'u').exec(disposition);
+  const matchedFilename: Web_Api_DownloadBackupExport_MatchedFilename = (filenameMatch !== null) ? filenameMatch[1] : undefined;
+  const filename: Web_Api_DownloadBackupExport_Filename = matchedFilename ?? `transmission-vpn-export-${new Date().toISOString().slice(0, 10)}.json`;
+  const url: Web_Api_DownloadBackupExport_Url = URL.createObjectURL(await response.blob());
   const link: HTMLAnchorElement = document.createElement('a');
+
   link.href = url;
   link.download = filename;
   link.click();
+
   URL.revokeObjectURL(url);
+
+  return;
 };
 
 /**
- * API - Reads a download's file name.
+ * API - Disposition File Name.
  *
  * Prefers the encoded filename* form, which carries names outside ASCII, then the plain
  * filename form, quoted or not, and otherwise uses the fallback.
  *
- * @param {string} disposition - Disposition.
- * @param {string} fallback    - Fallback.
+ * @param {Web_Api_DispositionFileName_Disposition} disposition - Disposition.
+ * @param {Web_Api_DispositionFileName_Fallback}    fallback    - Fallback.
  *
- * @returns {string}
+ * @returns {Web_Api_DispositionFileName_Returns}
  *
  * @since 2.2.0
  */
-export const dispositionFileName = (disposition: string, fallback: string): string => {
-  const encodedName: string | undefined = /filename\*=utf-8''([^;]+)/iu.exec(disposition)?.[1];
+export const dispositionFileName = (disposition: Web_Api_DispositionFileName_Disposition, fallback: Web_Api_DispositionFileName_Fallback): Web_Api_DispositionFileName_Returns => {
+  const encodedMatch: Web_Api_DispositionFileName_EncodedMatch = new RegExp(encodedFilenamePattern, 'iu').exec(disposition);
+  const encodedName: Web_Api_DispositionFileName_EncodedName = (encodedMatch !== null) ? encodedMatch[1] : undefined;
+
   if (encodedName !== undefined) {
     try {
       return decodeURIComponent(encodedName.trim());
@@ -3977,29 +4514,43 @@ export const dispositionFileName = (disposition: string, fallback: string): stri
     }
   }
 
-  return /filename="((?:[^"\\]|\\.)*)"/u.exec(disposition)?.[1]?.replace(/\\(.)/gu, '$1')
-    ?? /filename=([^;]+)/u.exec(disposition)?.[1]?.trim()
-    ?? fallback;
+  const quotedMatch: Web_Api_DispositionFileName_QuotedMatch = new RegExp(quotedFilenamePattern, 'u').exec(disposition);
+  const quotedName: Web_Api_DispositionFileName_QuotedName = (quotedMatch !== null) ? quotedMatch[1] : undefined;
+
+  if (quotedName !== undefined) {
+    return quotedName.replace(new RegExp(escapedCharacterPattern, 'gu'), '$1');
+  }
+
+  const bareMatch: Web_Api_DispositionFileName_BareMatch = new RegExp(bareFilenamePattern, 'u').exec(disposition);
+  const bareName: Web_Api_DispositionFileName_BareName = (bareMatch !== null) ? bareMatch[1] : undefined;
+
+  if (bareName !== undefined) {
+    return bareName.trim();
+  }
+
+  return fallback;
 };
 
 /**
- * API - Downloads torrent files.
+ * API - Download Torrent Files.
  *
  * Saves one torrent's .torrent file, or a zip of several. Torrents still fetching their
  * metadata have no file yet; the result is how many were left out for that reason.
  *
- * @param {string[]} hashes - Hashes.
+ * @param {Web_Api_DownloadTorrentFiles_Hashes} hashes - Hashes.
  *
- * @returns {Promise<number>}
+ * @returns {Web_Api_DownloadTorrentFiles_Returns}
  *
  * @since 2.2.0
  */
-export const downloadTorrentFiles = async (hashes: string[]): Promise<number> => {
+export const downloadTorrentFiles = async (hashes: Web_Api_DownloadTorrentFiles_Hashes): Web_Api_DownloadTorrentFiles_Returns => {
   const headers: Headers = new Headers({ 'Content-Type': 'application/json' });
-  const csrfToken: string | undefined = readCookie('tvpn_csrf');
+  const csrfToken: Web_Api_DownloadTorrentFiles_CsrfToken = readCookie('tvpn_csrf');
+
   if (csrfToken !== undefined) {
     headers.set('X-CSRF-Token', csrfToken);
   }
+
   const response: Response = await fetch('/api/v1/torrents/torrent-files', {
     body: JSON.stringify({ hashes }),
     cache: 'no-store',
@@ -4007,35 +4558,39 @@ export const downloadTorrentFiles = async (hashes: string[]): Promise<number> =>
     headers,
     method: 'POST',
   });
-  if (!response.ok) {
+
+  if (response.ok === false) {
     throw await responseError(response);
   }
-  const fallbackName: string = (hashes.length === 1) ? `${hashes[0]}.torrent` : 'transmission-vpn-torrents.zip';
-  const filename: string = dispositionFileName(response.headers.get('Content-Disposition') ?? '', fallbackName);
-  const url: string = URL.createObjectURL(await response.blob());
+
+  const fallbackName: Web_Api_DownloadTorrentFiles_FallbackName = (hashes.length === 1) ? `${hashes[0]}.torrent` : 'transmission-vpn-torrents.zip';
+  const filename: Web_Api_DownloadTorrentFiles_Filename = dispositionFileName(response.headers.get('Content-Disposition') ?? '', fallbackName);
+  const url: Web_Api_DownloadTorrentFiles_Url = URL.createObjectURL(await response.blob());
   const link: HTMLAnchorElement = document.createElement('a');
+
   link.href = url;
   link.download = filename;
   link.click();
+
   URL.revokeObjectURL(url);
 
   return Number(response.headers.get('X-Torrent-Files-Skipped') ?? '0') || 0;
 };
 
 /**
- * API - Downloads finished files.
+ * API - Download Finished Files.
  *
  * Has the server get the torrents' finished files ready, then lets the browser download
  * the link it answers with, so even a large download goes straight to disk with the
  * browser's own progress and can resume. The result counts the torrents left out.
  *
- * @param {string[]} hashes - Hashes.
+ * @param {Web_Api_DownloadFinishedFiles_Hashes} hashes - Hashes.
  *
- * @returns {Promise<Web_Api_TorrentContentsDownload>}
+ * @returns {Web_Api_DownloadFinishedFiles_Returns}
  *
  * @since 2.2.0
  */
-export const downloadFinishedFiles = async (hashes: string[]): Promise<Web_Api_TorrentContentsDownload> => {
+export const downloadFinishedFiles = async (hashes: Web_Api_DownloadFinishedFiles_Hashes): Web_Api_DownloadFinishedFiles_Returns => {
   const prepared: Web_Api_TorrentContentsDownload = await requestJSON(
     '/api/v1/torrents/contents',
     torrentContentsDownloadSchema,
@@ -4053,25 +4608,23 @@ export const downloadFinishedFiles = async (hashes: string[]): Promise<Web_Api_T
 };
 
 /**
- * API - Previews an export import.
+ * API - Preview Backup Import.
  *
  * Sends a locally validated document for environment-specific folder and conflict checks.
  * The returned projection contains only the choices the wizard needs to display.
  *
  * @param {Web_Backup_Document} document - Document.
  *
- * @returns {Promise<Web_Backup_ImportPreview>}
+ * @returns {Web_Api_PreviewBackupImport_Returns}
  *
  * @since 2.0.0
  */
 export const previewBackupImport = async (
   document: Web_Backup_Document,
-  folderMappings: Record<string, string> = {},
-  profileActions: Record<string, string> = {},
-): Promise<Web_Backup_ImportPreview> => {
-  const response: {
-    preview: Web_Backup_ImportPreview
-  } = await requestJSON(
+  folderMappings: Web_Api_PreviewBackupImport_FolderMappings = {},
+  profileActions: Web_Api_PreviewBackupImport_ProfileActions = {},
+): Web_Api_PreviewBackupImport_Returns => {
+  const response: Web_Api_PreviewBackupImport_Response = await requestJSON(
     '/api/v1/backup/imports/preview',
     z.object({ preview: backupImportPreviewSchema }),
     {
@@ -4090,25 +4643,23 @@ export const previewBackupImport = async (
 };
 
 /**
- * API - Previews another Transmission config folder.
+ * API - Preview Another Transmission Import.
  *
  * Inspects a mounted read-only source and returns only the migration choices.
  * Folder mappings may be supplied again to refresh data-found counts.
  *
- * @param {string}                 configPath     - Config path.
- * @param {Record<string, string>} folderMappings - Folder mappings.
+ * @param {Web_Api_PreviewAnotherTransmissionImport_ConfigPath}     configPath     - Config path.
+ * @param {Web_Api_PreviewAnotherTransmissionImport_FolderMappings} folderMappings - Folder mappings.
  *
- * @returns {Promise<Web_Backup_ImportPreview>}
+ * @returns {Web_Api_PreviewAnotherTransmissionImport_Returns}
  *
  * @since 2.0.0
  */
 export const previewAnotherTransmissionImport = async (
-  configPath: string,
-  folderMappings: Record<string, string> = {},
-): Promise<Web_Backup_ImportPreview> => {
-  const response: {
-    preview: Web_Backup_ImportPreview
-  } = await requestJSON(
+  configPath: Web_Api_PreviewAnotherTransmissionImport_ConfigPath,
+  folderMappings: Web_Api_PreviewAnotherTransmissionImport_FolderMappings = {},
+): Web_Api_PreviewAnotherTransmissionImport_Returns => {
+  const response: Web_Api_PreviewAnotherTransmissionImport_Response = await requestJSON(
     '/api/v1/backup/imports/preview',
     z.object({ preview: backupImportPreviewSchema }),
     {
@@ -4126,21 +4677,19 @@ export const previewAnotherTransmissionImport = async (
 };
 
 /**
- * API - Lists read-only import source folders.
+ * API - Get Backup Source Directory.
  *
  * Keeps mounted-source browsing behind the authenticated API and its path policy.
  * The picker receives only safe child-folder names and navigation metadata.
  *
- * @param {string} path - Path.
+ * @param {Web_Api_GetBackupSourceDirectory_Path} path - Path.
  *
- * @returns {Promise<Web_Backup_SourceDirectory>}
+ * @returns {Web_Api_GetBackupSourceDirectory_Returns}
  *
  * @since 2.0.0
  */
-export const getBackupSourceDirectory = async (path: string): Promise<Web_Backup_SourceDirectory> => {
-  const response: {
-    directory: Web_Backup_SourceDirectory
-  } = await requestJSON(
+export const getBackupSourceDirectory = async (path: Web_Api_GetBackupSourceDirectory_Path): Web_Api_GetBackupSourceDirectory_Returns => {
+  const response: Web_Api_GetBackupSourceDirectory_Response = await requestJSON(
     `/api/v1/backup/imports/source-directories?path=${encodeURIComponent(path)}`,
     z.object({ directory: backupSourceDirectorySchema }),
     { cache: 'no-store' },
@@ -4150,25 +4699,23 @@ export const getBackupSourceDirectory = async (path: string): Promise<Web_Backup
 };
 
 /**
- * API - Starts an import job.
+ * API - Create Backup Import.
  *
  * Submits the reviewed mappings together with a single-use confirmation grant.
  * The durable server job continues if the dialog closes or the page reloads.
  *
- * @param {Web_Backup_ImportPlan} plan  - Plan.
- * @param {string}                grant - Grant.
+ * @param {Web_Backup_ImportPlan}            plan  - Plan.
+ * @param {Web_Api_CreateBackupImport_Grant} grant - Grant.
  *
- * @returns {Promise<Web_Backup_ImportJob>}
+ * @returns {Web_Api_CreateBackupImport_Returns}
  *
  * @since 2.0.0
  */
 export const createBackupImport = async (
   plan: Web_Backup_ImportPlan,
-  grant: string,
-): Promise<Web_Backup_ImportJob> => {
-  const response: {
-    job: Web_Backup_ImportJob
-  } = await requestJSON(
+  grant: Web_Api_CreateBackupImport_Grant,
+): Web_Api_CreateBackupImport_Returns => {
+  const response: Web_Api_CreateBackupImport_Response = await requestJSON(
     '/api/v1/backup/imports',
     z.object({ job: backupImportJobSchema }),
     {
@@ -4185,19 +4732,17 @@ export const createBackupImport = async (
 };
 
 /**
- * API - Gets the running import, if any.
+ * API - Get Current Backup Import.
  *
  * Restores background progress when the Settings page first mounts.
  * A null response means no queued or running import exists.
  *
- * @returns {Promise<Web_Backup_ImportJob | null>}
+ * @returns {Web_Api_GetCurrentBackupImport_Returns}
  *
  * @since 2.0.0
  */
-export const getCurrentBackupImport = async (): Promise<Web_Backup_ImportJob | null> => {
-  const response: {
-    job: Web_Backup_ImportJob | null
-  } = await requestJSON(
+export const getCurrentBackupImport = async (): Web_Api_GetCurrentBackupImport_Returns => {
+  const response: Web_Api_GetCurrentBackupImport_Response = await requestJSON(
     '/api/v1/backup/imports/current',
     z.object({ job: backupImportJobSchema.nullable() }),
     { cache: 'no-store' },
@@ -4207,21 +4752,19 @@ export const getCurrentBackupImport = async (): Promise<Web_Backup_ImportJob | n
 };
 
 /**
- * API - Gets one import job.
+ * API - Get Backup Import.
  *
  * Polls a known durable job while its progress dialog is open or backgrounded.
  * Completed item outcomes remain available through the job-specific route.
  *
- * @param {string} importId - Import id.
+ * @param {Web_Api_GetBackupImport_ImportId} importId - Import id.
  *
- * @returns {Promise<Web_Backup_ImportJob>}
+ * @returns {Web_Api_GetBackupImport_Returns}
  *
  * @since 2.0.0
  */
-export const getBackupImport = async (importId: string): Promise<Web_Backup_ImportJob> => {
-  const response: {
-    job: Web_Backup_ImportJob
-  } = await requestJSON(
+export const getBackupImport = async (importId: Web_Api_GetBackupImport_ImportId): Web_Api_GetBackupImport_Returns => {
+  const response: Web_Api_GetBackupImport_Response = await requestJSON(
     `/api/v1/backup/imports/${encodeURIComponent(importId)}`,
     z.object({ job: backupImportJobSchema }),
     { cache: 'no-store' },
@@ -4231,10 +4774,14 @@ export const getBackupImport = async (importId: string): Promise<Web_Backup_Impo
 };
 
 /**
- * API - Connect live events.
+ * API - Connect Live Events.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
+ *
+ * @param {Web_Api_ConnectLiveEvents_OnSnapshot} onSnapshot - On snapshot.
+ *
+ * @returns {Web_Api_ConnectLiveEvents_Returns}
  *
  * @since 2.0.0
  */
@@ -4242,16 +4789,22 @@ export const connectLiveEvents = (
   onSnapshot: Web_Api_ConnectLiveEvents_OnSnapshot,
 ): Web_Api_ConnectLiveEvents_Returns => {
   const source: EventSource = new EventSource('/api/v1/events');
-  source.addEventListener('snapshot', (event: MessageEvent<string>): void => {
-    const value: unknown = JSON.parse(event.data);
-    const parsedSnapshot = liveSnapshotSchema.safeParse(value);
-    if (parsedSnapshot.success) {
+
+  source.addEventListener('snapshot', (event) => {
+    const value: Web_Api_ConnectLiveEvents_Value = JSON.parse(event.data);
+    const parsedSnapshot: Web_Api_ConnectLiveEvents_ParsedSnapshot = liveSnapshotSchema.safeParse(value);
+
+    if (parsedSnapshot.success === true) {
       onSnapshot(parsedSnapshot.data);
     }
+
+    return;
   });
 
-  return (): void => {
+  return () => {
     source.close();
+
+    return;
   };
 };
 

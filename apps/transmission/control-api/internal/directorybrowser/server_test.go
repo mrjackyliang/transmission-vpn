@@ -115,8 +115,8 @@ func TestServerBrowsesAndCreatesDirectories(testingObject *testing.T) {
 		serveErrors <- server.Serve(serveContext)
 	}()
 
-	waitForSocket(testingObject, socketPath, serveErrors)
-	client := NewClient(socketPath, 2*time.Second)
+	waitForReady(testingObject, markerPath, serveErrors)
+	client := NewClient(socketPath, testServerTimeout)
 	directory, err := client.List(context.Background(), rootPath)
 	if err != nil {
 		testingObject.Fatalf("list root directory: %v", err)
@@ -228,7 +228,7 @@ func TestServerBrowsesAndCreatesDirectories(testingObject *testing.T) {
 		if err != nil {
 			testingObject.Fatalf("directory server shutdown: %v", err)
 		}
-	case <-time.After(3 * time.Second):
+	case <-time.After(testServerTimeout):
 		testingObject.Fatal("directory server did not stop after cancellation")
 	}
 }
@@ -807,19 +807,32 @@ func assertDirectoryMetadata(
 	}
 }
 
-// waitForSocket waits briefly for the asynchronous Unix listener to publish.
+// testServerTimeout bounds each wait on the directory server in these tests.
 //
-// Failure reports the exact socket path so local-protocol startup regressions remain
-// straightforward to diagnose.
-func waitForSocket(
+// The image build runs every package's tests at once, so startup or one request can
+// take seconds on a loaded build host. Each wait ends as soon as the server answers,
+// so this only caps a genuinely stuck server.
+//
+// Since: 2.4.1
+const testServerTimeout = 30 * time.Second
+
+// waitForReady waits for the server's ready marker.
+//
+// Serve writes the marker only after the socket listens with its final permissions,
+// so a test that waits for it never races socket creation or chmod. A Serve error
+// before readiness fails the test at once instead of timing out.
+//
+// Since: 2.4.1
+func waitForReady(
 	testingObject *testing.T,
-	socketPath string,
+	markerPath string,
 	serveErrors <-chan error,
 ) {
 	testingObject.Helper()
 
-	for attempt := 0; attempt < 100; attempt++ {
-		if _, err := os.Stat(socketPath); err == nil {
+	deadline := time.Now().Add(testServerTimeout)
+	for time.Now().Before(deadline) {
+		if _, err := os.Stat(markerPath); err == nil {
 			return
 		}
 		select {
@@ -831,5 +844,5 @@ func waitForSocket(
 		time.Sleep(10 * time.Millisecond)
 	}
 
-	testingObject.Fatalf("directory socket was not created: %s", socketPath)
+	testingObject.Fatalf("directory server did not write %s within %s", markerPath, testServerTimeout)
 }

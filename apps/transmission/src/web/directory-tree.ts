@@ -1,25 +1,35 @@
 import type {
+  Web_DirectoryTree_DirectoryAncestorPaths_AncestorPath,
+  Web_DirectoryTree_DirectoryAncestorPaths_AncestorPaths,
   Web_DirectoryTree_DirectoryAncestorPaths_Path,
+  Web_DirectoryTree_DirectoryAncestorPaths_PathSegments,
   Web_DirectoryTree_DirectoryAncestorPaths_Returns,
   Web_DirectoryTree_DirectoryCreationParentPath_Browsable,
   Web_DirectoryTree_DirectoryCreationParentPath_Path,
   Web_DirectoryTree_DirectoryCreationParentPath_Returns,
   Web_DirectoryTree_DirectoryExpandedPaths_Path,
   Web_DirectoryTree_DirectoryExpandedPaths_Returns,
-  Web_DirectoryTree_Item,
+  Web_DirectoryTree_DirectoryRowClickAction_Browsable,
+  Web_DirectoryTree_DirectoryRowClickAction_HasSubfolders,
+  Web_DirectoryTree_DirectoryRowClickAction_Returns,
+  Web_DirectoryTree_DirectoryRowClickAction_Selectable,
+  Web_DirectoryTree_DirectoryRowClickAction_Usable,
+  Web_DirectoryTree_MoveDirectoryTreeFocus_CurrentIndex,
+  Web_DirectoryTree_MoveDirectoryTreeFocus_CurrentItem,
+  Web_DirectoryTree_MoveDirectoryTreeFocus_FirstChild,
+  Web_DirectoryTree_MoveDirectoryTreeFocus_FirstItem,
   Web_DirectoryTree_MoveDirectoryTreeFocus_FocusedPath,
   Web_DirectoryTree_MoveDirectoryTreeFocus_Items,
   Web_DirectoryTree_MoveDirectoryTreeFocus_Key,
+  Web_DirectoryTree_MoveDirectoryTreeFocus_LastItem,
+  Web_DirectoryTree_MoveDirectoryTreeFocus_NextItem,
+  Web_DirectoryTree_MoveDirectoryTreeFocus_ParentItem,
+  Web_DirectoryTree_MoveDirectoryTreeFocus_PreviousItem,
   Web_DirectoryTree_MoveDirectoryTreeFocus_Returns,
-  Web_DirectoryTree_RowClickAction_Browsable,
-  Web_DirectoryTree_RowClickAction_HasSubfolders,
-  Web_DirectoryTree_RowClickAction_Returns,
-  Web_DirectoryTree_RowClickAction_Selectable,
-  Web_DirectoryTree_RowClickAction_Usable,
 } from '@/types/web/directory-tree.d.ts';
 
 /**
- * Directory Tree - Directory ancestor paths.
+ * Directory Tree - Directory Ancestor Paths.
  *
  * Lists the levels that must load before an initial folder can appear in the
  * tree. The initial folder itself is listed by its parent and is not fetched.
@@ -33,11 +43,11 @@ import type {
 export const directoryAncestorPaths = (
   path: Web_DirectoryTree_DirectoryAncestorPaths_Path,
 ): Web_DirectoryTree_DirectoryAncestorPaths_Returns => {
-  const pathSegments: string[] = path.split('/').filter(
-    (pathSegment: string): boolean => pathSegment !== '',
+  const pathSegments: Web_DirectoryTree_DirectoryAncestorPaths_PathSegments = path.split('/').filter(
+    (pathSegment) => pathSegment !== '',
   );
-  const ancestorPaths: string[] = ['/data'];
-  let ancestorPath: string = '/data';
+  const ancestorPaths: Web_DirectoryTree_DirectoryAncestorPaths_AncestorPaths = ['/data'];
+  let ancestorPath: Web_DirectoryTree_DirectoryAncestorPaths_AncestorPath = '/data';
 
   if (pathSegments[0] !== 'data') {
     return ancestorPaths;
@@ -45,6 +55,7 @@ export const directoryAncestorPaths = (
 
   for (const pathSegment of pathSegments.slice(1, -1)) {
     ancestorPath = `${ancestorPath}/${pathSegment}`;
+
     ancestorPaths.push(ancestorPath);
   }
 
@@ -52,7 +63,7 @@ export const directoryAncestorPaths = (
 };
 
 /**
- * Directory Tree - Directory creation parent path.
+ * Directory Tree - Directory Creation Parent Path.
  *
  * Keeps folder creation inside the selected folder when it can be browsed,
  * beside an unbrowsable selection, or directly inside /data without one.
@@ -72,7 +83,7 @@ export const directoryCreationParentPath = (
     return '/data';
   }
 
-  if (browsable) {
+  if (browsable === true) {
     return path;
   }
 
@@ -80,7 +91,7 @@ export const directoryCreationParentPath = (
 };
 
 /**
- * Directory Tree - Directory expanded paths.
+ * Directory Tree - Directory Expanded Paths.
  *
  * Expands each listed ancestor below the fixed root so the initial folder is
  * revealed without opening the initial folder's own children.
@@ -94,35 +105,35 @@ export const directoryCreationParentPath = (
 export const directoryExpandedPaths = (
   path: Web_DirectoryTree_DirectoryExpandedPaths_Path,
 ): Web_DirectoryTree_DirectoryExpandedPaths_Returns => directoryAncestorPaths(path).filter(
-  (ancestorPath: string): boolean => ancestorPath !== '/data',
+  (ancestorPath) => ancestorPath !== '/data',
 );
 
 /**
- * Directory Tree - Row click action.
+ * Directory Tree - Directory Row Click Action.
  *
  * Chooses a valid folder, or opens a folder that cannot itself be chosen.
  * A non-selectable leaf remains inert because it has nowhere to navigate.
  *
- * @param {Web_DirectoryTree_RowClickAction_Selectable}    selectable    - Selectable.
- * @param {Web_DirectoryTree_RowClickAction_Usable}        usable        - Usable.
- * @param {Web_DirectoryTree_RowClickAction_Browsable}     browsable     - Browsable.
- * @param {Web_DirectoryTree_RowClickAction_HasSubfolders} hasSubfolders - Has subfolders.
+ * @param {Web_DirectoryTree_DirectoryRowClickAction_Selectable}    selectable    - Selectable.
+ * @param {Web_DirectoryTree_DirectoryRowClickAction_Usable}        usable        - Usable.
+ * @param {Web_DirectoryTree_DirectoryRowClickAction_Browsable}     browsable     - Browsable.
+ * @param {Web_DirectoryTree_DirectoryRowClickAction_HasSubfolders} hasSubfolders - Has subfolders.
  *
- * @returns {Web_DirectoryTree_RowClickAction_Returns}
+ * @returns {Web_DirectoryTree_DirectoryRowClickAction_Returns}
  *
  * @since 2.0.0
  */
 export const directoryRowClickAction = (
-  selectable: Web_DirectoryTree_RowClickAction_Selectable,
-  usable: Web_DirectoryTree_RowClickAction_Usable,
-  browsable: Web_DirectoryTree_RowClickAction_Browsable,
-  hasSubfolders: Web_DirectoryTree_RowClickAction_HasSubfolders,
-): Web_DirectoryTree_RowClickAction_Returns => {
-  if (selectable && usable) {
+  selectable: Web_DirectoryTree_DirectoryRowClickAction_Selectable,
+  usable: Web_DirectoryTree_DirectoryRowClickAction_Usable,
+  browsable: Web_DirectoryTree_DirectoryRowClickAction_Browsable,
+  hasSubfolders: Web_DirectoryTree_DirectoryRowClickAction_HasSubfolders,
+): Web_DirectoryTree_DirectoryRowClickAction_Returns => {
+  if (selectable === true && usable === true) {
     return 'select';
   }
 
-  if (browsable && hasSubfolders) {
+  if (browsable === true && hasSubfolders === true) {
     return 'toggle';
   }
 
@@ -130,7 +141,7 @@ export const directoryRowClickAction = (
 };
 
 /**
- * Directory Tree - Move directory tree focus.
+ * Directory Tree - Move Directory Tree Focus.
  *
  * Implements WAI-ARIA tree movement without touching the DOM. The caller
  * applies requested expansion changes and moves focus to the returned path.
@@ -148,10 +159,10 @@ export const moveDirectoryTreeFocus = (
   focusedPath: Web_DirectoryTree_MoveDirectoryTreeFocus_FocusedPath,
   key: Web_DirectoryTree_MoveDirectoryTreeFocus_Key,
 ): Web_DirectoryTree_MoveDirectoryTreeFocus_Returns => {
-  const currentIndex: number = items.findIndex(
-    (item: Web_DirectoryTree_Item): boolean => item['path'] === focusedPath,
+  const currentIndex: Web_DirectoryTree_MoveDirectoryTreeFocus_CurrentIndex = items.findIndex(
+    (item) => item['path'] === focusedPath,
   );
-  const currentItem: Web_DirectoryTree_Item | undefined = items[currentIndex];
+  const currentItem: Web_DirectoryTree_MoveDirectoryTreeFocus_CurrentItem = items[currentIndex];
 
   if (currentItem === undefined || items.length === 0) {
     return {
@@ -161,7 +172,7 @@ export const moveDirectoryTreeFocus = (
   }
 
   if (key === 'ArrowDown') {
-    const nextItem: Web_DirectoryTree_Item = items[Math.min(currentIndex + 1, items.length - 1)] ?? currentItem;
+    const nextItem: Web_DirectoryTree_MoveDirectoryTreeFocus_NextItem = items[Math.min(currentIndex + 1, items.length - 1)] ?? currentItem;
 
     return {
       action: 'none',
@@ -170,7 +181,7 @@ export const moveDirectoryTreeFocus = (
   }
 
   if (key === 'ArrowUp') {
-    const previousItem: Web_DirectoryTree_Item = items[Math.max(currentIndex - 1, 0)] ?? currentItem;
+    const previousItem: Web_DirectoryTree_MoveDirectoryTreeFocus_PreviousItem = items[Math.max(currentIndex - 1, 0)] ?? currentItem;
 
     return {
       action: 'none',
@@ -179,57 +190,61 @@ export const moveDirectoryTreeFocus = (
   }
 
   if (key === 'Home') {
+    const firstItem: Web_DirectoryTree_MoveDirectoryTreeFocus_FirstItem = items[0];
+
     return {
       action: 'none',
-      path: items[0]?.['path'] ?? currentItem['path'],
+      path: (firstItem !== undefined) ? firstItem['path'] : currentItem['path'],
     };
   }
 
   if (key === 'End') {
+    const lastItem: Web_DirectoryTree_MoveDirectoryTreeFocus_LastItem = items.at(-1);
+
     return {
       action: 'none',
-      path: items.at(-1)?.['path'] ?? currentItem['path'],
+      path: (lastItem !== undefined) ? lastItem['path'] : currentItem['path'],
     };
   }
 
   if (key === 'ArrowRight') {
-    if (!currentItem['hasChildren']) {
+    if (currentItem['hasChildren'] === false) {
       return {
         action: 'none',
         path: currentItem['path'],
       };
     }
 
-    if (!currentItem['expanded']) {
+    if (currentItem['expanded'] === false) {
       return {
         action: 'expand',
         path: currentItem['path'],
       };
     }
 
-    const firstChild: Web_DirectoryTree_Item | undefined = items.slice(currentIndex + 1).find(
-      (item: Web_DirectoryTree_Item): boolean => item['parentPath'] === currentItem['path'],
+    const firstChild: Web_DirectoryTree_MoveDirectoryTreeFocus_FirstChild = items.slice(currentIndex + 1).find(
+      (item) => item['parentPath'] === currentItem['path'],
     );
 
     return {
       action: 'none',
-      path: firstChild?.['path'] ?? currentItem['path'],
+      path: (firstChild !== undefined) ? firstChild['path'] : currentItem['path'],
     };
   }
 
-  if (currentItem['expanded'] && currentItem['hasChildren']) {
+  if (currentItem['expanded'] === true && currentItem['hasChildren'] === true) {
     return {
       action: 'collapse',
       path: currentItem['path'],
     };
   }
 
-  const parentItem: Web_DirectoryTree_Item | undefined = items.find(
-    (item: Web_DirectoryTree_Item): boolean => item['path'] === currentItem['parentPath'],
+  const parentItem: Web_DirectoryTree_MoveDirectoryTreeFocus_ParentItem = items.find(
+    (item) => item['path'] === currentItem['parentPath'],
   );
 
   return {
     action: 'none',
-    path: parentItem?.['path'] ?? currentItem['path'],
+    path: (parentItem !== undefined) ? parentItem['path'] : currentItem['path'],
   };
 };

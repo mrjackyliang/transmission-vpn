@@ -1,5 +1,17 @@
 import { z } from 'zod';
 
+import {
+  customProfileReferencePattern,
+  exitStatusPattern,
+  invalidNumberPattern,
+  safeNamePattern,
+  settingKeyPattern,
+  tooBigNumberPattern,
+  tooSmallNumberPattern,
+  torrentProfileIdPattern,
+  wireGuardPublicKeyPattern,
+} from '@/web/regex.js';
+
 import type {
   Web_Api_AddTorrentInput,
   Web_Api_ClaimInput,
@@ -8,17 +20,13 @@ import type {
   Web_Api_CustomProfileInput,
   Web_Api_DefaultTorrentProfileInput,
   Web_Api_DeleteVpnConnectionInput,
-  Web_Api_JsonValue,
   Web_Api_LoginInput,
-  Web_Api_ProviderTunnel,
   Web_Api_RemoveTorrentsInput,
   Web_Api_RenameTorrentPathInput,
   Web_Api_RPCLoginInput,
-  Web_Api_Schema,
   Web_Api_SetDefaultVpnConnectionInput,
   Web_Api_SetTorrentProfileInput,
   Web_Api_TorrentActionInput,
-  Web_Api_TorrentChanges,
   Web_Api_TorrentProfileInput,
   Web_Api_UpdateDefaultTorrentProfileInput,
   Web_Api_UpdateRPCLoginInput,
@@ -31,62 +39,175 @@ import type {
   Web_Api_VpnConnectionInput,
   Web_Api_WebProxyLoginInput,
 } from '@/types/web/api.d.ts';
+import type {
+  Web_FormValidation_AddTorrentInputSchema,
+  Web_FormValidation_AddTorrentInputSchema_SourceCount,
+  Web_FormValidation_BlocklistURLSchema_ParsedURL,
+  Web_FormValidation_ClaimInputSchema,
+  Web_FormValidation_CreateDirectoryInputSchema,
+  Web_FormValidation_CreateVpnConnectionInputSchema,
+  Web_FormValidation_CustomProfileInputSchema,
+  Web_FormValidation_DeleteVpnConnectionInputSchema,
+  Web_FormValidation_DownloadDataPathRootMessage,
+  Web_FormValidation_FormatConsoleError_FormattedMessage,
+  Web_FormValidation_FormatConsoleError_Message,
+  Web_FormValidation_FormatConsoleError_Returns,
+  Web_FormValidation_FormatConsoleError_SettingKey,
+  Web_FormValidation_FormatConsoleError_SettingTitle,
+  Web_FormValidation_HasUniqueNumbers_Returns,
+  Web_FormValidation_HasUniqueNumbers_Values,
+  Web_FormValidation_HasUniqueStrings_CaseSensitive,
+  Web_FormValidation_HasUniqueStrings_NormalizedValues,
+  Web_FormValidation_HasUniqueStrings_Returns,
+  Web_FormValidation_HasUniqueStrings_Values,
+  Web_FormValidation_IsAdministratorUsername_AllowedCharacters,
+  Web_FormValidation_IsAdministratorUsername_FirstCharacter,
+  Web_FormValidation_IsAdministratorUsername_FirstCharacterAllowed,
+  Web_FormValidation_IsAdministratorUsername_Returns,
+  Web_FormValidation_IsAdministratorUsername_Value,
+  Web_FormValidation_IsIdentifier_AllowedCharacters,
+  Web_FormValidation_IsIdentifier_Returns,
+  Web_FormValidation_IsIdentifier_Value,
+  Web_FormValidation_IsNormalizedDataPath_PathSegments,
+  Web_FormValidation_IsNormalizedDataPath_Returns,
+  Web_FormValidation_IsNormalizedDataPath_Value,
+  Web_FormValidation_IsPlainName_CharacterCode,
+  Web_FormValidation_IsPlainName_Returns,
+  Web_FormValidation_IsPlainName_Value,
+  Web_FormValidation_IsTorrentHash_HexadecimalCharacters,
+  Web_FormValidation_IsTorrentHash_Returns,
+  Web_FormValidation_IsTorrentHash_Value,
+  Web_FormValidation_IsTorrentURL_ParsedURL,
+  Web_FormValidation_IsTorrentURL_Protocol,
+  Web_FormValidation_IsTorrentURL_Returns,
+  Web_FormValidation_IsTorrentURL_Value,
+  Web_FormValidation_JsonValueSchema,
+  Web_FormValidation_LoginInputSchema,
+  Web_FormValidation_MaximumMetainfoLength,
+  Web_FormValidation_MaximumProfileLength,
+  Web_FormValidation_MaximumTorrentFileBytes,
+  Web_FormValidation_MaximumTrackerListLength,
+  Web_FormValidation_ParseDataPath_Returns,
+  Web_FormValidation_ParseDataPath_Value,
+  Web_FormValidation_ParseDefaultTorrentProfileInput_IncompleteDirectory,
+  Web_FormValidation_ParseInput_FirstIssue,
+  Web_FormValidation_ParseInput_Result,
+  Web_FormValidation_ParseInput_Schema,
+  Web_FormValidation_ParseInput_Value,
+  Web_FormValidation_ParseProviderID_Returns,
+  Web_FormValidation_ParseProviderID_Value,
+  Web_FormValidation_ParseTokenID_Returns,
+  Web_FormValidation_ParseTokenID_Value,
+  Web_FormValidation_ParseTorrentProfileInput_IncompleteDirectory,
+  Web_FormValidation_ParseUpdateDefaultTorrentProfileInput_IncompleteDirectory,
+  Web_FormValidation_ParseUpdateSettingsInput_DownloadDirectory,
+  Web_FormValidation_ParseUpdateSettingsInput_IncompleteDirectory,
+  Web_FormValidation_ParseUpdateSettingsInput_IncompleteDirectoryChanges,
+  Web_FormValidation_ParseUpdateTorrentProfileInput_IncompleteDirectory,
+  Web_FormValidation_ProviderRequiredMessage,
+  Web_FormValidation_RemoveTorrentsInputSchema,
+  Web_FormValidation_RenameTorrentPathInputSchema,
+  Web_FormValidation_RpcLoginInputSchema,
+  Web_FormValidation_SetDefaultVpnConnectionInputSchema,
+  Web_FormValidation_SettingTitles,
+  Web_FormValidation_SettingValueSchemas,
+  Web_FormValidation_SetTorrentProfileInputSchema,
+  Web_FormValidation_TorrentActionInputSchema,
+  Web_FormValidation_TorrentChangesSchema,
+  Web_FormValidation_UpdateDefaultTorrentProfileInputSchema,
+  Web_FormValidation_UpdateRPCLoginInputSchema,
+  Web_FormValidation_UpdateSettingsInputSchema,
+  Web_FormValidation_UpdateSettingsInputSchema_ChangeEntries,
+  Web_FormValidation_UpdateSettingsInputSchema_FirstIssue,
+  Web_FormValidation_UpdateSettingsInputSchema_FirstIssueMessage,
+  Web_FormValidation_UpdateSettingsInputSchema_IssueMessage,
+  Web_FormValidation_UpdateSettingsInputSchema_Key,
+  Web_FormValidation_UpdateSettingsInputSchema_Message,
+  Web_FormValidation_UpdateSettingsInputSchema_Result,
+  Web_FormValidation_UpdateSettingsInputSchema_SettingTitle,
+  Web_FormValidation_UpdateSettingsInputSchema_Value,
+  Web_FormValidation_UpdateSettingsInputSchema_ValueSchema,
+  Web_FormValidation_UpdateTorrentOrganizationInputSchema,
+  Web_FormValidation_UpdateTorrentProfileInputSchema,
+  Web_FormValidation_UpdateTorrentsInputSchema,
+  Web_FormValidation_UpdateVpnConnectionInputSchema,
+  Web_FormValidation_UpdateWebProxyLoginInputSchema,
+  Web_FormValidation_ValidateOutsideIncompleteDirectory_IncompleteDirectory,
+  Web_FormValidation_ValidateOutsideIncompleteDirectory_Returns,
+  Web_FormValidation_ValidateOutsideIncompleteDirectory_Value,
+  Web_FormValidation_ValidatePasswordConfirmation_Confirmation,
+  Web_FormValidation_ValidatePasswordConfirmation_Password,
+  Web_FormValidation_ValidatePasswordConfirmation_Returns,
+  Web_FormValidation_ValidateProviderCredentials_Credentials,
+  Web_FormValidation_ValidateProviderCredentials_Returns,
+  Web_FormValidation_ValidateProviderCredentials_SavedCredentials,
+  Web_FormValidation_ValidateProviderCredentials_Tunnel,
+  Web_FormValidation_ValidateProviderCredentials_Value,
+  Web_FormValidation_VpnConnectionInputSchema,
+  Web_FormValidation_WebProxyLoginInputSchema,
+  Web_FormValidation_WireGuardKeyPattern,
+} from '@/types/web/form-validation.d.ts';
 
 /**
- * Form Validation - Maximum torrent file bytes.
+ * Form Validation - Maximum Torrent File Bytes.
  *
  * Matches the control API's 16 MiB limit for one added .torrent file. The add
  * dialog skips larger files before reading them into base64.
  *
  * @since 2.3.0
  */
-export const maximumTorrentFileBytes: number = 16 * 1024 * 1024;
+export const maximumTorrentFileBytes: Web_FormValidation_MaximumTorrentFileBytes = 16 * 1024 * 1024;
 
 /**
- * Form Validation - Maximum metainfo length.
+ * Form Validation - Maximum Metainfo Length.
  *
  * Holds the base64 length of a .torrent file at the byte limit, so validation
  * accepts exactly what the control API accepts after decoding.
  *
  * @since 2.3.0
  */
-const maximumMetainfoLength: number = Math.ceil(maximumTorrentFileBytes / 3) * 4;
+const maximumMetainfoLength: Web_FormValidation_MaximumMetainfoLength = Math.ceil(maximumTorrentFileBytes / 3) * 4;
 
 /**
- * Form Validation - Maximum profile length.
+ * Form Validation - Maximum Profile Length.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
  * @since 2.0.0
  */
-const maximumProfileLength: number = 900_000;
+const maximumProfileLength: Web_FormValidation_MaximumProfileLength = 900_000;
 
 /**
- * Form Validation - Maximum tracker list length.
+ * Form Validation - Maximum Tracker List Length.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
  * @since 2.0.0
  */
-const maximumTrackerListLength: number = 256 * 1024;
+const maximumTrackerListLength: Web_FormValidation_MaximumTrackerListLength = 256 * 1024;
 
 /**
- * Form Validation - Checks whether plain name.
+ * Form Validation - Is Plain Name.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @param {Web_FormValidation_IsPlainName_Value} value - Value.
+ *
+ * @returns {Web_FormValidation_IsPlainName_Returns}
+ *
  * @since 2.0.0
  */
-const isPlainName = (value: string): boolean => {
+const isPlainName = (value: Web_FormValidation_IsPlainName_Value): Web_FormValidation_IsPlainName_Returns => {
   if (value === '.' || value === '..') {
     return false;
   }
 
   for (const character of value) {
-    const characterCode: number = character.codePointAt(0) ?? 0;
+    const characterCode: Web_FormValidation_IsPlainName_CharacterCode = character.codePointAt(0) ?? 0;
+
     if (
       character === '/'
       || character === '\\'
@@ -101,77 +222,99 @@ const isPlainName = (value: string): boolean => {
 };
 
 /**
- * Form Validation - Checks whether administrator username.
+ * Form Validation - Is Administrator Username.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @param {Web_FormValidation_IsAdministratorUsername_Value} value - Value.
+ *
+ * @returns {Web_FormValidation_IsAdministratorUsername_Returns}
+ *
  * @since 2.0.0
  */
-const isAdministratorUsername = (value: string): boolean => {
-  const allowedCharacters: string = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._-';
-  const firstCharacter: string = value.slice(0, 1);
-  const firstCharacterAllowed: boolean = firstCharacter !== '.'
+const isAdministratorUsername = (value: Web_FormValidation_IsAdministratorUsername_Value): Web_FormValidation_IsAdministratorUsername_Returns => {
+  const allowedCharacters: Web_FormValidation_IsAdministratorUsername_AllowedCharacters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._-';
+  const firstCharacter: Web_FormValidation_IsAdministratorUsername_FirstCharacter = value.slice(0, 1);
+  const firstCharacterAllowed: Web_FormValidation_IsAdministratorUsername_FirstCharacterAllowed = firstCharacter !== '.'
     && firstCharacter !== '_'
     && firstCharacter !== '-'
     && allowedCharacters.includes(firstCharacter);
 
   return firstCharacterAllowed && [...value].every(
-    (character: string): boolean => allowedCharacters.includes(character),
+    (character) => allowedCharacters.includes(character),
   );
 };
 
 /**
- * Form Validation - Checks whether identifier.
+ * Form Validation - Is Identifier.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @param {Web_FormValidation_IsIdentifier_Value} value - Value.
+ *
+ * @returns {Web_FormValidation_IsIdentifier_Returns}
+ *
  * @since 2.0.0
  */
-const isIdentifier = (value: string): boolean => {
-  const allowedCharacters: string = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._:-';
+const isIdentifier = (value: Web_FormValidation_IsIdentifier_Value): Web_FormValidation_IsIdentifier_Returns => {
+  const allowedCharacters: Web_FormValidation_IsIdentifier_AllowedCharacters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._:-';
 
   return [...value].every(
-    (character: string): boolean => allowedCharacters.includes(character),
+    (character) => allowedCharacters.includes(character),
   );
 };
 
 /**
- * Form Validation - Checks whether torrent hash.
+ * Form Validation - Is Torrent Hash.
  *
  * Accepts Transmission's 40-character SHA-1 and 64-character SHA-256 forms.
  * The API normalizes accepted values to lowercase before routing them.
  *
+ * @param {Web_FormValidation_IsTorrentHash_Value} value - Value.
+ *
+ * @returns {Web_FormValidation_IsTorrentHash_Returns}
+ *
  * @since 2.0.0
  */
-const isTorrentHash = (value: string): boolean => {
-  const hexadecimalCharacters: string = '0123456789abcdefABCDEF';
+const isTorrentHash = (value: Web_FormValidation_IsTorrentHash_Value): Web_FormValidation_IsTorrentHash_Returns => {
+  const hexadecimalCharacters: Web_FormValidation_IsTorrentHash_HexadecimalCharacters = '0123456789abcdefABCDEF';
 
-  return (value.length === 40 || value.length === 64) && [...value].every(
-    (character: string): boolean => hexadecimalCharacters.includes(character),
+  return (
+    (
+      value.length === 40
+      || value.length === 64
+    )
+    && [...value].every(
+      (character) => hexadecimalCharacters.includes(character),
+    )
   );
 };
 
 /**
- * Form Validation - Checks whether normalized data path.
+ * Form Validation - Is Normalized Data Path.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @param {Web_FormValidation_IsNormalizedDataPath_Value} value - Value.
+ *
+ * @returns {Web_FormValidation_IsNormalizedDataPath_Returns}
+ *
  * @since 2.0.0
  */
-const isNormalizedDataPath = (value: string): boolean => {
+const isNormalizedDataPath = (value: Web_FormValidation_IsNormalizedDataPath_Value): Web_FormValidation_IsNormalizedDataPath_Returns => {
   if (value === '/data') {
     return true;
   }
-  if (!value.startsWith('/data/') || value.endsWith('/')) {
+  if (value.startsWith('/data/') === false || value.endsWith('/') === true) {
     return false;
   }
 
-  const pathSegments: string[] = value.slice('/data/'.length).split('/');
+  const pathSegments: Web_FormValidation_IsNormalizedDataPath_PathSegments = value.slice('/data/'.length).split('/');
 
-  return pathSegments.every((pathSegment: string): boolean => (
+  return pathSegments.every((pathSegment) => (
     pathSegment !== ''
     && pathSegment !== '.'
     && pathSegment !== '..'
@@ -179,23 +322,30 @@ const isNormalizedDataPath = (value: string): boolean => {
 };
 
 /**
- * Form Validation - Checks whether torrent URL.
+ * Form Validation - Is Torrent URL.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @param {Web_FormValidation_IsTorrentURL_Value} value - Value.
+ *
+ * @returns {Web_FormValidation_IsTorrentURL_Returns}
+ *
  * @since 2.0.0
  */
-const isTorrentURL = (value: string): boolean => {
+const isTorrentURL = (value: Web_FormValidation_IsTorrentURL_Value): Web_FormValidation_IsTorrentURL_Returns => {
   try {
-    const parsedURL: URL = new URL(value);
-    const protocol: string = parsedURL.protocol.toLowerCase();
+    const parsedURL: Web_FormValidation_IsTorrentURL_ParsedURL = new URL(value);
+    const protocol: Web_FormValidation_IsTorrentURL_Protocol = parsedURL.protocol.toLowerCase();
     if (protocol === 'magnet:') {
       return parsedURL.searchParams.get('xt') !== null;
     }
 
     return (
-      (protocol === 'http:' || protocol === 'https:')
+      (
+        protocol === 'http:'
+        || protocol === 'https:'
+      )
       && parsedURL.hostname !== ''
       && parsedURL.username === ''
       && parsedURL.password === ''
@@ -206,62 +356,80 @@ const isTorrentURL = (value: string): boolean => {
 };
 
 /**
- * Form Validation - Checks whether unique strings.
+ * Form Validation - Has Unique Strings.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @param {Web_FormValidation_HasUniqueStrings_Values}        values        - Values.
+ * @param {Web_FormValidation_HasUniqueStrings_CaseSensitive} caseSensitive - Case sensitive.
+ *
+ * @returns {Web_FormValidation_HasUniqueStrings_Returns}
+ *
  * @since 2.0.0
  */
-const hasUniqueStrings = (values: string[], caseSensitive: boolean): boolean => {
-  const normalizedValues: string[] = values.map((value: string): string => (
-    (caseSensitive) ? value : value.toLocaleLowerCase()
+const hasUniqueStrings = (values: Web_FormValidation_HasUniqueStrings_Values, caseSensitive: Web_FormValidation_HasUniqueStrings_CaseSensitive): Web_FormValidation_HasUniqueStrings_Returns => {
+  const normalizedValues: Web_FormValidation_HasUniqueStrings_NormalizedValues = values.map((value) => (
+    (caseSensitive === true) ? value : value.toLocaleLowerCase()
   ));
 
   return new Set(normalizedValues).size === normalizedValues.length;
 };
 
 /**
- * Form Validation - Checks whether unique numbers.
+ * Form Validation - Has Unique Numbers.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @param {Web_FormValidation_HasUniqueNumbers_Values} values - Values.
+ *
+ * @returns {Web_FormValidation_HasUniqueNumbers_Returns}
+ *
  * @since 2.0.0
  */
-const hasUniqueNumbers = (values: number[]): boolean => new Set(values).size === values.length;
+const hasUniqueNumbers = (values: Web_FormValidation_HasUniqueNumbers_Values): Web_FormValidation_HasUniqueNumbers_Returns => new Set(values).size === values.length;
 
 /**
- * Form Validation - Parse input.
+ * Form Validation - Parse Input.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
+ * @param {Web_FormValidation_ParseInput_Schema<Value>} schema - Schema.
+ * @param {Web_FormValidation_ParseInput_Value}         value  - Value.
+ *
+ * @returns {Value}
+ *
  * @since 2.0.0
  */
 const parseInput = <Value>(
-  schema: Web_Api_Schema<Value>,
-  value: unknown,
+  schema: Web_FormValidation_ParseInput_Schema<Value>,
+  value: Web_FormValidation_ParseInput_Value,
 ): Value => {
-  const result = schema.safeParse(value);
-  if (result.success) {
+  const result: Web_FormValidation_ParseInput_Result<Value> = schema.safeParse(value);
+  if (result.success === true) {
     return result.data;
   }
 
-  const firstIssue = result.error.issues[0];
+  const firstIssue: Web_FormValidation_ParseInput_FirstIssue = result.error.issues[0];
 
-  throw new Error(firstIssue?.message ?? 'The form contains an invalid value.');
+  if (firstIssue === undefined) {
+    throw new Error('The form contains an invalid value.');
+  }
+
+  throw new Error(firstIssue.message);
 };
 
 /**
- * Form Validation - Setting titles.
+ * Form Validation - Setting Titles.
  *
  * Maps internal configuration keys to the labels people see in the console.
  * Error messages use these labels so implementation details never leak into the UI.
  *
  * @since 2.0.0
  */
-const settingTitles: Record<string, string> = {
+const settingTitles: Web_FormValidation_SettingTitles = {
   'diagnostics.debugLogging': 'Debug logging',
   'rpc.compatibilityEnabled': 'Transmission-compatible RPC',
   'transmission.blocklistEnabled': 'Enable blocklists',
@@ -280,42 +448,46 @@ const settingTitles: Record<string, string> = {
 };
 
 /**
- * Form Validation - Formats console error.
+ * Form Validation - Format Console Error.
  *
  * Replaces low-level validation and process details with user-facing wording while
  * preserving server messages that are already suitable for the console.
  *
+ * @param {Web_FormValidation_FormatConsoleError_Message} message - Message.
+ *
+ * @returns {Web_FormValidation_FormatConsoleError_Returns}
+ *
  * @since 2.0.0
  */
-export const formatConsoleError = (message: string): string => {
-  let formattedMessage: string = message;
+export const formatConsoleError = (message: Web_FormValidation_FormatConsoleError_Message): Web_FormValidation_FormatConsoleError_Returns => {
+  let formattedMessage: Web_FormValidation_FormatConsoleError_FormattedMessage = message;
 
-  for (const [
-    settingKey,
-    settingTitle,
-  ] of Object.entries(settingTitles)) {
+  for (const settingEntry of Object.entries(settingTitles)) {
+    const settingKey: Web_FormValidation_FormatConsoleError_SettingKey = settingEntry[0];
+    const settingTitle: Web_FormValidation_FormatConsoleError_SettingTitle = settingEntry[1];
+
     formattedMessage = formattedMessage.replaceAll(settingKey, settingTitle);
   }
 
   formattedMessage = formattedMessage
-    .replace(/\b(?:rpc|transmission|vpn)\.[A-Za-z0-9.]+\b/gu, 'the setting')
-    .replace(/\bcustom:[A-Za-z0-9._:-]+\b/gu, 'the selected custom profile')
-    .replace(/\bexit status \d+\b/giu, 'the VPN process stopped unexpectedly')
+    .replace(new RegExp(settingKeyPattern, 'gu'), 'the setting')
+    .replace(new RegExp(customProfileReferencePattern, 'gu'), 'the selected custom profile')
+    .replace(new RegExp(exitStatusPattern, 'giu'), 'the VPN process stopped unexpectedly')
     .replace(
-      /^Too small: expected number to be >=\s*([\d.]+)$/u,
+      new RegExp(tooSmallNumberPattern, 'u'),
       'Enter a number of at least $1.',
     )
     .replace(
-      /^Too big: expected number to be <=\s*([\d.]+)$/u,
+      new RegExp(tooBigNumberPattern, 'u'),
       'Enter a number no greater than $1.',
     )
-    .replace(/^Invalid input: expected number, received .+$/u, 'Enter a number.');
+    .replace(new RegExp(invalidNumberPattern, 'u'), 'Enter a number.');
 
   return formattedMessage;
 };
 
 /**
- * Form Validation - Data path schema.
+ * Form Validation - Data Path Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
@@ -328,17 +500,17 @@ const dataPathSchema = z.string().refine(
 );
 
 /**
- * Form Validation - Download data path root message.
+ * Form Validation - Download Data Path Root Message.
  *
  * Keeps the destination-specific guidance identical across every console form.
  * API and compatible RPC responses use the same text.
  *
  * @since 2.0.0
  */
-const downloadDataPathRootMessage: string = 'Choose a folder inside /data, not /data itself.';
+const downloadDataPathRootMessage: Web_FormValidation_DownloadDataPathRootMessage = 'Choose a folder inside /data, not /data itself.';
 
 /**
- * Form Validation - Download data path schema.
+ * Form Validation - Download Data Path Schema.
  *
  * Requires torrent destinations below the mount root while the directory browser
  * and free-space lookup continue to accept /data itself.
@@ -346,37 +518,42 @@ const downloadDataPathRootMessage: string = 'Choose a folder inside /data, not /
  * @since 2.0.0
  */
 const downloadDataPathSchema = dataPathSchema.refine(
-  (value: string): boolean => value !== '/data',
+  (value) => value !== '/data',
   downloadDataPathRootMessage,
 );
 
 /**
- * Form Validation - Checks incomplete folder containment.
+ * Form Validation - Validate Outside Incomplete Directory.
  *
  * A slash boundary keeps similarly prefixed siblings, such as incomplete-old,
  * distinct while still reserving every descendant of the effective folder.
  *
+ * @param {Web_FormValidation_ValidateOutsideIncompleteDirectory_Value}               value                 - Value.
+ * @param {Web_FormValidation_ValidateOutsideIncompleteDirectory_IncompleteDirectory} [incompleteDirectory] - Incomplete directory.
+ *
+ * @returns {Web_FormValidation_ValidateOutsideIncompleteDirectory_Returns}
+ *
  * @since 2.0.0
  */
 const validateOutsideIncompleteDirectory = (
-  value: string,
-  incompleteDirectory?: string,
-): void => {
+  value: Web_FormValidation_ValidateOutsideIncompleteDirectory_Value,
+  incompleteDirectory?: Web_FormValidation_ValidateOutsideIncompleteDirectory_IncompleteDirectory,
+): Web_FormValidation_ValidateOutsideIncompleteDirectory_Returns => {
   if (
-    incompleteDirectory === undefined
-    || (
-      value !== incompleteDirectory
-      && !value.startsWith(`${incompleteDirectory}/`)
+    incompleteDirectory !== undefined
+    && (
+      value === incompleteDirectory
+      || value.startsWith(`${incompleteDirectory}/`) === true
     )
   ) {
-    return;
+    throw new Error(`Choose a folder outside the incomplete folder, ${incompleteDirectory}.`);
   }
 
-  throw new Error(`Choose a folder outside the incomplete folder, ${incompleteDirectory}.`);
+  return;
 };
 
 /**
- * Form Validation - Label schema.
+ * Form Validation - Label Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
@@ -387,16 +564,16 @@ const labelSchema = z.string()
   .min(1, 'Labels cannot be empty.')
   .max(128, 'Labels cannot exceed 128 characters.')
   .refine(
-    (value: string): boolean => !value.includes(','),
+    (value) => value.includes(',') === false,
     'Labels can\'t contain commas.',
   )
   .refine(
-    (value: string): boolean => value.trim() === value,
+    (value) => value.trim() === value,
     'Labels cannot start or end with whitespace.',
   );
 
 /**
- * Form Validation - Identifier schema.
+ * Form Validation - Identifier Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
@@ -409,17 +586,17 @@ const identifierSchema = z.string()
   .refine(isIdentifier, 'The identifier contains unsupported characters.');
 
 /**
- * Form Validation - Provider required message.
+ * Form Validation - Provider Required Message.
  *
  * Keeps the provider select's inline issue identical to schema validation.
  * The connection editor reuses it before provider-specific checks run.
  *
  * @since 2.0.0
  */
-export const providerRequiredMessage: string = 'Choose a provider.';
+export const providerRequiredMessage: Web_FormValidation_ProviderRequiredMessage = 'Choose a provider.';
 
 /**
- * Form Validation - Provider identifier schema.
+ * Form Validation - Provider Identifier Schema.
  *
  * Gives an empty provider selection its field-specific message before applying
  * the shared identifier length and character rules to nonempty values.
@@ -431,7 +608,7 @@ const providerIdentifierSchema = z.string()
   .pipe(identifierSchema);
 
 /**
- * Form Validation - Connection name schema.
+ * Form Validation - Connection Name Schema.
  *
  * Keeps names readable in list rows and aligned with the profile-name limit.
  * Trimming here also makes case-insensitive duplicate checks predictable.
@@ -439,14 +616,14 @@ const providerIdentifierSchema = z.string()
  * @since 2.0.0
  */
 const connectionNameSchema = z.string()
-  .transform((name: string): string => name.trim())
+  .transform((name) => name.trim())
   .refine(
-    (name: string): boolean => [...name].length >= 1 && [...name].length <= 64,
+    (name) => [...name].length >= 1 && [...name].length <= 64,
     'Name must contain between 1 and 64 characters.',
   );
 
 /**
- * Form Validation - Peer port schema.
+ * Form Validation - Peer Port Schema.
  *
  * Reuses the valid non-privileged port range for create and update requests.
  * The shared wording matches the current connection form.
@@ -459,7 +636,7 @@ const peerPortSchema = z.number({ error: 'Enter a number from 1,024 to 65,535.' 
   .max(65_535, 'Enter a number from 1,024 to 65,535.');
 
 /**
- * Form Validation - Remote login username schema.
+ * Form Validation - Remote Login Username Schema.
  *
  * Stores the shared username rules used by the RPC and web proxies.
  * Both backend routes accept the same character set and length.
@@ -470,10 +647,10 @@ const remoteLoginUsernameSchema = z.string()
   .trim()
   .min(1, 'Enter a username.')
   .max(64, 'Usernames cannot exceed 64 characters.')
-  .regex(/^[A-Za-z0-9._-]+$/u, 'Use only letters, numbers, periods, underscores, and hyphens.');
+  .regex(new RegExp(safeNamePattern, 'u'), 'Use only letters, numbers, periods, underscores, and hyphens.');
 
 /**
- * Form Validation - DNS servers schema.
+ * Form Validation - DNS Servers Schema.
  *
  * Accepts up to eight IPv4 addresses, matching the VPN API contract.
  * Duplicate addresses are rejected before a connect request is sent.
@@ -485,12 +662,12 @@ const dnsServersSchema = z.array(
 )
   .max(8, 'Enter no more than 8 DNS servers.')
   .refine(
-    (servers: string[]): boolean => hasUniqueStrings(servers, true),
+    (servers) => hasUniqueStrings(servers, true),
     'Enter each DNS server only once.',
   );
 
 /**
- * Form Validation - Retry interval schema.
+ * Form Validation - Retry Interval Schema.
  *
  * Stores the range shared by the VPN form and connect request.
  * Explicit messages keep raw Zod wording out of the console.
@@ -503,7 +680,7 @@ const retryIntervalSchema = z.number({ error: 'Enter a number from 3 to 600.' })
   .max(600, 'Enter a number from 3 to 600.');
 
 /**
- * Form Validation - Torrent hashes schema.
+ * Form Validation - Torrent Hashes Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
@@ -513,17 +690,17 @@ const retryIntervalSchema = z.number({ error: 'Enter a number from 3 to 600.' })
 const torrentHashesSchema = z.array(
   z.string()
     .refine(isTorrentHash, 'Torrent hashes must contain 40 or 64 hexadecimal characters.')
-    .transform((hash: string): string => hash.toLowerCase()),
+    .transform((hash) => hash.toLowerCase()),
 )
   .min(1, 'Select at least one torrent.')
   .max(1000, 'Select no more than 1,000 torrents at once.')
   .refine(
-    (hashes: string[]): boolean => hasUniqueStrings(hashes, false),
+    (hashes) => hasUniqueStrings(hashes, false),
     'Torrent selections cannot contain duplicates.',
   );
 
 /**
- * Form Validation - File indices schema.
+ * Form Validation - File Indices Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
@@ -537,14 +714,14 @@ const fileIndicesSchema = z.array(
   .refine(hasUniqueNumbers, 'File selections cannot contain duplicates.');
 
 /**
- * Form Validation - Torrent changes schema.
+ * Form Validation - Torrent Changes Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
  * @since 2.0.0
  */
-const torrentChangesSchema: Web_Api_Schema<Web_Api_TorrentChanges> = z.object({
+const torrentChangesSchema: Web_FormValidation_TorrentChangesSchema = z.object({
   bandwidthPriority: z.union([
     z.literal(-1),
     z.literal(0),
@@ -558,7 +735,7 @@ const torrentChangesSchema: Web_Api_Schema<Web_Api_TorrentChanges> = z.object({
   labels: z.array(labelSchema)
     .max(64, 'A torrent cannot have more than 64 labels.')
     .refine(
-      (labels: string[]): boolean => hasUniqueStrings(labels, false),
+      (labels) => hasUniqueStrings(labels, false),
       'Torrent labels must be unique.',
     )
     .optional(),
@@ -585,19 +762,19 @@ const torrentChangesSchema: Web_Api_Schema<Web_Api_TorrentChanges> = z.object({
   uploadLimit: z.number().int().min(0).max(1_000_000_000).optional(),
   uploadLimited: z.boolean().optional(),
 }).strict().refine(
-  (changes: Web_Api_TorrentChanges): boolean => Object.keys(changes).length > 0,
+  (changes) => Object.keys(changes).length > 0,
   'Change at least one torrent option before saving.',
 );
 
 /**
- * Form Validation - Claim input schema.
+ * Form Validation - Claim Input Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
  * @since 2.0.0
  */
-const claimInputSchema: Web_Api_Schema<Web_Api_ClaimInput> = z.object({
+const claimInputSchema: Web_FormValidation_ClaimInputSchema = z.object({
   claimCode: z.string()
     .trim()
     .min(12, 'Enter the one-time claim code from the container log.')
@@ -616,14 +793,14 @@ const claimInputSchema: Web_Api_Schema<Web_Api_ClaimInput> = z.object({
 }).strict();
 
 /**
- * Form Validation - Login input schema.
+ * Form Validation - Login Input Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
  * @since 2.0.0
  */
-const loginInputSchema: Web_Api_Schema<Web_Api_LoginInput> = z.object({
+const loginInputSchema: Web_FormValidation_LoginInputSchema = z.object({
   username: z.string()
     .trim()
     .min(1, 'Enter your username.')
@@ -634,14 +811,14 @@ const loginInputSchema: Web_Api_Schema<Web_Api_LoginInput> = z.object({
 }).strict();
 
 /**
- * Form Validation - Add torrent input schema.
+ * Form Validation - Add Torrent Input Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
  * @since 2.0.0
  */
-const addTorrentInputSchema: Web_Api_Schema<Web_Api_AddTorrentInput> = z.object({
+const addTorrentInputSchema: Web_FormValidation_AddTorrentInputSchema = z.object({
   filename: z.string()
     .trim()
     .refine(isTorrentURL, 'Enter a valid HTTP, HTTPS, or magnet URL.')
@@ -649,7 +826,7 @@ const addTorrentInputSchema: Web_Api_Schema<Web_Api_AddTorrentInput> = z.object(
   labels: z.array(labelSchema)
     .max(64, 'A torrent cannot have more than 64 labels.')
     .refine(
-      (labels: string[]): boolean => hasUniqueStrings(labels, false),
+      (labels) => hasUniqueStrings(labels, false),
       'Torrent labels must be unique.',
     )
     .optional(),
@@ -659,20 +836,22 @@ const addTorrentInputSchema: Web_Api_Schema<Web_Api_AddTorrentInput> = z.object(
     .optional(),
   paused: z.boolean().optional(),
   profileId: z.string()
-    .regex(/^tpr-[0-9a-f]{16}$/u, 'Choose a valid torrent profile.')
+    .regex(new RegExp(torrentProfileIdPattern, 'u'), 'Choose a valid torrent profile.')
     .optional(),
-}).strict().superRefine((input: Web_Api_AddTorrentInput, context): void => {
-  const sourceCount: number = Number(input['filename'] !== undefined) + Number(input['metainfo'] !== undefined);
+}).strict().superRefine((input, context) => {
+  const sourceCount: Web_FormValidation_AddTorrentInputSchema_SourceCount = Number(input['filename'] !== undefined) + Number(input['metainfo'] !== undefined);
   if (sourceCount !== 1) {
     context.addIssue({
       code: 'custom',
       message: 'Provide exactly one torrent URL, magnet link, or .torrent file.',
     });
   }
+
+  return;
 });
 
 /**
- * Form Validation - Torrent profile options schema.
+ * Form Validation - Torrent Profile Options Schema.
  *
  * Keeps profile validation aligned with the control API before a request is sent.
  * The editor and API client share this single set of server-compatible limits.
@@ -712,19 +891,32 @@ const torrentProfileOptionsSchema = z.object({
       .min(0, 'Ratio cannot be negative.')
       .max(10_000, 'Ratio cannot exceed 10,000.')
       .nullable(),
-  }).strict().superRefine((seeding, context): void => {
-    if (seeding['mode'] === 'limit' && seeding['ratio'] === null && seeding['idleMinutes'] === null) {
+  }).strict().superRefine((seeding, context) => {
+    if (
+      seeding['mode'] === 'limit'
+      && seeding['ratio'] === null
+      && seeding['idleMinutes'] === null
+    ) {
       context.addIssue({
         code: 'custom',
         message: 'Enter a ratio, idle minutes, or both when stopping at a limit.',
       });
     }
-    if (seeding['mode'] === 'never' && (seeding['ratio'] !== null || seeding['idleMinutes'] !== null)) {
+
+    if (
+      seeding['mode'] === 'never'
+      && (
+        seeding['ratio'] !== null
+        || seeding['idleMinutes'] !== null
+      )
+    ) {
       context.addIssue({
         code: 'custom',
         message: 'Never stop cannot include a ratio or idle-minute limit.',
       });
     }
+
+    return;
   }),
   uploadLimitKBps: z.number()
     .int('Upload limit must be a whole number.')
@@ -734,7 +926,7 @@ const torrentProfileOptionsSchema = z.object({
 }).strict();
 
 /**
- * Form Validation - Default torrent profile input schema.
+ * Form Validation - Default Torrent Profile Input Schema.
  *
  * Validates the editable fields shared with a named profile while omitting
  * name matching and VPN selection, which the Default profile does not expose.
@@ -746,13 +938,13 @@ const defaultTorrentProfileInputSchema = z.object({
   labels: z.array(labelSchema)
     .max(64, 'A profile cannot have more than 64 labels.')
     .refine(
-      (labels: string[]): boolean => hasUniqueStrings(labels, false),
+      (labels) => hasUniqueStrings(labels, false),
       'Profile labels must be unique.',
     ),
   name: z.string()
-    .transform((name: string): string => name.trim())
+    .transform((name) => name.trim())
     .refine(
-      (name: string): boolean => [...name].length >= 1 && [...name].length <= 64,
+      (name) => [...name].length >= 1 && [...name].length <= 64,
       'Name must contain between 1 and 64 characters.',
     ),
   options: torrentProfileOptionsSchema,
@@ -760,7 +952,7 @@ const defaultTorrentProfileInputSchema = z.object({
 }).strict();
 
 /**
- * Form Validation - Named torrent profile input schema.
+ * Form Validation - Torrent Profile Input Schema.
  *
  * Adds the identity, connection, and filename-matching fields available only
  * to named profiles.
@@ -770,64 +962,64 @@ const defaultTorrentProfileInputSchema = z.object({
 const torrentProfileInputSchema = defaultTorrentProfileInputSchema.extend({
   connectionId: identifierSchema.nullable(),
   matchPatterns: z.array(z.string().refine(
-    (pattern: string): boolean => [...pattern].length >= 1 && [...pattern].length <= 128,
+    (pattern) => [...pattern].length >= 1 && [...pattern].length <= 128,
     'Each name pattern must contain between 1 and 128 characters.',
   )).max(64, 'Enter no more than 64 name patterns.'),
 }).strict();
 
 /**
- * Form Validation - Update torrent profile input schema.
+ * Form Validation - Update Torrent Profile Input Schema.
  *
  * Adds the explicit move confirmation accepted only by the update route.
  * A false flag is omitted so the wire payload follows the API contract.
  *
  * @since 2.0.0
  */
-const updateTorrentProfileInputSchema: Web_Api_Schema<Web_Api_UpdateTorrentProfileInput> = torrentProfileInputSchema.extend({
+const updateTorrentProfileInputSchema: Web_FormValidation_UpdateTorrentProfileInputSchema = torrentProfileInputSchema.extend({
   moveTorrents: z.literal(true).optional(),
 }).strict();
 
 /**
- * Form Validation - Update Default torrent profile input schema.
+ * Form Validation - Update Default Torrent Profile Input Schema.
  *
  * Adds the explicit move confirmation used when the Default profile folder
  * changes while torrents are assigned to it.
  *
  * @since 2.0.0
  */
-const updateDefaultTorrentProfileInputSchema: Web_Api_Schema<Web_Api_UpdateDefaultTorrentProfileInput> = defaultTorrentProfileInputSchema.extend({
+const updateDefaultTorrentProfileInputSchema: Web_FormValidation_UpdateDefaultTorrentProfileInputSchema = defaultTorrentProfileInputSchema.extend({
   moveTorrents: z.literal(true).optional(),
 }).strict();
 
 /**
- * Form Validation - Create directory input schema.
+ * Form Validation - Create Directory Input Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
  * @since 2.0.0
  */
-const createDirectoryInputSchema: Web_Api_Schema<Web_Api_CreateDirectoryInput> = z.object({
+const createDirectoryInputSchema: Web_FormValidation_CreateDirectoryInputSchema = z.object({
   parentPath: dataPathSchema,
   name: z.string()
     .min(1, 'Enter a folder name.')
     .max(255, 'Folder names cannot exceed 255 characters.')
     .refine(
-      (value: string): boolean => value.trim() === value,
+      (value) => value.trim() === value,
       'Folder names cannot start or end with whitespace.',
     )
     .refine(isPlainName, 'Folder names cannot contain path separators, control characters, or dot entries.'),
 }).strict();
 
 /**
- * Form Validation - Custom profile input schema.
+ * Form Validation - Custom Profile Input Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
  * @since 2.0.0
  */
-const customProfileInputSchema: Web_Api_Schema<Web_Api_CustomProfileInput> = z.object({
+const customProfileInputSchema: Web_FormValidation_CustomProfileInputSchema = z.object({
   tunnel: z.enum([
     'openvpn',
     'wireguard',
@@ -843,72 +1035,72 @@ const customProfileInputSchema: Web_Api_Schema<Web_Api_CustomProfileInput> = z.o
 }).strict();
 
 /**
- * Form Validation - RPC login input schema.
+ * Form Validation - Rpc Login Input Schema.
  *
  * Stores the RPC login form contract in one reusable schema.
  * The backend generates the corresponding password.
  *
  * @since 2.0.0
  */
-const rpcLoginInputSchema: Web_Api_Schema<Web_Api_RPCLoginInput> = z.object({
+const rpcLoginInputSchema: Web_FormValidation_RpcLoginInputSchema = z.object({
   username: remoteLoginUsernameSchema,
 }).strict();
 
 /**
- * Form Validation - Update RPC login input schema.
+ * Form Validation - Update Rpc Login Input Schema.
  *
  * Allows either an editable username or an explicit password regeneration request.
  * Omitted fields retain their current values.
  *
  * @since 2.0.0
  */
-const updateRPCLoginInputSchema: Web_Api_Schema<Web_Api_UpdateRPCLoginInput> = z.object({
+const updateRPCLoginInputSchema: Web_FormValidation_UpdateRPCLoginInputSchema = z.object({
   regeneratePassword: z.boolean().optional(),
   username: remoteLoginUsernameSchema.optional(),
 }).strict();
 
 /**
- * Form Validation - Web proxy login input schema.
+ * Form Validation - Web Proxy Login Input Schema.
  *
  * Stores the web proxy login form contract in one reusable schema.
  * The backend generates the corresponding password.
  *
  * @since 2.0.0
  */
-const webProxyLoginInputSchema: Web_Api_Schema<Web_Api_WebProxyLoginInput> = z.object({
+const webProxyLoginInputSchema: Web_FormValidation_WebProxyLoginInputSchema = z.object({
   connectionId: identifierSchema.nullable(),
   username: remoteLoginUsernameSchema,
 }).strict();
 
 /**
- * Form Validation - Update web proxy login input schema.
+ * Form Validation - Update Web Proxy Login Input Schema.
  *
  * Allows either editable metadata or an explicit password regeneration request.
  * Omitted fields retain their current values.
  *
  * @since 2.0.0
  */
-const updateWebProxyLoginInputSchema: Web_Api_Schema<Web_Api_UpdateWebProxyLoginInput> = z.object({
+const updateWebProxyLoginInputSchema: Web_FormValidation_UpdateWebProxyLoginInputSchema = z.object({
   connectionId: identifierSchema.nullable().optional(),
   regeneratePassword: z.boolean().optional(),
   username: remoteLoginUsernameSchema.optional(),
 }).strict();
 
 /**
- * Form Validation - VPN connection input schema.
+ * Form Validation - Vpn Connection Input Schema.
  *
  * Validates the connection controls independently from provider credentials.
  * The full connect schema reuses the same limits.
  *
  * @since 2.0.0
  */
-const vpnConnectionInputSchema: Web_Api_Schema<Web_Api_VpnConnectionInput> = z.object({
+const vpnConnectionInputSchema: Web_FormValidation_VpnConnectionInputSchema = z.object({
   dnsServers: dnsServersSchema,
   retryIntervalSeconds: retryIntervalSchema,
 }).strict();
 
 /**
- * Form Validation - VPN configuration input schema.
+ * Form Validation - Vpn Configuration Input Schema.
  *
  * Validates the test-and-connect portion shared by create and update routes.
  * Connection identity fields remain outside this nested configuration body.
@@ -921,7 +1113,7 @@ const vpnConfigurationInputSchema = z.object({
     .min(1, 'Add at least one endpoint to the pool.')
     .max(128, 'An endpoint pool cannot contain more than 128 profiles.')
     .refine(
-      (profileIDs: string[]): boolean => hasUniqueStrings(profileIDs, true),
+      (profileIDs) => hasUniqueStrings(profileIDs, true),
       'The endpoint pool cannot contain duplicates.',
     ),
   tunnel: z.enum([
@@ -940,7 +1132,11 @@ const vpnConfigurationInputSchema = z.object({
     z.string()
       .max(2048, 'VPN credentials cannot exceed 2,048 characters.')
       .refine(
-        (value: string): boolean => !value.includes('\r') && !value.includes('\n') && !value.includes('\0'),
+        (value) => (
+          value.includes('\r') === false
+          && value.includes('\n') === false
+          && value.includes('\0') === false
+        ),
         'A VPN credential contains unsupported characters.',
       ),
   ),
@@ -949,83 +1145,83 @@ const vpnConfigurationInputSchema = z.object({
 }).strict();
 
 /**
- * Form Validation - Create VPN connection input schema.
+ * Form Validation - Create Vpn Connection Input Schema.
  *
  * Combines one named connection and its tested VPN configuration.
  * Peer port is optional because the server can allocate its default.
  *
  * @since 2.0.0
  */
-const createVpnConnectionInputSchema: Web_Api_Schema<Web_Api_CreateVpnConnectionInput> = vpnConfigurationInputSchema.extend({
+const createVpnConnectionInputSchema: Web_FormValidation_CreateVpnConnectionInputSchema = vpnConfigurationInputSchema.extend({
   name: connectionNameSchema,
   peerPort: peerPortSchema.optional(),
 }).strict();
 
 /**
- * Form Validation - Update VPN connection input schema.
+ * Form Validation - Update Vpn Connection Input Schema.
  *
  * Allows a reconnect-free name or peer-port update and an optional tested
  * configuration. The expected revision is mandatory for every update.
  *
  * @since 2.0.0
  */
-const updateVpnConnectionInputSchema: Web_Api_Schema<Web_Api_UpdateVpnConnectionInput> = z.object({
+const updateVpnConnectionInputSchema: Web_FormValidation_UpdateVpnConnectionInputSchema = z.object({
   expectedRevision: z.number().int().min(1, 'The connection revision is invalid.'),
   name: connectionNameSchema.optional(),
   peerPort: peerPortSchema.optional(),
   configuration: vpnConfigurationInputSchema.optional(),
 }).strict().refine(
-  (input: Web_Api_UpdateVpnConnectionInput): boolean => input['name'] !== undefined
+  (input) => input['name'] !== undefined
     || input['peerPort'] !== undefined
     || input['configuration'] !== undefined,
   'Change the name, peer port, or VPN configuration.',
 );
 
 /**
- * Form Validation - Set default VPN connection input schema.
+ * Form Validation - Set Default Vpn Connection Input Schema.
  *
  * Validates the global default-switch request before it reaches the API client.
  * The connection identifier uses the same contract as every related request.
  *
  * @since 2.0.0
  */
-const setDefaultVpnConnectionInputSchema: Web_Api_Schema<Web_Api_SetDefaultVpnConnectionInput> = z.object({
+const setDefaultVpnConnectionInputSchema: Web_FormValidation_SetDefaultVpnConnectionInputSchema = z.object({
   connectionId: identifierSchema,
   moveTorrents: z.literal(true).optional(),
 }).strict();
 
 /**
- * Form Validation - Delete VPN connection input schema.
+ * Form Validation - Delete Vpn Connection Input Schema.
  *
  * Accepts no destination for the dependency probe and one destination when the
  * owner confirms moving dependants before removal.
  *
  * @since 2.0.0
  */
-const deleteVpnConnectionInputSchema: Web_Api_Schema<Web_Api_DeleteVpnConnectionInput> = z.object({
+const deleteVpnConnectionInputSchema: Web_FormValidation_DeleteVpnConnectionInputSchema = z.object({
   moveTo: identifierSchema.optional(),
 }).strict();
 
 /**
- * Form Validation - Update torrent organization input schema.
+ * Form Validation - Update Torrent Organization Input Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
  * @since 2.0.0
  */
-const updateTorrentOrganizationInputSchema: Web_Api_Schema<Web_Api_UpdateTorrentOrganizationInput> = z.object({
+const updateTorrentOrganizationInputSchema: Web_FormValidation_UpdateTorrentOrganizationInputSchema = z.object({
   expectedRevision: z.number().int().nonnegative('The organization revision is invalid.'),
   labels: z.array(labelSchema)
     .max(1024, 'Save no more than 1,024 labels.')
     .refine(
-      (labels: string[]): boolean => hasUniqueStrings(labels, false),
+      (labels) => hasUniqueStrings(labels, false),
       'Labels must be unique.',
     ),
   removedLabels: z.array(labelSchema)
     .max(1024, 'Remove no more than 1,024 labels.')
     .refine(
-      (labels: string[]): boolean => hasUniqueStrings(labels, false),
+      (labels) => hasUniqueStrings(labels, false),
       'Removed labels must be unique.',
     ),
   renamedLabels: z.array(z.object({
@@ -1035,14 +1231,14 @@ const updateTorrentOrganizationInputSchema: Web_Api_Schema<Web_Api_UpdateTorrent
 }).strict();
 
 /**
- * Form Validation - JSON value schema.
+ * Form Validation - JSON Value Schema.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
  * @since 2.0.0
  */
-const jsonValueSchema: Web_Api_Schema<Web_Api_JsonValue> = z.lazy(() => z.union([
+const jsonValueSchema: Web_FormValidation_JsonValueSchema = z.lazy(() => z.union([
   z.boolean(),
   z.number(),
   z.string(),
@@ -1052,7 +1248,7 @@ const jsonValueSchema: Web_Api_Schema<Web_Api_JsonValue> = z.lazy(() => z.union(
 ]));
 
 /**
- * Form Validation - Blocklist URL schema.
+ * Form Validation - Blocklist URL Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
@@ -1060,23 +1256,27 @@ const jsonValueSchema: Web_Api_Schema<Web_Api_JsonValue> = z.lazy(() => z.union(
  * @since 2.0.0
  */
 const blocklistURLSchema = z.url('Every blocklist source must be a valid URL.').refine(
-  (value: string): boolean => {
-    const parsedURL: URL = new URL(value);
+  (value) => {
+    const parsedURL: Web_FormValidation_BlocklistURLSchema_ParsedURL = new URL(value);
 
-    return parsedURL.protocol === 'https:' && parsedURL.username === '' && parsedURL.password === '';
+    return (
+      parsedURL.protocol === 'https:'
+      && parsedURL.username === ''
+      && parsedURL.password === ''
+    );
   },
   'Every blocklist source must use HTTPS without embedded credentials.',
 );
 
 /**
- * Form Validation - Setting value schemas.
+ * Form Validation - Setting Value Schemas.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
  * @since 2.0.0
  */
-const settingValueSchemas: Record<string, z.ZodType> = {
+const settingValueSchemas: Web_FormValidation_SettingValueSchemas = {
   'diagnostics.debugLogging': z.boolean(),
   'rpc.compatibilityEnabled': z.boolean(),
   'transmission.blocklistEnabled': z.boolean(),
@@ -1109,18 +1309,18 @@ const settingValueSchemas: Record<string, z.ZodType> = {
 };
 
 /**
- * Form Validation - Update settings input schema.
+ * Form Validation - Update Settings Input Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
  * @since 2.0.0
  */
-const updateSettingsInputSchema: Web_Api_Schema<Web_Api_UpdateSettingsInput> = z.object({
+const updateSettingsInputSchema: Web_FormValidation_UpdateSettingsInputSchema = z.object({
   expectedRevision: z.number().int().nonnegative('The settings revision is invalid.'),
   changes: z.record(z.string(), jsonValueSchema),
-}).strict().superRefine((input: Web_Api_UpdateSettingsInput, context): void => {
-  const changeEntries: [string, Web_Api_JsonValue][] = Object.entries(input['changes']);
+}).strict().superRefine((input, context) => {
+  const changeEntries: Web_FormValidation_UpdateSettingsInputSchema_ChangeEntries = Object.entries(input['changes']);
   if (changeEntries.length === 0) {
     context.addIssue({
       code: 'custom',
@@ -1141,9 +1341,9 @@ const updateSettingsInputSchema: Web_Api_Schema<Web_Api_UpdateSettingsInput> = z
   }
 
   for (const changeEntry of changeEntries) {
-    const key: string = changeEntry[0];
-    const value: Web_Api_JsonValue = changeEntry[1];
-    const valueSchema: z.ZodType | undefined = settingValueSchemas[key];
+    const key: Web_FormValidation_UpdateSettingsInputSchema_Key = changeEntry[0];
+    const value: Web_FormValidation_UpdateSettingsInputSchema_Value = changeEntry[1];
+    const valueSchema: Web_FormValidation_UpdateSettingsInputSchema_ValueSchema = settingValueSchemas[key];
     if (valueSchema === undefined) {
       context.addIssue({
         code: 'custom',
@@ -1157,12 +1357,13 @@ const updateSettingsInputSchema: Web_Api_Schema<Web_Api_UpdateSettingsInput> = z
       continue;
     }
 
-    const result = valueSchema.safeParse(value);
-    if (!result.success) {
-      const firstIssue = result.error.issues[0];
-      const settingTitle: string = settingTitles[key] ?? 'Setting';
-      const issueMessage: string = formatConsoleError(firstIssue?.message ?? 'Enter a valid value.');
-      const message: string = (issueMessage === downloadDataPathRootMessage) ? issueMessage : `${settingTitle}: ${issueMessage}`;
+    const result: Web_FormValidation_UpdateSettingsInputSchema_Result = valueSchema.safeParse(value);
+    if (result.success === false) {
+      const firstIssue: Web_FormValidation_UpdateSettingsInputSchema_FirstIssue = result.error.issues[0];
+      const settingTitle: Web_FormValidation_UpdateSettingsInputSchema_SettingTitle = settingTitles[key] ?? 'Setting';
+      const firstIssueMessage: Web_FormValidation_UpdateSettingsInputSchema_FirstIssueMessage = (firstIssue !== undefined) ? firstIssue.message : 'Enter a valid value.';
+      const issueMessage: Web_FormValidation_UpdateSettingsInputSchema_IssueMessage = formatConsoleError(firstIssueMessage);
+      const message: Web_FormValidation_UpdateSettingsInputSchema_Message = (issueMessage === downloadDataPathRootMessage) ? issueMessage : `${settingTitle}: ${issueMessage}`;
 
       context.addIssue({
         code: 'custom',
@@ -1174,33 +1375,35 @@ const updateSettingsInputSchema: Web_Api_Schema<Web_Api_UpdateSettingsInput> = z
       });
     }
   }
+
+  return;
 });
 
 /**
- * Form Validation - Set torrent profile input schema.
+ * Form Validation - Set Torrent Profile Input Schema.
  *
  * Validates profile assignment requests before the details drawer submits them.
  * A null profile identifier deliberately represents the Default profile.
  *
  * @since 2.0.0
  */
-const setTorrentProfileInputSchema: Web_Api_Schema<Web_Api_SetTorrentProfileInput> = z.object({
+const setTorrentProfileInputSchema: Web_FormValidation_SetTorrentProfileInputSchema = z.object({
   applyOptions: z.boolean(),
   hashes: torrentHashesSchema,
-  profileId: z.string().regex(/^tpr-[0-9a-f]{16}$/u, 'Choose a valid torrent profile.').nullable(),
+  profileId: z.string().regex(new RegExp(torrentProfileIdPattern, 'u'), 'Choose a valid torrent profile.').nullable(),
 }).strict();
 
 /**
- * Form Validation - Rename torrent path input schema.
+ * Form Validation - Rename Torrent Path Input Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
  * @since 2.0.0
  */
-const renameTorrentPathInputSchema: Web_Api_Schema<Web_Api_RenameTorrentPathInput> = z.object({
+const renameTorrentPathInputSchema: Web_FormValidation_RenameTorrentPathInputSchema = z.object({
   hashes: torrentHashesSchema.refine(
-    (hashes: string[]): boolean => hashes.length === 1,
+    (hashes) => hashes.length === 1,
     'Choose one torrent to rename.',
   ),
   name: z.string()
@@ -1211,20 +1414,25 @@ const renameTorrentPathInputSchema: Web_Api_Schema<Web_Api_RenameTorrentPathInpu
     .min(1, 'The torrent path is missing.')
     .max(4096, 'The torrent path is too long.')
     .refine(
-      (value: string): boolean => !value.startsWith('/') && !value.startsWith('../') && value !== '.' && value !== '..',
+      (value) => (
+        value.startsWith('/') === false
+        && value.startsWith('../') === false
+        && value !== '.'
+        && value !== '..'
+      ),
       'The torrent path must stay within the torrent.',
     ),
 }).strict();
 
 /**
- * Form Validation - Torrent action input schema.
+ * Form Validation - Torrent Action Input Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
  * @since 2.0.0
  */
-const torrentActionInputSchema: Web_Api_Schema<Web_Api_TorrentActionInput> = z.object({
+const torrentActionInputSchema: Web_FormValidation_TorrentActionInputSchema = z.object({
   action: z.enum([
     'queue-bottom',
     'queue-down',
@@ -1240,36 +1448,40 @@ const torrentActionInputSchema: Web_Api_Schema<Web_Api_TorrentActionInput> = z.o
 }).strict();
 
 /**
- * Form Validation - Remove torrents input schema.
+ * Form Validation - Remove Torrents Input Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
  * @since 2.0.0
  */
-const removeTorrentsInputSchema: Web_Api_Schema<Web_Api_RemoveTorrentsInput> = z.object({
+const removeTorrentsInputSchema: Web_FormValidation_RemoveTorrentsInputSchema = z.object({
   deleteLocalData: z.boolean(),
   hashes: torrentHashesSchema,
 }).strict();
 
 /**
- * Form Validation - Update torrents input schema.
+ * Form Validation - Update Torrents Input Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
  * @since 2.0.0
  */
-const updateTorrentsInputSchema: Web_Api_Schema<Web_Api_UpdateTorrentsInput> = z.object({
+const updateTorrentsInputSchema: Web_FormValidation_UpdateTorrentsInputSchema = z.object({
   changes: torrentChangesSchema,
   hashes: torrentHashesSchema,
 }).strict();
 
 /**
- * Form Validation - Parses add torrent input.
+ * Form Validation - Parse Add Torrent Input.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
+ *
+ * @param {Web_Api_AddTorrentInput} input - Input.
+ *
+ * @returns {Web_Api_AddTorrentInput}
  *
  * @since 2.0.0
  */
@@ -1278,10 +1490,14 @@ export const parseAddTorrentInput = (
 ): Web_Api_AddTorrentInput => parseInput(addTorrentInputSchema, input);
 
 /**
- * Form Validation - Parses claim input.
+ * Form Validation - Parse Claim Input.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
+ *
+ * @param {Web_Api_ClaimInput} input - Input.
+ *
+ * @returns {Web_Api_ClaimInput}
  *
  * @since 2.0.0
  */
@@ -1291,10 +1507,14 @@ export const parseClaimInput = (input: Web_Api_ClaimInput): Web_Api_ClaimInput =
 );
 
 /**
- * Form Validation - Parses create VPN connection input.
+ * Form Validation - Parse Create Vpn Connection Input.
  *
  * Normalizes the name and validates the complete test-and-connect request.
  * The result can be sent directly to the collection route.
+ *
+ * @param {Web_Api_CreateVpnConnectionInput} input - Input.
+ *
+ * @returns {Web_Api_CreateVpnConnectionInput}
  *
  * @since 2.0.0
  */
@@ -1306,10 +1526,14 @@ export const parseCreateVpnConnectionInput = (
 );
 
 /**
- * Form Validation - Parses delete VPN connection input.
+ * Form Validation - Parse Delete Vpn Connection Input.
  *
  * Validates an optional move destination used by the removal dialog.
  * An empty object performs the dependency probe defined by the API.
+ *
+ * @param {Web_Api_DeleteVpnConnectionInput} input - Input.
+ *
+ * @returns {Web_Api_DeleteVpnConnectionInput}
  *
  * @since 2.0.0
  */
@@ -1318,10 +1542,14 @@ export const parseDeleteVpnConnectionInput = (
 ): Web_Api_DeleteVpnConnectionInput => parseInput(deleteVpnConnectionInputSchema, input);
 
 /**
- * Form Validation - Parses set default VPN connection input.
+ * Form Validation - Parse Set Default Vpn Connection Input.
  *
  * Validates the target identifier for the global default switch.
  * Keeping this parser shared prevents route-specific identifier drift.
+ *
+ * @param {Web_Api_SetDefaultVpnConnectionInput} input - Input.
+ *
+ * @returns {Web_Api_SetDefaultVpnConnectionInput}
  *
  * @since 2.0.0
  */
@@ -1330,10 +1558,14 @@ export const parseSetDefaultVpnConnectionInput = (
 ): Web_Api_SetDefaultVpnConnectionInput => parseInput(setDefaultVpnConnectionInputSchema, input);
 
 /**
- * Form Validation - Parses create directory input.
+ * Form Validation - Parse Create Directory Input.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
+ *
+ * @param {Web_Api_CreateDirectoryInput} input - Input.
+ *
+ * @returns {Web_Api_CreateDirectoryInput}
  *
  * @since 2.0.0
  */
@@ -1343,10 +1575,14 @@ export const parseCreateDirectoryInput = (input: Web_Api_CreateDirectoryInput): 
 );
 
 /**
- * Form Validation - Parse custom profile input.
+ * Form Validation - Parse Custom Profile Input.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
+ *
+ * @param {Web_Api_CustomProfileInput} input - Input.
+ *
+ * @returns {Web_Api_CustomProfileInput}
  *
  * @since 2.0.0
  */
@@ -1355,10 +1591,14 @@ export const parseCustomProfileInput = (
 ): Web_Api_CustomProfileInput => parseInput(customProfileInputSchema, input);
 
 /**
- * Form Validation - Parses RPC login input.
+ * Form Validation - Parse Rpc Login Input.
  *
  * Centralizes validation for creating a remote RPC login.
  * The normalized username is returned to the caller.
+ *
+ * @param {Web_Api_RPCLoginInput} input - Input.
+ *
+ * @returns {Web_Api_RPCLoginInput}
  *
  * @since 2.0.0
  */
@@ -1368,10 +1608,14 @@ export const parseRPCLoginInput = (input: Web_Api_RPCLoginInput): Web_Api_RPCLog
 );
 
 /**
- * Form Validation - Parses RPC login update.
+ * Form Validation - Parse Update Rpc Login Input.
  *
  * Centralizes validation for editing a remote RPC login.
  * Password regeneration is represented by an explicit boolean.
+ *
+ * @param {Web_Api_UpdateRPCLoginInput} input - Input.
+ *
+ * @returns {Web_Api_UpdateRPCLoginInput}
  *
  * @since 2.0.0
  */
@@ -1380,10 +1624,14 @@ export const parseUpdateRPCLoginInput = (
 ): Web_Api_UpdateRPCLoginInput => parseInput(updateRPCLoginInputSchema, input);
 
 /**
- * Form Validation - Parses web proxy login input.
+ * Form Validation - Parse Web Proxy Login Input.
  *
  * Centralizes validation for creating a web proxy login.
  * The result is safe to send directly to the API.
+ *
+ * @param {Web_Api_WebProxyLoginInput} input - Input.
+ *
+ * @returns {Web_Api_WebProxyLoginInput}
  *
  * @since 2.0.0
  */
@@ -1392,10 +1640,14 @@ export const parseWebProxyLoginInput = (
 ): Web_Api_WebProxyLoginInput => parseInput(webProxyLoginInputSchema, input);
 
 /**
- * Form Validation - Parses web proxy login update.
+ * Form Validation - Parse Update Web Proxy Login Input.
  *
  * Centralizes validation for editing a web proxy login.
  * Password regeneration is represented by an explicit boolean.
+ *
+ * @param {Web_Api_UpdateWebProxyLoginInput} input - Input.
+ *
+ * @returns {Web_Api_UpdateWebProxyLoginInput}
  *
  * @since 2.0.0
  */
@@ -1404,10 +1656,14 @@ export const parseUpdateWebProxyLoginInput = (
 ): Web_Api_UpdateWebProxyLoginInput => parseInput(updateWebProxyLoginInputSchema, input);
 
 /**
- * Form Validation - Parses VPN connection input.
+ * Form Validation - Parse Vpn Connection Input.
  *
  * Validates DNS and retry controls before combining them with provider fields.
  * It returns a normalized connection payload for the VPN request.
+ *
+ * @param {Web_Api_VpnConnectionInput} input - Input.
+ *
+ * @returns {Web_Api_VpnConnectionInput}
  *
  * @since 2.0.0
  */
@@ -1416,20 +1672,28 @@ export const parseVPNConnectionInput = (
 ): Web_Api_VpnConnectionInput => parseInput(vpnConnectionInputSchema, input);
 
 /**
- * Form Validation - Parses data path.
+ * Form Validation - Parse Data Path.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
+ *
+ * @param {Web_FormValidation_ParseDataPath_Value} value - Value.
+ *
+ * @returns {Web_FormValidation_ParseDataPath_Returns}
  *
  * @since 2.0.0
  */
-export const parseDataPath = (value: string): string => parseInput(dataPathSchema, value);
+export const parseDataPath = (value: Web_FormValidation_ParseDataPath_Value): Web_FormValidation_ParseDataPath_Returns => parseInput(dataPathSchema, value);
 
 /**
- * Form Validation - Parses login input.
+ * Form Validation - Parse Login Input.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
+ *
+ * @param {Web_Api_LoginInput} input - Input.
+ *
+ * @returns {Web_Api_LoginInput}
  *
  * @since 2.0.0
  */
@@ -1439,20 +1703,28 @@ export const parseLoginInput = (input: Web_Api_LoginInput): Web_Api_LoginInput =
 );
 
 /**
- * Form Validation - Parses provider ID.
+ * Form Validation - Parse Provider ID.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @param {Web_FormValidation_ParseProviderID_Value} value - Value.
+ *
+ * @returns {Web_FormValidation_ParseProviderID_Returns}
+ *
  * @since 2.0.0
  */
-export const parseProviderID = (value: string): string => parseInput(identifierSchema, value);
+export const parseProviderID = (value: Web_FormValidation_ParseProviderID_Value): Web_FormValidation_ParseProviderID_Returns => parseInput(identifierSchema, value);
 
 /**
- * Form Validation - Parse remove torrents input.
+ * Form Validation - Parse Remove Torrents Input.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
+ *
+ * @param {Web_Api_RemoveTorrentsInput} input - Input.
+ *
+ * @returns {Web_Api_RemoveTorrentsInput}
  *
  * @since 2.0.0
  */
@@ -1461,10 +1733,14 @@ export const parseRemoveTorrentsInput = (
 ): Web_Api_RemoveTorrentsInput => parseInput(removeTorrentsInputSchema, input);
 
 /**
- * Form Validation - Parse rename torrent path input.
+ * Form Validation - Parse Rename Torrent Path Input.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
+ *
+ * @param {Web_Api_RenameTorrentPathInput} input - Input.
+ *
+ * @returns {Web_Api_RenameTorrentPathInput}
  *
  * @since 2.0.0
  */
@@ -1473,10 +1749,14 @@ export const parseRenameTorrentPathInput = (
 ): Web_Api_RenameTorrentPathInput => parseInput(renameTorrentPathInputSchema, input);
 
 /**
- * Form Validation - Parse set torrent profile input.
+ * Form Validation - Parse Set Torrent Profile Input.
  *
  * Returns a validated profile assignment payload for the API client.
  * Invalid identifiers never reach the profile mutation route.
+ *
+ * @param {Web_Api_SetTorrentProfileInput} input - Input.
+ *
+ * @returns {Web_Api_SetTorrentProfileInput}
  *
  * @since 2.0.0
  */
@@ -1485,21 +1765,27 @@ export const parseSetTorrentProfileInput = (
 ): Web_Api_SetTorrentProfileInput => parseInput(setTorrentProfileInputSchema, input);
 
 /**
- * Form Validation - Parse torrent profile input.
+ * Form Validation - Parse Torrent Profile Input.
  *
  * Normalizes and validates every profile editor value against server limits.
  * Callers can send the returned payload without additional field conversion.
+ *
+ * @param {Web_Api_TorrentProfileInput}                                     input                 - Input.
+ * @param {Web_FormValidation_ParseTorrentProfileInput_IncompleteDirectory} [incompleteDirectory] - Incomplete directory.
+ *
+ * @returns {Web_Api_TorrentProfileInput}
  *
  * @since 2.0.0
  */
 export const parseTorrentProfileInput = (
   input: Web_Api_TorrentProfileInput,
-  incompleteDirectory?: string,
+  incompleteDirectory?: Web_FormValidation_ParseTorrentProfileInput_IncompleteDirectory,
 ): Web_Api_TorrentProfileInput => {
   const validatedInput: Web_Api_TorrentProfileInput = parseInput(
     torrentProfileInputSchema,
     input,
   );
+
   validateOutsideIncompleteDirectory(
     validatedInput['downloadDirectory'],
     incompleteDirectory,
@@ -1509,42 +1795,54 @@ export const parseTorrentProfileInput = (
 };
 
 /**
- * Form Validation - Parses the Default torrent profile input.
+ * Form Validation - Parse Default Torrent Profile Input.
  *
  * Validates the editable Default profile fields before creating its request.
  * Named-only identity, VPN, and matching values cannot enter this payload.
+ *
+ * @param {Web_Api_DefaultTorrentProfileInput}                                     input                 - Input.
+ * @param {Web_FormValidation_ParseDefaultTorrentProfileInput_IncompleteDirectory} [incompleteDirectory] - Incomplete directory.
+ *
+ * @returns {Web_Api_DefaultTorrentProfileInput}
  *
  * @since 2.0.0
  */
 export const parseDefaultTorrentProfileInput = (
   input: Web_Api_DefaultTorrentProfileInput,
-  incompleteDirectory?: string,
+  incompleteDirectory?: Web_FormValidation_ParseDefaultTorrentProfileInput_IncompleteDirectory,
 ): Web_Api_DefaultTorrentProfileInput => {
   const validatedInput: Web_Api_DefaultTorrentProfileInput = parseInput(
     defaultTorrentProfileInputSchema,
     input,
   );
+
   validateOutsideIncompleteDirectory(validatedInput['downloadDirectory'], incompleteDirectory);
 
   return validatedInput;
 };
 
 /**
- * Form Validation - Parses update torrent profile input.
+ * Form Validation - Parse Update Torrent Profile Input.
  *
  * Validates the profile editor payload and its optional move confirmation.
  * Only the literal true is accepted when torrent movement is authorized.
+ *
+ * @param {Web_Api_UpdateTorrentProfileInput}                                     input                 - Input.
+ * @param {Web_FormValidation_ParseUpdateTorrentProfileInput_IncompleteDirectory} [incompleteDirectory] - Incomplete directory.
+ *
+ * @returns {Web_Api_UpdateTorrentProfileInput}
  *
  * @since 2.0.0
  */
 export const parseUpdateTorrentProfileInput = (
   input: Web_Api_UpdateTorrentProfileInput,
-  incompleteDirectory?: string,
+  incompleteDirectory?: Web_FormValidation_ParseUpdateTorrentProfileInput_IncompleteDirectory,
 ): Web_Api_UpdateTorrentProfileInput => {
   const validatedInput: Web_Api_UpdateTorrentProfileInput = parseInput(
     updateTorrentProfileInputSchema,
     input,
   );
+
   validateOutsideIncompleteDirectory(
     validatedInput['downloadDirectory'],
     incompleteDirectory,
@@ -1554,31 +1852,41 @@ export const parseUpdateTorrentProfileInput = (
 };
 
 /**
- * Form Validation - Parses a Default torrent profile update.
+ * Form Validation - Parse Update Default Torrent Profile Input.
  *
  * Accepts the same optional move confirmation as named profile updates.
  * The saved fields otherwise use the reduced Default profile input contract.
+ *
+ * @param {Web_Api_UpdateDefaultTorrentProfileInput}                                     input                 - Input.
+ * @param {Web_FormValidation_ParseUpdateDefaultTorrentProfileInput_IncompleteDirectory} [incompleteDirectory] - Incomplete directory.
+ *
+ * @returns {Web_Api_UpdateDefaultTorrentProfileInput}
  *
  * @since 2.0.0
  */
 export const parseUpdateDefaultTorrentProfileInput = (
   input: Web_Api_UpdateDefaultTorrentProfileInput,
-  incompleteDirectory?: string,
+  incompleteDirectory?: Web_FormValidation_ParseUpdateDefaultTorrentProfileInput_IncompleteDirectory,
 ): Web_Api_UpdateDefaultTorrentProfileInput => {
   const validatedInput: Web_Api_UpdateDefaultTorrentProfileInput = parseInput(
     updateDefaultTorrentProfileInputSchema,
     input,
   );
+
   validateOutsideIncompleteDirectory(validatedInput['downloadDirectory'], incompleteDirectory);
 
   return validatedInput;
 };
 
 /**
- * Form Validation - Parses update VPN connection input.
+ * Form Validation - Parse Update Vpn Connection Input.
  *
  * Enforces revision control and preserves rename-only requests without a
  * configuration field, so those updates do not reconnect the tunnel.
+ *
+ * @param {Web_Api_UpdateVpnConnectionInput} input - Input.
+ *
+ * @returns {Web_Api_UpdateVpnConnectionInput}
  *
  * @since 2.0.0
  */
@@ -1587,10 +1895,14 @@ export const parseUpdateVpnConnectionInput = (
 ): Web_Api_UpdateVpnConnectionInput => parseInput(updateVpnConnectionInputSchema, input);
 
 /**
- * Form Validation - Parse torrent action input.
+ * Form Validation - Parse Torrent Action Input.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
+ *
+ * @param {Web_Api_TorrentActionInput} input - Input.
+ *
+ * @returns {Web_Api_TorrentActionInput}
  *
  * @since 2.0.0
  */
@@ -1599,24 +1911,29 @@ export const parseTorrentActionInput = (
 ): Web_Api_TorrentActionInput => parseInput(torrentActionInputSchema, input);
 
 /**
- * Form Validation - Parse update settings input.
+ * Form Validation - Parse Update Settings Input.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
+ *
+ * @param {Web_Api_UpdateSettingsInput}                                     input                 - Input.
+ * @param {Web_FormValidation_ParseUpdateSettingsInput_IncompleteDirectory} [incompleteDirectory] - Incomplete directory.
+ *
+ * @returns {Web_Api_UpdateSettingsInput}
  *
  * @since 2.0.0
  */
 export const parseUpdateSettingsInput = (
   input: Web_Api_UpdateSettingsInput,
-  incompleteDirectory?: string,
+  incompleteDirectory?: Web_FormValidation_ParseUpdateSettingsInput_IncompleteDirectory,
 ): Web_Api_UpdateSettingsInput => {
   const validatedInput: Web_Api_UpdateSettingsInput = parseInput(
     updateSettingsInputSchema,
     input,
   );
-  const downloadDirectory = validatedInput['changes']['transmission.downloadDirectory'];
-  const incompleteDirectoryChanges = 'transmission.incompleteDirectory' in validatedInput['changes'];
-  if (typeof downloadDirectory === 'string' && !incompleteDirectoryChanges) {
+  const downloadDirectory: Web_FormValidation_ParseUpdateSettingsInput_DownloadDirectory = validatedInput['changes']['transmission.downloadDirectory'];
+  const incompleteDirectoryChanges: Web_FormValidation_ParseUpdateSettingsInput_IncompleteDirectoryChanges = 'transmission.incompleteDirectory' in validatedInput['changes'];
+  if (typeof downloadDirectory === 'string' && incompleteDirectoryChanges === false) {
     validateOutsideIncompleteDirectory(downloadDirectory, incompleteDirectory);
   }
 
@@ -1624,10 +1941,14 @@ export const parseUpdateSettingsInput = (
 };
 
 /**
- * Form Validation - Parse update torrent organization input.
+ * Form Validation - Parse Update Torrent Organization Input.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
+ *
+ * @param {Web_Api_UpdateTorrentOrganizationInput} input - Input.
+ *
+ * @returns {Web_Api_UpdateTorrentOrganizationInput}
  *
  * @since 2.0.0
  */
@@ -1636,10 +1957,14 @@ export const parseUpdateTorrentOrganizationInput = (
 ): Web_Api_UpdateTorrentOrganizationInput => parseInput(updateTorrentOrganizationInputSchema, input);
 
 /**
- * Form Validation - Parse update torrents input.
+ * Form Validation - Parse Update Torrents Input.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
+ *
+ * @param {Web_Api_UpdateTorrentsInput} input - Input.
+ *
+ * @returns {Web_Api_UpdateTorrentsInput}
  *
  * @since 2.0.0
  */
@@ -1648,14 +1973,18 @@ export const parseUpdateTorrentsInput = (
 ): Web_Api_UpdateTorrentsInput => parseInput(updateTorrentsInputSchema, input);
 
 /**
- * Form Validation - Parses token ID.
+ * Form Validation - Parse Token ID.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @param {Web_FormValidation_ParseTokenID_Value} value - Value.
+ *
+ * @returns {Web_FormValidation_ParseTokenID_Returns}
+ *
  * @since 2.0.0
  */
-export const parseTokenID = (value: string): string => parseInput(
+export const parseTokenID = (value: Web_FormValidation_ParseTokenID_Value): Web_FormValidation_ParseTokenID_Returns => parseInput(
   z.string()
     .min(1, 'The credential identifier is missing.')
     .max(64, 'The credential identifier is invalid.')
@@ -1664,17 +1993,17 @@ export const parseTokenID = (value: string): string => parseInput(
 );
 
 /**
- * Form Validation - WireGuard key pattern.
+ * Form Validation - Wire Guard Key Pattern.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
  * @since 2.0.0
  */
-const wireGuardKeyPattern: RegExp = /^[A-Za-z0-9+/]{43}=$/;
+const wireGuardKeyPattern: Web_FormValidation_WireGuardKeyPattern = new RegExp(wireGuardPublicKeyPattern);
 
 /**
- * Form Validation - IPv4 address schema.
+ * Form Validation - Ipv4 Address Schema.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
@@ -1687,50 +2016,65 @@ const ipv4AddressSchema = z.union([
 ]);
 
 /**
- * Form Validation - Validate provider credentials.
+ * Form Validation - Validate Provider Credentials.
  *
  * Checks each field of the tunnel by its kind, with the same rules as the server.
  * Values are never repeated in a message.
  *
+ * @param {Web_FormValidation_ValidateProviderCredentials_Tunnel}           tunnel             - Tunnel.
+ * @param {Web_FormValidation_ValidateProviderCredentials_Credentials}      credentials        - Credentials.
+ * @param {Web_FormValidation_ValidateProviderCredentials_SavedCredentials} [savedCredentials] - Saved credentials.
+ *
+ * @returns {Web_FormValidation_ValidateProviderCredentials_Returns}
+ *
  * @since 2.0.0
  */
 export const validateProviderCredentials = (
-  tunnel: Web_Api_ProviderTunnel | undefined,
-  credentials: Record<string, string>,
-  savedCredentials: string[] = [],
-): void => {
+  tunnel: Web_FormValidation_ValidateProviderCredentials_Tunnel,
+  credentials: Web_FormValidation_ValidateProviderCredentials_Credentials,
+  savedCredentials: Web_FormValidation_ValidateProviderCredentials_SavedCredentials = [],
+): Web_FormValidation_ValidateProviderCredentials_Returns => {
   if (tunnel === undefined) {
     throw new Error('Choose a supported VPN provider.');
   }
 
   for (const field of tunnel['credentialFields']) {
-    const value: string = (credentials[field['key']] ?? '').trim();
+    const value: Web_FormValidation_ValidateProviderCredentials_Value = (credentials[field['key']] ?? '').trim();
     if (value === '') {
-      if (field['required'] && !savedCredentials.includes(field['key'])) {
+      if (field['required'] === true && savedCredentials.includes(field['key']) === false) {
         throw new Error(`${field['label']} is required.`);
       }
 
       continue;
     }
-    if (field['kind'] === 'wireguard-key' && !wireGuardKeyPattern.test(value)) {
+    if (field['kind'] === 'wireguard-key' && wireGuardKeyPattern.test(value) === false) {
       throw new Error(`${field['label']} must be a WireGuard key: 44 characters of base64 ending in =.`);
     }
-    if (field['kind'] === 'ipv4-address' && !ipv4AddressSchema.safeParse(value).success) {
+    if (field['kind'] === 'ipv4-address' && ipv4AddressSchema.safeParse(value).success === false) {
       throw new Error(`${field['label']} must be an IPv4 address such as 10.68.12.34/32.`);
     }
   }
+
+  return;
 };
 
 /**
- * Form Validation - Validates password confirmation.
+ * Form Validation - Validate Password Confirmation.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @param {Web_FormValidation_ValidatePasswordConfirmation_Password}     password     - Password.
+ * @param {Web_FormValidation_ValidatePasswordConfirmation_Confirmation} confirmation - Confirmation.
+ *
+ * @returns {Web_FormValidation_ValidatePasswordConfirmation_Returns}
+ *
  * @since 2.0.0
  */
-export const validatePasswordConfirmation = (password: string, confirmation: string): void => {
+export const validatePasswordConfirmation = (password: Web_FormValidation_ValidatePasswordConfirmation_Password, confirmation: Web_FormValidation_ValidatePasswordConfirmation_Confirmation): Web_FormValidation_ValidatePasswordConfirmation_Returns => {
   if (password !== confirmation) {
     throw new Error('The password confirmation does not match.');
   }
+
+  return;
 };

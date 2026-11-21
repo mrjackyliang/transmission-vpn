@@ -33,6 +33,9 @@ export type Web_DirectoryTree_RowAction = 'select' | 'toggle' | 'none';
  */
 export type Web_DirectoryTree_DirectoryAncestorPaths_Path = string;
 export type Web_DirectoryTree_DirectoryAncestorPaths_Returns = string[];
+export type Web_DirectoryTree_DirectoryAncestorPaths_PathSegments = string[];
+export type Web_DirectoryTree_DirectoryAncestorPaths_AncestorPaths = string[];
+export type Web_DirectoryTree_DirectoryAncestorPaths_AncestorPath = string;
 
 /**
  * Directory Tree - Directory creation parent path.
@@ -52,15 +55,15 @@ export type Web_DirectoryTree_DirectoryExpandedPaths_Path = string;
 export type Web_DirectoryTree_DirectoryExpandedPaths_Returns = string[];
 
 /**
- * Directory Tree - Row click action.
+ * Directory Tree - Directory row click action.
  *
  * @since 2.0.0
  */
-export type Web_DirectoryTree_RowClickAction_Selectable = boolean;
-export type Web_DirectoryTree_RowClickAction_Usable = boolean;
-export type Web_DirectoryTree_RowClickAction_Browsable = boolean;
-export type Web_DirectoryTree_RowClickAction_HasSubfolders = boolean;
-export type Web_DirectoryTree_RowClickAction_Returns = Web_DirectoryTree_RowAction;
+export type Web_DirectoryTree_DirectoryRowClickAction_Selectable = boolean;
+export type Web_DirectoryTree_DirectoryRowClickAction_Usable = boolean;
+export type Web_DirectoryTree_DirectoryRowClickAction_Browsable = boolean;
+export type Web_DirectoryTree_DirectoryRowClickAction_HasSubfolders = boolean;
+export type Web_DirectoryTree_DirectoryRowClickAction_Returns = Web_DirectoryTree_RowAction;
 
 /**
  * Directory Tree - Move directory tree focus.
@@ -71,3 +74,11 @@ export type Web_DirectoryTree_MoveDirectoryTreeFocus_Items = Web_DirectoryTree_I
 export type Web_DirectoryTree_MoveDirectoryTreeFocus_FocusedPath = string;
 export type Web_DirectoryTree_MoveDirectoryTreeFocus_Key = Web_DirectoryTree_KeyboardKey;
 export type Web_DirectoryTree_MoveDirectoryTreeFocus_Returns = Web_DirectoryTree_Move;
+export type Web_DirectoryTree_MoveDirectoryTreeFocus_CurrentIndex = number;
+export type Web_DirectoryTree_MoveDirectoryTreeFocus_CurrentItem = Web_DirectoryTree_Item | undefined;
+export type Web_DirectoryTree_MoveDirectoryTreeFocus_NextItem = Web_DirectoryTree_Item;
+export type Web_DirectoryTree_MoveDirectoryTreeFocus_PreviousItem = Web_DirectoryTree_Item;
+export type Web_DirectoryTree_MoveDirectoryTreeFocus_FirstItem = Web_DirectoryTree_Item | undefined;
+export type Web_DirectoryTree_MoveDirectoryTreeFocus_LastItem = Web_DirectoryTree_Item | undefined;
+export type Web_DirectoryTree_MoveDirectoryTreeFocus_FirstChild = Web_DirectoryTree_Item | undefined;
+export type Web_DirectoryTree_MoveDirectoryTreeFocus_ParentItem = Web_DirectoryTree_Item | undefined;

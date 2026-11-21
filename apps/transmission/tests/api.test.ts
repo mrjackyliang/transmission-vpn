@@ -27,9 +27,42 @@ import {
   updateTorrents,
 } from '../src/web/api.ts';
 
-describe('API response schemas', (): void => {
-  it('parses blocklist status and normalizes a null source list', async (): Promise<void> => {
-    vi.stubGlobal('fetch', async (): Promise<Response> => new Response(JSON.stringify({
+import type {
+  Tests_Web_Api_Assignment,
+  Tests_Web_Api_AssignmentMoved,
+  Tests_Web_Api_Body,
+  Tests_Web_Api_ConnectionId,
+  Tests_Web_Api_DefaultConnection_Result,
+  Tests_Web_Api_Detail,
+  Tests_Web_Api_Directory,
+  Tests_Web_Api_FetchInput,
+  Tests_Web_Api_FetchOptions,
+  Tests_Web_Api_FetchResponse,
+  Tests_Web_Api_Hash,
+  Tests_Web_Api_Moved,
+  Tests_Web_Api_Organization,
+  Tests_Web_Api_Path,
+  Tests_Web_Api_Profile,
+  Tests_Web_Api_ProfileDeletion_Result,
+  Tests_Web_Api_ProfileId,
+  Tests_Web_Api_ProfileInput,
+  Tests_Web_Api_ProfileMoved,
+  Tests_Web_Api_Removal,
+  Tests_Web_Api_RemovalMoved,
+  Tests_Web_Api_RequestBody,
+  Tests_Web_Api_RequestMethod,
+  Tests_Web_Api_RequestPath,
+  Tests_Web_Api_Requests,
+  Tests_Web_Api_ResponseBody,
+  Tests_Web_Api_Status,
+  Tests_Web_Api_VpnConnections_Response,
+  Tests_Web_Api_Warning,
+  Tests_Web_Api_WebProxy_Response,
+} from '../src/types/tests/web/api.test.d.ts';
+
+describe('API response schemas', () => {
+  it('parses blocklist status and normalizes a null source list', async () => {
+    vi.stubGlobal('fetch', async () => new Response(JSON.stringify({
       lastAttemptAt: null,
       lastSuccessAt: null,
       nextUpdateAt: null,
@@ -42,7 +75,7 @@ describe('API response schemas', (): void => {
     }));
 
     try {
-      const status = await getBlocklistStatus();
+      const status: Tests_Web_Api_Status = await getBlocklistStatus();
 
       expect(status).toMatchObject({
         sources: [],
@@ -52,13 +85,16 @@ describe('API response schemas', (): void => {
     } finally {
       vi.unstubAllGlobals();
     }
+
+    return;
   });
 
-  it('accepts the empty 202 blocklist update response', async (): Promise<void> => {
-    let requestMethod: string = '';
-    let requestPath: string = '';
+  it('accepts the empty 202 blocklist update response', async () => {
+    let requestMethod: Tests_Web_Api_RequestMethod = '';
+    let requestPath: Tests_Web_Api_RequestPath = '';
+
     vi.stubGlobal('document', { cookie: '' });
-    vi.stubGlobal('fetch', async (input: RequestInfo | URL, options: RequestInit = {}): Promise<Response> => {
+    vi.stubGlobal('fetch', async (input: Tests_Web_Api_FetchInput, options: Tests_Web_Api_FetchOptions = {}): Tests_Web_Api_FetchResponse => {
       requestMethod = options.method ?? 'GET';
       requestPath = String(input);
 
@@ -69,17 +105,21 @@ describe('API response schemas', (): void => {
       await expect(requestBlocklistUpdate()).resolves.toBeUndefined();
 
       expect(requestMethod).toBe('POST');
+
       expect(requestPath).toBe('/api/v1/blocklists/update');
     } finally {
       vi.unstubAllGlobals();
     }
+
+    return;
   });
 
-  it('accepts a no-content directory deletion response', async (): Promise<void> => {
-    let requestMethod: string = '';
-    let requestPath: string = '';
+  it('accepts a no-content directory deletion response', async () => {
+    let requestMethod: Tests_Web_Api_RequestMethod = '';
+    let requestPath: Tests_Web_Api_RequestPath = '';
+
     vi.stubGlobal('document', { cookie: '' });
-    vi.stubGlobal('fetch', async (input: RequestInfo | URL, options: RequestInit = {}): Promise<Response> => {
+    vi.stubGlobal('fetch', async (input: Tests_Web_Api_FetchInput, options: Tests_Web_Api_FetchOptions = {}): Tests_Web_Api_FetchResponse => {
       requestMethod = options.method ?? 'GET';
       requestPath = String(input);
 
@@ -90,20 +130,24 @@ describe('API response schemas', (): void => {
       await expect(deleteDirectory('/data/empty', 'incomplete')).resolves.toBeUndefined();
 
       expect(requestMethod).toBe('DELETE');
+
       expect(requestPath).toBe('/api/v1/storage/directories?path=%2Fdata%2Fempty&purpose=incomplete');
     } finally {
       vi.unstubAllGlobals();
     }
+
+    return;
   });
 
-  it('confirms profile deletion and parses per-torrent move results', async (): Promise<void> => {
-    const hash: string = 'c'.repeat(40);
-    const profileId: string = 'tpr-0123456789abcdef';
-    let requestBody: Record<string, unknown> = {};
-    let requestMethod: string = '';
+  it('confirms profile deletion and parses per-torrent move results', async () => {
+    const hash: Tests_Web_Api_Hash = 'c'.repeat(40);
+    const profileId: Tests_Web_Api_ProfileId = 'tpr-0123456789abcdef';
+    let requestBody: Tests_Web_Api_RequestBody = {};
+    let requestMethod: Tests_Web_Api_RequestMethod = '';
+
     vi.stubGlobal('document', { cookie: '' });
-    vi.stubGlobal('fetch', async (_input: RequestInfo | URL, options: RequestInit = {}): Promise<Response> => {
-      requestBody = JSON.parse(String(options.body ?? '{}')) as Record<string, unknown>;
+    vi.stubGlobal('fetch', async (_input: Tests_Web_Api_FetchInput, options: Tests_Web_Api_FetchOptions = {}): Tests_Web_Api_FetchResponse => {
+      requestBody = JSON.parse(String(options.body ?? '{}')) as Tests_Web_Api_RequestBody;
       requestMethod = options.method ?? 'GET';
 
       return new Response(JSON.stringify({
@@ -120,10 +164,12 @@ describe('API response schemas', (): void => {
     });
 
     try {
-      const result = await deleteTorrentProfile(profileId, true);
+      const result: Tests_Web_Api_ProfileDeletion_Result = await deleteTorrentProfile(profileId, true);
 
       expect(requestMethod).toBe('DELETE');
+
       expect(requestBody).toEqual({ moveTorrents: true });
+
       expect(result['moved'][0]).toMatchObject({
         hash,
         result: 'failed',
@@ -131,16 +177,19 @@ describe('API response schemas', (): void => {
     } finally {
       vi.unstubAllGlobals();
     }
+
+    return;
   });
 
-  it('confirms a default connection change and parses per-torrent move results', async (): Promise<void> => {
-    const connectionId: string = 'vpc-fedcba9876543210';
-    const hash: string = 'd'.repeat(40);
-    let requestBody: Record<string, unknown> = {};
-    let requestMethod: string = '';
+  it('confirms a default connection change and parses per-torrent move results', async () => {
+    const connectionId: Tests_Web_Api_ConnectionId = 'vpc-fedcba9876543210';
+    const hash: Tests_Web_Api_Hash = 'd'.repeat(40);
+    let requestBody: Tests_Web_Api_RequestBody = {};
+    let requestMethod: Tests_Web_Api_RequestMethod = '';
+
     vi.stubGlobal('document', { cookie: '' });
-    vi.stubGlobal('fetch', async (_input: RequestInfo | URL, options: RequestInit = {}): Promise<Response> => {
-      requestBody = JSON.parse(String(options.body ?? '{}')) as Record<string, unknown>;
+    vi.stubGlobal('fetch', async (_input: Tests_Web_Api_FetchInput, options: Tests_Web_Api_FetchOptions = {}): Tests_Web_Api_FetchResponse => {
+      requestBody = JSON.parse(String(options.body ?? '{}')) as Tests_Web_Api_RequestBody;
       requestMethod = options.method ?? 'GET';
 
       return new Response(JSON.stringify({
@@ -157,16 +206,18 @@ describe('API response schemas', (): void => {
     });
 
     try {
-      const result = await setDefaultVPNConnection({
+      const result: Tests_Web_Api_DefaultConnection_Result = await setDefaultVPNConnection({
         connectionId,
         moveTorrents: true,
       });
 
       expect(requestMethod).toBe('PUT');
+
       expect(requestBody).toEqual({
         connectionId,
         moveTorrents: true,
       });
+
       expect(result['moved']).toEqual([{
         hash,
         name: 'Default profile torrent',
@@ -175,10 +226,12 @@ describe('API response schemas', (): void => {
     } finally {
       vi.unstubAllGlobals();
     }
+
+    return;
   });
 
-  it('parses purpose-aware directory entries and normalizes null tags', async (): Promise<void> => {
-    vi.stubGlobal('fetch', async (): Promise<Response> => new Response(JSON.stringify({
+  it('parses purpose-aware directory entries and normalizes null tags', async () => {
+    vi.stubGlobal('fetch', async () => new Response(JSON.stringify({
       directories: [{
         browsable: true,
         deletable: false,
@@ -200,9 +253,9 @@ describe('API response schemas', (): void => {
     }));
 
     try {
-      const directory = await getDirectory('/data', 'incomplete');
+      const directory: Tests_Web_Api_Directory = await getDirectory('/data', 'incomplete');
 
-      expect(directory.directories[0]).toMatchObject({
+      expect(directory['directories'][0]).toMatchObject({
         browsable: true,
         deletable: false,
         empty: false,
@@ -214,10 +267,12 @@ describe('API response schemas', (): void => {
     } finally {
       vi.unstubAllGlobals();
     }
+
+    return;
   });
 
-  it('normalizes a null directory list to an empty array', async (): Promise<void> => {
-    vi.stubGlobal('fetch', async (): Promise<Response> => new Response(JSON.stringify({
+  it('normalizes a null directory list to an empty array', async () => {
+    vi.stubGlobal('fetch', async () => new Response(JSON.stringify({
       directories: null,
       downloadAllowed: false,
       path: '/data',
@@ -227,16 +282,18 @@ describe('API response schemas', (): void => {
     }));
 
     try {
-      const directory = await getDirectory('/data', 'download');
+      const directory: Tests_Web_Api_Directory = await getDirectory('/data', 'download');
 
-      expect(directory.directories).toEqual([]);
+      expect(directory['directories']).toEqual([]);
     } finally {
       vi.unstubAllGlobals();
     }
+
+    return;
   });
 
-  it('treats null response lists as empty arrays', async (): Promise<void> => {
-    vi.stubGlobal('fetch', async (): Promise<Response> => new Response(JSON.stringify({
+  it('treats null response lists as empty arrays', async () => {
+    vi.stubGlobal('fetch', async () => new Response(JSON.stringify({
       labels: null,
       revision: 0,
     }), {
@@ -245,16 +302,18 @@ describe('API response schemas', (): void => {
     }));
 
     try {
-      const organization = await getTorrentOrganization();
+      const organization: Tests_Web_Api_Organization = await getTorrentOrganization();
 
-      expect(organization.labels).toEqual([]);
+      expect(organization['labels']).toEqual([]);
     } finally {
       vi.unstubAllGlobals();
     }
+
+    return;
   });
 
-  it('accepts the multi-connection list and capacity contract', async (): Promise<void> => {
-    vi.stubGlobal('fetch', async (): Promise<Response> => new Response(JSON.stringify({
+  it('accepts the multi-connection list and capacity contract', async () => {
+    vi.stubGlobal('fetch', async () => new Response(JSON.stringify({
       capacity: {
         cpus: 4,
         limit: 8,
@@ -315,13 +374,14 @@ describe('API response schemas', (): void => {
     }));
 
     try {
-      const response = await getVPNConnections();
+      const response: Tests_Web_Api_VpnConnections_Response = await getVPNConnections();
 
-      expect(response.capacity).toMatchObject({
+      expect(response['capacity']).toMatchObject({
         limit: 8,
         used: 1,
       });
-      expect(response.connections[0]).toMatchObject({
+
+      expect(response['connections'][0]).toMatchObject({
         id: 'vpc-0123456789abcdef',
         name: 'Office',
         peerPort: 42_370,
@@ -335,19 +395,19 @@ describe('API response schemas', (): void => {
     } finally {
       vi.unstubAllGlobals();
     }
+
+    return;
   });
 
-  it('sends stable hashes for every torrent mutation shape', async (): Promise<void> => {
-    const hash: string = 'a'.repeat(40);
-    const requests: {
-      body: Record<string, unknown>
-      method: string
-      path: string
-    }[] = [];
+  it('sends stable hashes for every torrent mutation shape', async () => {
+    const hash: Tests_Web_Api_Hash = 'a'.repeat(40);
+    const requests: Tests_Web_Api_Requests = [];
+
     vi.stubGlobal('document', { cookie: '' });
-    vi.stubGlobal('fetch', async (input: RequestInfo | URL, options: RequestInit = {}): Promise<Response> => {
-      const path: string = String(input);
-      const body: Record<string, unknown> = JSON.parse(String(options.body ?? '{}')) as Record<string, unknown>;
+    vi.stubGlobal('fetch', async (input: Tests_Web_Api_FetchInput, options: Tests_Web_Api_FetchOptions = {}): Tests_Web_Api_FetchResponse => {
+      const path: Tests_Web_Api_Path = String(input);
+      const body: Tests_Web_Api_Body = JSON.parse(String(options.body ?? '{}')) as Tests_Web_Api_Body;
+
       requests.push({
         body,
         method: options.method ?? 'GET',
@@ -356,7 +416,7 @@ describe('API response schemas', (): void => {
       if (path === '/api/v1/torrents/remove') {
         return new Response(null, { status: 204 });
       }
-      let responseBody: Record<string, unknown> = { hashes: [hash] };
+      let responseBody: Tests_Web_Api_ResponseBody = { hashes: [hash] };
       if (path === '/api/v1/torrents/actions') {
         responseBody = {
           action: body['action'],
@@ -398,27 +458,31 @@ describe('API response schemas', (): void => {
       await removeTorrents([hash], false);
 
       expect(requests).toHaveLength(5);
+
       for (const request of requests) {
-        expect(request.body).toMatchObject({ hashes: [hash] });
-        expect(request.body).not.toHaveProperty('ids');
+        expect(request['body']).toMatchObject({ hashes: [hash] });
+
+        expect(request['body']).not.toHaveProperty('ids');
       }
     } finally {
       vi.unstubAllGlobals();
     }
+
+    return;
   });
 
-  it('accepts warnings on every per-torrent move response', async (): Promise<void> => {
-    const hash: string = 'b'.repeat(40);
-    const connectionId: string = 'vpc-0123456789abcdef';
-    const profileId: string = 'tpr-0123456789abcdef';
-    const warning: string = 'The torrent moved, but its restart could not be confirmed.';
-    const moved = [{
+  it('accepts warnings on every per-torrent move response', async () => {
+    const hash: Tests_Web_Api_Hash = 'b'.repeat(40);
+    const connectionId: Tests_Web_Api_ConnectionId = 'vpc-0123456789abcdef';
+    const profileId: Tests_Web_Api_ProfileId = 'tpr-0123456789abcdef';
+    const warning: Tests_Web_Api_Warning = 'The torrent moved, but its restart could not be confirmed.';
+    const moved: Tests_Web_Api_Moved = [{
       hash,
       name: 'Example torrent',
       result: 'moved' as const,
       warnings: [warning],
     }];
-    const profileInput = {
+    const profileInput: Tests_Web_Api_ProfileInput = {
       connectionId,
       downloadDirectory: '/data/downloads',
       labels: [],
@@ -438,17 +502,18 @@ describe('API response schemas', (): void => {
       },
       startPaused: false,
     };
+
     vi.stubGlobal('document', { cookie: '' });
-    vi.stubGlobal('fetch', async (input: RequestInfo | URL): Promise<Response> => {
-      const path: string = String(input);
-      let body: Record<string, unknown> = {};
-      if (path.startsWith('/api/v1/vpn/connections/')) {
+    vi.stubGlobal('fetch', async (input: Tests_Web_Api_FetchInput): Tests_Web_Api_FetchResponse => {
+      const path: Tests_Web_Api_Path = String(input);
+      let body: Tests_Web_Api_Body = {};
+      if (path.startsWith('/api/v1/vpn/connections/') === true) {
         body = {
           logins: 0,
           moved,
           profiles: 0,
         };
-      } else if (path.startsWith('/api/v1/torrent-profiles/')) {
+      } else if (path.startsWith('/api/v1/torrent-profiles/') === true) {
         body = {
           ...profileInput,
           createdAt: '2026-11-05T12:00:00Z',
@@ -473,27 +538,34 @@ describe('API response schemas', (): void => {
     });
 
     try {
-      const removal = await deleteVPNConnection(connectionId, { moveTo: 'vpc-fedcba9876543210' });
-      const profile = await updateTorrentProfile(profileId, profileInput, true);
-      const assignment = await setTorrentProfile({
+      const removal: Tests_Web_Api_Removal = await deleteVPNConnection(connectionId, { moveTo: 'vpc-fedcba9876543210' });
+      const profile: Tests_Web_Api_Profile = await updateTorrentProfile(profileId, profileInput, true);
+      const assignment: Tests_Web_Api_Assignment = await setTorrentProfile({
         applyOptions: true,
         hashes: [hash],
         profileId,
       });
+      const removalMoved: Tests_Web_Api_RemovalMoved = removal['moved'][0];
+      const profileMoved: Tests_Web_Api_ProfileMoved = profile['moved'][0];
+      const assignmentMoved: Tests_Web_Api_AssignmentMoved = assignment['moved'][0];
 
-      expect(removal.moved[0]?.warnings).toEqual([warning]);
-      expect(profile.moved[0]?.warnings).toEqual([warning]);
-      expect(assignment.moved[0]).toMatchObject({
+      expect((removalMoved !== undefined) ? removalMoved['warnings'] : undefined).toEqual([warning]);
+
+      expect((profileMoved !== undefined) ? profileMoved['warnings'] : undefined).toEqual([warning]);
+
+      expect(assignmentMoved).toMatchObject({
         result: 'moved',
         warnings: [warning],
       });
     } finally {
       vi.unstubAllGlobals();
     }
+
+    return;
   });
 
-  it('accepts a web proxy login whose stored connection is missing', async (): Promise<void> => {
-    vi.stubGlobal('fetch', async (): Promise<Response> => new Response(JSON.stringify({
+  it('accepts a web proxy login whose stored connection is missing', async () => {
+    vi.stubGlobal('fetch', async () => new Response(JSON.stringify({
       enabled: true,
       logins: [{
         connectionId: 'vpc-ffffffffffffffff',
@@ -510,19 +582,21 @@ describe('API response schemas', (): void => {
     }));
 
     try {
-      const response = await getWebProxy();
+      const response: Tests_Web_Api_WebProxy_Response = await getWebProxy();
 
-      expect(response.logins[0]).toMatchObject({
+      expect(response['logins'][0]).toMatchObject({
         connectionId: 'vpc-ffffffffffffffff',
         effectiveConnectionId: 'vpc-0123456789abcdef',
       });
     } finally {
       vi.unstubAllGlobals();
     }
+
+    return;
   });
 
-  it('reads the 1 and 0 Transmission sends for wanted files in a torrent detail', async (): Promise<void> => {
-    vi.stubGlobal('fetch', async (): Promise<Response> => new Response(JSON.stringify({
+  it('reads the 1 and 0 Transmission sends for wanted files in a torrent detail', async () => {
+    vi.stubGlobal('fetch', async () => new Response(JSON.stringify({
       activityDate: 0,
       addedDate: 0,
       connectionId: 'vpc-0123456789abcdef',
@@ -569,7 +643,7 @@ describe('API response schemas', (): void => {
     }));
 
     try {
-      const detail = await getTorrentDetail(16_777_218);
+      const detail: Tests_Web_Api_Detail = await getTorrentDetail(16_777_218);
 
       expect(detail['wanted']).toEqual([
         true,
@@ -578,5 +652,9 @@ describe('API response schemas', (): void => {
     } finally {
       vi.unstubAllGlobals();
     }
+
+    return;
   });
+
+  return;
 });

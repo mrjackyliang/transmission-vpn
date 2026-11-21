@@ -941,7 +941,7 @@ func TestUpdateDefaultTorrentProfileLabelsDoNotTouchExistingTorrents(testingObje
 		testingObject,
 		func(recordedTransmissionCall) any { return map[string]any{} },
 	)
-	server.transmission = client
+	server.transmission = transmissionrpc.NewAdapter(client)
 
 	response := performRequest(
 		testingObject,
@@ -1336,7 +1336,7 @@ func TestAddTorrentWithoutProfile(t *testing.T) {
 			},
 		}
 	})
-	server.transmission = client
+	server.transmission = transmissionrpc.NewAdapter(client)
 
 	response := performRequest(
 		t,
@@ -1409,7 +1409,7 @@ func TestAddTorrentUsesDefaultProfileDefaults(testingObject *testing.T) {
 
 		return map[string]any{}
 	})
-	server.transmission = client
+	server.transmission = transmissionrpc.NewAdapter(client)
 	response := performRequest(
 		testingObject,
 		server,
@@ -1461,7 +1461,7 @@ func TestAddTorrentExplicitEmptyLabelsAndPausedOverrideDefaultProfile(testingObj
 
 		return map[string]any{}
 	})
-	server.transmission = client
+	server.transmission = transmissionrpc.NewAdapter(client)
 	response := performRequest(
 		testingObject,
 		server,
@@ -1517,7 +1517,7 @@ func TestAddTorrentWithProfileAppliesOptionsAndAssigns(t *testing.T) {
 
 		return map[string]any{}
 	})
-	server.transmission = client
+	server.transmission = transmissionrpc.NewAdapter(client)
 
 	response := performRequest(
 		t,
@@ -1558,7 +1558,11 @@ func TestTorrentProfileNeverSeedingDisablesLimits(t *testing.T) {
 		},
 	}, []int64{10}, false)
 
-	assertTransmissionArguments(t, arguments, `{"ids":[10],"seedRatioMode":2,"seedIdleMode":2,"downloadLimited":false,"uploadLimited":false,"bandwidthPriority":0,"peer-limit":50}`)
+	encodedArguments := map[string]any{"ids": arguments.IDs}
+	for key, value := range arguments.Changes {
+		encodedArguments[string(key)] = value
+	}
+	assertTransmissionArguments(t, encodedArguments, `{"ids":[10],"seedRatioMode":2,"seedIdleMode":2,"downloadLimited":false,"uploadLimited":false,"bandwidthPriority":0,"peer-limit":50}`)
 }
 
 // TestDuplicateAddWithProfileChangesNothing leaves options and assignments untouched.
@@ -1586,7 +1590,7 @@ func TestDuplicateAddWithProfileChangesNothing(t *testing.T) {
 			},
 		}
 	})
-	server.transmission = client
+	server.transmission = transmissionrpc.NewAdapter(client)
 
 	response := performRequest(
 		t,
@@ -1641,7 +1645,7 @@ func TestDuplicateAddWithUnassignedProfileFinishesProfile(testingObject *testing
 
 		return map[string]any{}
 	})
-	server.transmission = client
+	server.transmission = transmissionrpc.NewAdapter(client)
 
 	response := performRequest(
 		testingObject,
@@ -1716,7 +1720,7 @@ func TestTorrentProfileReassignment(t *testing.T) {
 
 		return map[string]any{}
 	})
-	server.transmission = client
+	server.transmission = transmissionrpc.NewAdapter(client)
 
 	withoutApply := performRequest(
 		t,
@@ -1865,7 +1869,7 @@ func TestTorrentProfileResolution(testingObject *testing.T) {
 			return map[string]any{}
 		},
 	)
-	server.transmission = client
+	server.transmission = transmissionrpc.NewAdapter(client)
 	if err := server.store.ReplaceTorrentNeedsProfile(
 		context.Background(),
 		hash,
@@ -2240,7 +2244,7 @@ func TestTorrentPayloadsIncludeProfileID(t *testing.T) {
 			return nil
 		}
 	})
-	server.transmission = client
+	server.transmission = transmissionrpc.NewAdapter(client)
 
 	list := performRequest(t, server, http.MethodGet, "/api/v1/torrents", "", cookies, "")
 	if list.Code != http.StatusOK || !strings.Contains(list.Body.String(), `"profileId":"`+profile.ID+`"`) {
@@ -2300,7 +2304,7 @@ func TestTorrentPayloadsIncludeNeedsProfile(testingObject *testing.T) {
 			}
 		},
 	)
-	server.transmission = client
+	server.transmission = transmissionrpc.NewAdapter(client)
 	wantJSON := `"needsProfile":{"profileIds":["` + profileIDs[0] + `","` + profileIDs[1] + `"]}`
 
 	list := performRequest(testingObject, server, http.MethodGet, "/api/v1/torrents", "", cookies, "")

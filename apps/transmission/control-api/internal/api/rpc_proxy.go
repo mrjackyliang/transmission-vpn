@@ -8,6 +8,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -17,7 +18,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-	"unicode"
 
 	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/clientinfo"
 	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/notifications"
@@ -50,14 +50,6 @@ const (
 	// Since: 2.3.0
 	rpcRequestTooLargeResult = "The request is larger than 23 MiB. A .torrent file can be up to 16 MiB."
 )
-
-// rpcFacadeRequest is the legacy Transmission envelope accepted on port 9091.
-type rpcFacadeRequest struct {
-	Method    string          `json:"method"`
-	Arguments json.RawMessage `json:"arguments"`
-	Tag       json.RawMessage `json:"tag"`
-	JSONRPC   json.RawMessage `json:"jsonrpc"`
-}
 
 // handleRPCProxy authenticates a dedicated login before serving the RPC facade.
 //
@@ -161,7 +153,7 @@ func (server *Server) serveRPCFacade(responseWriter http.ResponseWriter, request
 	request.Body = http.MaxBytesReader(responseWriter, request.Body, maximumRPCRequestBytes)
 	decoder := json.NewDecoder(request.Body)
 	decoder.UseNumber()
-	var envelope rpcFacadeRequest
+	var envelope transmissionrpc.LegacyRequest
 	if err := decoder.Decode(&envelope); err != nil {
 		server.writeRPCFacadeResponse(responseWriter, map[string]any{}, rpcDecodeResult(err), nil)
 
@@ -220,15 +212,15 @@ func (server *Server) writeRPCFacadeResponse(
 	tag json.RawMessage,
 ) {
 	response := map[string]any{
-		"arguments": arguments,
-		"result":    result,
+		transmissionrpc.ResponseArguments: arguments,
+		transmissionrpc.ResponseResult:    result,
 	}
 	if len(tag) > 0 {
 		var decodedTag any
 		decoder := json.NewDecoder(strings.NewReader(string(tag)))
 		decoder.UseNumber()
 		if decoder.Decode(&decodedTag) == nil {
-			response["tag"] = decodedTag
+			response[transmissionrpc.ResponseTag] = decodedTag
 		}
 	}
 	writeJSON(responseWriter, http.StatusOK, response)
@@ -245,7 +237,8 @@ func (server *Server) callRPCFacade(
 	method string,
 	arguments map[string]any,
 ) (any, string) {
-	if method == "torrent-set-location" {
+	nativeMethod := transmissionrpc.Method(method)
+	if nativeMethod == transmissionrpc.MethodTorrentSetLocation {
 		return map[string]any{}, "Change the torrent's profile in the console to move it."
 	}
 	normalizedArguments, validationResult := normalizeRPCFacadeArguments(method, arguments)
@@ -253,8 +246,8 @@ func (server *Server) callRPCFacade(
 		return map[string]any{}, validationResult
 	}
 	arguments = normalizedArguments
-	if method == "torrent-set" {
-		if labelsValue, found := arguments["labels"]; found {
+	if nativeMethod == transmissionrpc.MethodTorrentSet {
+		if labelsValue, found := arguments[transmissionrpc.ArgumentLabels]; found {
 			labels, valid := rpcStringList(labelsValue)
 			if !valid {
 				return map[string]any{}, "labels must be an array of strings"
@@ -262,7 +255,7 @@ func (server *Server) callRPCFacade(
 			if err := validateLabels(labels); err != nil {
 				return map[string]any{}, err.Error()
 			}
-			arguments["labels"] = labels
+			arguments[transmissionrpc.ArgumentLabels] = labels
 		}
 	}
 	if validationResult := server.validateRPCFacadeDownloadPaths(
@@ -273,33 +266,43 @@ func (server *Server) callRPCFacade(
 		return map[string]any{}, validationResult
 	}
 
-	switch method {
-	case "torrent-get":
+	switch nativeMethod {
+	case transmissionrpc.MethodTorrentGet:
 		return server.rpcFacadeTorrentGet(ctx, arguments)
-	case "torrent-add":
+	case transmissionrpc.MethodTorrentAdd:
 		return server.rpcFacadeTorrentAdd(ctx, arguments)
-	case "torrent-remove":
+	case transmissionrpc.MethodTorrentRemove:
 		return server.rpcFacadeTorrentRemove(ctx, arguments)
-	case "torrent-set", "torrent-start", "torrent-start-now", "torrent-stop",
-		"torrent-verify", "torrent-reannounce",
-		"torrent-rename-path", "queue-move-top",
-		"queue-move-up", "queue-move-down", "queue-move-bottom":
+	case transmissionrpc.MethodTorrentSet,
+		transmissionrpc.MethodTorrentStart,
+		transmissionrpc.MethodTorrentStartNow,
+		transmissionrpc.MethodTorrentStop,
+		transmissionrpc.MethodTorrentVerify,
+		transmissionrpc.MethodTorrentReannounce,
+		transmissionrpc.MethodTorrentRenamePath,
+		transmissionrpc.MethodQueueMoveTop,
+		transmissionrpc.MethodQueueMoveUp,
+		transmissionrpc.MethodQueueMoveDown,
+		transmissionrpc.MethodQueueMoveBottom:
 		return server.rpcFacadeRoutedCall(ctx, method, arguments)
-	case "session-stats":
+	case transmissionrpc.MethodSessionStatistics:
 		statistics, errorCodes := server.summedTransmissionStatistics(ctx)
 		if len(errorCodes) > 0 {
 			return map[string]any{}, "Transmission is unavailable for one or more connections"
 		}
 
 		return statistics, "success"
-	case "session-get", "free-space", "port-test", "group-get":
+	case transmissionrpc.MethodSessionGet,
+		transmissionrpc.MethodFreeSpace,
+		transmissionrpc.MethodPortTest,
+		transmissionrpc.MethodGroupGet:
 		return server.rpcFacadeDefaultCall(ctx, method, arguments)
-	case "session-set", "group-set":
+	case transmissionrpc.MethodSessionSet, transmissionrpc.MethodGroupSet:
 		return server.rpcFacadeEveryCall(ctx, method, arguments)
-	case "blocklist-update":
+	case transmissionrpc.MethodBlocklistUpdate:
 		return server.rpcFacadeBlocklistUpdate(ctx)
-	case "session-close":
-		return map[string]any{}, "session-close is not supported by transmission-vpn"
+	case transmissionrpc.MethodSessionClose:
+		return map[string]any{}, transmissionrpc.MethodSessionClose.String() + " is not supported by transmission-vpn"
 	default:
 		return map[string]any{}, rpcUnsupportedMethodResult
 	}
@@ -311,7 +314,7 @@ func (server *Server) rpcFacadeTorrentRemove(
 	ctx context.Context,
 	arguments map[string]any,
 ) (any, string) {
-	selectionValue, selectionPresent := arguments["ids"]
+	selectionValue, selectionPresent := arguments[transmissionrpc.ArgumentIDs]
 	hashes := []string{}
 	seen := map[string]struct{}{}
 	appendHash := func(hash string) {
@@ -324,12 +327,15 @@ func (server *Server) rpcFacadeTorrentRemove(
 	}
 
 	if !selectionPresent {
-		result := server.mergedTorrents(ctx, []string{"hashString", "id"}, nil)
+		result := server.mergedTorrents(ctx, []transmissionrpc.TorrentField{
+			transmissionrpc.TorrentFieldHashString,
+			transmissionrpc.TorrentFieldID,
+		}, nil)
 		if rpcFacadeTorrentResultUnavailable(result.Errors) {
 			return map[string]any{}, "Transmission is unavailable for one or more connections"
 		}
 		for _, torrent := range result.Torrents {
-			if hash, valid := torrent["hashString"].(string); valid && hash != "" {
+			if hash, valid := torrent[string(transmissionrpc.TorrentFieldHashString)].(string); valid && hash != "" {
 				appendHash(hash)
 			}
 		}
@@ -345,12 +351,15 @@ func (server *Server) rpcFacadeTorrentRemove(
 					appendHash(hash)
 				}
 			case []int64:
-				resolved := server.mergedTorrents(ctx, []string{"hashString", "id"}, selected)
+				resolved := server.mergedTorrents(ctx, []transmissionrpc.TorrentField{
+					transmissionrpc.TorrentFieldHashString,
+					transmissionrpc.TorrentFieldID,
+				}, selected)
 				if rpcFacadeTorrentResultUnavailable(resolved.Errors) {
 					return map[string]any{}, "Transmission is unavailable for one or more connections"
 				}
 				for _, torrent := range resolved.Torrents {
-					if hash, valid := torrent["hashString"].(string); valid && hash != "" {
+					if hash, valid := torrent[string(transmissionrpc.TorrentFieldHashString)].(string); valid && hash != "" {
 						appendHash(hash)
 					}
 				}
@@ -358,7 +367,7 @@ func (server *Server) rpcFacadeTorrentRemove(
 		}
 	}
 
-	response, result := server.rpcFacadeRoutedCall(ctx, "torrent-remove", arguments)
+	response, result := server.rpcFacadeRoutedCall(ctx, transmissionrpc.MethodTorrentRemove.String(), arguments)
 	if result != "success" || len(hashes) == 0 {
 		return response, result
 	}
@@ -380,7 +389,7 @@ func normalizeRPCFacadeArguments(method string, arguments map[string]any) (map[s
 	normalized := copyRPCArguments(arguments)
 	canonicalKeys := make(map[string]string, len(arguments))
 	for key := range arguments {
-		canonicalKey := canonicalRPCFacadeArgumentKey(key)
+		canonicalKey := transmissionrpc.CanonicalArgumentKey(key)
 		if _, duplicate := canonicalKeys[canonicalKey]; duplicate {
 			return nil, "duplicate Transmission RPC argument " + canonicalKey
 		}
@@ -388,28 +397,28 @@ func normalizeRPCFacadeArguments(method string, arguments map[string]any) (map[s
 	}
 
 	pathKeys := []string{}
-	switch method {
-	case "session-set":
+	switch transmissionrpc.Method(method) {
+	case transmissionrpc.MethodSessionSet:
 		normalized = make(map[string]any, len(arguments))
 		for canonicalKey, originalKey := range canonicalKeys {
-			upstreamKey, allowed := rpcFacadeSessionSetArgumentKey(canonicalKey)
+			upstreamKey, allowed := transmissionrpc.SessionSetArgumentKey(canonicalKey)
 			if !allowed {
-				return nil, canonicalKey + " is not supported for session-set by transmission-vpn"
+				return nil, canonicalKey + " is not supported for " + transmissionrpc.MethodSessionSet.String() + " by transmission-vpn"
 			}
 			normalized[upstreamKey] = arguments[originalKey]
 		}
-		pathKeys = []string{"download-dir", "incomplete-dir"}
-	case "torrent-add":
-		if originalKey, found := canonicalKeys["download-dir"]; found && originalKey != "download-dir" {
-			normalized["download-dir"] = normalized[originalKey]
+		pathKeys = []string{transmissionrpc.ArgumentDownloadDirectory, transmissionrpc.ArgumentIncompleteDirectory}
+	case transmissionrpc.MethodTorrentAdd:
+		if originalKey, found := canonicalKeys[transmissionrpc.ArgumentDownloadDirectory]; found && originalKey != transmissionrpc.ArgumentDownloadDirectory {
+			normalized[transmissionrpc.ArgumentDownloadDirectory] = normalized[originalKey]
 			delete(normalized, originalKey)
 		}
-	case "torrent-set", "torrent-set-location":
-		if originalKey, found := canonicalKeys["location"]; found && originalKey != "location" {
-			normalized["location"] = normalized[originalKey]
+	case transmissionrpc.MethodTorrentSet, transmissionrpc.MethodTorrentSetLocation:
+		if originalKey, found := canonicalKeys[transmissionrpc.ArgumentLocation]; found && originalKey != transmissionrpc.ArgumentLocation {
+			normalized[transmissionrpc.ArgumentLocation] = normalized[originalKey]
 			delete(normalized, originalKey)
 		}
-		pathKeys = []string{"location"}
+		pathKeys = []string{transmissionrpc.ArgumentLocation}
 	}
 	for _, key := range pathKeys {
 		value, found := normalized[key]
@@ -433,85 +442,19 @@ func normalizeRPCFacadeArguments(method string, arguments map[string]any) (map[s
 	return normalized, "success"
 }
 
-// canonicalRPCFacadeArgumentKey normalizes aliases for facade security checks.
-//
-// Comparing legacy and current Transmission spellings in one namespace keeps
-// alternate separators and casing from bypassing allowlists or path checks.
-//
-// Since: 2.0.0
-func canonicalRPCFacadeArgumentKey(key string) string {
-	var canonical strings.Builder
-	canonical.Grow(len(key))
-	var previous rune
-	for index, character := range key {
-		originalCharacter := character
-		if character == '_' {
-			character = '-'
-		}
-		if unicode.IsUpper(character) {
-			if index > 0 && previous != '-' && previous != '_' && !unicode.IsUpper(previous) {
-				canonical.WriteByte('-')
-			}
-			character = unicode.ToLower(character)
-		}
-		canonical.WriteRune(character)
-		previous = originalCharacter
-	}
-
-	switch canonical.String() {
-	case "cache-size-mib":
-		return "cache-size-mb"
-	case "peer-socket-tos":
-		return "peer-socket-diffserv"
-	case "remote-session-requres-authentication":
-		return "remote-session-requires-authentication"
-	default:
-		return strings.ToLower(canonical.String())
-	}
-}
-
-// rpcFacadeSessionSetArgumentKey returns the safe upstream session-set key.
-//
-// Remote applications receive only user-owned tuning settings; process,
-// scripting, listener, and port-forwarding controls remain appliance-owned.
-//
-// Since: 2.0.0
-func rpcFacadeSessionSetArgumentKey(canonicalKey string) (string, bool) {
-	switch canonicalKey {
-	case "alt-speed-down", "alt-speed-enabled", "alt-speed-time-begin",
-		"alt-speed-time-day", "alt-speed-time-enabled", "alt-speed-time-end",
-		"alt-speed-up", "blocklist-enabled", "cache-size-mb", "dht-enabled",
-		"download-dir", "download-queue-enabled", "download-queue-size",
-		"encryption", "idle-seeding-limit", "idle-seeding-limit-enabled",
-		"incomplete-dir", "incomplete-dir-enabled", "lpd-enabled",
-		"peer-limit-global", "peer-limit-per-torrent", "pex-enabled",
-		"queue-stalled-enabled", "queue-stalled-minutes", "rename-partial-files",
-		"seed-queue-enabled", "seed-queue-size", "speed-limit-down",
-		"speed-limit-down-enabled", "speed-limit-up", "speed-limit-up-enabled",
-		"start-added-torrents", "trash-original-torrent-files", "utp-enabled":
-		return canonicalKey, true
-	case "seed-ratio-limit":
-		return "seed_ratio_limit", true
-	case "seed-ratio-limited":
-		return "seed_ratio_limited", true
-	default:
-		return "", false
-	}
-}
-
 func (server *Server) rpcFacadeTorrentGet(
 	ctx context.Context,
 	arguments map[string]any,
 ) (any, string) {
-	fields, valid := rpcStringList(arguments["fields"])
+	fields, valid := rpcStringList(arguments[transmissionrpc.ArgumentFields])
 	if !valid || len(fields) == 0 {
-		return map[string]any{}, "torrent-get requires a fields array"
+		return map[string]any{}, transmissionrpc.MethodTorrentGet.String() + " requires a fields array"
 	}
 	format := "objects"
-	if value, found := arguments["format"]; found {
+	if value, found := arguments[transmissionrpc.ArgumentFormat]; found {
 		format, valid = value.(string)
 		if !valid || format != "objects" && format != "table" {
-			return map[string]any{}, "torrent-get format must be objects or table"
+			return map[string]any{}, transmissionrpc.MethodTorrentGet.String() + " format must be objects or table"
 		}
 	}
 	if format == "table" {
@@ -520,32 +463,38 @@ func (server *Server) rpcFacadeTorrentGet(
 		}
 	}
 
-	selections, recentlyActive, result := rpcTorrentSelections(arguments["ids"])
+	selections, recentlyActive, result := rpcTorrentSelections(arguments[transmissionrpc.ArgumentIDs])
 	if result != "success" {
 		return map[string]any{}, result
 	}
-	requestedID := stringInSlice(fields, "id")
-	requestedHash := stringInSlice(fields, "hashString")
+	requestedID := stringInSlice(fields, string(transmissionrpc.TorrentFieldID))
+	requestedHash := stringInSlice(fields, string(transmissionrpc.TorrentFieldHashString))
 	upstreamFields := append([]string(nil), fields...)
 	if !requestedID {
-		upstreamFields = append(upstreamFields, "id")
+		upstreamFields = append(upstreamFields, string(transmissionrpc.TorrentFieldID))
 	}
 	if !requestedHash {
-		upstreamFields = append(upstreamFields, "hashString")
+		upstreamFields = append(upstreamFields, string(transmissionrpc.TorrentFieldHashString))
 	}
 
 	merged := mergedTorrentResult{Torrents: []map[string]any{}, Removed: []int64{}, Complete: true}
 	seen := map[int64]struct{}{}
 	for _, selection := range selections {
-		partial := server.mergedTorrents(ctx, upstreamFields, selection)
+		partial := server.mergedTorrents(ctx, transmissionrpc.TorrentFields(upstreamFields), selection)
 		if rpcFacadeTorrentResultUnavailable(partial.Errors) {
 			return map[string]any{}, "Transmission is unavailable for one or more connections"
 		}
 		for _, skipped := range partial.Errors {
-			server.logger.Warn("compatible RPC skipped unknown torrent", "method", "torrent-get", "torrent", skipped)
+			server.logger.Warn(
+				"compatible RPC skipped unknown torrent",
+				"method",
+				transmissionrpc.MethodTorrentGet.String(),
+				"torrent",
+				skipped,
+			)
 		}
 		for _, torrent := range partial.Torrents {
-			identifier, identifierValid := integerValue(torrent["id"])
+			identifier, identifierValid := integerValue(torrent[string(transmissionrpc.TorrentFieldID)])
 			if identifierValid {
 				if _, duplicate := seen[identifier]; duplicate {
 					continue
@@ -554,18 +503,18 @@ func (server *Server) rpcFacadeTorrentGet(
 			}
 			delete(torrent, "connectionId")
 			if !requestedID {
-				delete(torrent, "id")
+				delete(torrent, string(transmissionrpc.TorrentFieldID))
 			}
 			if !requestedHash {
-				delete(torrent, "hashString")
+				delete(torrent, string(transmissionrpc.TorrentFieldHashString))
 			}
 			merged.Torrents = append(merged.Torrents, torrent)
 		}
 		merged.Removed = append(merged.Removed, partial.Removed...)
 	}
 	sort.SliceStable(merged.Torrents, func(left int, right int) bool {
-		leftID, leftValid := integerValue(merged.Torrents[left]["id"])
-		rightID, rightValid := integerValue(merged.Torrents[right]["id"])
+		leftID, leftValid := integerValue(merged.Torrents[left][string(transmissionrpc.TorrentFieldID)])
+		rightID, rightValid := integerValue(merged.Torrents[right][string(transmissionrpc.TorrentFieldID)])
 
 		return leftValid && rightValid && leftID < rightID
 	})
@@ -584,15 +533,15 @@ func (server *Server) rpcFacadeTorrentGet(
 			}
 			table = append(table, row)
 		}
-		response["torrents"] = table
+		response[transmissionrpc.ResponseTorrents] = table
 	} else {
-		response["torrents"] = merged.Torrents
+		response[transmissionrpc.ResponseTorrents] = merged.Torrents
 	}
 	if recentlyActive {
 		sort.Slice(merged.Removed, func(left int, right int) bool {
 			return merged.Removed[left] < merged.Removed[right]
 		})
-		response["removed"] = merged.Removed
+		response[transmissionrpc.ResponseRemoved] = merged.Removed
 	}
 
 	return response, "success"
@@ -623,14 +572,14 @@ func rpcTorrentSelections(value any) ([]any, bool, string) {
 			return []any{normalized}, false, "success"
 		}
 
-		return nil, false, "torrent-get ids contains an unsupported value"
+		return nil, false, transmissionrpc.MethodTorrentGet.String() + " ids contains an unsupported value"
 	}
 	if identifier, valid := rpcPositiveInteger(value); valid {
 		return []any{[]int64{identifier}}, false, "success"
 	}
 	values, ok := value.([]any)
 	if !ok {
-		return nil, false, "torrent-get ids must be an integer, hash, array, or recently-active"
+		return nil, false, transmissionrpc.MethodTorrentGet.String() + " ids must be an integer, hash, array, or recently-active"
 	}
 	identifiers := []int64{}
 	hashes := []string{}
@@ -642,11 +591,11 @@ func rpcTorrentSelections(value any) ([]any, bool, string) {
 		}
 		hash, valid := item.(string)
 		if !valid {
-			return nil, false, "torrent-get ids contains an invalid torrent identifier"
+			return nil, false, transmissionrpc.MethodTorrentGet.String() + " ids contains an invalid torrent identifier"
 		}
 		normalized, err := normalizeTorrentHashes([]string{hash})
 		if err != nil {
-			return nil, false, "torrent-get ids contains an invalid torrent hash"
+			return nil, false, transmissionrpc.MethodTorrentGet.String() + " ids contains an invalid torrent hash"
 		}
 		hashes = append(hashes, normalized[0])
 	}
@@ -666,13 +615,14 @@ func rpcTorrentSelections(value any) ([]any, bool, string) {
 
 func (server *Server) rpcTableFormatSupported(ctx context.Context) (bool, string) {
 	for _, daemon := range server.transmissionDaemons(ctx) {
-		var session map[string]any
-		if err := daemon.Client.Call(ctx, "session-get", nil, &session); err != nil {
+		session, err := daemon.Client.GetSession(ctx, transmissionrpc.GetSessionRequest{})
+		if err != nil {
 			return false, "Transmission is unavailable while checking table support"
 		}
-		version, valid := integerValue(session["rpc-version"])
-		if !valid || version < minimumTableFormatRPCVersion {
-			return false, "torrent-get table format is not supported by every Transmission daemon"
+		var version int64
+		if err := session.DecodeValue(transmissionrpc.SessionFieldRPCVersion, &version); err != nil ||
+			version < minimumTableFormatRPCVersion {
+			return false, transmissionrpc.MethodTorrentGet.String() + " table format is not supported by every Transmission daemon"
 		}
 	}
 
@@ -685,8 +635,8 @@ func (server *Server) rpcFacadeRoutedCall(
 	arguments map[string]any,
 ) (any, string) {
 	baseArguments := copyRPCArguments(arguments)
-	selectionValue, selectionPresent := baseArguments["ids"]
-	delete(baseArguments, "ids")
+	selectionValue, selectionPresent := baseArguments[transmissionrpc.ArgumentIDs]
+	delete(baseArguments, transmissionrpc.ArgumentIDs)
 
 	type routedCall struct {
 		daemon      transmissionrpc.Daemon
@@ -729,7 +679,7 @@ func (server *Server) rpcFacadeRoutedCall(
 			defer waitGroup.Done()
 			callArguments := copyRPCArguments(baseArguments)
 			if selectionPresent {
-				callArguments["ids"] = call.identifiers
+				callArguments[transmissionrpc.ArgumentIDs] = call.identifiers
 			}
 			errorsByCall[index] = call.daemon.Client.Call(ctx, method, callArguments, &results[index])
 		}()
@@ -741,10 +691,13 @@ func (server *Server) rpcFacadeRoutedCall(
 			successfulCalls++
 		}
 	}
-	if method == "torrent-set" && successfulCalls > 0 {
-		if labels, changed := baseArguments["labels"].([]string); changed {
+	if transmissionrpc.Method(method) == transmissionrpc.MethodTorrentSet && successfulCalls > 0 {
+		if labels, changed := baseArguments[transmissionrpc.ArgumentLabels].([]string); changed {
 			if _, err := server.saveTorrentLabels(ctx, labels); err != nil {
-				server.logInternalError("save labels used by compatible RPC torrent-set", err)
+				server.logInternalError(
+					"save labels used by compatible RPC "+transmissionrpc.MethodTorrentSet.String(),
+					err,
+				)
 
 				return map[string]any{}, "The torrent labels could not be saved"
 			}
@@ -756,13 +709,13 @@ func (server *Server) rpcFacadeRoutedCall(
 		if err != nil {
 			return map[string]any{}, server.rpcFacadeCallError(method, calls[index].daemon.ConnectionID, err)
 		}
-		if method == "torrent-rename-path" {
-			if daemonID, valid := integerValue(results[index]["id"]); valid {
+		if transmissionrpc.Method(method) == transmissionrpc.MethodTorrentRenamePath {
+			if daemonID, valid := integerValue(results[index][string(transmissionrpc.TorrentFieldID)]); valid {
 				facadeID, facadeError := transmissionrpc.FacadeID(calls[index].daemon.Slot, daemonID)
 				if facadeError != nil {
 					return map[string]any{}, "Transmission returned an invalid torrent identifier"
 				}
-				results[index]["id"] = facadeID
+				results[index][string(transmissionrpc.TorrentFieldID)] = facadeID
 			}
 		}
 		for key, value := range results[index] {
@@ -815,7 +768,7 @@ func (server *Server) rpcFacadeEveryCall(
 		}()
 	}
 	waitGroup.Wait()
-	if method == "session-set" {
+	if transmissionrpc.Method(method) == transmissionrpc.MethodSessionSet {
 		server.ensureRPCSessionDirectories(context.WithoutCancel(ctx), arguments)
 	}
 
@@ -846,7 +799,7 @@ func (server *Server) rpcFacadeBlocklistUpdate(ctx context.Context) (any, string
 		return map[string]any{}, "blocklist update failed: " + err.Error()
 	}
 
-	return map[string]any{"blocklist-size": totalRanges}, "success"
+	return map[string]any{transmissionrpc.ResponseBlocklistSize: totalRanges}, "success"
 }
 
 func (server *Server) rpcFacadeCallError(method string, connectionID string, err error) string {
@@ -872,11 +825,11 @@ func (server *Server) rpcFacadeTorrentAdd(
 	arguments map[string]any,
 ) (any, string) {
 	addArguments := copyRPCArguments(arguments)
-	filename, hasFilename := addArguments["filename"].(string)
-	metainfo, hasMetainfo := addArguments["metainfo"].(string)
+	filename, hasFilename := addArguments[transmissionrpc.ArgumentFilename].(string)
+	metainfo, hasMetainfo := addArguments[transmissionrpc.ArgumentMetainfo].(string)
 	if hasFilename == hasMetainfo || hasFilename && strings.TrimSpace(filename) == "" ||
 		hasMetainfo && strings.TrimSpace(metainfo) == "" {
-		return map[string]any{}, "torrent-add requires exactly one filename or metainfo"
+		return map[string]any{}, transmissionrpc.MethodTorrentAdd.String() + " requires exactly one filename or metainfo"
 	}
 	var decodedMetainfo []byte
 	var err error
@@ -893,7 +846,7 @@ func (server *Server) rpcFacadeTorrentAdd(
 			return map[string]any{}, torrentFileTooLargeMessage
 		}
 	}
-	if labelsValue, found := addArguments["labels"]; found {
+	if labelsValue, found := addArguments[transmissionrpc.ArgumentLabels]; found {
 		labels, valid := rpcStringList(labelsValue)
 		if !valid {
 			return map[string]any{}, "labels must be an array of strings"
@@ -901,7 +854,7 @@ func (server *Server) rpcFacadeTorrentAdd(
 		if err := validateLabels(labels); err != nil {
 			return map[string]any{}, err.Error()
 		}
-		addArguments["labels"] = labels
+		addArguments[transmissionrpc.ArgumentLabels] = labels
 	}
 
 	name, err := torrentSourceName(filename, decodedMetainfo)
@@ -940,13 +893,13 @@ func (server *Server) rpcFacadeTorrentAdd(
 
 		return map[string]any{}, "Settings are unavailable"
 	}
-	if err := prepareTorrentAddDownloadDirectory(
-		addArguments,
-		profile,
-		downloadPolicy,
-	); err != nil {
+	normalizedDownloadDirectory, err := downloadPolicy.normalizeDownloadDirectory(
+		profile.DownloadDirectory,
+	)
+	if err != nil {
 		return map[string]any{}, err.Error()
 	}
+	addArguments[transmissionrpc.ArgumentDownloadDirectory] = normalizedDownloadDirectory
 	target, err := server.defaultTransmissionDaemon(ctx)
 	if profile.ConnectionID != nil && server.transmissionClients != nil {
 		var found bool
@@ -962,19 +915,19 @@ func (server *Server) rpcFacadeTorrentAdd(
 		return map[string]any{}, "Transmission is unavailable for the selected connection"
 	}
 	requestedLabels := []string{}
-	if _, found := addArguments["labels"]; found {
-		requestedLabels, _ = rpcStringList(addArguments["labels"])
+	if _, found := addArguments[transmissionrpc.ArgumentLabels]; found {
+		requestedLabels, _ = rpcStringList(addArguments[transmissionrpc.ArgumentLabels])
 	}
 	mergedLabels, err := mergeTorrentLabels(requestedLabels, profile.Labels)
 	if err != nil {
 		return map[string]any{}, err.Error()
 	}
-	addArguments["labels"] = nonNilStrings(mergedLabels)
-	if _, found := addArguments["paused"]; !found {
-		addArguments["paused"] = profile.StartPaused
+	addArguments[transmissionrpc.ArgumentLabels] = nonNilStrings(mergedLabels)
+	if _, found := addArguments[transmissionrpc.ArgumentPaused]; !found {
+		addArguments[transmissionrpc.ArgumentPaused] = profile.StartPaused
 	}
 	if needsProfile {
-		addArguments["paused"] = true
+		addArguments[transmissionrpc.ArgumentPaused] = true
 	}
 	sourceHash, hashKnown, err := torrentSourceHash(filename, decodedMetainfo)
 	if err != nil {
@@ -1010,43 +963,75 @@ func (server *Server) rpcFacadeTorrentAdd(
 	if hashKnown {
 		if existing, found := refreshedLocations[sourceHash]; found &&
 			existing.ConnectionID != target.ConnectionID {
-			return map[string]any{"torrent-duplicate": rpcTorrentAddItem(existing.FacadeID, sourceHash, existing.Name)}, "success"
+			return map[string]any{
+				transmissionrpc.ResponseTorrentDuplicate: rpcTorrentAddItem(
+					existing.FacadeID,
+					sourceHash,
+					existing.Name,
+				),
+			}, "success"
 		}
 	}
 	if !hashKnown {
-		if pausedValue, found := addArguments["paused"]; found {
+		if pausedValue, found := addArguments[transmissionrpc.ArgumentPaused]; found {
 			if _, valid := pausedValue.(bool); !valid {
 				return map[string]any{}, "paused must be a boolean"
 			}
 		}
 	}
-	startAfterDuplicateCheck, err := prepareTorrentAddStart(
-		ctx,
-		target.Client,
-		addArguments,
-		hashKnown,
-	)
-	if err != nil {
-		return map[string]any{}, server.rpcFacadeCallError("session-get", target.ConnectionID, err)
+	startAfterDuplicateCheck := false
+	if !hashKnown {
+		if pausedValue, found := addArguments[transmissionrpc.ArgumentPaused]; found {
+			startAfterDuplicateCheck = !pausedValue.(bool)
+		} else {
+			session, sessionError := target.Client.GetSession(
+				ctx,
+				transmissionrpc.GetSessionRequest{Fields: []transmissionrpc.SessionField{
+					transmissionrpc.SessionFieldStartAddedTorrents,
+				}},
+			)
+			if sessionError != nil {
+				return map[string]any{}, server.rpcFacadeCallError(
+					transmissionrpc.MethodSessionGet.String(),
+					target.ConnectionID,
+					fmt.Errorf("read Transmission start-added-torrents: %w", sessionError),
+				)
+			}
+			if decodeError := session.DecodeValue(
+				transmissionrpc.SessionFieldStartAddedTorrents,
+				&startAfterDuplicateCheck,
+			); decodeError != nil {
+				return map[string]any{}, server.rpcFacadeCallError(
+					transmissionrpc.MethodSessionGet.String(),
+					target.ConnectionID,
+					fmt.Errorf("decode Transmission start-added-torrents: %w", decodeError),
+				)
+			}
+		}
+		addArguments[transmissionrpc.ArgumentPaused] = true
 	}
 
 	var result torrentAddRPCResult
-	if err := target.Client.Call(ctx, "torrent-add", addArguments, &result); err != nil {
-		return map[string]any{}, server.rpcFacadeCallError("torrent-add", target.ConnectionID, err)
+	if err := target.Client.Call(ctx, transmissionrpc.MethodTorrentAdd.String(), addArguments, &result); err != nil {
+		return map[string]any{}, server.rpcFacadeCallError(
+			transmissionrpc.MethodTorrentAdd.String(),
+			target.ConnectionID,
+			err,
+		)
 	}
 	if result.Added == nil && result.Duplicate == nil || result.Added != nil && result.Duplicate != nil {
-		return map[string]any{}, "Transmission returned an invalid torrent-add response"
+		return map[string]any{}, "Transmission returned an invalid " + transmissionrpc.MethodTorrentAdd.String() + " response"
 	}
 	added := result.Added
 	duplicate := false
-	responseKey := "torrent-added"
+	responseKey := transmissionrpc.ResponseTorrentAdded
 	if result.Duplicate != nil {
 		added = result.Duplicate
 		duplicate = true
-		responseKey = "torrent-duplicate"
+		responseKey = transmissionrpc.ResponseTorrentDuplicate
 	}
 	if added.ID <= 0 || strings.TrimSpace(added.HashString) == "" {
-		return map[string]any{}, "Transmission returned an invalid torrent-add response"
+		return map[string]any{}, "Transmission returned an invalid " + transmissionrpc.MethodTorrentAdd.String() + " response"
 	}
 	added.HashString = strings.ToLower(added.HashString)
 	facadeID, err := transmissionrpc.FacadeID(target.Slot, added.ID)
@@ -1054,19 +1039,29 @@ func (server *Server) rpcFacadeTorrentAdd(
 		return map[string]any{}, "Transmission returned an invalid torrent identifier"
 	}
 	if existing, found := refreshedLocations[added.HashString]; found && existing.ConnectionID != target.ConnectionID {
-		removeError := target.Client.Call(ctx, "torrent-remove", map[string]any{
-			"ids": []int64{added.ID}, "delete-local-data": false,
-		}, nil)
+		removeError := target.Client.RemoveTorrents(ctx, transmissionrpc.RemoveTorrentsRequest{
+			IDs:             []int64{added.ID},
+			DeleteLocalData: false,
+		})
 		if removeError != nil {
 			return map[string]any{}, "The cross-connection duplicate could not be removed"
 		}
 
-		return map[string]any{"torrent-duplicate": rpcTorrentAddItem(existing.FacadeID, added.HashString, existing.Name)}, "success"
+		return map[string]any{
+			transmissionrpc.ResponseTorrentDuplicate: rpcTorrentAddItem(
+				existing.FacadeID,
+				added.HashString,
+				existing.Name,
+			),
+		}, "success"
 	}
 	if !duplicate {
-		labels, _ := rpcStringList(addArguments["labels"])
+		labels, _ := rpcStringList(addArguments[transmissionrpc.ArgumentLabels])
 		if _, err := server.saveTorrentLabels(ctx, labels); err != nil {
-			server.logInternalError("save labels used by compatible RPC torrent-add", err)
+			server.logInternalError(
+				"save labels used by compatible RPC "+transmissionrpc.MethodTorrentAdd.String(),
+				err,
+			)
 
 			return map[string]any{}, "The torrent labels could not be saved"
 		}
@@ -1092,7 +1087,7 @@ func (server *Server) rpcFacadeTorrentAdd(
 			)
 			if labelError != nil {
 				return map[string]any{}, server.rpcFacadeCallError(
-					"torrent-get",
+					transmissionrpc.MethodTorrentGet.String(),
 					target.ConnectionID,
 					labelError,
 				)
@@ -1101,10 +1096,14 @@ func (server *Server) rpcFacadeTorrentAdd(
 			if labelError != nil {
 				return map[string]any{}, labelError.Error()
 			}
-			profileArguments["labels"] = duplicateLabels
+			profileArguments.Changes[transmissionrpc.TorrentArgumentLabels] = duplicateLabels
 		}
-		if err := target.Client.Call(profileContext, "torrent-set", profileArguments, nil); err != nil {
-			return map[string]any{}, server.rpcFacadeCallError("torrent-set", target.ConnectionID, err)
+		if err := target.Client.SetTorrents(profileContext, profileArguments); err != nil {
+			return map[string]any{}, server.rpcFacadeCallError(
+				transmissionrpc.MethodTorrentSet.String(),
+				target.ConnectionID,
+				err,
+			)
 		}
 		if duplicate {
 			if _, err := server.saveTorrentLabels(profileContext, duplicateLabels); err != nil {
@@ -1114,8 +1113,15 @@ func (server *Server) rpcFacadeTorrentAdd(
 			}
 		}
 		if profile.Options.Queue == "top" {
-			if err := target.Client.Call(profileContext, "queue-move-top", map[string]any{"ids": []int64{added.ID}}, nil); err != nil {
-				return map[string]any{}, server.rpcFacadeCallError("queue-move-top", target.ConnectionID, err)
+			if err := target.Client.MoveTorrentsToQueueTop(
+				profileContext,
+				transmissionrpc.TorrentSelectionRequest{IDs: []int64{added.ID}},
+			); err != nil {
+				return map[string]any{}, server.rpcFacadeCallError(
+					transmissionrpc.MethodQueueMoveTop.String(),
+					target.ConnectionID,
+					err,
+				)
 			}
 		}
 		if namedProfile {
@@ -1150,13 +1156,15 @@ func (server *Server) rpcFacadeTorrentAdd(
 		}
 	}
 	if startAfterDuplicateCheck && !duplicate {
-		if err := target.Client.Call(
+		if err := target.Client.StartTorrents(
 			startContext,
-			"torrent-start",
-			map[string]any{"ids": []int64{added.ID}},
-			nil,
+			transmissionrpc.TorrentSelectionRequest{IDs: []int64{added.ID}},
 		); err != nil {
-			return map[string]any{}, server.rpcFacadeCallError("torrent-start", target.ConnectionID, err)
+			return map[string]any{}, server.rpcFacadeCallError(
+				transmissionrpc.MethodTorrentStart.String(),
+				target.ConnectionID,
+				err,
+			)
 		}
 	}
 	server.rememberTorrentLocation(added.HashString, torrentLocation{
@@ -1197,7 +1205,11 @@ func (server *Server) notifyProfileChoiceNeeded(
 }
 
 func rpcTorrentAddItem(identifier int64, hash string, name string) map[string]any {
-	return map[string]any{"id": identifier, "hashString": hash, "name": name}
+	return map[string]any{
+		string(transmissionrpc.TorrentFieldID):         identifier,
+		string(transmissionrpc.TorrentFieldHashString): hash,
+		string(transmissionrpc.TorrentFieldName):       name,
+	}
 }
 
 // rpcTorrentAddProfileSelection records the winning match and any unresolved tie.
@@ -1213,7 +1225,7 @@ func rpcTorrentAddProfile(
 	profiles []storage.TorrentProfile,
 	defaultProfile storage.TorrentProfile,
 ) rpcTorrentAddProfileSelection {
-	if requestedDirectory, valid := arguments["download-dir"].(string); valid {
+	if requestedDirectory, valid := arguments[transmissionrpc.ArgumentDownloadDirectory].(string); valid {
 		for _, profile := range profiles {
 			if torrentAddDownloadDirectoryMatches(
 				requestedDirectory,
@@ -1230,7 +1242,7 @@ func rpcTorrentAddProfile(
 		}
 	}
 
-	if requestedLabels, valid := rpcStringList(arguments["labels"]); valid {
+	if requestedLabels, valid := rpcStringList(arguments[transmissionrpc.ArgumentLabels]); valid {
 		for _, profile := range profiles {
 			for _, requestedLabel := range requestedLabels {
 				if strings.EqualFold(requestedLabel, profile.Name) ||
@@ -1332,22 +1344,23 @@ func readRPCTorrentLabels(
 	daemon transmissionrpc.Daemon,
 	id int64,
 ) ([]string, error) {
-	var response struct {
-		Torrents []struct {
-			Labels []string `json:"labels"`
-		} `json:"torrents"`
-	}
-	if err := daemon.Client.Call(ctx, "torrent-get", map[string]any{
-		"fields": []string{"labels"},
-		"ids":    []int64{id},
-	}, &response); err != nil {
+	response, err := daemon.Client.ListTorrents(ctx, transmissionrpc.ListTorrentsRequest{
+		Fields: []transmissionrpc.TorrentField{transmissionrpc.TorrentFieldLabels},
+		IDs:    []int64{id},
+	})
+	if err != nil {
 		return nil, err
 	}
 	if len(response.Torrents) != 1 {
 		return nil, errors.New("duplicate torrent labels are unavailable")
 	}
 
-	return response.Torrents[0].Labels, nil
+	var labels []string
+	if err := response.Torrents[0].DecodeValue(transmissionrpc.TorrentFieldLabels, &labels); err != nil {
+		return nil, err
+	}
+
+	return labels, nil
 }
 
 func rpcPositiveInteger(value any) (int64, bool) {

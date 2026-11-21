@@ -9,25 +9,37 @@ import {
   mergeTorrentOrganizationUpdate,
 } from '../src/web/torrent-organization.ts';
 
-import type { Web_Api_TorrentOrganization } from '../src/types/web/api.d.ts';
+import type {
+  Tests_Web_TorrentOrganization_EditedOrganization,
+  Tests_Web_TorrentOrganization_OpenedOrganization,
+  Tests_Web_TorrentOrganization_Organization_Labels,
+  Tests_Web_TorrentOrganization_Organization_Returns,
+  Tests_Web_TorrentOrganization_Organization_Revision,
+  Tests_Web_TorrentOrganization_Result,
+} from '../src/types/tests/web/torrent-organization.test.d.ts';
 
 /**
- * Torrent Organization Test - Creates organization.
+ * Torrent Organization - Organization.
  *
  * Supplies a compact labels-only server revision for update and conflict tests.
+ *
+ * @param {Tests_Web_TorrentOrganization_Organization_Revision} revision - Revision.
+ * @param {Tests_Web_TorrentOrganization_Organization_Labels}   labels   - Labels.
+ *
+ * @returns {Tests_Web_TorrentOrganization_Organization_Returns}
  *
  * @since 2.0.0
  */
 const organization = (
-  revision: number,
-  labels: string[],
-): Web_Api_TorrentOrganization => ({
+  revision: Tests_Web_TorrentOrganization_Organization_Revision,
+  labels: Tests_Web_TorrentOrganization_Organization_Labels,
+): Tests_Web_TorrentOrganization_Organization_Returns => ({
   labels,
   revision,
 });
 
-describe('torrent organization updates', (): void => {
-  it('sends deleted and renamed labels as explicit operations', (): void => {
+describe('torrent organization updates', () => {
+  it('sends deleted and renamed labels as explicit operations', () => {
     expect(buildTorrentOrganizationUpdate(7, [
       'Archive',
       'Film',
@@ -61,14 +73,16 @@ describe('torrent organization updates', (): void => {
         to: 'Movies',
       }],
     });
+
+    return;
   });
 
-  it('replays removals, renames, and additions over a newer revision', (): void => {
-    const openedOrganization = organization(5, [
+  it('replays removals, renames, and additions over a newer revision', () => {
+    const openedOrganization: Tests_Web_TorrentOrganization_OpenedOrganization = organization(5, [
       'Archive',
       'Film',
     ]);
-    const editedOrganization = buildTorrentOrganizationUpdate(
+    const editedOrganization: Tests_Web_TorrentOrganization_EditedOrganization = buildTorrentOrganizationUpdate(
       openedOrganization['revision'],
       openedOrganization['labels'],
       [
@@ -84,7 +98,7 @@ describe('torrent organization updates', (): void => {
         },
       ],
     );
-    const result = mergeTorrentOrganizationUpdate(
+    const result: Tests_Web_TorrentOrganization_Result = mergeTorrentOrganizationUpdate(
       openedOrganization,
       editedOrganization,
       organization(6, [
@@ -107,11 +121,13 @@ describe('torrent organization updates', (): void => {
         to: 'Movies',
       }],
     });
+
+    return;
   });
 
-  it('preserves a case-only rename', (): void => {
-    const openedOrganization = organization(9, ['Movies']);
-    const editedOrganization = buildTorrentOrganizationUpdate(
+  it('preserves a case-only rename', () => {
+    const openedOrganization: Tests_Web_TorrentOrganization_OpenedOrganization = organization(9, ['Movies']);
+    const editedOrganization: Tests_Web_TorrentOrganization_EditedOrganization = buildTorrentOrganizationUpdate(
       openedOrganization['revision'],
       openedOrganization['labels'],
       [{
@@ -120,7 +136,7 @@ describe('torrent organization updates', (): void => {
         value: 'movies',
       }],
     );
-    const result = mergeTorrentOrganizationUpdate(
+    const result: Tests_Web_TorrentOrganization_Result = mergeTorrentOrganizationUpdate(
       openedOrganization,
       editedOrganization,
       organization(10, [
@@ -129,9 +145,13 @@ describe('torrent organization updates', (): void => {
       ]),
     );
 
-    expect(result.labels).toEqual([
+    expect(result['labels']).toEqual([
       'movies',
       'Shows',
     ]);
+
+    return;
   });
+
+  return;
 });

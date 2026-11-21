@@ -1,21 +1,30 @@
+import { chatPlatformWebhookPlaceholderUrl } from '@/web/chat-platform.js';
+
 import type {
-  Web_Notifications_Field,
-  Web_Notifications_Service,
-  Web_Notifications_ServiceDefinition,
-} from '@/types/web/notifications.d.ts';
+  Web_NotificationServices_DefaultValues_Returns,
+  Web_NotificationServices_DefaultValues_Service,
+  Web_NotificationServices_FindNotificationService_Returns,
+  Web_NotificationServices_FindNotificationService_Service,
+  Web_NotificationServices_NotificationServiceIssue_Attempted,
+  Web_NotificationServices_NotificationServiceIssue_Returns,
+  Web_NotificationServices_NotificationServiceIssue_Service,
+  Web_NotificationServices_NotificationServices,
+  Web_NotificationServices_NotificationServiceValues_Returns,
+  Web_NotificationServices_NotificationServiceValues_Service,
+} from '@/types/web/notification-services.d.ts';
 
 // The services a destination can use, in the order the dialog offers them, with the
 // fields each one needs. Secret fields are never shown again after they're saved.
 
 /**
- * Notification Services.
+ * Notification Services - Notification Services.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
  * @since 2.0.0
  */
-export const notificationServices: Web_Notifications_ServiceDefinition[] = [
+export const notificationServices: Web_NotificationServices_NotificationServices = [
   {
     fields: [
       {
@@ -86,7 +95,7 @@ export const notificationServices: Web_Notifications_ServiceDefinition[] = [
       key: 'webhookUrl',
       kind: 'password',
       label: 'Webhook URL',
-      placeholder: 'e.g. https://discord.com/api/webhooks/…',
+      placeholder: `e.g. ${chatPlatformWebhookPlaceholderUrl}`,
       secret: true,
     }],
     key: 'discord',
@@ -290,64 +299,73 @@ export const notificationServices: Web_Notifications_ServiceDefinition[] = [
 // a value the console doesn't know yet.
 
 /**
- * Notification Services - Finds notification service.
+ * Notification Services - Find Notification Service.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @param {Web_NotificationServices_FindNotificationService_Service} service - Service.
+ *
+ * @returns {Web_NotificationServices_FindNotificationService_Returns}
+ *
  * @since 2.0.0
  */
-export const findNotificationService = (service: Web_Notifications_Service): Web_Notifications_ServiceDefinition => (
-  notificationServices.find((definition: Web_Notifications_ServiceDefinition): boolean => definition['key'] === service) ?? notificationServices[0]!
-);
+export const findNotificationService = (service: Web_NotificationServices_FindNotificationService_Service): Web_NotificationServices_FindNotificationService_Returns => {
+  return notificationServices.find((definition) => definition['key'] === service) ?? notificationServices[0]!;
+};
 
 // defaultValues gives a service's fields their starting values, like port 587 for email.
 
 /**
- * Notification Services - Default values.
+ * Notification Services - Default Values.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @param {Web_NotificationServices_DefaultValues_Service} service - Service.
+ *
+ * @returns {Web_NotificationServices_DefaultValues_Returns}
+ *
  * @since 2.0.0
  */
-const defaultValues = (service: Web_Notifications_Service): Record<string, string> => Object.fromEntries(
-  findNotificationService(service)['fields'].map((field: Web_Notifications_Field): [string, string] => [
-    field['key'],
-    field['defaultValue'] ?? '',
-  ]),
-);
+const defaultValues = (service: Web_NotificationServices_DefaultValues_Service): Web_NotificationServices_DefaultValues_Returns => {
+  return Object.fromEntries(
+    findNotificationService(service)['fields'].map((field) => [
+      field['key'],
+      field['defaultValue'] ?? '',
+    ]),
+  );
+};
 
 /**
- * Notification Services - Values for selection.
+ * Notification Services - Notification Service Values.
  *
  * Clears service-specific fields for the placeholder and otherwise returns
  * only the selected service's configured defaults.
  *
- * @param {Web_Notifications_Service | ''} service - Service.
+ * @param {Web_NotificationServices_NotificationServiceValues_Service} service - Service.
  *
- * @returns {Record<string, string>}
+ * @returns {Web_NotificationServices_NotificationServiceValues_Returns}
  *
  * @since 2.0.0
  */
-export const notificationServiceValues = (
-  service: Web_Notifications_Service | '',
-): Record<string, string> => (service === '') ? {} : defaultValues(service);
+export const notificationServiceValues = (service: Web_NotificationServices_NotificationServiceValues_Service): Web_NotificationServices_NotificationServiceValues_Returns => {
+  return (service === '') ? {} : defaultValues(service);
+};
 
 /**
- * Notification Services - Required issue.
+ * Notification Services - Notification Service Issue.
  *
  * Shows the required choice only after the owner submits the blank service.
  * Server-provided field issues continue through the shared API error path.
  *
- * @param {Web_Notifications_Service | ''} service   - Service.
- * @param {boolean}                        attempted - Attempted.
+ * @param {Web_NotificationServices_NotificationServiceIssue_Service}   service   - Service.
+ * @param {Web_NotificationServices_NotificationServiceIssue_Attempted} attempted - Attempted.
  *
- * @returns {string}
+ * @returns {Web_NotificationServices_NotificationServiceIssue_Returns}
  *
  * @since 2.0.0
  */
-export const notificationServiceIssue = (
-  service: Web_Notifications_Service | '',
-  attempted: boolean,
-): string => (attempted && service === '') ? 'Choose a service.' : '';
+export const notificationServiceIssue = (service: Web_NotificationServices_NotificationServiceIssue_Service, attempted: Web_NotificationServices_NotificationServiceIssue_Attempted): Web_NotificationServices_NotificationServiceIssue_Returns => {
+  return (attempted === true && service === '') ? 'Choose a service.' : '';
+};

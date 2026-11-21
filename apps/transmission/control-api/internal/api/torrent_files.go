@@ -13,6 +13,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/directorybrowser"
+	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/transmissionrpc"
 )
 
 const (
@@ -63,12 +64,16 @@ func (server *Server) handleDownloadTorrentFiles(
 
 	ctx := request.Context()
 	// mergedTorrents needs each torrent's id, and Transmission sends only the fields asked for.
-	result := server.mergedTorrents(ctx, []string{"hashString", "id", "name"}, hashes)
+	result := server.mergedTorrents(ctx, []transmissionrpc.TorrentField{
+		transmissionrpc.TorrentFieldHashString,
+		transmissionrpc.TorrentFieldID,
+		transmissionrpc.TorrentFieldName,
+	}, hashes)
 	locations := make(map[string]torrentLocation, len(result.Torrents))
 	for _, torrent := range result.Torrents {
-		hash, _ := torrent["hashString"].(string)
+		hash, _ := torrent[string(transmissionrpc.TorrentFieldHashString)].(string)
 		connectionID, _ := torrent["connectionId"].(string)
-		name, _ := torrent["name"].(string)
+		name, _ := torrent[string(transmissionrpc.TorrentFieldName)].(string)
 		if hash != "" && connectionID != "" {
 			locations[strings.ToLower(hash)] = torrentLocation{ConnectionID: connectionID, Name: name}
 		}

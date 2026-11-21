@@ -10,6 +10,7 @@ import (
 	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/directorybrowser"
 	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/settings"
 	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/storage"
+	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/transmissionrpc"
 )
 
 const (
@@ -460,12 +461,15 @@ func (server *Server) readStorageDirectoryRules(
 			ProfileName: profile.Name + " profile",
 		})
 	}
-	torrentResult := server.mergedTorrents(ctx, []string{"id", "downloadDir"}, nil)
+	torrentResult := server.mergedTorrents(ctx, []transmissionrpc.TorrentField{
+		transmissionrpc.TorrentFieldID,
+		transmissionrpc.TorrentFieldDownloadDirectory,
+	}, nil)
 	torrentDirectories := make(map[string]struct{}, len(torrentResult.Torrents))
 	torrentLocationsAvailable := torrentResult.Complete
 	if torrentLocationsAvailable {
 		for _, torrent := range torrentResult.Torrents {
-			downloadDirectory, valid := torrent["downloadDir"].(string)
+			downloadDirectory, valid := torrent[string(transmissionrpc.TorrentFieldDownloadDirectory)].(string)
 			if !valid || downloadDirectory == "" {
 				torrentLocationsAvailable = false
 				break

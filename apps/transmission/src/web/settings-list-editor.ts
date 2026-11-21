@@ -6,7 +6,7 @@ import type {
 } from '@/types/web/settings-list-editor.d.ts';
 
 /**
- * Settings List Editor - Get setting list empty state.
+ * Settings List Editor - Get Setting List Empty State.
  *
  * Selects empty-state copy without coupling the shared editor to one setting.
  * Blocklist sources get task-specific guidance while future lists stay neutral.
@@ -34,7 +34,7 @@ export const getSettingListEmptyState = (
 };
 
 /**
- * Settings List Editor - Normalize setting list values.
+ * Settings List Editor - Normalize Setting List Values.
  *
  * Keeps blank rows in the editor while sending only trimmed, non-empty values
  * into the Settings draft and save transaction.
@@ -47,6 +47,8 @@ export const getSettingListEmptyState = (
  */
 export const normalizeSettingListValues = (
   values: Web_SettingsListEditor_NormalizeSettingListValues_Values,
-): Web_SettingsListEditor_NormalizeSettingListValues_Returns => values
-  .map((value: string): string => value.trim())
-  .filter((value: string): boolean => value !== '');
+): Web_SettingsListEditor_NormalizeSettingListValues_Returns => {
+  return values
+    .map((value) => value.trim())
+    .filter((value) => value !== '');
+};

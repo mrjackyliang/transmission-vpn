@@ -1,22 +1,33 @@
 import { appConfig } from '@/web/app-config.ts';
 
-import type { ReactElement } from 'react';
-
 import type {
-  Web_Components_Button_Props,
-  Web_Components_Icon_Name,
-  Web_Components_Icon_Props,
-} from '@/types/web/components.d.ts';
+  Web_Primitives_BrandMark_Returns,
+  Web_Primitives_Button_Block,
+  Web_Primitives_Button_BlockClassName,
+  Web_Primitives_Button_Children,
+  Web_Primitives_Button_Disabled,
+  Web_Primitives_Button_Icon,
+  Web_Primitives_Button_OnClick,
+  Web_Primitives_Button_Props,
+  Web_Primitives_Button_Returns,
+  Web_Primitives_Button_Type,
+  Web_Primitives_Button_Variant,
+  Web_Primitives_Icon_Name,
+  Web_Primitives_Icon_Props,
+  Web_Primitives_Icon_Returns,
+  Web_Primitives_Icon_Size,
+  Web_Primitives_IconElements,
+} from '@/types/web/primitives.d.ts';
 
 /**
- * Primitives - Icon elements.
+ * Primitives - Icon Elements.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
  * @since 2.0.0
  */
-const iconElements: Record<Web_Components_Icon_Name, ReactElement> = {
+const iconElements: Web_Primitives_IconElements = {
   /*
    * Lucide Icons v1.61.0 - ISC License
    * Copyright (c) 2026 Lucide Icons and Contributors
@@ -362,7 +373,7 @@ const iconElements: Record<Web_Components_Icon_Name, ReactElement> = {
 };
 
 /**
- * Primitives - Password manager ignore.
+ * Primitives - Password Manager Ignore.
  *
  * Marks a field that holds another service's sign-in or secret, so 1Password, Bitwarden,
  * LastPass, and Dashlane leave it alone. Pair it with autoComplete="off" for the browser.
@@ -382,37 +393,45 @@ export const passwordManagerIgnore = {
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
+ * @param {Web_Primitives_Icon_Props} props - Props.
+ *
+ * @returns {Web_Primitives_Icon_Returns}
+ *
  * @since 2.0.0
  */
-export const Icon = ({
-  name,
-  size = 20,
-}: Web_Components_Icon_Props): ReactElement => (
-  <svg
-    aria-hidden="true"
-    className="icon"
-    fill="none"
-    height={size}
-    stroke="currentColor"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    strokeWidth="2"
-    viewBox="0 0 24 24"
-    width={size}
-  >
-    {iconElements[name]}
-  </svg>
-);
+export const Icon = (props: Web_Primitives_Icon_Props): Web_Primitives_Icon_Returns => {
+  const name: Web_Primitives_Icon_Name = props['name'];
+  const size: Web_Primitives_Icon_Size = props['size'] ?? 20;
+
+  return (
+    <svg
+      aria-hidden="true"
+      className="icon"
+      fill="none"
+      height={size}
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2"
+      viewBox="0 0 24 24"
+      width={size}
+    >
+      {iconElements[name]}
+    </svg>
+  );
+};
 
 /**
- * Primitives - Brand mark.
+ * Primitives - Brand Mark.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @returns {Web_Primitives_BrandMark_Returns}
+ *
  * @since 2.0.0
  */
-export const BrandMark = (): ReactElement => (
+export const BrandMark = (): Web_Primitives_BrandMark_Returns => (
   <img alt="" className="brand-mark" src={appConfig['brandMarkUrl']} />
 );
 
@@ -422,24 +441,31 @@ export const BrandMark = (): ReactElement => (
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
+ * @param {Web_Primitives_Button_Props} props - Props.
+ *
+ * @returns {Web_Primitives_Button_Returns}
+ *
  * @since 2.0.0
  */
-export const Button = ({
-  block = false,
-  children,
-  disabled = false,
-  icon,
-  onClick,
-  type = 'button',
-  variant = 'secondary',
-}: Web_Components_Button_Props): ReactElement => (
-  <button
-    className={`button button-${variant}${(block) ? ' button-block' : ''}`}
-    disabled={disabled}
-    onClick={onClick}
-    type={type}
-  >
-    {(icon === undefined) ? null : <Icon name={icon} size={16} />}
-    <span>{children}</span>
-  </button>
-);
+export const Button = (props: Web_Primitives_Button_Props): Web_Primitives_Button_Returns => {
+  const block: Web_Primitives_Button_Block = props['block'] ?? false;
+  const children: Web_Primitives_Button_Children = props['children'];
+  const disabled: Web_Primitives_Button_Disabled = props['disabled'] ?? false;
+  const icon: Web_Primitives_Button_Icon = props['icon'];
+  const onClick: Web_Primitives_Button_OnClick = props['onClick'];
+  const type: Web_Primitives_Button_Type = props['type'] ?? 'button';
+  const variant: Web_Primitives_Button_Variant = props['variant'] ?? 'secondary';
+  const blockClassName: Web_Primitives_Button_BlockClassName = (block === true) ? ' button-block' : '';
+
+  return (
+    <button
+      className={`button button-${variant}${blockClassName}`}
+      disabled={disabled}
+      onClick={onClick}
+      type={type}
+    >
+      {(icon === undefined) ? null : <Icon name={icon} size={16} />}
+      <span>{children}</span>
+    </button>
+  );
+};

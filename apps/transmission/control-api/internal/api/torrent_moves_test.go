@@ -632,13 +632,13 @@ func TestTorrentMoveSelectionArgumentsNeverSendEmptyLists(testingObject *testing
 				FileStats: scenario.fileStats,
 			}, "adadadadadadadadadadadadadadadadadadadad")
 			for _, key := range scenario.present {
-				value, found := arguments[key]
+				value, found := arguments.Changes[transmissionrpc.TorrentArgument(key)]
 				if !found || reflect.ValueOf(value).Len() == 0 {
 					testingObject.Fatalf("%s = %#v, found %t", key, value, found)
 				}
 			}
 			for _, key := range scenario.absent {
-				if value, found := arguments[key]; found {
+				if value, found := arguments.Changes[transmissionrpc.TorrentArgument(key)]; found {
 					testingObject.Fatalf("unexpected %s = %#v", key, value)
 				}
 			}

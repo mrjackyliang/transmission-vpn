@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
-	"net"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -38,19 +37,18 @@ func TestControllerSocketStatus(testingObject *testing.T) {
 	serveContext, cancelServe := context.WithCancel(context.Background())
 	serveErrors := make(chan error, 1)
 	go func() { serveErrors <- daemon.Serve(serveContext) }()
-	waitForSocket(testingObject, daemon.config.SocketPath, serveErrors)
+	// The ready marker follows both listeners and their chmod calls, so the socket
+	// modes below are final once it exists.
+	waitForControllerReady(testingObject, daemon, serveErrors)
 
-	// Serve opens the direct socket and sets its mode after the control socket is
-	// already listening, so the check waits for that final mode.
-	var directInfo os.FileInfo
-	var err error
-	for attempt := 0; attempt < 100; attempt++ {
-		directInfo, err = os.Stat(daemon.config.DirectSocketPath)
-		if err == nil && directInfo.Mode()&os.ModeSocket != 0 && directInfo.Mode().Perm() == 0o660 {
-			break
-		}
-		time.Sleep(10 * time.Millisecond)
+	controlInfo, err := os.Stat(daemon.config.SocketPath)
+	if err != nil {
+		testingObject.Fatalf("stat controller socket: %v", err)
 	}
+	if controlInfo.Mode()&os.ModeSocket == 0 || controlInfo.Mode().Perm() != 0o660 {
+		testingObject.Fatalf("controller socket mode = %v, want a 0660 socket", controlInfo.Mode())
+	}
+	directInfo, err := os.Stat(daemon.config.DirectSocketPath)
 	if err != nil {
 		testingObject.Fatalf("stat direct connection socket: %v", err)
 	}
@@ -73,7 +71,7 @@ func TestControllerSocketStatus(testingObject *testing.T) {
 		if err != nil {
 			testingObject.Fatalf("controller shutdown: %v", err)
 		}
-	case <-time.After(3 * time.Second):
+	case <-time.After(controllerReadyTimeout):
 		testingObject.Fatal("controller did not stop after cancellation")
 	}
 }
@@ -433,7 +431,7 @@ func TestNewerUnknownDisconnectRejectsAnOlderConnect(testingObject *testing.T) {
 		true,
 		connection,
 		3,
-		time.Second,
+		testConnectLimit,
 	)
 	if err != nil || status.State != "protected" {
 		testingObject.Fatalf("newer connect = %+v, %v", status, err)
@@ -1166,20 +1164,53 @@ func (session *testTunnelSession) isStopped() bool {
 	return session.stopped
 }
 
-func waitForSocket(testingObject *testing.T, socketPath string, serveErrors <-chan error) {
-	testingObject.Helper()
-	for attempt := 0; attempt < 100; attempt++ {
-		if connection, err := net.Dial("unix", socketPath); err == nil {
-			_ = connection.Close()
+// controllerReadyTimeout bounds how long a test waits for Serve to finish startup.
+//
+// Startup runs the firewall helper and every slot's network preparation before it
+// listens, which can take seconds on a loaded build host. The wait ends as soon as
+// the ready marker appears, so this only caps a genuinely stuck controller.
+//
+// Since: 2.4.1
+const controllerReadyTimeout = 30 * time.Second
 
+// testConnectLimit bounds a connect attempt that a test expects to succeed.
+//
+// The image build runs every package's tests at once, so a fake tunnel can take
+// longer than a second to come up. The attempt returns as soon as it is protected,
+// so this only caps a genuinely stuck connect.
+//
+// Since: 2.4.1
+const testConnectLimit = 30 * time.Second
+
+// waitForControllerReady blocks until Serve has written its ready marker.
+//
+// Serve writes the marker only after both sockets listen with their final
+// permissions, so tests that wait for it never race socket creation or chmod.
+// A Serve error before readiness fails the test at once instead of timing out.
+//
+// Since: 2.4.1
+func waitForControllerReady(testingObject *testing.T, daemon *Daemon, serveErrors <-chan error) {
+	testingObject.Helper()
+	markerPath := filepath.Join(daemon.config.RuntimeDirectory, "services", "vpn-controller.ready")
+	deadline := time.NewTimer(controllerReadyTimeout)
+	defer deadline.Stop()
+	ticker := time.NewTicker(5 * time.Millisecond)
+	defer ticker.Stop()
+
+	for {
+		if _, err := os.Stat(markerPath); err == nil {
 			return
 		}
 		select {
 		case err := <-serveErrors:
-			testingObject.Fatalf("controller stopped before creating its socket: %v", err)
-		default:
+			testingObject.Fatalf("controller stopped before it was ready: %v", err)
+		case <-deadline.C:
+			testingObject.Fatalf(
+				"controller was not ready within %s: %s",
+				controllerReadyTimeout,
+				daemon.config.SocketPath,
+			)
+		case <-ticker.C:
 		}
-		time.Sleep(10 * time.Millisecond)
 	}
-	testingObject.Fatalf("controller socket was not created: %s", socketPath)
 }

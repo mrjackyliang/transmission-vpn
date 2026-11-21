@@ -62,7 +62,7 @@ type daemonProcess struct {
 	Entry            daemonEntry
 	ProcessID        int
 	PeerPort         int
-	Client           transmissionrpc.Caller
+	Client           *transmissionrpc.Adapter
 	Ready            bool
 	ReloadPending    bool
 	BlocklistEnabled bool
@@ -392,7 +392,7 @@ func (runner *runner) superviseDaemon(ctx context.Context, entry daemonEntry) {
 			PeerPort:     peerPort,
 		})
 
-		client, clientError := transmissionrpc.NewClient(
+		rpcClient, clientError := transmissionrpc.NewClient(
 			fmt.Sprintf("http://127.0.0.1:%d/transmission/rpc", rpcPort),
 			5*time.Second,
 		)
@@ -413,6 +413,7 @@ func (runner *runner) superviseDaemon(ctx context.Context, entry daemonEntry) {
 
 			continue
 		}
+		client := transmissionrpc.NewAdapter(rpcClient)
 
 		command := exec.Command(
 			runner.options.DaemonPath,
@@ -573,7 +574,7 @@ func (runner *runner) setDaemonProcess(
 	entry daemonEntry,
 	processID int,
 	peerPort int,
-	client transmissionrpc.Caller,
+	client *transmissionrpc.Adapter,
 	preparedRevision uint64,
 ) {
 	runner.processMutex.Lock()

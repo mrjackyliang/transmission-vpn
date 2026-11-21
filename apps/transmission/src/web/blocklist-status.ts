@@ -4,9 +4,11 @@ import type {
   Web_BlocklistStatus_FormatBlocklistCopyDate_Returns,
   Web_BlocklistStatus_FormatBlocklistCopyDate_Value,
   Web_BlocklistStatus_FormatBlocklistLastUpdated_Now,
+  Web_BlocklistStatus_FormatBlocklistLastUpdated_RelativeTime,
   Web_BlocklistStatus_FormatBlocklistLastUpdated_Returns,
   Web_BlocklistStatus_FormatBlocklistLastUpdated_Status,
   Web_BlocklistStatus_FormatBlocklistNextUpdate_Now,
+  Web_BlocklistStatus_FormatBlocklistNextUpdate_RelativeTime,
   Web_BlocklistStatus_FormatBlocklistNextUpdate_Returns,
   Web_BlocklistStatus_FormatBlocklistNextUpdate_Status,
   Web_BlocklistStatus_FormatBlocklistSourceLine_CopyDate,
@@ -33,7 +35,7 @@ import type {
 } from '@/types/web/blocklist-status.d.ts';
 
 /**
- * Blocklist Status - Format blocklist copy date.
+ * Blocklist Status - Format Blocklist Copy Date.
  *
  * Keeps the last-good copy date compact enough for one source status line.
  * Invalid timestamps are omitted instead of presenting misleading recovery text.
@@ -50,7 +52,7 @@ const formatBlocklistCopyDate = (
   value: Web_BlocklistStatus_FormatBlocklistCopyDate_Value,
 ): Web_BlocklistStatus_FormatBlocklistCopyDate_Returns => {
   const date: Date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
+  if (Number.isNaN(date.getTime()) === true) {
     return '';
   }
 
@@ -61,7 +63,7 @@ const formatBlocklistCopyDate = (
 };
 
 /**
- * Blocklist Status - Format blocklist last updated.
+ * Blocklist Status - Format Blocklist Last Updated.
  *
  * Builds the optional successful-update detail below the aggregate summary.
  * Unknown and invalid timestamps stay absent from the Settings row.
@@ -81,7 +83,7 @@ export const formatBlocklistLastUpdated = (
     return null;
   }
 
-  const relativeTime: string = formatRelative(status['lastSuccessAt'], now);
+  const relativeTime: Web_BlocklistStatus_FormatBlocklistLastUpdated_RelativeTime = formatRelative(status['lastSuccessAt'], now);
   if (relativeTime === 'never' || relativeTime === 'unknown') {
     return null;
   }
@@ -90,7 +92,7 @@ export const formatBlocklistLastUpdated = (
 };
 
 /**
- * Blocklist Status - Format blocklist next update.
+ * Blocklist Status - Format Blocklist Next Update.
  *
  * Builds the optional scheduled-update detail below the aggregate summary.
  * States without a known schedule leave the line out entirely.
@@ -110,7 +112,7 @@ export const formatBlocklistNextUpdate = (
     return null;
   }
 
-  const relativeTime: string = formatRelative(status['nextUpdateAt'], now);
+  const relativeTime: Web_BlocklistStatus_FormatBlocklistNextUpdate_RelativeTime = formatRelative(status['nextUpdateAt'], now);
   if (relativeTime === 'never' || relativeTime === 'unknown') {
     return null;
   }
@@ -119,7 +121,7 @@ export const formatBlocklistNextUpdate = (
 };
 
 /**
- * Blocklist Status - Format blocklist source line.
+ * Blocklist Status - Format Blocklist Source Line.
  *
  * Maps one saved URL to its current merger result while keeping unsaved rows blank.
  * During an update, the first pending source is active and later sources wait.
@@ -140,7 +142,7 @@ export const formatBlocklistSourceLine = (
   now: Web_BlocklistStatus_FormatBlocklistSourceLine_Now = Date.now(),
 ): Web_BlocklistStatus_FormatBlocklistSourceLine_Returns => {
   const matchedSource: Web_BlocklistStatus_FormatBlocklistSourceLine_MatchedSource = status['sources'].find(
-    (source): boolean => source['url'] === sourceUrl,
+    (source) => source['url'] === sourceUrl,
   );
   if (matchedSource === undefined) {
     return null;
@@ -151,7 +153,7 @@ export const formatBlocklistSourceLine = (
 
   if (status['state'] === 'updating' && matchedSource['state'] === 'pending') {
     const firstPendingIndex: Web_BlocklistStatus_FormatBlocklistSourceLine_FirstPendingIndex = status['sources'].findIndex(
-      (source): boolean => source['state'] === 'pending',
+      (source) => source['state'] === 'pending',
     );
     const sourceIndex: Web_BlocklistStatus_FormatBlocklistSourceLine_SourceIndex = status['sources'].indexOf(matchedSource);
 
@@ -188,9 +190,9 @@ export const formatBlocklistSourceLine = (
       const copyDate: Web_BlocklistStatus_FormatBlocklistSourceLine_CopyDate = formatBlocklistCopyDate(matchedSource['copyFrom']);
       if (copyDate !== '') {
         const separatedErrorText: Web_BlocklistStatus_FormatBlocklistSourceLine_SeparatedErrorText = (
-          errorText.endsWith('.')
-          || errorText.endsWith('!')
-          || errorText.endsWith('?')
+          errorText.endsWith('.') === true
+          || errorText.endsWith('!') === true
+          || errorText.endsWith('?') === true
         ) ? errorText : `${errorText}.`;
 
         text = `${separatedErrorText} Using the copy from ${copyDate}.`;
@@ -199,7 +201,7 @@ export const formatBlocklistSourceLine = (
   }
 
   // Errors keep the danger tone even while blocklists are off; only plain results are muted.
-  if (!enabled && tone !== 'danger') {
+  if (enabled === false && tone !== 'danger') {
     tone = 'muted';
   }
 
@@ -210,7 +212,7 @@ export const formatBlocklistSourceLine = (
 };
 
 /**
- * Blocklist Status - Format blocklist summary.
+ * Blocklist Status - Format Blocklist Summary.
  *
  * Maps every merger state to the approved Settings copy.
  * Idle and updating summaries use the device locale for their counts.
@@ -237,7 +239,7 @@ export const formatBlocklistSummary = (
   const sourceCount: Web_BlocklistStatus_FormatBlocklistSummary_SourceCount = status['sources'].length;
   if (status['state'] === 'updating') {
     const firstPendingIndex: Web_BlocklistStatus_FormatBlocklistSummary_FirstPendingIndex = status['sources'].findIndex(
-      (source): boolean => source['state'] === 'pending',
+      (source) => source['state'] === 'pending',
     );
     let currentSource: Web_BlocklistStatus_FormatBlocklistSummary_CurrentSource = sourceCount;
     if (firstPendingIndex !== -1) {

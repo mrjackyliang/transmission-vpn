@@ -49,126 +49,362 @@ import {
 } from '@/web/vpn-tunnels.ts';
 
 import type {
-  ChangeEvent,
-  FormEvent,
-  ReactElement,
-} from 'react';
-
-import type {
-  Web_Api_CreateVpnConnectionInput,
-  Web_Api_MovedTorrent,
-  Web_Api_Provider,
-  Web_Api_ProviderCredentialField,
-  Web_Api_ProviderP2P,
-  Web_Api_ProviderTunnel,
-  Web_Api_UpdateVpnConnectionInput,
-  Web_Api_VpnConfigurationInput,
-  Web_Api_VpnConnection,
-  Web_Api_VpnProfile,
-  Web_Api_VpnRuntime,
-  Web_Api_VpnTunnel,
-} from '@/types/web/api.d.ts';
-import type {
-  Web_Components_VpnView_NavigationTarget,
-  Web_Components_VpnView_Props,
-} from '@/types/web/components.d.ts';
-import type { Web_UseDragReorder_Result } from '@/types/web/use-drag-reorder.d.ts';
-import type {
-  Web_VpnTunnels_CredentialInput,
-  Web_VpnTunnels_ProfileFile,
-} from '@/types/web/vpn-tunnels.d.ts';
+  Web_VpnView_ConnectionEditor_ActionsRenameOnlyClass,
+  Web_VpnView_ConnectionEditor_ActiveProfile,
+  Web_VpnView_ConnectionEditor_ActiveProvider,
+  Web_VpnView_ConnectionEditor_ActiveProviderID,
+  Web_VpnView_ConnectionEditor_ActiveProviderName,
+  Web_VpnView_ConnectionEditor_BuildConfiguration,
+  Web_VpnView_ConnectionEditor_BuildConfiguration_Returns,
+  Web_VpnView_ConnectionEditor_BusyAction,
+  Web_VpnView_ConnectionEditor_BusyActionState,
+  Web_VpnView_ConnectionEditor_ChangeRunning,
+  Web_VpnView_ConnectionEditor_ConfigurationDirty,
+  Web_VpnView_ConnectionEditor_Connection,
+  Web_VpnView_ConnectionEditor_ConnectionProviderID,
+  Web_VpnView_ConnectionEditor_Continent,
+  Web_VpnView_ConnectionEditor_Continents,
+  Web_VpnView_ConnectionEditor_ContinentState,
+  Web_VpnView_ConnectionEditor_CredentialFields,
+  Web_VpnView_ConnectionEditor_CredentialHelp,
+  Web_VpnView_ConnectionEditor_Credentials,
+  Web_VpnView_ConnectionEditor_CredentialsDirty,
+  Web_VpnView_ConnectionEditor_CredentialsState,
+  Web_VpnView_ConnectionEditor_CustomDNS,
+  Web_VpnView_ConnectionEditor_CustomDNSState,
+  Web_VpnView_ConnectionEditor_CustomFile,
+  Web_VpnView_ConnectionEditor_CustomFileState,
+  Web_VpnView_ConnectionEditor_DefaultPeerPort,
+  Web_VpnView_ConnectionEditor_Description,
+  Web_VpnView_ConnectionEditor_DnsHint,
+  Web_VpnView_ConnectionEditor_DnsMode,
+  Web_VpnView_ConnectionEditor_DnsModeState,
+  Web_VpnView_ConnectionEditor_EndpointLabel,
+  Web_VpnView_ConnectionEditor_EndpointStrategy,
+  Web_VpnView_ConnectionEditor_EndpointStrategyState,
+  Web_VpnView_ConnectionEditor_Error,
+  Web_VpnView_ConnectionEditor_ErrorState,
+  Web_VpnView_ConnectionEditor_FieldError,
+  Web_VpnView_ConnectionEditor_FieldErrorState,
+  Web_VpnView_ConnectionEditor_FieldIssue,
+  Web_VpnView_ConnectionEditor_FilteredProfiles,
+  Web_VpnView_ConnectionEditor_Firewall,
+  Web_VpnView_ConnectionEditor_FirewallLabel,
+  Web_VpnView_ConnectionEditor_HandleCustomFile,
+  Web_VpnView_ConnectionEditor_HandleCustomFile_Event,
+  Web_VpnView_ConnectionEditor_HandleCustomFile_File,
+  Web_VpnView_ConnectionEditor_HandleCustomFile_Files,
+  Web_VpnView_ConnectionEditor_HandleCustomFile_Returns,
+  Web_VpnView_ConnectionEditor_HandshakeLabel,
+  Web_VpnView_ConnectionEditor_InitializedSessionID,
+  Web_VpnView_ConnectionEditor_InitializedSessionIDRef,
+  Web_VpnView_ConnectionEditor_Input,
+  Web_VpnView_ConnectionEditor_InterfaceLabel,
+  Web_VpnView_ConnectionEditor_IsWireGuard,
+  Web_VpnView_ConnectionEditor_MetadataDirty,
+  Web_VpnView_ConnectionEditor_Name,
+  Web_VpnView_ConnectionEditor_NameIssue,
+  Web_VpnView_ConnectionEditor_NameState,
+  Web_VpnView_ConnectionEditor_NextPickedTunnel,
+  Web_VpnView_ConnectionEditor_NextPickedTunnelID,
+  Web_VpnView_ConnectionEditor_NextProvider,
+  Web_VpnView_ConnectionEditor_NextProviderID,
+  Web_VpnView_ConnectionEditor_NextTunnel,
+  Web_VpnView_ConnectionEditor_NextValue,
+  Web_VpnView_ConnectionEditor_NormalizedDNS,
+  Web_VpnView_ConnectionEditor_NormalizedSearch,
+  Web_VpnView_ConnectionEditor_OnBack,
+  Web_VpnView_ConnectionEditor_OnCreate,
+  Web_VpnView_ConnectionEditor_OnDisconnect,
+  Web_VpnView_ConnectionEditor_OnMakeDefault,
+  Web_VpnView_ConnectionEditor_OnReconnect,
+  Web_VpnView_ConnectionEditor_OnRefreshCatalog,
+  Web_VpnView_ConnectionEditor_OnUpdate,
+  Web_VpnView_ConnectionEditor_OnUploadProfile,
+  Web_VpnView_ConnectionEditor_PeerPort,
+  Web_VpnView_ConnectionEditor_PeerPortIssue,
+  Web_VpnView_ConnectionEditor_PeerPortState,
+  Web_VpnView_ConnectionEditor_PoolLabel,
+  Web_VpnView_ConnectionEditor_PoolList,
+  Web_VpnView_ConnectionEditor_PoolListRef,
+  Web_VpnView_ConnectionEditor_PoolReorder,
+  Web_VpnView_ConnectionEditor_PrimaryButtonLabel,
+  Web_VpnView_ConnectionEditor_ProfileByID,
+  Web_VpnView_ConnectionEditor_ProfileCountNoun,
+  Web_VpnView_ConnectionEditor_ProfileEntries,
+  Web_VpnView_ConnectionEditor_ProfileIDs,
+  Web_VpnView_ConnectionEditor_ProfileIDsState,
+  Web_VpnView_ConnectionEditor_Profiles,
+  Web_VpnView_ConnectionEditor_Props,
+  Web_VpnView_ConnectionEditor_Protocol,
+  Web_VpnView_ConnectionEditor_ProtocolState,
+  Web_VpnView_ConnectionEditor_ProtocolSuffix,
+  Web_VpnView_ConnectionEditor_ProviderID,
+  Web_VpnView_ConnectionEditor_ProviderIDState,
+  Web_VpnView_ConnectionEditor_ProviderIssue,
+  Web_VpnView_ConnectionEditor_ProviderLabel,
+  Web_VpnView_ConnectionEditor_ProviderProfiles,
+  Web_VpnView_ConnectionEditor_Providers,
+  Web_VpnView_ConnectionEditor_ProviderSubmissionAttempted,
+  Web_VpnView_ConnectionEditor_ProviderSubmissionAttemptedState,
+  Web_VpnView_ConnectionEditor_RemotePort,
+  Web_VpnView_ConnectionEditor_RenameOnly,
+  Web_VpnView_ConnectionEditor_ReorderHintID,
+  Web_VpnView_ConnectionEditor_ResetSelection,
+  Web_VpnView_ConnectionEditor_ResetSelection_Returns,
+  Web_VpnView_ConnectionEditor_RetryInterval,
+  Web_VpnView_ConnectionEditor_RetryIntervalState,
+  Web_VpnView_ConnectionEditor_Returns,
+  Web_VpnView_ConnectionEditor_RunConnectionAction,
+  Web_VpnView_ConnectionEditor_RunConnectionAction_Action,
+  Web_VpnView_ConnectionEditor_RunConnectionAction_Returns,
+  Web_VpnView_ConnectionEditor_Runtime,
+  Web_VpnView_ConnectionEditor_RuntimeEndpointCount,
+  Web_VpnView_ConnectionEditor_RuntimeEndpointPosition,
+  Web_VpnView_ConnectionEditor_RuntimeEndpointStrategy,
+  Web_VpnView_ConnectionEditor_RuntimeInterface,
+  Web_VpnView_ConnectionEditor_RuntimeLabel,
+  Web_VpnView_ConnectionEditor_RuntimeLastError,
+  Web_VpnView_ConnectionEditor_RuntimeLastHandshakeAt,
+  Web_VpnView_ConnectionEditor_RuntimeProfileID,
+  Web_VpnView_ConnectionEditor_RuntimeProviderID,
+  Web_VpnView_ConnectionEditor_RuntimeRemoteHost,
+  Web_VpnView_ConnectionEditor_RuntimeRemotePort,
+  Web_VpnView_ConnectionEditor_RuntimeState,
+  Web_VpnView_ConnectionEditor_RuntimeTone,
+  Web_VpnView_ConnectionEditor_RuntimeTunnel,
+  Web_VpnView_ConnectionEditor_Saved,
+  Web_VpnView_ConnectionEditor_SavedCredentials,
+  Web_VpnView_ConnectionEditor_Search,
+  Web_VpnView_ConnectionEditor_SearchState,
+  Web_VpnView_ConnectionEditor_Selected,
+  Web_VpnView_ConnectionEditor_SelectedP2P,
+  Web_VpnView_ConnectionEditor_SelectedProfile,
+  Web_VpnView_ConnectionEditor_SelectedProfiles,
+  Web_VpnView_ConnectionEditor_SelectedProvider,
+  Web_VpnView_ConnectionEditor_SelectedProviderName,
+  Web_VpnView_ConnectionEditor_SelectedTunnel,
+  Web_VpnView_ConnectionEditor_Separator,
+  Web_VpnView_ConnectionEditor_SessionID,
+  Web_VpnView_ConnectionEditor_SetBusyAction,
+  Web_VpnView_ConnectionEditor_SetContinent,
+  Web_VpnView_ConnectionEditor_SetCredentials,
+  Web_VpnView_ConnectionEditor_SetCustomDNS,
+  Web_VpnView_ConnectionEditor_SetCustomFile,
+  Web_VpnView_ConnectionEditor_SetDNSMode,
+  Web_VpnView_ConnectionEditor_SetEndpointStrategy,
+  Web_VpnView_ConnectionEditor_SetError,
+  Web_VpnView_ConnectionEditor_SetFieldError,
+  Web_VpnView_ConnectionEditor_SetName,
+  Web_VpnView_ConnectionEditor_SetPeerPort,
+  Web_VpnView_ConnectionEditor_SetProfileIDs,
+  Web_VpnView_ConnectionEditor_SetProtocol,
+  Web_VpnView_ConnectionEditor_SetProviderID,
+  Web_VpnView_ConnectionEditor_SetProviderSubmissionAttempted,
+  Web_VpnView_ConnectionEditor_SetRetryInterval,
+  Web_VpnView_ConnectionEditor_SetSearch,
+  Web_VpnView_ConnectionEditor_SetTunnelChoice,
+  Web_VpnView_ConnectionEditor_SetVisibleProfileCount,
+  Web_VpnView_ConnectionEditor_Snapshot,
+  Web_VpnView_ConnectionEditor_StatusIsProtected,
+  Web_VpnView_ConnectionEditor_StatusIsWireGuard,
+  Web_VpnView_ConnectionEditor_StrategySuffix,
+  Web_VpnView_ConnectionEditor_Submit,
+  Web_VpnView_ConnectionEditor_Submit_CreateInput,
+  Web_VpnView_ConnectionEditor_Submit_Event,
+  Web_VpnView_ConnectionEditor_Submit_Returns,
+  Web_VpnView_ConnectionEditor_Submit_ShownFields,
+  Web_VpnView_ConnectionEditor_Submit_UpdateInput,
+  Web_VpnView_ConnectionEditor_SubmitDisabled,
+  Web_VpnView_ConnectionEditor_ToggleProfile,
+  Web_VpnView_ConnectionEditor_ToggleProfile_ProfileID,
+  Web_VpnView_ConnectionEditor_ToggleProfile_Returns,
+  Web_VpnView_ConnectionEditor_TunnelChoice,
+  Web_VpnView_ConnectionEditor_TunnelChoiceState,
+  Web_VpnView_ConnectionEditor_TunnelControl,
+  Web_VpnView_ConnectionEditor_TunnelID,
+  Web_VpnView_ConnectionEditor_TunnelLabelID,
+  Web_VpnView_ConnectionEditor_UploadFile,
+  Web_VpnView_ConnectionEditor_UploadHintID,
+  Web_VpnView_ConnectionEditor_UploadProfile,
+  Web_VpnView_ConnectionEditor_UploadProfile_FirstUploadedProfile,
+  Web_VpnView_ConnectionEditor_UploadProfile_ProfileContent,
+  Web_VpnView_ConnectionEditor_UploadProfile_Returns,
+  Web_VpnView_ConnectionEditor_UploadProfile_UploadedNoun,
+  Web_VpnView_ConnectionEditor_UploadProfile_UploadedProfiles,
+  Web_VpnView_ConnectionEditor_VisibleProfileCount,
+  Web_VpnView_ConnectionEditor_VisibleProfileCountState,
+  Web_VpnView_ConnectionEditor_VisibleProfiles,
+  Web_VpnView_ConnectionState_Connection,
+  Web_VpnView_ConnectionState_LiveConnection,
+  Web_VpnView_ConnectionState_Returns,
+  Web_VpnView_ConnectionState_Snapshot,
+  Web_VpnView_EndpointStrategy,
+  Web_VpnView_EndpointStrategyDescriptions,
+  Web_VpnView_MaximumCustomProfileBytes,
+  Web_VpnView_MovedTorrents_Details,
+  Web_VpnView_MovedTorrents_Moved,
+  Web_VpnView_MovedTorrents_Returns,
+  Web_VpnView_ParseDependencies_Details,
+  Web_VpnView_ParseDependencies_Logins,
+  Web_VpnView_ParseDependencies_Profiles,
+  Web_VpnView_ParseDependencies_Returns,
+  Web_VpnView_StateLabels,
+  Web_VpnView_StatusReason_Returns,
+  Web_VpnView_StatusReason_Runtime,
+  Web_VpnView_StatusTone_Returns,
+  Web_VpnView_StatusTone_State,
+  Web_VpnView_VpnView_AtCapacity,
+  Web_VpnView_VpnView_Capacity,
+  Web_VpnView_VpnView_CapacityCpuNoun,
+  Web_VpnView_VpnView_CapacityCpus,
+  Web_VpnView_VpnView_CapacityDescription,
+  Web_VpnView_VpnView_CapacityLimit,
+  Web_VpnView_VpnView_CapacityMemoryGigabytes,
+  Web_VpnView_VpnView_CloseDefaultChange,
+  Web_VpnView_VpnView_CloseDefaultChange_Returns,
+  Web_VpnView_VpnView_CloseMenusOnEscape,
+  Web_VpnView_VpnView_CloseMenusOnEscape_Event,
+  Web_VpnView_VpnView_CloseMenusOnEscape_Returns,
+  Web_VpnView_VpnView_CloseMenusOutside,
+  Web_VpnView_VpnView_CloseMenusOutside_Event,
+  Web_VpnView_VpnView_CloseMenusOutside_Returns,
+  Web_VpnView_VpnView_ConfirmDefaultChange,
+  Web_VpnView_VpnView_ConfirmDefaultChange_Results,
+  Web_VpnView_VpnView_ConfirmDefaultChange_Returns,
+  Web_VpnView_VpnView_ConnectionExists,
+  Web_VpnView_VpnView_ConnectionProvider,
+  Web_VpnView_VpnView_Connections,
+  Web_VpnView_VpnView_DefaultChangeBusy,
+  Web_VpnView_VpnView_DefaultChangeBusyState,
+  Web_VpnView_VpnView_DefaultChangeComplete,
+  Web_VpnView_VpnView_DefaultChangeCompleteState,
+  Web_VpnView_VpnView_DefaultChangeDialog,
+  Web_VpnView_VpnView_DefaultChangeError,
+  Web_VpnView_VpnView_DefaultChangeErrorState,
+  Web_VpnView_VpnView_DefaultChangeHasFailures,
+  Web_VpnView_VpnView_DefaultChangeMessage,
+  Web_VpnView_VpnView_DefaultChangeState,
+  Web_VpnView_VpnView_DefaultChangeStateState,
+  Web_VpnView_VpnView_DefaultMoveResults,
+  Web_VpnView_VpnView_DefaultMoveResultsState,
+  Web_VpnView_VpnView_DefaultPeerPort,
+  Web_VpnView_VpnView_DefaultProfile,
+  Web_VpnView_VpnView_Endpoint,
+  Web_VpnView_VpnView_HandledNavigationSequence,
+  Web_VpnView_VpnView_HandledNavigationSequenceRef,
+  Web_VpnView_VpnView_Menu,
+  Web_VpnView_VpnView_MoveAndRemove,
+  Web_VpnView_VpnView_MoveAndRemove_HasWarnings,
+  Web_VpnView_VpnView_MoveAndRemove_Result,
+  Web_VpnView_VpnView_MoveAndRemove_Returns,
+  Web_VpnView_VpnView_MoveAndRemove_TargetConnection,
+  Web_VpnView_VpnView_MoveAndRemove_TargetConnectionName,
+  Web_VpnView_VpnView_MoveAndRemove_Warnings,
+  Web_VpnView_VpnView_MoveResults,
+  Web_VpnView_VpnView_MoveResultsState,
+  Web_VpnView_VpnView_MoveTo,
+  Web_VpnView_VpnView_MoveToState,
+  Web_VpnView_VpnView_NavigationSequence,
+  Web_VpnView_VpnView_NavigationTarget,
+  Web_VpnView_VpnView_OnCreate,
+  Web_VpnView_VpnView_OnDelete,
+  Web_VpnView_VpnView_OnDisconnect,
+  Web_VpnView_VpnView_OnMakeDefault,
+  Web_VpnView_VpnView_OnNavigate,
+  Web_VpnView_VpnView_OnOpenTorrents,
+  Web_VpnView_VpnView_OnReconnect,
+  Web_VpnView_VpnView_OnRefreshCatalog,
+  Web_VpnView_VpnView_OnUpdate,
+  Web_VpnView_VpnView_OnUploadProfile,
+  Web_VpnView_VpnView_OpenNavigationTarget,
+  Web_VpnView_VpnView_OpenNavigationTarget_Replace,
+  Web_VpnView_VpnView_OpenNavigationTarget_Returns,
+  Web_VpnView_VpnView_OpenNavigationTarget_Target,
+  Web_VpnView_VpnView_Profiles,
+  Web_VpnView_VpnView_Props,
+  Web_VpnView_VpnView_ProviderName,
+  Web_VpnView_VpnView_Providers,
+  Web_VpnView_VpnView_RemovalComplete,
+  Web_VpnView_VpnView_RemovalCompleteState,
+  Web_VpnView_VpnView_RemoveError,
+  Web_VpnView_VpnView_RemoveErrorState,
+  Web_VpnView_VpnView_RemoveLoginNoun,
+  Web_VpnView_VpnView_RemoveProfileNoun,
+  Web_VpnView_VpnView_RemoveState,
+  Web_VpnView_VpnView_RemoveStateState,
+  Web_VpnView_VpnView_RemoveTorrentNoun,
+  Web_VpnView_VpnView_Removing,
+  Web_VpnView_VpnView_RemovingState,
+  Web_VpnView_VpnView_RequestDefaultChange,
+  Web_VpnView_VpnView_RequestDefaultChange_Connection,
+  Web_VpnView_VpnView_RequestDefaultChange_ConnectionId,
+  Web_VpnView_VpnView_RequestDefaultChange_DefaultProfileTorrentCount,
+  Web_VpnView_VpnView_RequestDefaultChange_FollowingProfileTorrentCount,
+  Web_VpnView_VpnView_RequestDefaultChange_Results,
+  Web_VpnView_VpnView_RequestDefaultChange_Returns,
+  Web_VpnView_VpnView_RequestDefaultChange_TorrentCount,
+  Web_VpnView_VpnView_RequestRemove,
+  Web_VpnView_VpnView_RequestRemove_Connection,
+  Web_VpnView_VpnView_RequestRemove_DefaultCandidate,
+  Web_VpnView_VpnView_RequestRemove_Dependencies,
+  Web_VpnView_VpnView_RequestRemove_Returns,
+  Web_VpnView_VpnView_Response,
+  Web_VpnView_VpnView_Returns,
+  Web_VpnView_VpnView_Runtime,
+  Web_VpnView_VpnView_SelectedConnection,
+  Web_VpnView_VpnView_SelectedID,
+  Web_VpnView_VpnView_SelectedIDState,
+  Web_VpnView_VpnView_SetDefaultChangeBusy,
+  Web_VpnView_VpnView_SetDefaultChangeComplete,
+  Web_VpnView_VpnView_SetDefaultChangeError,
+  Web_VpnView_VpnView_SetDefaultChangeState,
+  Web_VpnView_VpnView_SetDefaultMoveResults,
+  Web_VpnView_VpnView_SetMoveResults,
+  Web_VpnView_VpnView_SetMoveTo,
+  Web_VpnView_VpnView_SetRemovalComplete,
+  Web_VpnView_VpnView_SetRemoveError,
+  Web_VpnView_VpnView_SetRemoveState,
+  Web_VpnView_VpnView_SetRemoving,
+  Web_VpnView_VpnView_SetSelectedID,
+  Web_VpnView_VpnView_Snapshot,
+  Web_VpnView_VpnView_TorrentNoun,
+  Web_VpnView_VpnView_UsedPeerPorts,
+} from '@/types/web/vpn-view.d.ts';
 
 /**
- * VPN View - Remove dependencies.
- *
- * Names the resources reported by a connection-in-use response.
- * The dialog renders each group as a separate one-item-per-line list.
- *
- * @since 2.0.0
- */
-type RemoveDependencies = {
-  torrents: number
-  profiles: {
-    id: string
-    name: string
-  }[]
-  logins: {
-    id: string
-    username: string
-  }[]
-};
-
-/**
- * VPN View - Remove state.
- *
- * Keeps the selected row together with its server-reported dependencies.
- * This prevents stale list data from replacing the conflict response.
- *
- * @since 2.0.0
- */
-type RemoveState = {
-  connection: Web_Api_VpnConnection
-  dependencies: RemoveDependencies
-};
-
-/**
- * VPN View - Default change state.
- *
- * Keeps the selected target with the server-counted profile-group totals.
- * The conflict identifies Default-profile and following-profile torrents.
- *
- * @since 2.0.0
- */
-type DefaultChangeState = {
-  connection: Web_Api_VpnConnection
-  defaultProfileTorrents: number
-  followingProfileTorrents: number
-  torrents: number
-};
-
-/**
- * VPN View - Endpoint strategy.
- *
- * Reuses the stored connection union for the editor state.
- * The form and API therefore cannot drift between strategy spellings.
- *
- * @since 2.0.0
- */
-type EndpointStrategy = Web_Api_VpnConnection['endpointStrategy'];
-
-/**
- * VPN View - Maximum custom profile bytes.
+ * Vpn View - Maximum Custom Profile Bytes.
  *
  * Keeps custom uploads within the same bound as the original VPN page.
  * The browser rejects oversized files before reading them into memory.
  *
  * @since 2.0.0
  */
-const maximumCustomProfileBytes: number = 900_000;
+const maximumCustomProfileBytes: Web_VpnView_MaximumCustomProfileBytes = 900_000;
 
 /**
- * VPN View - Endpoint strategy descriptions.
+ * Vpn View - Endpoint Strategy Descriptions.
  *
  * Explains how the ordered pool is used after an endpoint fails.
  * The selected strategy updates the approved helper copy in place.
  *
  * @since 2.0.0
  */
-const endpointStrategyDescriptions: Record<EndpointStrategy, string> = {
+const endpointStrategyDescriptions: Web_VpnView_EndpointStrategyDescriptions = {
   ordered: 'Move to the next endpoint after a connection fails.',
   randomized: 'Shuffle the endpoint order for each failover cycle.',
   sticky: 'Keep using the current endpoint until it stops working.',
 };
 
 /**
- * VPN View - State labels.
+ * Vpn View - State Labels.
  *
  * Gives controller states the approved sentence-case chip text.
  * Unknown future states still fall back to their server value.
  *
  * @since 2.0.0
  */
-const stateLabels: Record<string, string> = {
+const stateLabels: Web_VpnView_StateLabels = {
   'blocked': 'Blocked',
   'connecting': 'Connecting',
   'disconnected': 'Disconnected',
@@ -179,29 +415,42 @@ const stateLabels: Record<string, string> = {
 };
 
 /**
- * VPN View - Connection state.
+ * Vpn View - Connection State.
  *
  * Prefers the newest event snapshot while the durable list refresh catches up.
  * Stored runtime remains available before the first event arrives.
  *
+ * @param {Web_VpnView_ConnectionState_Connection} connection - Connection.
+ * @param {Web_VpnView_ConnectionState_Snapshot}   snapshot   - Snapshot.
+ *
+ * @returns {Web_VpnView_ConnectionState_Returns}
+ *
  * @since 2.0.0
  */
 const connectionState = (
-  connection: Web_Api_VpnConnection,
-  snapshot: Web_Components_VpnView_Props['snapshot'],
-): Web_Api_VpnRuntime => snapshot?.['connections'].find(
-  (candidate): boolean => candidate['connectionId'] === connection['id'],
-) ?? connection['runtime'];
+  connection: Web_VpnView_ConnectionState_Connection,
+  snapshot: Web_VpnView_ConnectionState_Snapshot,
+): Web_VpnView_ConnectionState_Returns => {
+  const liveConnection: Web_VpnView_ConnectionState_LiveConnection = (snapshot === null) ? undefined : snapshot['connections'].find(
+    (candidate) => candidate['connectionId'] === connection['id'],
+  );
+
+  return liveConnection ?? connection['runtime'];
+};
 
 /**
- * VPN View - Status reason.
+ * Vpn View - Status Reason.
  *
  * Provides the second line beneath each state chip.
  * Controller errors take precedence over generated activity text.
  *
+ * @param {Web_VpnView_StatusReason_Runtime} runtime - Runtime.
+ *
+ * @returns {Web_VpnView_StatusReason_Returns}
+ *
  * @since 2.0.0
  */
-const statusReason = (runtime: Web_Api_VpnRuntime): string => {
+const statusReason = (runtime: Web_VpnView_StatusReason_Runtime): Web_VpnView_StatusReason_Returns => {
   if (runtime['lastError'] !== undefined && runtime['lastError'] !== '') {
     return runtime['lastError'];
   }
@@ -211,6 +460,7 @@ const statusReason = (runtime: Web_Api_VpnRuntime): string => {
   if (runtime['state'] === 'connecting' || runtime['state'] === 'reconnecting') {
     return `Attempt ${runtime['attempt']}`;
   }
+
   // OpenVPN has no handshake time, so a protected OpenVPN row has no second line.
   if (runtime['state'] === 'protected') {
     return '';
@@ -220,14 +470,18 @@ const statusReason = (runtime: Web_Api_VpnRuntime): string => {
 };
 
 /**
- * VPN View - Status tone.
+ * Vpn View - Status Tone.
  *
  * Maps all non-protected terminal states to the blocked visual treatment.
  * Connecting states retain their progress treatment instead.
  *
+ * @param {Web_VpnView_StatusTone_State} state - State.
+ *
+ * @returns {Web_VpnView_StatusTone_Returns}
+ *
  * @since 2.0.0
  */
-const statusTone = (state: string): string => {
+const statusTone = (state: Web_VpnView_StatusTone_State): Web_VpnView_StatusTone_Returns => {
   if (state === 'protected') {
     return 'protected';
   }
@@ -239,232 +493,220 @@ const statusTone = (state: string): string => {
 };
 
 /**
- * VPN View - Parse dependencies.
+ * Vpn View - Parse Dependencies.
  *
  * Safely narrows optional error details before the remove dialog uses them.
  * Missing groups become empty lists so partial responses remain renderable.
  *
+ * @param {Web_VpnView_ParseDependencies_Details} details - Details.
+ *
+ * @returns {Web_VpnView_ParseDependencies_Returns}
+ *
  * @since 2.0.0
  */
-const parseDependencies = (details: Record<string, unknown>): RemoveDependencies => ({
-  logins: (Array.isArray(details['logins'])) ? details['logins'] as RemoveDependencies['logins'] : [],
-  profiles: (Array.isArray(details['profiles'])) ? details['profiles'] as RemoveDependencies['profiles'] : [],
+const parseDependencies = (details: Web_VpnView_ParseDependencies_Details): Web_VpnView_ParseDependencies_Returns => ({
+  logins: (Array.isArray(details['logins']) === true) ? details['logins'] as Web_VpnView_ParseDependencies_Logins : [],
+  profiles: (Array.isArray(details['profiles']) === true) ? details['profiles'] as Web_VpnView_ParseDependencies_Profiles : [],
   torrents: (typeof details['torrents'] === 'number') ? details['torrents'] : 0,
 });
 
 /**
- * VPN View - Moved torrents.
+ * Vpn View - Moved Torrents.
  *
  * Extracts partial move results from a move-failed error response.
  * An absent result list is represented as an empty list.
  *
+ * @param {Web_VpnView_MovedTorrents_Details} details - Details.
+ *
+ * @returns {Web_VpnView_MovedTorrents_Returns}
+ *
  * @since 2.0.0
  */
-const movedTorrents = (details: Record<string, unknown>): Web_Api_MovedTorrent[] => (
-  (Array.isArray(details['moved'])) ? details['moved'] as Web_Api_MovedTorrent[] : []
+const movedTorrents = (details: Web_VpnView_MovedTorrents_Details): Web_VpnView_MovedTorrents_Returns => (
+  (Array.isArray(details['moved']) === true) ? details['moved'] as Web_VpnView_MovedTorrents_Moved : []
 );
 
 /**
- * VPN connection editor.
+ * Vpn View - Connection Editor.
  *
  * Creates a connection or updates one existing slot. Configuration changes are
  * tested and connected; name-only and peer-port-only changes save in place.
  *
+ * @param {Web_VpnView_ConnectionEditor_Props} props - Props.
+ *
+ * @returns {Web_VpnView_ConnectionEditor_Returns}
+ *
  * @since 2.0.0
  */
-const ConnectionEditor = ({
-  connection,
-  defaultPeerPort,
-  onBack,
-  onCreate,
-  onDisconnect,
-  onMakeDefault,
-  onReconnect,
-  onRefreshCatalog,
-  onUpdate,
-  onUploadProfile,
-  profiles,
-  providers,
-  snapshot,
-}: {
-  connection: Web_Api_VpnConnection | null
-  defaultPeerPort: number
-  onBack: () => void
-  onCreate: Web_Components_VpnView_Props['onCreate']
-  onDisconnect: Web_Components_VpnView_Props['onDisconnect']
-  onMakeDefault: Web_Components_VpnView_Props['onMakeDefault']
-  onReconnect: Web_Components_VpnView_Props['onReconnect']
-  onRefreshCatalog: Web_Components_VpnView_Props['onRefreshCatalog']
-  onUpdate: Web_Components_VpnView_Props['onUpdate']
-  onUploadProfile: Web_Components_VpnView_Props['onUploadProfile']
-  profiles: Web_Api_VpnProfile[]
-  providers: Web_Api_Provider[]
-  snapshot: Web_Components_VpnView_Props['snapshot']
-}): ReactElement => {
-  const [
-    name,
-    setName,
-  ] = useState<string>('');
-  const [
-    peerPort,
-    setPeerPort,
-  ] = useState<string>('51413');
-  const [
-    providerID,
-    setProviderID,
-  ] = useState<string>('');
-  const [
-    providerSubmissionAttempted,
-    setProviderSubmissionAttempted,
-  ] = useState<boolean>(false);
-  const [
-    tunnelChoice,
-    setTunnelChoice,
-  ] = useState<Web_Api_VpnTunnel>('openvpn');
-  const [
-    profileIDs,
-    setProfileIDs,
-  ] = useState<string[]>([]);
-  const [
-    endpointStrategy,
-    setEndpointStrategy,
-  ] = useState<EndpointStrategy>('sticky');
-  const [
-    search,
-    setSearch,
-  ] = useState<string>('');
-  const [
-    continent,
-    setContinent,
-  ] = useState<string>('all');
-  const [
-    protocol,
-    setProtocol,
-  ] = useState<string>('all');
-  const [
-    visibleProfileCount,
-    setVisibleProfileCount,
-  ] = useState<number>(100);
-  const [
-    credentials,
-    setCredentials,
-  ] = useState<Record<string, string>>({});
-  const [
-    dnsMode,
-    setDNSMode,
-  ] = useState<'provider' | 'custom'>('provider');
-  const [
-    customDNS,
-    setCustomDNS,
-  ] = useState<string>('');
-  const [
-    retryInterval,
-    setRetryInterval,
-  ] = useState<string>('10');
-  const [
-    busyAction,
-    setBusyAction,
-  ] = useState<string>('');
-  const [
-    error,
-    setError,
-  ] = useState<string>('');
-  const [
-    fieldError,
-    setFieldError,
-  ] = useState<ApiError | null>(null);
-  const [
-    customFile,
-    setCustomFile,
-  ] = useState<File | null>(null);
-  const tunnelLabelID: string = useId();
-  const uploadHintID: string = useId();
-  const reorderHintID: string = useId();
-  const initializedSessionIDRef = useRef<string | null>(null);
-  const poolListRef = useRef<HTMLOListElement | null>(null);
+const ConnectionEditor = (props: Web_VpnView_ConnectionEditor_Props): Web_VpnView_ConnectionEditor_Returns => {
+  const connection: Web_VpnView_ConnectionEditor_Connection = props['connection'];
+  const defaultPeerPort: Web_VpnView_ConnectionEditor_DefaultPeerPort = props['defaultPeerPort'];
+  const onBack: Web_VpnView_ConnectionEditor_OnBack = props['onBack'];
+  const onCreate: Web_VpnView_ConnectionEditor_OnCreate = props['onCreate'];
+  const onDisconnect: Web_VpnView_ConnectionEditor_OnDisconnect = props['onDisconnect'];
+  const onMakeDefault: Web_VpnView_ConnectionEditor_OnMakeDefault = props['onMakeDefault'];
+  const onReconnect: Web_VpnView_ConnectionEditor_OnReconnect = props['onReconnect'];
+  const onRefreshCatalog: Web_VpnView_ConnectionEditor_OnRefreshCatalog = props['onRefreshCatalog'];
+  const onUpdate: Web_VpnView_ConnectionEditor_OnUpdate = props['onUpdate'];
+  const onUploadProfile: Web_VpnView_ConnectionEditor_OnUploadProfile = props['onUploadProfile'];
+  const profiles: Web_VpnView_ConnectionEditor_Profiles = props['profiles'];
+  const providers: Web_VpnView_ConnectionEditor_Providers = props['providers'];
+  const snapshot: Web_VpnView_ConnectionEditor_Snapshot = props['snapshot'];
+  const nameState: Web_VpnView_ConnectionEditor_NameState = useState<Web_VpnView_ConnectionEditor_Name>('');
+  const name: Web_VpnView_ConnectionEditor_Name = nameState[0];
+  const setName: Web_VpnView_ConnectionEditor_SetName = nameState[1];
+  const peerPortState: Web_VpnView_ConnectionEditor_PeerPortState = useState<Web_VpnView_ConnectionEditor_PeerPort>('51413');
+  const peerPort: Web_VpnView_ConnectionEditor_PeerPort = peerPortState[0];
+  const setPeerPort: Web_VpnView_ConnectionEditor_SetPeerPort = peerPortState[1];
+  const providerIDState: Web_VpnView_ConnectionEditor_ProviderIDState = useState<Web_VpnView_ConnectionEditor_ProviderID>('');
+  const providerID: Web_VpnView_ConnectionEditor_ProviderID = providerIDState[0];
+  const setProviderID: Web_VpnView_ConnectionEditor_SetProviderID = providerIDState[1];
+  const providerSubmissionAttemptedState: Web_VpnView_ConnectionEditor_ProviderSubmissionAttemptedState = useState<Web_VpnView_ConnectionEditor_ProviderSubmissionAttempted>(false);
+  const providerSubmissionAttempted: Web_VpnView_ConnectionEditor_ProviderSubmissionAttempted = providerSubmissionAttemptedState[0];
+  const setProviderSubmissionAttempted: Web_VpnView_ConnectionEditor_SetProviderSubmissionAttempted = providerSubmissionAttemptedState[1];
+  const tunnelChoiceState: Web_VpnView_ConnectionEditor_TunnelChoiceState = useState<Web_VpnView_ConnectionEditor_TunnelChoice>('openvpn');
+  const tunnelChoice: Web_VpnView_ConnectionEditor_TunnelChoice = tunnelChoiceState[0];
+  const setTunnelChoice: Web_VpnView_ConnectionEditor_SetTunnelChoice = tunnelChoiceState[1];
+  const profileIDsState: Web_VpnView_ConnectionEditor_ProfileIDsState = useState<Web_VpnView_ConnectionEditor_ProfileIDs>([]);
+  const profileIDs: Web_VpnView_ConnectionEditor_ProfileIDs = profileIDsState[0];
+  const setProfileIDs: Web_VpnView_ConnectionEditor_SetProfileIDs = profileIDsState[1];
+  const endpointStrategyState: Web_VpnView_ConnectionEditor_EndpointStrategyState = useState<Web_VpnView_ConnectionEditor_EndpointStrategy>('sticky');
+  const endpointStrategy: Web_VpnView_ConnectionEditor_EndpointStrategy = endpointStrategyState[0];
+  const setEndpointStrategy: Web_VpnView_ConnectionEditor_SetEndpointStrategy = endpointStrategyState[1];
+  const searchState: Web_VpnView_ConnectionEditor_SearchState = useState<Web_VpnView_ConnectionEditor_Search>('');
+  const search: Web_VpnView_ConnectionEditor_Search = searchState[0];
+  const setSearch: Web_VpnView_ConnectionEditor_SetSearch = searchState[1];
+  const continentState: Web_VpnView_ConnectionEditor_ContinentState = useState<Web_VpnView_ConnectionEditor_Continent>('all');
+  const continent: Web_VpnView_ConnectionEditor_Continent = continentState[0];
+  const setContinent: Web_VpnView_ConnectionEditor_SetContinent = continentState[1];
+  const protocolState: Web_VpnView_ConnectionEditor_ProtocolState = useState<Web_VpnView_ConnectionEditor_Protocol>('all');
+  const protocol: Web_VpnView_ConnectionEditor_Protocol = protocolState[0];
+  const setProtocol: Web_VpnView_ConnectionEditor_SetProtocol = protocolState[1];
+  const visibleProfileCountState: Web_VpnView_ConnectionEditor_VisibleProfileCountState = useState<Web_VpnView_ConnectionEditor_VisibleProfileCount>(100);
+  const visibleProfileCount: Web_VpnView_ConnectionEditor_VisibleProfileCount = visibleProfileCountState[0];
+  const setVisibleProfileCount: Web_VpnView_ConnectionEditor_SetVisibleProfileCount = visibleProfileCountState[1];
+  const credentialsState: Web_VpnView_ConnectionEditor_CredentialsState = useState<Web_VpnView_ConnectionEditor_Credentials>({});
+  const credentials: Web_VpnView_ConnectionEditor_Credentials = credentialsState[0];
+  const setCredentials: Web_VpnView_ConnectionEditor_SetCredentials = credentialsState[1];
+  const dnsModeState: Web_VpnView_ConnectionEditor_DnsModeState = useState<Web_VpnView_ConnectionEditor_DnsMode>('provider');
+  const dnsMode: Web_VpnView_ConnectionEditor_DnsMode = dnsModeState[0];
+  const setDNSMode: Web_VpnView_ConnectionEditor_SetDNSMode = dnsModeState[1];
+  const customDNSState: Web_VpnView_ConnectionEditor_CustomDNSState = useState<Web_VpnView_ConnectionEditor_CustomDNS>('');
+  const customDNS: Web_VpnView_ConnectionEditor_CustomDNS = customDNSState[0];
+  const setCustomDNS: Web_VpnView_ConnectionEditor_SetCustomDNS = customDNSState[1];
+  const retryIntervalState: Web_VpnView_ConnectionEditor_RetryIntervalState = useState<Web_VpnView_ConnectionEditor_RetryInterval>('10');
+  const retryInterval: Web_VpnView_ConnectionEditor_RetryInterval = retryIntervalState[0];
+  const setRetryInterval: Web_VpnView_ConnectionEditor_SetRetryInterval = retryIntervalState[1];
+  const busyActionState: Web_VpnView_ConnectionEditor_BusyActionState = useState<Web_VpnView_ConnectionEditor_BusyAction>('');
+  const busyAction: Web_VpnView_ConnectionEditor_BusyAction = busyActionState[0];
+  const setBusyAction: Web_VpnView_ConnectionEditor_SetBusyAction = busyActionState[1];
+  const errorState: Web_VpnView_ConnectionEditor_ErrorState = useState<Web_VpnView_ConnectionEditor_Error>('');
+  const error: Web_VpnView_ConnectionEditor_Error = errorState[0];
+  const setError: Web_VpnView_ConnectionEditor_SetError = errorState[1];
+  const fieldErrorState: Web_VpnView_ConnectionEditor_FieldErrorState = useState<Web_VpnView_ConnectionEditor_FieldError>(null);
+  const fieldError: Web_VpnView_ConnectionEditor_FieldError = fieldErrorState[0];
+  const setFieldError: Web_VpnView_ConnectionEditor_SetFieldError = fieldErrorState[1];
+  const customFileState: Web_VpnView_ConnectionEditor_CustomFileState = useState<Web_VpnView_ConnectionEditor_CustomFile>(null);
+  const customFile: Web_VpnView_ConnectionEditor_CustomFile = customFileState[0];
+  const setCustomFile: Web_VpnView_ConnectionEditor_SetCustomFile = customFileState[1];
+  const tunnelLabelID: Web_VpnView_ConnectionEditor_TunnelLabelID = useId();
+  const uploadHintID: Web_VpnView_ConnectionEditor_UploadHintID = useId();
+  const reorderHintID: Web_VpnView_ConnectionEditor_ReorderHintID = useId();
+  const initializedSessionIDRef: Web_VpnView_ConnectionEditor_InitializedSessionIDRef = useRef<Web_VpnView_ConnectionEditor_InitializedSessionID>(null);
+  const poolListRef: Web_VpnView_ConnectionEditor_PoolListRef = useRef<Web_VpnView_ConnectionEditor_PoolList>(null);
 
-  useEffect((): void => {
-    const sessionID: string = connection?.['id'] ?? 'new';
-    if (!shouldInitializeConnectionEditor(
+  useEffect(() => {
+    const sessionID: Web_VpnView_ConnectionEditor_SessionID = (connection === null) ? 'new' : connection['id'];
+    if (shouldInitializeConnectionEditor(
       initializedSessionIDRef.current,
       sessionID,
       providers.length > 0,
-    )) {
+    ) === false) {
       return;
     }
     initializedSessionIDRef.current = sessionID;
+
     // A new connection starts on "— Select one —", so no provider is preferred.
-    const nextProviderID = connection?.['providerId'] ?? '';
-    const nextProvider = providers.find((provider): boolean => provider['id'] === nextProviderID);
-    const nextTunnel = connection?.['tunnel'] ?? pickTunnel(nextProvider, 'openvpn')?.['id'] ?? 'openvpn';
-    setName(connection?.['name'] ?? '');
-    setPeerPort(String(connection?.['peerPort'] ?? defaultPeerPort));
+    const nextProviderID: Web_VpnView_ConnectionEditor_NextProviderID = (connection === null) ? '' : connection['providerId'];
+    const nextProvider: Web_VpnView_ConnectionEditor_NextProvider = providers.find((provider) => provider['id'] === nextProviderID);
+    const nextPickedTunnel: Web_VpnView_ConnectionEditor_NextPickedTunnel = (connection === null) ? pickTunnel(nextProvider, 'openvpn') : undefined;
+    const nextPickedTunnelID: Web_VpnView_ConnectionEditor_NextPickedTunnelID = (nextPickedTunnel === undefined) ? 'openvpn' : nextPickedTunnel['id'];
+    const nextTunnel: Web_VpnView_ConnectionEditor_NextTunnel = (connection === null) ? nextPickedTunnelID : connection['tunnel'];
+
+    setName((connection === null) ? '' : connection['name']);
+    setPeerPort(String((connection === null) ? defaultPeerPort : connection['peerPort']));
     setProviderID(nextProviderID);
     setProviderSubmissionAttempted(false);
     setTunnelChoice(nextTunnel);
-    setProfileIDs(connection?.['profileIds'] ?? []);
-    setEndpointStrategy(connection?.['endpointStrategy'] ?? 'sticky');
+    setProfileIDs((connection === null) ? [] : connection['profileIds']);
+    setEndpointStrategy((connection === null) ? 'sticky' : connection['endpointStrategy']);
     setSearch('');
     setContinent('all');
     setProtocol('all');
     setVisibleProfileCount(100);
     setCredentials({});
     setCustomFile(null);
-    setDNSMode(((connection?.['dnsServers'].length ?? 0) === 0) ? 'provider' : 'custom');
-    setCustomDNS(connection?.['dnsServers'].join('\n') ?? '');
-    setRetryInterval(String(connection?.['retryIntervalSeconds'] ?? 10));
+    setDNSMode((connection === null || connection['dnsServers'].length === 0) ? 'provider' : 'custom');
+    setCustomDNS((connection === null) ? '' : connection['dnsServers'].join('\n'));
+    setRetryInterval(String((connection === null) ? 10 : connection['retryIntervalSeconds']));
     setError('');
     setFieldError(null);
     setBusyAction('');
+
+    return;
   }, [
     connection,
     defaultPeerPort,
     providers,
   ]);
 
-  const selectedProvider: Web_Api_Provider | undefined = providers.find(
-    (provider): boolean => provider['id'] === providerID,
+  const selectedProvider: Web_VpnView_ConnectionEditor_SelectedProvider = providers.find(
+    (provider) => provider['id'] === providerID,
   );
-  const selectedP2P: Web_Api_ProviderP2P | null = selectedProvider?.['p2p'] ?? null;
-  const selectedTunnel: Web_Api_ProviderTunnel | undefined = pickTunnel(selectedProvider, tunnelChoice);
-  const tunnelID: Web_Api_VpnTunnel = selectedTunnel?.['id'] ?? 'openvpn';
-  const isWireGuard: boolean = tunnelID === 'wireguard';
-  const uploadFile: Web_VpnTunnels_ProfileFile = profileFile(tunnelID);
-  const providerProfiles: Web_Api_VpnProfile[] = useMemo((): Web_Api_VpnProfile[] => (
-    profiles.filter((profile): boolean => profile['providerId'] === providerID && profile['tunnel'] === tunnelID)
+  const selectedP2P: Web_VpnView_ConnectionEditor_SelectedP2P = (selectedProvider === undefined) ? null : selectedProvider['p2p'];
+  const selectedTunnel: Web_VpnView_ConnectionEditor_SelectedTunnel = pickTunnel(selectedProvider, tunnelChoice);
+  const tunnelID: Web_VpnView_ConnectionEditor_TunnelID = (selectedTunnel === undefined) ? 'openvpn' : selectedTunnel['id'];
+  const isWireGuard: Web_VpnView_ConnectionEditor_IsWireGuard = tunnelID === 'wireguard';
+  const uploadFile: Web_VpnView_ConnectionEditor_UploadFile = profileFile(tunnelID);
+  const providerProfiles: Web_VpnView_ConnectionEditor_ProviderProfiles = useMemo(() => (
+    profiles.filter((profile) => profile['providerId'] === providerID && profile['tunnel'] === tunnelID)
   ), [
     profiles,
     providerID,
     tunnelID,
   ]);
-  const profileByID: Map<string, Web_Api_VpnProfile> = useMemo((): Map<string, Web_Api_VpnProfile> => (
-    new Map(providerProfiles.map((profile): [string, Web_Api_VpnProfile] => [
+  const profileByID: Web_VpnView_ConnectionEditor_ProfileByID = useMemo(() => {
+    const profileEntries: Web_VpnView_ConnectionEditor_ProfileEntries = providerProfiles.map((profile) => [
       profile['id'],
       profile,
-    ]))
-  ), [providerProfiles]);
-  const selectedProfiles: Web_Api_VpnProfile[] = profileIDs.flatMap(
-    (profileID): Web_Api_VpnProfile[] => {
-      const selectedProfile: Web_Api_VpnProfile | undefined = profileByID.get(profileID);
+    ]);
+
+    return new Map(profileEntries);
+  }, [providerProfiles]);
+  const selectedProfiles: Web_VpnView_ConnectionEditor_SelectedProfiles = profileIDs.flatMap(
+    (profileID) => {
+      const selectedProfile: Web_VpnView_ConnectionEditor_SelectedProfile = profileByID.get(profileID);
 
       return (selectedProfile === undefined) ? [] : [selectedProfile];
     },
   );
 
   // The fallback order is part of the form, so each move only changes the draft.
-  const poolReorder: Web_UseDragReorder_Result = useDragReorder(poolListRef, (profileID: string, destinationIndex: number): void => {
-    setProfileIDs((currentProfileIDs): string[] => placeListedID(currentProfileIDs, profileByID, profileID, destinationIndex));
-  });
-  const continents: string[] = useMemo((): string[] => (
-    [...new Set(providerProfiles
-      .map((profile): string => profile['continent'])
-      .filter((value): boolean => value !== ''))]
-      .sort((left, right): number => left.localeCompare(right))
-  ), [providerProfiles]);
-  const filteredProfiles: Web_Api_VpnProfile[] = useMemo((): Web_Api_VpnProfile[] => {
-    const normalizedSearch: string = search.trim().toLocaleLowerCase();
+  const poolReorder: Web_VpnView_ConnectionEditor_PoolReorder = useDragReorder(poolListRef, (profileID, destinationIndex) => {
+    setProfileIDs((currentProfileIDs) => placeListedID(currentProfileIDs, profileByID, profileID, destinationIndex));
 
-    return providerProfiles.filter((profile): boolean => {
+    return;
+  });
+  const continents: Web_VpnView_ConnectionEditor_Continents = useMemo(() => {
+    return [...new Set(providerProfiles
+      .map((profile) => profile['continent'])
+      .filter((value) => value !== ''))]
+      .sort((left, right) => left.localeCompare(right));
+  }, [providerProfiles]);
+  const filteredProfiles: Web_VpnView_ConnectionEditor_FilteredProfiles = useMemo(() => {
+    const normalizedSearch: Web_VpnView_ConnectionEditor_NormalizedSearch = search.trim().toLocaleLowerCase();
+
+    return providerProfiles.filter((profile) => {
       if (continent !== 'all' && profile['continent'] !== continent) {
         return false;
       }
@@ -480,7 +722,7 @@ const ConnectionEditor = ({
         profile['country'],
         profile['city'],
         profile['remoteHost'],
-      ].some((value): boolean => value.toLocaleLowerCase().includes(normalizedSearch));
+      ].some((value) => value.toLocaleLowerCase().includes(normalizedSearch));
     });
   }, [
     continent,
@@ -488,9 +730,9 @@ const ConnectionEditor = ({
     providerProfiles,
     search,
   ]);
-  const visibleProfiles: Web_Api_VpnProfile[] = filteredProfiles.slice(0, visibleProfileCount);
-  const credentialFields: Web_Api_ProviderCredentialField[] = selectedTunnel?.['credentialFields'] ?? [];
-  let savedCredentials: string[] = [];
+  const visibleProfiles: Web_VpnView_ConnectionEditor_VisibleProfiles = filteredProfiles.slice(0, visibleProfileCount);
+  const credentialFields: Web_VpnView_ConnectionEditor_CredentialFields = (selectedTunnel === undefined) ? [] : selectedTunnel['credentialFields'];
+  let savedCredentials: Web_VpnView_ConnectionEditor_SavedCredentials = [];
   if (
     connection !== null
     && providerID === connection['providerId']
@@ -498,56 +740,82 @@ const ConnectionEditor = ({
   ) {
     savedCredentials = connection['savedCredentials'];
   }
-  const nameIssue: string = issueFor(fieldError, 'name');
-  const peerPortIssue: string = issueFor(fieldError, 'peerPort');
-  let providerIssue: string = issueFor(fieldError, 'providerId');
+  const nameIssue: Web_VpnView_ConnectionEditor_NameIssue = issueFor(fieldError, 'name');
+  const peerPortIssue: Web_VpnView_ConnectionEditor_PeerPortIssue = issueFor(fieldError, 'peerPort');
+  let providerIssue: Web_VpnView_ConnectionEditor_ProviderIssue = issueFor(fieldError, 'providerId');
   if (providerIssue === '') {
     providerIssue = issueFor(fieldError, 'configuration.providerId');
   }
-  if (providerIssue === '' && providerSubmissionAttempted && providerID === '') {
+  if (
+    providerIssue === ''
+    && providerSubmissionAttempted === true
+    && providerID === ''
+  ) {
     providerIssue = providerRequiredMessage;
   }
-  const runtime: Web_Api_VpnRuntime | undefined = (connection === null) ? undefined : connectionState(connection, snapshot);
-  const activeProvider: Web_Api_Provider | undefined = providers.find(
-    (provider): boolean => provider['id'] === (runtime?.['providerId'] ?? connection?.['providerId']),
+  const runtime: Web_VpnView_ConnectionEditor_Runtime = (connection === null) ? undefined : connectionState(connection, snapshot);
+  const runtimeState: Web_VpnView_ConnectionEditor_RuntimeState = (runtime === undefined) ? undefined : runtime['state'];
+  const runtimeProviderID: Web_VpnView_ConnectionEditor_RuntimeProviderID = (runtime === undefined) ? undefined : runtime['providerId'];
+  const runtimeProfileID: Web_VpnView_ConnectionEditor_RuntimeProfileID = (runtime === undefined) ? undefined : runtime['profileId'];
+  const runtimeTunnel: Web_VpnView_ConnectionEditor_RuntimeTunnel = (runtime === undefined) ? undefined : runtime['tunnel'];
+  const runtimeInterface: Web_VpnView_ConnectionEditor_RuntimeInterface = (runtime === undefined) ? undefined : runtime['interface'];
+  const runtimeLastHandshakeAt: Web_VpnView_ConnectionEditor_RuntimeLastHandshakeAt = (runtime === undefined) ? undefined : runtime['lastHandshakeAt'];
+  const runtimeRemoteHost: Web_VpnView_ConnectionEditor_RuntimeRemoteHost = (runtime === undefined) ? undefined : runtime['remoteHost'];
+  const runtimeRemotePort: Web_VpnView_ConnectionEditor_RuntimeRemotePort = (runtime === undefined) ? undefined : runtime['remotePort'];
+  const runtimeEndpointStrategy: Web_VpnView_ConnectionEditor_RuntimeEndpointStrategy = (runtime === undefined) ? undefined : runtime['endpointStrategy'];
+  const runtimeEndpointCount: Web_VpnView_ConnectionEditor_RuntimeEndpointCount = (runtime === undefined) ? undefined : runtime['endpointCount'];
+  const runtimeEndpointPosition: Web_VpnView_ConnectionEditor_RuntimeEndpointPosition = (runtime === undefined) ? undefined : runtime['endpointPosition'];
+  const runtimeLastError: Web_VpnView_ConnectionEditor_RuntimeLastError = (runtime === undefined) ? undefined : runtime['lastError'];
+  const connectionProviderID: Web_VpnView_ConnectionEditor_ConnectionProviderID = (connection === null) ? undefined : connection['providerId'];
+  const activeProviderID: Web_VpnView_ConnectionEditor_ActiveProviderID = runtimeProviderID ?? connectionProviderID;
+  const activeProvider: Web_VpnView_ConnectionEditor_ActiveProvider = providers.find(
+    (provider) => provider['id'] === activeProviderID,
   );
-  const activeProfile: Web_Api_VpnProfile | undefined = profiles.find(
-    (profile): boolean => profile['id'] === runtime?.['profileId'],
+  const activeProfile: Web_VpnView_ConnectionEditor_ActiveProfile = profiles.find(
+    (profile) => profile['id'] === runtimeProfileID,
   );
-  const firewall = (snapshot === null || snapshot['status'] === undefined) ? undefined : snapshot['status']['runtime']['firewall'];
-  const runtimeTone: string = (runtime === undefined) ? 'blocked' : statusTone(runtime['state']);
-  const runtimeLabel: string = (runtime === undefined) ? 'Not connected' : stateLabels[runtime['state']] ?? runtime['state'];
-  const statusIsProtected: boolean = runtime?.['state'] === 'protected';
-  const statusIsWireGuard: boolean = (runtime?.['tunnel'] ?? tunnelID) === 'wireguard';
-  const interfaceLabel: string = (statusIsProtected) ? runtime?.['interface'] ?? '—' : '—';
-  const handshakeLabel: string = (statusIsProtected && runtime?.['lastHandshakeAt'] !== undefined) ? formatElapsed(runtime['lastHandshakeAt']) : '—';
-  const remotePort: string = (runtime?.['remotePort'] === undefined) ? '' : `:${runtime['remotePort']}`;
-  const protocolSuffix: string = (activeProfile === undefined || statusIsWireGuard) ? '' : ` (${activeProfile['protocol']})`;
-  let endpointLabel: string = '—';
+  const activeProviderName: Web_VpnView_ConnectionEditor_ActiveProviderName = (activeProvider === undefined) ? undefined : activeProvider['displayName'];
+  const selectedProviderName: Web_VpnView_ConnectionEditor_SelectedProviderName = (selectedProvider === undefined) ? undefined : selectedProvider['displayName'];
+  const providerLabel: Web_VpnView_ConnectionEditor_ProviderLabel = (
+    activeProviderName
+    ?? selectedProviderName
+    ?? '—'
+  );
+  const firewall: Web_VpnView_ConnectionEditor_Firewall = (snapshot === null || snapshot['status'] === undefined) ? undefined : snapshot['status']['runtime']['firewall'];
+  const runtimeTone: Web_VpnView_ConnectionEditor_RuntimeTone = (runtime === undefined) ? 'blocked' : statusTone(runtime['state']);
+  const runtimeLabel: Web_VpnView_ConnectionEditor_RuntimeLabel = (runtime === undefined) ? 'Not connected' : stateLabels[runtime['state']] ?? runtime['state'];
+  const statusIsProtected: Web_VpnView_ConnectionEditor_StatusIsProtected = runtimeState === 'protected';
+  const statusIsWireGuard: Web_VpnView_ConnectionEditor_StatusIsWireGuard = (runtimeTunnel ?? tunnelID) === 'wireguard';
+  const interfaceLabel: Web_VpnView_ConnectionEditor_InterfaceLabel = (statusIsProtected === true) ? runtimeInterface ?? '—' : '—';
+  const handshakeLabel: Web_VpnView_ConnectionEditor_HandshakeLabel = (statusIsProtected === true && runtimeLastHandshakeAt !== undefined) ? formatElapsed(runtimeLastHandshakeAt) : '—';
+  const remotePort: Web_VpnView_ConnectionEditor_RemotePort = (runtimeRemotePort === undefined) ? '' : `:${runtimeRemotePort}`;
+  const protocolSuffix: Web_VpnView_ConnectionEditor_ProtocolSuffix = (activeProfile === undefined || statusIsWireGuard === true) ? '' : ` (${activeProfile['protocol']})`;
+  let endpointLabel: Web_VpnView_ConnectionEditor_EndpointLabel = '—';
   if (connection === null) {
     endpointLabel = 'Not tested';
   }
-  if (runtime?.['remoteHost'] !== undefined) {
-    endpointLabel = `${runtime['remoteHost']}${remotePort}${protocolSuffix}`;
+  if (runtimeRemoteHost !== undefined) {
+    endpointLabel = `${runtimeRemoteHost}${remotePort}${protocolSuffix}`;
   }
-  const strategySuffix: string = (runtime?.['endpointStrategy'] === undefined) ? '' : `, ${runtime['endpointStrategy']}`;
-  const poolLabel: string = (runtime?.['endpointCount'] === undefined) ? `${profileIDs.length} ${(profileIDs.length === 1) ? 'endpoint' : 'endpoints'}` : `${runtime['endpointPosition'] ?? 1} of ${runtime['endpointCount']}${strategySuffix}`;
-  let firewallLabel: string = '—';
+  const strategySuffix: Web_VpnView_ConnectionEditor_StrategySuffix = (runtimeEndpointStrategy === undefined) ? '' : `, ${runtimeEndpointStrategy}`;
+  const profileCountNoun: Web_VpnView_ConnectionEditor_ProfileCountNoun = (profileIDs.length === 1) ? 'endpoint' : 'endpoints';
+  const poolLabel: Web_VpnView_ConnectionEditor_PoolLabel = (runtimeEndpointCount === undefined) ? `${profileIDs.length} ${profileCountNoun}` : `${runtimeEndpointPosition ?? 1} of ${runtimeEndpointCount}${strategySuffix}`;
+  let firewallLabel: Web_VpnView_ConnectionEditor_FirewallLabel = '—';
   if (connection === null) {
     firewallLabel = 'Ready';
   } else if (firewall !== undefined) {
     // Plain words for the firewall's two states. Its iptables variant stays in the health API.
     firewallLabel = (firewall['state'] === 'protected') ? 'Tunnel only' : 'Blocked';
   }
-  let normalizedDNS: string[] = [];
+  let normalizedDNS: Web_VpnView_ConnectionEditor_NormalizedDNS = [];
   if (dnsMode === 'custom') {
     normalizedDNS = customDNS
       .split('\n')
-      .map((server): string => server.trim())
-      .filter((server): boolean => server !== '');
+      .map((server) => server.trim())
+      .filter((server) => server !== '');
   }
-  const credentialsDirty: boolean = Object.values(credentials).some((value): boolean => value.trim() !== '');
-  const configurationDirty: boolean = connection === null
+  const credentialsDirty: Web_VpnView_ConnectionEditor_CredentialsDirty = Object.values(credentials).some((value) => value.trim() !== '');
+  const configurationDirty: Web_VpnView_ConnectionEditor_ConfigurationDirty = connection === null
     || providerID !== connection['providerId']
     || tunnelID !== connection['tunnel']
     || endpointStrategy !== connection['endpointStrategy']
@@ -555,28 +823,39 @@ const ConnectionEditor = ({
     || normalizedDNS.join('\n') !== connection['dnsServers'].join('\n')
     || profileIDs.join('|') !== connection['profileIds'].join('|')
     || credentialsDirty;
-  const metadataDirty: boolean = connection !== null && (
-    name.trim() !== connection['name'] || Number(peerPort) !== connection['peerPort']
+  const metadataDirty: Web_VpnView_ConnectionEditor_MetadataDirty = (
+    connection !== null
+    && (
+      name.trim() !== connection['name']
+      || Number(peerPort) !== connection['peerPort']
+    )
   );
-  const renameOnly: boolean = connection !== null && metadataDirty && !configurationDirty;
-  const changeRunning: boolean = connection?.['changeRunning'] === true;
+  const renameOnly: Web_VpnView_ConnectionEditor_RenameOnly = (
+    connection !== null
+    && metadataDirty === true
+    && configurationDirty === false
+  );
+  const changeRunning: Web_VpnView_ConnectionEditor_ChangeRunning = connection !== null && connection['changeRunning'] === true;
+
   // Every Transmission looks trackers up through the default connection, so say whose DNS answers.
-  let dnsHint: string = 'Web proxy logins on this connection use these servers. Tracker lookups for every connection use the default connection\'s DNS.';
-  if (connection?.['default'] === true) {
+  let dnsHint: Web_VpnView_ConnectionEditor_DnsHint = 'Web proxy logins on this connection use these servers. Tracker lookups for every connection use the default connection\'s DNS.';
+  if (connection !== null && connection['default'] === true) {
     dnsHint = 'This is the default connection, so these servers answer the tracker lookups of every connection, plus this connection\'s web proxy logins.';
   } else if (connection !== null) {
     dnsHint = 'Only this connection\'s web proxy logins use these servers. Tracker lookups for every connection use the default connection\'s DNS.';
   }
 
   /**
-   * VPN connection editor - Reset selection.
+   * Vpn View - Reset Selection.
    *
    * Clears endpoint-specific state after a provider or tunnel change.
    * Filters and credentials cannot carry across different catalogs.
    *
+   * @returns {Web_VpnView_ConnectionEditor_ResetSelection_Returns}
+   *
    * @since 2.0.0
    */
-  const resetSelection = (): void => {
+  const resetSelection: Web_VpnView_ConnectionEditor_ResetSelection = (): Web_VpnView_ConnectionEditor_ResetSelection_Returns => {
     setProfileIDs([]);
     setSearch('');
     setContinent('all');
@@ -587,42 +866,50 @@ const ConnectionEditor = ({
     setError('');
     setFieldError(null);
     setProviderSubmissionAttempted(false);
+
+    return;
   };
 
   /**
-   * VPN connection editor - Toggle profile.
+   * Vpn View - Toggle Profile.
    *
    * Adds or removes one endpoint while preserving the pool order.
    * The same handler serves the browser and fallback list controls.
    *
-   * @param {string} profileID - Profile i d.
+   * @param {Web_VpnView_ConnectionEditor_ToggleProfile_ProfileID} profileID - Profile i d.
+   *
+   * @returns {Web_VpnView_ConnectionEditor_ToggleProfile_Returns}
    *
    * @since 2.0.0
    */
-  const toggleProfile = (profileID: string): void => {
-    if (!profileIDs.includes(profileID) && profileIDs.length >= 128) {
+  const toggleProfile: Web_VpnView_ConnectionEditor_ToggleProfile = (profileID: Web_VpnView_ConnectionEditor_ToggleProfile_ProfileID): Web_VpnView_ConnectionEditor_ToggleProfile_Returns => {
+    if (profileIDs.includes(profileID) === false && profileIDs.length >= 128) {
       showToast('An endpoint pool can contain up to 128 profiles.', false);
 
       return;
     }
 
-    setProfileIDs((currentProfileIDs): string[] => (
-      (currentProfileIDs.includes(profileID)) ? currentProfileIDs.filter((currentProfileID): boolean => currentProfileID !== profileID) : [
+    setProfileIDs((currentProfileIDs) => (
+      (currentProfileIDs.includes(profileID) === true) ? currentProfileIDs.filter((currentProfileID) => currentProfileID !== profileID) : [
         ...currentProfileIDs,
         profileID,
       ]
     ));
+
+    return;
   };
 
   /**
-   * VPN connection editor - Build configuration.
+   * Vpn View - Build Configuration.
    *
    * Normalizes the form into the exact create/update configuration body.
    * Metadata remains outside this object for rename-only saves.
    *
+   * @returns {Web_VpnView_ConnectionEditor_BuildConfiguration_Returns}
+   *
    * @since 2.0.0
    */
-  const buildConfiguration = (): Web_Api_VpnConfigurationInput => ({
+  const buildConfiguration: Web_VpnView_ConnectionEditor_BuildConfiguration = (): Web_VpnView_ConnectionEditor_BuildConfiguration_Returns => ({
     credentials: submittedCredentials(credentialFields, credentials),
     ...parseVPNConnectionInput({
       dnsServers: normalizedDNS,
@@ -635,15 +922,20 @@ const ConnectionEditor = ({
   });
 
   /**
-   * VPN connection editor - Submit.
+   * Vpn View - Submit.
    *
    * Omits configuration for metadata-only saves so the VPN stays connected.
    * New and configuration-changing submissions retain the test workflow.
    *
+   * @param {Web_VpnView_ConnectionEditor_Submit_Event} event - Event.
+   *
+   * @returns {Web_VpnView_ConnectionEditor_Submit_Returns}
+   *
    * @since 2.0.0
    */
-  const submit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
+  const submit: Web_VpnView_ConnectionEditor_Submit = async (event: Web_VpnView_ConnectionEditor_Submit_Event): Web_VpnView_ConnectionEditor_Submit_Returns => {
     event.preventDefault();
+
     setProviderSubmissionAttempted(true);
     if (providerID === '') {
       setError('');
@@ -655,37 +947,40 @@ const ConnectionEditor = ({
     setError('');
     setFieldError(null);
     try {
-      if (!renameOnly) {
+      if (renameOnly === false) {
         validateProviderCredentials(selectedTunnel, credentials, savedCredentials);
       }
 
       if (connection === null) {
-        const input: Web_Api_CreateVpnConnectionInput = {
+        const createInput: Web_VpnView_ConnectionEditor_Submit_CreateInput = {
           ...buildConfiguration(),
           name: name.trim(),
           peerPort: Number(peerPort),
         };
-        await onCreate(input);
+
+        await onCreate(createInput);
       } else {
-        const input: Web_Api_UpdateVpnConnectionInput = {
+        const updateInput: Web_VpnView_ConnectionEditor_Submit_UpdateInput = {
           expectedRevision: connection['revision'],
           ...((name.trim() === connection['name']) ? {} : { name: name.trim() }),
           ...((Number(peerPort) === connection['peerPort']) ? {} : { peerPort: Number(peerPort) }),
-          ...((renameOnly) ? {} : { configuration: buildConfiguration() }),
+          ...((renameOnly === true) ? {} : { configuration: buildConfiguration() }),
         };
-        await onUpdate(connection['id'], input);
+
+        await onUpdate(connection['id'], updateInput);
       }
 
-      setCredentials((currentCredentials): Record<string, string> => keptCredentials(credentialFields, currentCredentials));
-      showToast((renameOnly) ? 'Connection saved.' : 'VPN connected.', true);
+      setCredentials((currentCredentials) => keptCredentials(credentialFields, currentCredentials));
+      showToast((renameOnly === true) ? 'Connection saved.' : 'VPN connected.', true);
       onBack();
     } catch (caughtError) {
-      const shownFields: string[] = [
+      const shownFields: Web_VpnView_ConnectionEditor_Submit_ShownFields = [
         'name',
         'peerPort',
         'providerId',
         'configuration.providerId',
       ];
+
       for (const field of credentialFields) {
         shownFields.push(`credentials.${field['key']}`);
         shownFields.push(`configuration.credentials.${field['key']}`);
@@ -696,17 +991,23 @@ const ConnectionEditor = ({
     } finally {
       setBusyAction('');
     }
+
+    return;
   };
 
   /**
-   * VPN connection editor - Run connection action.
+   * Vpn View - Run Connection Action.
    *
    * Shares busy and error handling across the three row-level mutations.
    * Each action remains scoped to the open connection identifier.
    *
+   * @param {Web_VpnView_ConnectionEditor_RunConnectionAction_Action} action - Action.
+   *
+   * @returns {Web_VpnView_ConnectionEditor_RunConnectionAction_Returns}
+   *
    * @since 2.0.0
    */
-  const runConnectionAction = async (action: 'default' | 'disconnect' | 'reconnect'): Promise<void> => {
+  const runConnectionAction: Web_VpnView_ConnectionEditor_RunConnectionAction = async (action: Web_VpnView_ConnectionEditor_RunConnectionAction_Action): Web_VpnView_ConnectionEditor_RunConnectionAction_Returns => {
     if (connection === null) {
       return;
     }
@@ -728,31 +1029,42 @@ const ConnectionEditor = ({
     } finally {
       setBusyAction('');
     }
+
+    return;
   };
 
   /**
-   * VPN connection editor - Handle custom file.
+   * Vpn View - Handle Custom File.
    *
    * Stores the selected profile until the user uploads it.
    * File content remains local until the explicit upload action.
    *
-   * @param {ChangeEvent<HTMLInputElement>} event - Event.
+   * @param {Web_VpnView_ConnectionEditor_HandleCustomFile_Event} event - Event.
+   *
+   * @returns {Web_VpnView_ConnectionEditor_HandleCustomFile_Returns}
    *
    * @since 2.0.0
    */
-  const handleCustomFile = (event: ChangeEvent<HTMLInputElement>): void => {
-    setCustomFile(event.currentTarget.files?.[0] ?? null);
+  const handleCustomFile: Web_VpnView_ConnectionEditor_HandleCustomFile = (event: Web_VpnView_ConnectionEditor_HandleCustomFile_Event): Web_VpnView_ConnectionEditor_HandleCustomFile_Returns => {
+    const files: Web_VpnView_ConnectionEditor_HandleCustomFile_Files = event.currentTarget.files;
+    const file: Web_VpnView_ConnectionEditor_HandleCustomFile_File = (files === null) ? undefined : files[0];
+
+    setCustomFile(file ?? null);
+
+    return;
   };
 
   /**
-   * VPN connection editor - Upload profile.
+   * Vpn View - Upload Profile.
    *
    * Validates the browser-side size bound before reading the file.
    * A successful upload becomes the only selected custom endpoint.
    *
+   * @returns {Web_VpnView_ConnectionEditor_UploadProfile_Returns}
+   *
    * @since 2.0.0
    */
-  const uploadProfile = async (): Promise<void> => {
+  const uploadProfile: Web_VpnView_ConnectionEditor_UploadProfile = async (): Web_VpnView_ConnectionEditor_UploadProfile_Returns => {
     if (customFile === null) {
       showToast(`Choose a ${uploadFile['label']} first.`, false);
 
@@ -766,37 +1078,44 @@ const ConnectionEditor = ({
 
     setBusyAction('upload');
     try {
-      const profileContent: string = await customFile.text();
-      const uploadedProfiles: Web_Api_VpnProfile[] = await onUploadProfile(tunnelID, customFile.name, profileContent);
+      const profileContent: Web_VpnView_ConnectionEditor_UploadProfile_ProfileContent = await customFile.text();
+      const uploadedProfiles: Web_VpnView_ConnectionEditor_UploadProfile_UploadedProfiles = await onUploadProfile(tunnelID, customFile.name, profileContent);
+      const firstUploadedProfile: Web_VpnView_ConnectionEditor_UploadProfile_FirstUploadedProfile = uploadedProfiles[0];
+      const uploadedNoun: Web_VpnView_ConnectionEditor_UploadProfile_UploadedNoun = (uploadedProfiles.length === 1) ? 'endpoint' : 'endpoints';
+
       setProviderID('custom');
-      setTunnelChoice(uploadedProfiles[0]?.['tunnel'] ?? tunnelID);
-      setProfileIDs(uploadedProfiles.map((profile: Web_Api_VpnProfile): string => profile['id']));
+      setTunnelChoice((firstUploadedProfile === undefined) ? tunnelID : firstUploadedProfile['tunnel']);
+      setProfileIDs(uploadedProfiles.map((profile) => profile['id']));
       setCustomFile(null);
-      showToast(`${String(uploadedProfiles.length)} VPN ${(uploadedProfiles.length === 1) ? 'endpoint' : 'endpoints'} uploaded.`, true);
+      showToast(`${String(uploadedProfiles.length)} VPN ${uploadedNoun} uploaded.`, true);
     } catch (caughtError) {
       setError((caughtError instanceof Error) ? caughtError.message : 'The profile could not be uploaded.');
     } finally {
       setBusyAction('');
     }
+
+    return;
   };
 
-  let tunnelControl: ReactElement | null = null;
+  let tunnelControl: Web_VpnView_ConnectionEditor_TunnelControl = null;
   if (selectedProvider !== undefined && selectedProvider['tunnels'].length > 1) {
     tunnelControl = (
       <div aria-labelledby={tunnelLabelID} className="field tunnel-field" role="group">
         <span id={tunnelLabelID}>Tunnel</span>
         <div className="segmented">
-          {selectedProvider['tunnels'].map((tunnel): ReactElement => (
+          {selectedProvider['tunnels'].map((tunnel) => (
             <button
               aria-pressed={tunnel['id'] === tunnelID}
               key={tunnel['id']}
-              onClick={(): void => {
+              onClick={() => {
                 if (tunnel['id'] === tunnelID) {
                   return;
                 }
 
                 setTunnelChoice(tunnel['id']);
                 resetSelection();
+
+                return;
               }}
               type="button"
             >
@@ -815,10 +1134,19 @@ const ConnectionEditor = ({
     );
   }
 
-  let primaryButtonLabel: string = (renameOnly) ? 'Save' : 'Test and connect';
+  let primaryButtonLabel: Web_VpnView_ConnectionEditor_PrimaryButtonLabel = (renameOnly === true) ? 'Save' : 'Test and connect';
   if (busyAction === 'save') {
-    primaryButtonLabel = (renameOnly) ? 'Saving…' : 'Testing…';
+    primaryButtonLabel = (renameOnly === true) ? 'Saving…' : 'Testing…';
   }
+
+  const actionsRenameOnlyClass: Web_VpnView_ConnectionEditor_ActionsRenameOnlyClass = (renameOnly === true) ? ' vpn-actions-rename-only' : '';
+  const submitDisabled: Web_VpnView_ConnectionEditor_SubmitDisabled = (
+    busyAction !== ''
+    || changeRunning
+    || name.trim() === ''
+    || providerID === ''
+    || profileIDs.length === 0
+  );
 
   return (
     <section className="workspace-section vpn-workspace vpn-editor-page">
@@ -829,14 +1157,16 @@ const ConnectionEditor = ({
       <header className="vpn-editor-heading">
         <span className="vpn-title-line">
           <h1>{(connection === null) ? 'New connection' : connection['name']}</h1>
-          {(connection?.['default'] === true) ? <span className="tag vpn-default-tag">Default</span> : null}
+          {(connection !== null && connection['default'] === true) ? <span className="tag vpn-default-tag">Default</span> : null}
         </span>
-        {(connection === null || connection['default']) ? null : (
+        {(connection === null || connection['default'] === true) ? null : (
           <Button
             disabled={busyAction !== ''}
             icon="shield"
-            onClick={(): void => {
+            onClick={() => {
               void runConnectionAction('default');
+
+              return;
             }}
           >
             Make default
@@ -863,13 +1193,13 @@ const ConnectionEditor = ({
           </div>
           <div>
             <dt>Provider</dt>
-            <dd>{activeProvider?.['displayName'] ?? selectedProvider?.['displayName'] ?? '—'}</dd>
+            <dd>{providerLabel}</dd>
           </div>
           <div>
             <dt>Endpoint</dt>
             <dd title={endpointLabel}>{endpointLabel}</dd>
           </div>
-          {(statusIsWireGuard) ? (
+          {(statusIsWireGuard === true) ? (
             <div>
               <dt>Last handshake</dt>
               <dd>{handshakeLabel}</dd>
@@ -896,35 +1226,43 @@ const ConnectionEditor = ({
         </dl>
       )}
 
-      {(connection === null || runtime?.['lastError'] === undefined || runtime['lastError'] === '') ? null : (
-        <div className="form-error">
-          <strong>Connection error</strong>
-          {formatConsoleError(runtime['lastError'])}
-        </div>
-      )}
+      {(
+        connection === null
+        || runtimeLastError === undefined
+        || runtimeLastError === ''
+      ) ? null : (
+          <div className="form-error">
+            <strong>Connection error</strong>
+            {formatConsoleError(runtimeLastError)}
+          </div>
+        )}
 
       <form className="panel vpn-connection-form" noValidate onSubmit={submit}>
         <section className="form-section">
           <div className="form-section-head">
             <h2>Provider</h2>
-            <span>{`${profileIDs.length} ${(profileIDs.length === 1) ? 'endpoint' : 'endpoints'} selected`}</span>
+            <span>{`${profileIDs.length} ${profileCountNoun} selected`}</span>
           </div>
           <div className="field-row">
             <FieldLabel>
               <span>Provider</span>
               <select
                 aria-invalid={providerIssue !== ''}
-                onChange={(event): void => {
-                  const nextProviderID: string = event.currentTarget.value;
-                  const nextProvider: Web_Api_Provider | undefined = providers.find((provider): boolean => provider['id'] === nextProviderID);
+                onChange={(event) => {
+                  const nextProviderID: Web_VpnView_ConnectionEditor_NextProviderID = event.currentTarget.value;
+                  const nextProvider: Web_VpnView_ConnectionEditor_NextProvider = providers.find((provider) => provider['id'] === nextProviderID);
+                  const nextPickedTunnel: Web_VpnView_ConnectionEditor_NextPickedTunnel = pickTunnel(nextProvider, 'openvpn');
+
                   setProviderID(nextProviderID);
-                  setTunnelChoice(pickTunnel(nextProvider, 'openvpn')?.['id'] ?? 'openvpn');
+                  setTunnelChoice((nextPickedTunnel === undefined) ? 'openvpn' : nextPickedTunnel['id']);
                   resetSelection();
+
+                  return;
                 }}
                 value={providerID}
               >
                 <option className="select-placeholder" value="">— Select one —</option>
-                {providers.map((provider): ReactElement => (
+                {providers.map((provider) => (
                   <option key={provider['id']} value={provider['id']}>{provider['displayName']}</option>
                 ))}
               </select>
@@ -934,19 +1272,25 @@ const ConnectionEditor = ({
             {tunnelControl}
           </div>
 
-          {(selectedTunnel?.['supportsCatalogRefresh'] === true) ? (
+          {(selectedTunnel !== undefined && selectedTunnel['supportsCatalogRefresh'] === true) ? (
             <div className="inline-meta">
               <span>{(selectedTunnel['catalog'] === undefined) ? 'Endpoint list not downloaded yet' : `${selectedTunnel['catalog']['endpointCount']} endpoints · updated ${formatDate(selectedTunnel['catalog']['refreshedAt'])}`}</span>
               <button
                 className="text-button"
                 disabled={busyAction !== ''}
-                onClick={(): void => {
+                onClick={() => {
                   setBusyAction('catalog refresh');
-                  void onRefreshCatalog(providerID, tunnelID).then((): void => {
+                  void onRefreshCatalog(providerID, tunnelID).then(() => {
                     showToast('Endpoint list refreshed.', true);
-                  }).catch((caughtError): void => {
+
+                    return;
+                  }).catch((caughtError) => {
                     setError((caughtError instanceof Error) ? caughtError.message : 'The endpoint list could not be refreshed.');
-                  }).finally((): void => setBusyAction(''));
+
+                    return;
+                  }).finally(() => setBusyAction(''));
+
+                  return;
                 }}
                 type="button"
               >
@@ -955,21 +1299,23 @@ const ConnectionEditor = ({
             </div>
           ) : null}
 
-          {(selectedTunnel?.['supportsProfileUpload'] === true) ? (
+          {(selectedTunnel !== undefined && selectedTunnel['supportsProfileUpload'] === true) ? (
             <div className="upload-row">
               <label className="file-drop file-drop-compact">
                 <Icon name="upload" size={20} />
-                <strong>{customFile?.name ?? uploadFile['prompt']}</strong>
+                <strong>{(customFile === null) ? uploadFile['prompt'] : customFile.name}</strong>
                 <span>{(customFile === null) ? 'or drop it here' : formatBytes(customFile.size)}</span>
-                <input accept={uploadFile['accept']} aria-describedby={(isWireGuard) ? uploadHintID : undefined} onChange={handleCustomFile} type="file" />
+                <input accept={uploadFile['accept']} aria-describedby={(isWireGuard === true) ? uploadHintID : undefined} onChange={handleCustomFile} type="file" />
               </label>
-              {(isWireGuard) ? (
+              {(isWireGuard === true) ? (
                 <p className="form-section-note" id={uploadHintID}>The file must include its private key, one peer, and no PostUp/PreDown lines.</p>
               ) : null}
               <Button
                 disabled={busyAction !== '' || customFile === null}
-                onClick={(): void => {
+                onClick={() => {
                   void uploadProfile();
+
+                  return;
                 }}
               >
                 Upload profile
@@ -985,8 +1331,8 @@ const ConnectionEditor = ({
           </div>
 
           {(selectedP2P === null) ? null : (
-            <p className={(selectedP2P['restricted']) ? 'p2p-note p2p-note-restricted' : 'p2p-note'}>
-              <Icon name={(selectedP2P['restricted']) ? 'warning' : 'torrent'} size={15} />
+            <p className={(selectedP2P['restricted'] === true) ? 'p2p-note p2p-note-restricted' : 'p2p-note'}>
+              <Icon name={(selectedP2P['restricted'] === true) ? 'warning' : 'torrent'} size={15} />
               <span>
                 {selectedP2P['note']}
                 {' '}
@@ -995,14 +1341,16 @@ const ConnectionEditor = ({
             </p>
           )}
 
-          <div className={(isWireGuard) ? 'endpoint-filters endpoint-filters-no-protocol' : 'endpoint-filters'}>
+          <div className={(isWireGuard === true) ? 'endpoint-filters endpoint-filters-no-protocol' : 'endpoint-filters'}>
             <label className="search-field">
               <Icon name="search" size={16} />
               <span className="visually-hidden">Search endpoints</span>
               <input
-                onChange={(event): void => {
+                onChange={(event) => {
                   setSearch(event.currentTarget.value);
                   setVisibleProfileCount(100);
+
+                  return;
                 }}
                 placeholder="Search city, country or server"
                 type="search"
@@ -1012,24 +1360,28 @@ const ConnectionEditor = ({
             <select
               aria-label="Filter endpoints by continent"
               className="select-control"
-              onChange={(event): void => {
+              onChange={(event) => {
                 setContinent(event.currentTarget.value);
                 setVisibleProfileCount(100);
+
+                return;
               }}
               value={continent}
             >
               <option value="all">All continents</option>
-              {continents.map((continentName): ReactElement => (
+              {continents.map((continentName) => (
                 <option key={continentName} value={continentName}>{continentName}</option>
               ))}
             </select>
-            {(isWireGuard) ? null : (
+            {(isWireGuard === true) ? null : (
               <select
                 aria-label="Filter endpoints by protocol"
                 className="select-control"
-                onChange={(event): void => {
+                onChange={(event) => {
                   setProtocol(event.currentTarget.value);
                   setVisibleProfileCount(100);
+
+                  return;
                 }}
                 value={protocol}
               >
@@ -1043,23 +1395,23 @@ const ConnectionEditor = ({
           <div className="select-list">
             {(visibleProfiles.length === 0) ? (
               <p className="select-list-empty">No endpoints match these filters.</p>
-            ) : visibleProfiles.map((profile): ReactElement => {
-              const selected: boolean = profileIDs.includes(profile['id']);
+            ) : visibleProfiles.map((profile) => {
+              const selected: Web_VpnView_ConnectionEditor_Selected = profileIDs.includes(profile['id']);
 
               return (
                 <label className="select-list-row" key={profile['id']}>
-                  <input checked={selected} onChange={(): void => toggleProfile(profile['id'])} type="checkbox" />
+                  <input checked={selected} onChange={() => toggleProfile(profile['id'])} type="checkbox" />
                   <span className="select-list-main">
                     <span>{profile['displayName']}</span>
                     <small className="mono">{`${profile['remoteHost']}:${profile['remotePort']}`}</small>
                   </span>
-                  <span className="tag">{(isWireGuard) ? 'WireGuard' : profile['protocol'].toUpperCase()}</span>
+                  <span className="tag">{(isWireGuard === true) ? 'WireGuard' : profile['protocol'].toUpperCase()}</span>
                 </label>
               );
             })}
           </div>
           {(visibleProfiles.length >= filteredProfiles.length) ? null : (
-            <button className="text-button" onClick={(): void => setVisibleProfileCount((count): number => count + 100)} type="button">Show 100 more</button>
+            <button className="text-button" onClick={() => setVisibleProfileCount((count) => count + 100)} type="button">Show 100 more</button>
           )}
         </section>
 
@@ -1069,7 +1421,7 @@ const ConnectionEditor = ({
             <select
               aria-label="Fallback strategy"
               className="select-control"
-              onChange={(event): void => setEndpointStrategy(event.currentTarget.value as EndpointStrategy)}
+              onChange={(event) => setEndpointStrategy(event.currentTarget.value as Web_VpnView_EndpointStrategy)}
               value={endpointStrategy}
             >
               <option value="sticky">Sticky</option>
@@ -1083,14 +1435,14 @@ const ConnectionEditor = ({
           ) : (
             <>
               <ol className={(poolReorder['draggingID'] === null) ? 'select-list pool-list' : 'select-list pool-list reordering'} ref={poolListRef}>
-                {selectedProfiles.map((profile, profileIndex): ReactElement => (
+                {selectedProfiles.map((profile, profileIndex) => (
                   <li className={(poolReorder['draggingID'] === profile['id']) ? 'select-list-row reorder-dragging' : 'select-list-row'} data-reorder-id={profile['id']} key={profile['id']}>
                     <button
                       aria-describedby={reorderHintID}
                       aria-label={`Reorder ${profile['displayName']}`}
                       className="icon-button reorder-handle"
-                      onKeyDown={(event): void => poolReorder.handleKeyDown(event, profile['id'], profileIndex, selectedProfiles.length, profile['displayName'])}
-                      onPointerDown={(event): void => poolReorder.handlePointerDown(event, profile['id'])}
+                      onKeyDown={(event) => poolReorder.handleKeyDown(event, profile['id'], profileIndex, selectedProfiles.length, profile['displayName'])}
+                      onPointerDown={(event) => poolReorder.handlePointerDown(event, profile['id'])}
                       title="Drag to reorder"
                       type="button"
                     >
@@ -1099,10 +1451,10 @@ const ConnectionEditor = ({
                     <span className="pool-position">{profileIndex + 1}</span>
                     <span className="select-list-main">
                       <span>{profile['displayName']}</span>
-                      <small className="mono">{(isWireGuard) ? `${profile['remoteHost']}:${profile['remotePort']}` : `${profile['remoteHost']}:${profile['remotePort']} · ${profile['protocol'].toUpperCase()}`}</small>
+                      <small className="mono">{(isWireGuard === true) ? `${profile['remoteHost']}:${profile['remotePort']}` : `${profile['remoteHost']}:${profile['remotePort']} · ${profile['protocol'].toUpperCase()}`}</small>
                     </span>
                     <span className="pool-actions">
-                      <button aria-label={`Remove ${profile['displayName']}`} className="icon-button" onClick={(): void => toggleProfile(profile['id'])} title="Remove" type="button"><Icon name="x" size={15} /></button>
+                      <button aria-label={`Remove ${profile['displayName']}`} className="icon-button" onClick={() => toggleProfile(profile['id'])} title="Remove" type="button"><Icon name="x" size={15} /></button>
                     </span>
                   </li>
                 ))}
@@ -1117,23 +1469,23 @@ const ConnectionEditor = ({
           <section className="form-section">
             <div className="form-section-head"><h2>Sign-in</h2></div>
             {(credentialFields.length === 0) ? (
-              <p className="form-section-note">{(isWireGuard) ? 'This file includes its own key.' : 'This profile includes its own credentials.'}</p>
+              <p className="form-section-note">{(isWireGuard === true) ? 'This file includes its own key.' : 'This profile includes its own credentials.'}</p>
             ) : (
               <div className="field-row">
-                {credentialFields.map((field): ReactElement => {
-                  const saved: boolean = savedCredentials.includes(field['key']);
-                  const input: Web_VpnTunnels_CredentialInput = credentialInput(field, saved);
-                  let description: string = field['description'];
-                  if (saved) {
-                    const separator: string = (description === '') ? '' : ' ';
+                {credentialFields.map((field) => {
+                  const saved: Web_VpnView_ConnectionEditor_Saved = savedCredentials.includes(field['key']);
+                  const input: Web_VpnView_ConnectionEditor_Input = credentialInput(field, saved);
+                  let description: Web_VpnView_ConnectionEditor_Description = field['description'];
+                  if (saved === true) {
+                    const separator: Web_VpnView_ConnectionEditor_Separator = (description === '') ? '' : ' ';
 
                     description = `${description}${separator}Saved. Leave empty to keep it.`;
                   }
-                  let fieldIssue: string = issueFor(fieldError, `configuration.credentials.${field['key']}`);
+                  let fieldIssue: Web_VpnView_ConnectionEditor_FieldIssue = issueFor(fieldError, `configuration.credentials.${field['key']}`);
                   if (fieldIssue === '') {
                     fieldIssue = issueFor(fieldError, `credentials.${field['key']}`);
                   }
-                  let credentialHelp: ReactElement | null = null;
+                  let credentialHelp: Web_VpnView_ConnectionEditor_CredentialHelp = null;
                   if (fieldIssue !== '') {
                     credentialHelp = <small className="field-error">{fieldIssue}</small>;
                   } else if (description !== '') {
@@ -1148,12 +1500,15 @@ const ConnectionEditor = ({
                         aria-invalid={fieldIssue !== ''}
                         autoComplete={input['autoComplete']}
                         className={input['className']}
-                        onChange={(event): void => {
-                          const nextValue: string = event.currentTarget.value;
-                          setCredentials((currentCredentials): Record<string, string> => ({
+                        onChange={(event) => {
+                          const nextValue: Web_VpnView_ConnectionEditor_NextValue = event.currentTarget.value;
+
+                          setCredentials((currentCredentials) => ({
                             ...currentCredentials,
                             [field['key']]: nextValue,
                           }));
+
+                          return;
                         }}
                         placeholder={input['placeholder']}
                         spellCheck={false}
@@ -1173,34 +1528,34 @@ const ConnectionEditor = ({
             <div className="field-row">
               <FieldLabel>
                 <span>Name</span>
-                <input aria-invalid={nameIssue !== ''} onChange={(event): void => setName(event.currentTarget.value)} placeholder="Connection name" type="text" value={name} />
+                <input aria-invalid={nameIssue !== ''} onChange={(event) => setName(event.currentTarget.value)} placeholder="Connection name" type="text" value={name} />
                 {(nameIssue === '') ? null : <small className="field-error">{nameIssue}</small>}
               </FieldLabel>
               <FieldLabel>
                 <span>Peer port</span>
-                <input aria-invalid={peerPortIssue !== ''} max="65535" min="1024" onChange={(event): void => setPeerPort(event.currentTarget.value)} type="number" value={peerPort} />
+                <input aria-invalid={peerPortIssue !== ''} max="65535" min="1024" onChange={(event) => setPeerPort(event.currentTarget.value)} type="number" value={peerPort} />
                 {(peerPortIssue === '') ? null : <small className="field-error">{peerPortIssue}</small>}
               </FieldLabel>
             </div>
             <div className="field">
               <span>DNS</span>
               <div className="segmented dns-choice">
-                <button aria-pressed={dnsMode === 'provider'} onClick={(): void => setDNSMode('provider')} type="button">Provider&apos;s servers</button>
-                <button aria-pressed={dnsMode === 'custom'} onClick={(): void => setDNSMode('custom')} type="button">Custom</button>
+                <button aria-pressed={dnsMode === 'provider'} onClick={() => setDNSMode('provider')} type="button">Provider&apos;s servers</button>
+                <button aria-pressed={dnsMode === 'custom'} onClick={() => setDNSMode('custom')} type="button">Custom</button>
               </div>
               <small>{dnsHint}</small>
             </div>
             {(dnsMode === 'custom') ? (
               <FieldLabel className="field dns-custom-field">
                 <span>IPv4 addresses</span>
-                <textarea onChange={(event): void => setCustomDNS(event.currentTarget.value)} rows={4} value={customDNS} />
+                <textarea onChange={(event) => setCustomDNS(event.currentTarget.value)} rows={4} value={customDNS} />
                 <small>Up to 8 addresses, one per line.</small>
               </FieldLabel>
             ) : null}
             <FieldLabel>
               <span>Retry interval</span>
               <span className="input-suffix">
-                <input max="600" min="3" onChange={(event): void => setRetryInterval(event.currentTarget.value)} type="number" value={retryInterval} />
+                <input max="600" min="3" onChange={(event) => setRetryInterval(event.currentTarget.value)} type="number" value={retryInterval} />
                 <span>seconds</span>
               </span>
               <small>From 3 to 600 seconds.</small>
@@ -1215,22 +1570,24 @@ const ConnectionEditor = ({
           </div>
         )}
 
-        {(changeRunning) ? (
+        {(changeRunning === true) ? (
           <p className="vpn-change-notice" role="status">
             <Icon name="activity" size={16} />
             A VPN change is running.
           </p>
         ) : null}
 
-        <footer className={`form-actions vpn-actions${(renameOnly) ? ' vpn-actions-rename-only' : ''}`} hidden={providerID === ''}>
+        <footer className={`form-actions vpn-actions${actionsRenameOnlyClass}`} hidden={providerID === ''}>
           {(connection === null) ? (
             <Button disabled={busyAction !== ''} onClick={onBack}>Cancel</Button>
           ) : (
             <Button
               disabled={busyAction !== '' || changeRunning}
               icon="pause"
-              onClick={(): void => {
+              onClick={() => {
                 void runConnectionAction('disconnect');
+
+                return;
               }}
               variant="danger"
             >
@@ -1242,19 +1599,21 @@ const ConnectionEditor = ({
             <Button
               disabled={busyAction !== '' || changeRunning}
               icon="refresh"
-              onClick={(): void => {
+              onClick={() => {
                 void runConnectionAction('reconnect');
+
+                return;
               }}
             >
               Reconnect
             </Button>
           )}
-          {(renameOnly) ? (
-            <Button disabled={busyAction !== '' || changeRunning || name.trim() === '' || providerID === '' || profileIDs.length === 0} type="submit" variant="primary">{primaryButtonLabel}</Button>
+          {(renameOnly === true) ? (
+            <Button disabled={submitDisabled} type="submit" variant="primary">{primaryButtonLabel}</Button>
           ) : (
-            <Button disabled={busyAction !== '' || changeRunning || name.trim() === '' || providerID === '' || profileIDs.length === 0} icon="shield" type="submit" variant="primary">{primaryButtonLabel}</Button>
+            <Button disabled={submitDisabled} icon="shield" type="submit" variant="primary">{primaryButtonLabel}</Button>
           )}
-          {(renameOnly) ? <small className="vpn-save-hint">Saves without reconnecting the VPN.</small> : null}
+          {(renameOnly === true) ? <small className="vpn-save-hint">Saves without reconnecting the VPN.</small> : null}
         </footer>
       </form>
     </section>
@@ -1262,155 +1621,166 @@ const ConnectionEditor = ({
 };
 
 /**
- * VPN connections page.
+ * Vpn View - Vpn View.
  *
  * Shows every isolated connection, opens its editor, and coordinates safe
  * dependency moves before a non-default connection is removed.
  *
+ * @param {Web_VpnView_VpnView_Props} props - Props.
+ *
+ * @returns {Web_VpnView_VpnView_Returns}
+ *
  * @since 2.0.0
  */
-export const VpnView = ({
-  connections: response,
-  defaultProfile,
-  navigationSequence,
-  navigationTarget,
-  onCreate,
-  onDelete,
-  onDisconnect,
-  onMakeDefault,
-  onNavigate,
-  onOpenTorrents,
-  onReconnect,
-  onRefreshCatalog,
-  onUpdate,
-  onUploadProfile,
-  profiles,
-  providers,
-  snapshot,
-}: Web_Components_VpnView_Props): ReactElement => {
-  const [
-    selectedID,
-    setSelectedID,
-  ] = useState<string | 'new' | null>(null);
-  const [
-    removeState,
-    setRemoveState,
-  ] = useState<RemoveState | null>(null);
-  const [
-    moveTo,
-    setMoveTo,
-  ] = useState<string>('');
-  const [
-    removing,
-    setRemoving,
-  ] = useState<boolean>(false);
-  const [
-    removeError,
-    setRemoveError,
-  ] = useState<string>('');
-  const [
-    moveResults,
-    setMoveResults,
-  ] = useState<Web_Api_MovedTorrent[]>([]);
-  const [
-    removalComplete,
-    setRemovalComplete,
-  ] = useState<boolean>(false);
-  const [
-    defaultChangeState,
-    setDefaultChangeState,
-  ] = useState<DefaultChangeState | null>(null);
-  const [
-    defaultChangeBusy,
-    setDefaultChangeBusy,
-  ] = useState<boolean>(false);
-  const [
-    defaultChangeError,
-    setDefaultChangeError,
-  ] = useState<string>('');
-  const [
-    defaultMoveResults,
-    setDefaultMoveResults,
-  ] = useState<Web_Api_MovedTorrent[]>([]);
-  const [
-    defaultChangeComplete,
-    setDefaultChangeComplete,
-  ] = useState<boolean>(false);
-  const handledNavigationSequenceRef = useRef<number>(-1);
+export const VpnView = (props: Web_VpnView_VpnView_Props): Web_VpnView_VpnView_Returns => {
+  const response: Web_VpnView_VpnView_Response = props['connections'];
+  const defaultProfile: Web_VpnView_VpnView_DefaultProfile = props['defaultProfile'];
+  const navigationSequence: Web_VpnView_VpnView_NavigationSequence = props['navigationSequence'];
+  const navigationTarget: Web_VpnView_VpnView_NavigationTarget = props['navigationTarget'];
+  const onCreate: Web_VpnView_VpnView_OnCreate = props['onCreate'];
+  const onDelete: Web_VpnView_VpnView_OnDelete = props['onDelete'];
+  const onDisconnect: Web_VpnView_VpnView_OnDisconnect = props['onDisconnect'];
+  const onMakeDefault: Web_VpnView_VpnView_OnMakeDefault = props['onMakeDefault'];
+  const onNavigate: Web_VpnView_VpnView_OnNavigate = props['onNavigate'];
+  const onOpenTorrents: Web_VpnView_VpnView_OnOpenTorrents = props['onOpenTorrents'];
+  const onReconnect: Web_VpnView_VpnView_OnReconnect = props['onReconnect'];
+  const onRefreshCatalog: Web_VpnView_VpnView_OnRefreshCatalog = props['onRefreshCatalog'];
+  const onUpdate: Web_VpnView_VpnView_OnUpdate = props['onUpdate'];
+  const onUploadProfile: Web_VpnView_VpnView_OnUploadProfile = props['onUploadProfile'];
+  const profiles: Web_VpnView_VpnView_Profiles = props['profiles'];
+  const providers: Web_VpnView_VpnView_Providers = props['providers'];
+  const snapshot: Web_VpnView_VpnView_Snapshot = props['snapshot'];
+  const selectedIDState: Web_VpnView_VpnView_SelectedIDState = useState<Web_VpnView_VpnView_SelectedID>(null);
+  const selectedID: Web_VpnView_VpnView_SelectedID = selectedIDState[0];
+  const setSelectedID: Web_VpnView_VpnView_SetSelectedID = selectedIDState[1];
+  const removeStateState: Web_VpnView_VpnView_RemoveStateState = useState<Web_VpnView_VpnView_RemoveState>(null);
+  const removeState: Web_VpnView_VpnView_RemoveState = removeStateState[0];
+  const setRemoveState: Web_VpnView_VpnView_SetRemoveState = removeStateState[1];
+  const moveToState: Web_VpnView_VpnView_MoveToState = useState<Web_VpnView_VpnView_MoveTo>('');
+  const moveTo: Web_VpnView_VpnView_MoveTo = moveToState[0];
+  const setMoveTo: Web_VpnView_VpnView_SetMoveTo = moveToState[1];
+  const removingState: Web_VpnView_VpnView_RemovingState = useState<Web_VpnView_VpnView_Removing>(false);
+  const removing: Web_VpnView_VpnView_Removing = removingState[0];
+  const setRemoving: Web_VpnView_VpnView_SetRemoving = removingState[1];
+  const removeErrorState: Web_VpnView_VpnView_RemoveErrorState = useState<Web_VpnView_VpnView_RemoveError>('');
+  const removeError: Web_VpnView_VpnView_RemoveError = removeErrorState[0];
+  const setRemoveError: Web_VpnView_VpnView_SetRemoveError = removeErrorState[1];
+  const moveResultsState: Web_VpnView_VpnView_MoveResultsState = useState<Web_VpnView_VpnView_MoveResults>([]);
+  const moveResults: Web_VpnView_VpnView_MoveResults = moveResultsState[0];
+  const setMoveResults: Web_VpnView_VpnView_SetMoveResults = moveResultsState[1];
+  const removalCompleteState: Web_VpnView_VpnView_RemovalCompleteState = useState<Web_VpnView_VpnView_RemovalComplete>(false);
+  const removalComplete: Web_VpnView_VpnView_RemovalComplete = removalCompleteState[0];
+  const setRemovalComplete: Web_VpnView_VpnView_SetRemovalComplete = removalCompleteState[1];
+  const defaultChangeStateState: Web_VpnView_VpnView_DefaultChangeStateState = useState<Web_VpnView_VpnView_DefaultChangeState>(null);
+  const defaultChangeState: Web_VpnView_VpnView_DefaultChangeState = defaultChangeStateState[0];
+  const setDefaultChangeState: Web_VpnView_VpnView_SetDefaultChangeState = defaultChangeStateState[1];
+  const defaultChangeBusyState: Web_VpnView_VpnView_DefaultChangeBusyState = useState<Web_VpnView_VpnView_DefaultChangeBusy>(false);
+  const defaultChangeBusy: Web_VpnView_VpnView_DefaultChangeBusy = defaultChangeBusyState[0];
+  const setDefaultChangeBusy: Web_VpnView_VpnView_SetDefaultChangeBusy = defaultChangeBusyState[1];
+  const defaultChangeErrorState: Web_VpnView_VpnView_DefaultChangeErrorState = useState<Web_VpnView_VpnView_DefaultChangeError>('');
+  const defaultChangeError: Web_VpnView_VpnView_DefaultChangeError = defaultChangeErrorState[0];
+  const setDefaultChangeError: Web_VpnView_VpnView_SetDefaultChangeError = defaultChangeErrorState[1];
+  const defaultMoveResultsState: Web_VpnView_VpnView_DefaultMoveResultsState = useState<Web_VpnView_VpnView_DefaultMoveResults>([]);
+  const defaultMoveResults: Web_VpnView_VpnView_DefaultMoveResults = defaultMoveResultsState[0];
+  const setDefaultMoveResults: Web_VpnView_VpnView_SetDefaultMoveResults = defaultMoveResultsState[1];
+  const defaultChangeCompleteState: Web_VpnView_VpnView_DefaultChangeCompleteState = useState<Web_VpnView_VpnView_DefaultChangeComplete>(false);
+  const defaultChangeComplete: Web_VpnView_VpnView_DefaultChangeComplete = defaultChangeCompleteState[0];
+  const setDefaultChangeComplete: Web_VpnView_VpnView_SetDefaultChangeComplete = defaultChangeCompleteState[1];
+  const handledNavigationSequenceRef: Web_VpnView_VpnView_HandledNavigationSequenceRef = useRef<Web_VpnView_VpnView_HandledNavigationSequence>(-1);
 
-  useEffect((): (() => void) => {
+  useEffect(() => {
     /**
-     * VPN view - Close row menus outside.
+     * Vpn View - Close Menus Outside.
      *
      * Closes every open row menu that the press landed outside of. Native menus stay open
      * until toggled, so opening one menu also closes the one left open before it.
      *
-     * @param {PointerEvent} event - Event.
+     * @param {Web_VpnView_VpnView_CloseMenusOutside_Event} event - Event.
+     *
+     * @returns {Web_VpnView_VpnView_CloseMenusOutside_Returns}
      *
      * @since 2.0.0
      */
-    const closeMenusOutside = (event: PointerEvent): void => {
-      document.querySelectorAll<HTMLDetailsElement>('details.vpn-row-menu[open]').forEach((menu): void => {
-        if (!(event.target instanceof Node) || !menu.contains(event.target)) {
+    const closeMenusOutside: Web_VpnView_VpnView_CloseMenusOutside = (event: Web_VpnView_VpnView_CloseMenusOutside_Event): Web_VpnView_VpnView_CloseMenusOutside_Returns => {
+      document.querySelectorAll<HTMLDetailsElement>('details.vpn-row-menu[open]').forEach((menu) => {
+        if ((event.target instanceof Node) === false || menu.contains(event.target) === false) {
           menu.removeAttribute('open');
         }
+
+        return;
       });
+
+      return;
     };
 
     /**
-     * VPN view - Close row menus on escape.
+     * Vpn View - Close Menus On Escape.
      *
      * Closes every open row menu when Escape is pressed.
      * The app's other menus close the same way.
      *
-     * @param {KeyboardEvent} event - Event.
+     * @param {Web_VpnView_VpnView_CloseMenusOnEscape_Event} event - Event.
+     *
+     * @returns {Web_VpnView_VpnView_CloseMenusOnEscape_Returns}
      *
      * @since 2.0.0
      */
-    const closeMenusOnEscape = (event: KeyboardEvent): void => {
+    const closeMenusOnEscape: Web_VpnView_VpnView_CloseMenusOnEscape = (event: Web_VpnView_VpnView_CloseMenusOnEscape_Event): Web_VpnView_VpnView_CloseMenusOnEscape_Returns => {
       if (event.key === 'Escape') {
-        document.querySelectorAll<HTMLDetailsElement>('details.vpn-row-menu[open]').forEach((menu): void => {
+        document.querySelectorAll<HTMLDetailsElement>('details.vpn-row-menu[open]').forEach((menu) => {
           menu.removeAttribute('open');
+
+          return;
         });
       }
+
+      return;
     };
 
     document.addEventListener('pointerdown', closeMenusOutside);
     document.addEventListener('keydown', closeMenusOnEscape);
 
-    return (): void => {
+    return () => {
       document.removeEventListener('pointerdown', closeMenusOutside);
       document.removeEventListener('keydown', closeMenusOnEscape);
+
+      return;
     };
   }, []);
 
-  const connections = response?.['connections'] ?? [];
-  const selectedConnection = (selectedID === null || selectedID === 'new') ? null : connections.find((connection): boolean => connection['id'] === selectedID) ?? null;
-  const usedPeerPorts: Set<number> = new Set(connections.map((connection): number => connection['peerPort']));
-  let defaultPeerPort: number = 51_413;
-  while (usedPeerPorts.has(defaultPeerPort) && defaultPeerPort < 65_535) {
+  const connections: Web_VpnView_VpnView_Connections = (response === null) ? [] : response['connections'];
+  const selectedConnection: Web_VpnView_VpnView_SelectedConnection = (selectedID === null || selectedID === 'new') ? null : connections.find((connection) => connection['id'] === selectedID) ?? null;
+  const usedPeerPorts: Web_VpnView_VpnView_UsedPeerPorts = new Set(connections.map((connection) => connection['peerPort']));
+  let defaultPeerPort: Web_VpnView_VpnView_DefaultPeerPort = 51_413;
+
+  while (usedPeerPorts.has(defaultPeerPort) === true && defaultPeerPort < 65_535) {
     defaultPeerPort += 1;
   }
-  const capacity = response?.['capacity'];
-  const atCapacity: boolean = capacity !== undefined && capacity['used'] >= capacity['limit'];
-  const capacityMemoryGigabytes: number = (capacity === undefined) ? 0 : Math.round(capacity['memoryBytes'] / (1024 * 1024 * 1024));
-  const capacityDescription: string = (capacity?.['source'] === 'fallback') ? `Memory availability could not be read, so up to ${capacity['limit']} connections are allowed` : `${capacityMemoryGigabytes} GB of memory and ${capacity?.['cpus'] ?? 0} ${(capacity?.['cpus'] === 1) ? 'CPU' : 'CPUs'} allow ${capacity?.['limit'] ?? 0}`;
+  const capacity: Web_VpnView_VpnView_Capacity = (response === null) ? undefined : response['capacity'];
+  const atCapacity: Web_VpnView_VpnView_AtCapacity = capacity !== undefined && capacity['used'] >= capacity['limit'];
+  const capacityMemoryGigabytes: Web_VpnView_VpnView_CapacityMemoryGigabytes = (capacity === undefined) ? 0 : Math.round(capacity['memoryBytes'] / (1024 * 1024 * 1024));
+  const capacityCpus: Web_VpnView_VpnView_CapacityCpus = (capacity === undefined) ? undefined : capacity['cpus'];
+  const capacityLimit: Web_VpnView_VpnView_CapacityLimit = (capacity === undefined) ? undefined : capacity['limit'];
+  const capacityCpuNoun: Web_VpnView_VpnView_CapacityCpuNoun = (capacityCpus === 1) ? 'CPU' : 'CPUs';
+  const capacityDescription: Web_VpnView_VpnView_CapacityDescription = (capacity !== undefined && capacity['source'] === 'fallback') ? `Memory availability could not be read, so up to ${capacity['limit']} connections are allowed` : `${capacityMemoryGigabytes} GB of memory and ${capacityCpus ?? 0} ${capacityCpuNoun} allow ${capacityLimit ?? 0}`;
 
   /**
-   * VPN connections page - Open navigation target.
+   * Vpn View - Open Navigation Target.
    *
    * Updates the editor immediately and delegates the matching browser address
    * to the app. Missing and unavailable deep targets replace instead of push.
    *
-   * @param {Web_Components_VpnView_NavigationTarget} target    - Target.
-   * @param {boolean}                                 [replace] - Replace.
+   * @param {Web_VpnView_VpnView_OpenNavigationTarget_Target}  target    - Target.
+   * @param {Web_VpnView_VpnView_OpenNavigationTarget_Replace} [replace] - Replace.
+   *
+   * @returns {Web_VpnView_VpnView_OpenNavigationTarget_Returns}
    *
    * @since 2.0.0
    */
-  const openNavigationTarget = (
-    target: Web_Components_VpnView_NavigationTarget,
-    replace: boolean = false,
-  ): void => {
+  const openNavigationTarget: Web_VpnView_VpnView_OpenNavigationTarget = (
+    target: Web_VpnView_VpnView_OpenNavigationTarget_Target,
+    replace: Web_VpnView_VpnView_OpenNavigationTarget_Replace = false,
+  ): Web_VpnView_VpnView_OpenNavigationTarget_Returns => {
     if (target['kind'] === 'connection') {
       setSelectedID(target['connectionID']);
     } else if (target['kind'] === 'new') {
@@ -1424,17 +1794,17 @@ export const VpnView = ({
     return;
   };
 
-  useEffect((): void => {
+  useEffect(() => {
     if (response === null || handledNavigationSequenceRef.current === navigationSequence) {
       return;
     }
 
     handledNavigationSequenceRef.current = navigationSequence;
     if (navigationTarget['kind'] === 'connection') {
-      const connectionExists: boolean = connections.some(
-        (connection: Web_Api_VpnConnection): boolean => connection['id'] === navigationTarget['connectionID'],
+      const connectionExists: Web_VpnView_VpnView_ConnectionExists = connections.some(
+        (connection) => connection['id'] === navigationTarget['connectionID'],
       );
-      if (!connectionExists) {
+      if (connectionExists === false) {
         openNavigationTarget({ kind: 'list' }, true);
 
         return;
@@ -1446,7 +1816,7 @@ export const VpnView = ({
     }
 
     if (navigationTarget['kind'] === 'new') {
-      if (atCapacity) {
+      if (atCapacity === true) {
         openNavigationTarget({ kind: 'list' }, true);
 
         return;
@@ -1458,6 +1828,8 @@ export const VpnView = ({
     }
 
     setSelectedID(null);
+
+    return;
   }, [
     atCapacity,
     navigationSequence,
@@ -1466,14 +1838,18 @@ export const VpnView = ({
   ]);
 
   /**
-   * VPN connections page - Request remove.
+   * Vpn View - Request Remove.
    *
    * Removes an unused row immediately or opens dependency migration on conflict.
    * Other server errors stay visible through the global toast.
    *
+   * @param {Web_VpnView_VpnView_RequestRemove_Connection} connection - Connection.
+   *
+   * @returns {Web_VpnView_VpnView_RequestRemove_Returns}
+   *
    * @since 2.0.0
    */
-  const requestRemove = async (connection: Web_Api_VpnConnection): Promise<void> => {
+  const requestRemove: Web_VpnView_VpnView_RequestRemove = async (connection: Web_VpnView_VpnView_RequestRemove_Connection): Web_VpnView_VpnView_RequestRemove_Returns => {
     setRemoveError('');
     setMoveResults([]);
     setRemovalComplete(false);
@@ -1482,41 +1858,58 @@ export const VpnView = ({
       showToast(`${connection['name']} removed.`, true);
     } catch (caughtError) {
       if (caughtError instanceof ApiError && caughtError['code'] === 'connection_in_use') {
-        const dependencies = parseDependencies(caughtError['details']);
+        const dependencies: Web_VpnView_VpnView_RequestRemove_Dependencies = parseDependencies(caughtError['details']);
+        const defaultCandidate: Web_VpnView_VpnView_RequestRemove_DefaultCandidate = connections.find((candidate) => candidate['id'] !== connection['id'] && candidate['default'] === true);
+
         setRemoveState({
           connection,
           dependencies,
         });
-        setMoveTo(connections.find((candidate): boolean => candidate['id'] !== connection['id'] && candidate['default'])?.['id'] ?? '');
+        setMoveTo((defaultCandidate === undefined) ? '' : defaultCandidate['id']);
+
         return;
       }
       showToast((caughtError instanceof Error) ? caughtError.message : 'The connection could not be removed.', false);
     }
+
+    return;
   };
 
   /**
-   * VPN connections page - Move and remove.
+   * Vpn View - Move And Remove.
    *
    * Submits the selected destination and preserves partial results on failure.
    * The dialog stays open so failed torrents can be inspected and retried.
    *
+   * @returns {Web_VpnView_VpnView_MoveAndRemove_Returns}
+   *
    * @since 2.0.0
    */
-  const moveAndRemove = async (): Promise<void> => {
+  const moveAndRemove: Web_VpnView_VpnView_MoveAndRemove = async (): Web_VpnView_VpnView_MoveAndRemove_Returns => {
     if (removeState === null || moveTo === '') {
       return;
     }
-    const targetConnectionName: string = connections.find(
-      (connection): boolean => connection['id'] === moveTo,
-    )?.['name'] ?? 'The selected connection';
+    const targetConnection: Web_VpnView_VpnView_MoveAndRemove_TargetConnection = connections.find(
+      (connection) => connection['id'] === moveTo,
+    );
+    const targetConnectionName: Web_VpnView_VpnView_MoveAndRemove_TargetConnectionName = (targetConnection === undefined) ? 'The selected connection' : targetConnection['name'];
+
     setRemoving(true);
     setRemoveError('');
     setMoveResults([]);
     try {
-      const result = await onDelete(removeState['connection']['id'], { moveTo });
+      const result: Web_VpnView_VpnView_MoveAndRemove_Result = await onDelete(removeState['connection']['id'], { moveTo });
+
       setMoveResults(result['moved']);
       showToast(`${removeState['connection']['name']} removed.`, true);
-      if (result['moved'].some((movedTorrent): boolean => (movedTorrent['warnings']?.length ?? 0) > 0)) {
+
+      const hasWarnings: Web_VpnView_VpnView_MoveAndRemove_HasWarnings = result['moved'].some((movedTorrent) => {
+        const warnings: Web_VpnView_VpnView_MoveAndRemove_Warnings = movedTorrent['warnings'];
+
+        return warnings !== undefined && warnings.length > 0;
+      });
+
+      if (hasWarnings === true) {
         setRemovalComplete(true);
       } else {
         setRemoveState(null);
@@ -1531,19 +1924,25 @@ export const VpnView = ({
     } finally {
       setRemoving(false);
     }
+
+    return;
   };
 
   /**
-   * VPN connections page - Request default change.
+   * Vpn View - Request Default Change.
    *
    * Applies a move-free switch immediately and opens confirmation only when the
    * backend reports that Default-profile torrents would change daemon ownership.
    *
+   * @param {Web_VpnView_VpnView_RequestDefaultChange_ConnectionId} connectionId - Connection id.
+   *
+   * @returns {Web_VpnView_VpnView_RequestDefaultChange_Returns}
+   *
    * @since 2.0.0
    */
-  const requestDefaultChange = async (connectionId: string): Promise<Web_Api_MovedTorrent[]> => {
-    const connection: Web_Api_VpnConnection | undefined = connections.find(
-      (candidate: Web_Api_VpnConnection): boolean => candidate['id'] === connectionId,
+  const requestDefaultChange: Web_VpnView_VpnView_RequestDefaultChange = async (connectionId: Web_VpnView_VpnView_RequestDefaultChange_ConnectionId): Web_VpnView_VpnView_RequestDefaultChange_Returns => {
+    const connection: Web_VpnView_VpnView_RequestDefaultChange_Connection = connections.find(
+      (candidate) => candidate['id'] === connectionId,
     );
     if (connection === undefined) {
       showToast('The VPN connection could not be found.', false);
@@ -1552,24 +1951,25 @@ export const VpnView = ({
     }
 
     try {
-      const results: Web_Api_MovedTorrent[] = await onMakeDefault(connectionId);
+      const results: Web_VpnView_VpnView_RequestDefaultChange_Results = await onMakeDefault(connectionId);
+
       showToast(`${connection['name']} is now the default connection.`, true);
 
       return results;
     } catch (caughtError) {
       if (caughtError instanceof ApiError && caughtError['code'] === 'torrents_must_move') {
-        const torrentCount: unknown = caughtError['details']['torrents'];
-        const defaultProfileTorrentCount: unknown = caughtError['details']['defaultProfileTorrents'];
-        const followingProfileTorrentCount: unknown = caughtError['details']['followingProfileTorrents'];
+        const torrentCount: Web_VpnView_VpnView_RequestDefaultChange_TorrentCount = caughtError['details']['torrents'];
+        const defaultProfileTorrentCount: Web_VpnView_VpnView_RequestDefaultChange_DefaultProfileTorrentCount = caughtError['details']['defaultProfileTorrents'];
+        const followingProfileTorrentCount: Web_VpnView_VpnView_RequestDefaultChange_FollowingProfileTorrentCount = caughtError['details']['followingProfileTorrents'];
         if (
           typeof torrentCount === 'number'
-          && Number.isInteger(torrentCount)
+          && Number.isInteger(torrentCount) === true
           && torrentCount > 0
           && typeof defaultProfileTorrentCount === 'number'
-          && Number.isInteger(defaultProfileTorrentCount)
+          && Number.isInteger(defaultProfileTorrentCount) === true
           && defaultProfileTorrentCount >= 0
           && typeof followingProfileTorrentCount === 'number'
-          && Number.isInteger(followingProfileTorrentCount)
+          && Number.isInteger(followingProfileTorrentCount) === true
           && followingProfileTorrentCount >= 0
           && defaultProfileTorrentCount + followingProfileTorrentCount === torrentCount
         ) {
@@ -1593,18 +1993,20 @@ export const VpnView = ({
   };
 
   /**
-   * VPN connections page - Confirm default change.
+   * Vpn View - Confirm Default Change.
    *
    * Repeats the switch with explicit move consent and keeps every per-torrent
    * outcome visible even when one source remains unchanged after a failure.
    *
+   * @returns {Web_VpnView_VpnView_ConfirmDefaultChange_Returns}
+   *
    * @since 2.0.0
    */
-  const confirmDefaultChange = async (): Promise<void> => {
+  const confirmDefaultChange: Web_VpnView_VpnView_ConfirmDefaultChange = async (): Web_VpnView_VpnView_ConfirmDefaultChange_Returns => {
     if (defaultChangeState === null) {
       return;
     }
-    if (defaultChangeComplete) {
+    if (defaultChangeComplete === true) {
       setDefaultChangeState(null);
 
       return;
@@ -1613,10 +2015,11 @@ export const VpnView = ({
     setDefaultChangeBusy(true);
     setDefaultChangeError('');
     try {
-      const results: Web_Api_MovedTorrent[] = await onMakeDefault(
+      const results: Web_VpnView_VpnView_ConfirmDefaultChange_Results = await onMakeDefault(
         defaultChangeState['connection']['id'],
         true,
       );
+
       setDefaultMoveResults(results);
       setDefaultChangeComplete(true);
       showToast(`${defaultChangeState['connection']['name']} is now the default connection.`, true);
@@ -1625,29 +2028,35 @@ export const VpnView = ({
     } finally {
       setDefaultChangeBusy(false);
     }
+
+    return;
   };
 
   /**
-   * VPN connections page - Close default change.
+   * Vpn View - Close Default Change.
    *
    * Clears confirmation and result state before another connection is selected.
    * A later conflict therefore always opens with a clean confirmation dialog.
    *
+   * @returns {Web_VpnView_VpnView_CloseDefaultChange_Returns}
+   *
    * @since 2.0.0
    */
-  const closeDefaultChange = (): void => {
+  const closeDefaultChange: Web_VpnView_VpnView_CloseDefaultChange = (): Web_VpnView_VpnView_CloseDefaultChange_Returns => {
     setDefaultChangeState(null);
     setDefaultChangeError('');
     setDefaultMoveResults([]);
     setDefaultChangeComplete(false);
+
+    return;
   };
-  const defaultChangeHasFailures: boolean = defaultMoveResults.some(
-    (result: Web_Api_MovedTorrent): boolean => result['result'] === 'failed',
+  const defaultChangeHasFailures: Web_VpnView_VpnView_DefaultChangeHasFailures = defaultMoveResults.some(
+    (result) => result['result'] === 'failed',
   );
-  let defaultChangeMessage: string = '';
+  let defaultChangeMessage: Web_VpnView_VpnView_DefaultChangeMessage = '';
   if (defaultChangeState !== null) {
-    if (defaultChangeComplete) {
-      defaultChangeMessage = (defaultChangeHasFailures) ? `${defaultChangeState['connection']['name']} is now the default. Failed torrents stayed on their old connection.` : `${defaultChangeState['connection']['name']} is now the default. Review each torrent move below.`;
+    if (defaultChangeComplete === true) {
+      defaultChangeMessage = (defaultChangeHasFailures === true) ? `${defaultChangeState['connection']['name']} is now the default. Failed torrents stayed on their old connection.` : `${defaultChangeState['connection']['name']} is now the default. Review each torrent move below.`;
     } else {
       defaultChangeMessage = defaultVPNMoveConfirmation(
         defaultChangeState['connection']['name'],
@@ -1657,7 +2066,7 @@ export const VpnView = ({
       );
     }
   }
-  const defaultChangeDialog: ReactElement = (!defaultChangeComplete) ? (
+  const defaultChangeDialog: Web_VpnView_VpnView_DefaultChangeDialog = (defaultChangeComplete === false) ? (
     <ConfirmDialog
       busy={defaultChangeBusy}
       busyLabel="Making default and moving…"
@@ -1665,8 +2074,10 @@ export const VpnView = ({
       error={defaultChangeError}
       message={defaultChangeMessage}
       onCancel={closeDefaultChange}
-      onConfirm={(): void => {
+      onConfirm={() => {
         void confirmDefaultChange();
+
+        return;
       }}
       open={defaultChangeState !== null}
       title="Make default connection"
@@ -1681,12 +2092,12 @@ export const VpnView = ({
         <p className="dialog-message" id="default-change-results-message">{defaultChangeMessage}</p>
         <div className="torrent-move-results">
           <ul>
-            {defaultMoveResults.map((result: Web_Api_MovedTorrent): ReactElement => (
+            {defaultMoveResults.map((result) => (
               <li className={(result['result'] === 'failed') ? 'move-failed' : 'move-succeeded'} key={result['hash']}>
                 <strong>{result['name']}</strong>
                 <span className="move-result-copy">
                   <span className="move-result-state">{torrentMoveResultLabel(result)}</span>
-                  {result['warnings']?.map((warning: string): ReactElement => <small key={`${result['hash']}-${warning}`}>{warning}</small>)}
+                  {(result['warnings'] === undefined) ? undefined : result['warnings'].map((warning) => <small key={`${result['hash']}-${warning}`}>{warning}</small>)}
                 </span>
               </li>
             ))}
@@ -1705,7 +2116,7 @@ export const VpnView = ({
         <ConnectionEditor
           connection={(selectedID === 'new') ? null : selectedConnection}
           defaultPeerPort={defaultPeerPort}
-          onBack={(): void => openNavigationTarget({ kind: 'list' })}
+          onBack={() => openNavigationTarget({ kind: 'list' })}
           onCreate={onCreate}
           onDisconnect={onDisconnect}
           onMakeDefault={requestDefaultChange}
@@ -1722,6 +2133,10 @@ export const VpnView = ({
     );
   }
 
+  const removeTorrentNoun: Web_VpnView_VpnView_RemoveTorrentNoun = (removeState !== null && removeState['dependencies']['torrents'] === 1) ? 'torrent' : 'torrents';
+  const removeProfileNoun: Web_VpnView_VpnView_RemoveProfileNoun = (removeState !== null && removeState['dependencies']['profiles'].length === 1) ? 'profile' : 'profiles';
+  const removeLoginNoun: Web_VpnView_VpnView_RemoveLoginNoun = (removeState !== null && removeState['dependencies']['logins'].length === 1) ? 'login' : 'logins';
+
   return (
     <section className="workspace-section vpn-list-page">
       <header className="workspace-heading vpn-list-heading">
@@ -1730,8 +2145,8 @@ export const VpnView = ({
           <p>Each connection runs its own Transmission.</p>
         </div>
         <div className="vpn-add-control">
-          <Button disabled={atCapacity} icon="add" onClick={(): void => openNavigationTarget({ kind: 'new' })} variant="primary">Add connection</Button>
-          {(atCapacity) ? <small>Remove a connection before adding another.</small> : null}
+          <Button disabled={atCapacity} icon="add" onClick={() => openNavigationTarget({ kind: 'new' })} variant="primary">Add connection</Button>
+          {(atCapacity === true) ? <small>Remove a connection before adding another.</small> : null}
         </div>
       </header>
 
@@ -1744,9 +2159,12 @@ export const VpnView = ({
 
       {(connections.length === 0) ? <div className="vpn-connection-empty"><p>No connections yet.</p></div> : (
         <div className="vpn-connection-list">
-          {connections.map((connection): ReactElement => {
-            const runtime = connectionState(connection, snapshot);
-            const endpoint: string = (runtime['remoteHost'] === undefined) ? '—' : `${runtime['remoteHost']}:${runtime['remotePort'] ?? ''}`;
+          {connections.map((connection) => {
+            const runtime: Web_VpnView_VpnView_Runtime = connectionState(connection, snapshot);
+            const endpoint: Web_VpnView_VpnView_Endpoint = (runtime['remoteHost'] === undefined) ? '—' : `${runtime['remoteHost']}:${runtime['remotePort'] ?? ''}`;
+            const connectionProvider: Web_VpnView_VpnView_ConnectionProvider = providers.find((provider) => provider['id'] === connection['providerId']);
+            const providerName: Web_VpnView_VpnView_ProviderName = (connectionProvider === undefined) ? connection['providerId'] : connectionProvider['displayName'];
+            const torrentNoun: Web_VpnView_VpnView_TorrentNoun = (connection['torrentCount'] === 1) ? 'torrent' : 'torrents';
 
             return (
               <article
@@ -1756,7 +2174,7 @@ export const VpnView = ({
                 <button
                   aria-label={`Open ${connection['name']}`}
                   className="vpn-row-open-button"
-                  onClick={(): void => openNavigationTarget({
+                  onClick={() => openNavigationTarget({
                     connectionID: connection['id'],
                     kind: 'connection',
                   })}
@@ -1765,10 +2183,10 @@ export const VpnView = ({
                 <div className="vpn-connection-identity">
                   <span className="vpn-title-line">
                     <strong>{connection['name']}</strong>
-                    {(connection['default']) ? <span className="tag vpn-default-tag">Default</span> : null}
+                    {(connection['default'] === true) ? <span className="tag vpn-default-tag">Default</span> : null}
                   </span>
-                  <span>{`${providers.find((provider): boolean => provider['id'] === connection['providerId'])?.['displayName'] ?? connection['providerId']} · ${tunnelLabel(connection['tunnel'])}`}</span>
-                  {(connection['default']) ? <small className="vpn-default-note">{`${defaultProfile['name']} torrents and tracker lookups use this connection.`}</small> : null}
+                  <span>{`${providerName} · ${tunnelLabel(connection['tunnel'])}`}</span>
+                  {(connection['default'] === true) ? <small className="vpn-default-note">{`${defaultProfile['name']} torrents and tracker lookups use this connection.`}</small> : null}
                 </div>
                 <div className="vpn-row-status">
                   <span className={`state-chip ${statusTone(runtime['state'])}`}>
@@ -1784,16 +2202,16 @@ export const VpnView = ({
                 </div>
                 <button
                   className="vpn-torrent-link"
-                  onClick={(): void => onOpenTorrents(connection['id'])}
+                  onClick={() => onOpenTorrents(connection['id'])}
                   type="button"
                 >
-                  {`${connection['torrentCount']} ${(connection['torrentCount'] === 1) ? 'torrent' : 'torrents'}`}
+                  {`${connection['torrentCount']} ${torrentNoun}`}
                 </button>
                 <details className="vpn-row-menu">
                   <summary aria-label={`Actions for ${connection['name']}`} className="icon-button"><Icon name="more" size={18} /></summary>
                   <div className="menu">
                     <button
-                      onClick={(): void => openNavigationTarget({
+                      onClick={() => openNavigationTarget({
                         connectionID: connection['id'],
                         kind: 'connection',
                       })}
@@ -1803,20 +2221,34 @@ export const VpnView = ({
                     </button>
                     <button
                       disabled={connection['default']}
-                      onClick={(event): void => {
-                        event.currentTarget.closest('details')?.removeAttribute('open');
+                      onClick={(event) => {
+                        const menu: Web_VpnView_VpnView_Menu = event.currentTarget.closest('details');
+
+                        if (menu !== null) {
+                          menu.removeAttribute('open');
+                        }
+
                         void requestDefaultChange(connection['id']);
+
+                        return;
                       }}
                       type="button"
                     >
                       Make default
                     </button>
-                    {(connection['default']) ? null : (
+                    {(connection['default'] === true) ? null : (
                       <button
                         className="menu-danger"
-                        onClick={(event): void => {
-                          event.currentTarget.closest('details')?.removeAttribute('open');
+                        onClick={(event) => {
+                          const menu: Web_VpnView_VpnView_Menu = event.currentTarget.closest('details');
+
+                          if (menu !== null) {
+                            menu.removeAttribute('open');
+                          }
+
                           void requestRemove(connection);
+
+                          return;
                         }}
                         type="button"
                       >
@@ -1835,35 +2267,35 @@ export const VpnView = ({
         <div className="dialog-backdrop" role="presentation">
           <section aria-labelledby="remove-vpn-title" aria-modal="true" className="dialog remove-vpn-dialog" role="alertdialog">
             <div className="dialog-heading">
-              <h2 id="remove-vpn-title">{(removalComplete) ? `${removeState['connection']['name']} removed` : `Remove ${removeState['connection']['name']}?`}</h2>
-              <button aria-label="Close" className="icon-button" disabled={removing} onClick={(): void => setRemoveState(null)} type="button"><Icon name="x" /></button>
+              <h2 id="remove-vpn-title">{(removalComplete === true) ? `${removeState['connection']['name']} removed` : `Remove ${removeState['connection']['name']}?`}</h2>
+              <button aria-label="Close" className="icon-button" disabled={removing} onClick={() => setRemoveState(null)} type="button"><Icon name="x" /></button>
             </div>
-            {(removalComplete) ? <p className="dialog-message">Review the warnings from torrents that still moved successfully.</p> : (
+            {(removalComplete === true) ? <p className="dialog-message">Review the warnings from torrents that still moved successfully.</p> : (
               <>
                 <p className="dialog-message">This connection is used by:</p>
                 <ul className="remove-vpn-dependencies">
-                  {(removeState['dependencies']['torrents'] === 0) ? null : <li><strong>{`${removeState['dependencies']['torrents']} ${(removeState['dependencies']['torrents'] === 1) ? 'torrent' : 'torrents'}`}</strong></li>}
+                  {(removeState['dependencies']['torrents'] === 0) ? null : <li><strong>{`${removeState['dependencies']['torrents']} ${removeTorrentNoun}`}</strong></li>}
                   {(removeState['dependencies']['profiles'].length === 0) ? null : (
                     <li>
-                      <strong>{`${removeState['dependencies']['profiles'].length} ${(removeState['dependencies']['profiles'].length === 1) ? 'profile' : 'profiles'}:`}</strong>
-                      {` ${removeState['dependencies']['profiles'].map((profile): string => profile['name']).join(', ')}`}
+                      <strong>{`${removeState['dependencies']['profiles'].length} ${removeProfileNoun}:`}</strong>
+                      {` ${removeState['dependencies']['profiles'].map((profile) => profile['name']).join(', ')}`}
                     </li>
                   )}
                   {(removeState['dependencies']['logins'].length === 0) ? null : (
                     <li>
-                      <strong>{`${removeState['dependencies']['logins'].length} web proxy ${(removeState['dependencies']['logins'].length === 1) ? 'login' : 'logins'}:`}</strong>
-                      {` ${removeState['dependencies']['logins'].map((login): string => login['username']).join(', ')}`}
+                      <strong>{`${removeState['dependencies']['logins'].length} web proxy ${removeLoginNoun}:`}</strong>
+                      {` ${removeState['dependencies']['logins'].map((login) => login['username']).join(', ')}`}
                     </li>
                   )}
                 </ul>
                 <FieldLabel>
                   <span>Move them to</span>
-                  <select disabled={removing} onChange={(event): void => setMoveTo(event.currentTarget.value)} value={moveTo}>{connections.filter((connection): boolean => connection['id'] !== removeState['connection']['id']).map((connection): ReactElement => <option key={connection['id']} value={connection['id']}>{(connection['default']) ? `Default (${connection['name']})` : connection['name']}</option>)}</select>
+                  <select disabled={removing} onChange={(event) => setMoveTo(event.currentTarget.value)} value={moveTo}>{connections.filter((connection) => connection['id'] !== removeState['connection']['id']).map((connection) => <option key={connection['id']} value={connection['id']}>{(connection['default'] === true) ? `Default (${connection['name']})` : connection['name']}</option>)}</select>
                   <small>Torrents keep their files. Each one is checked after it moves.</small>
                 </FieldLabel>
               </>
             )}
-            {(removing) ? (
+            {(removing === true) ? (
               <div aria-live="polite" className="vpn-remove-progress">
                 <span className="spinner" />
                 Moving torrents and removing connection…
@@ -1873,12 +2305,12 @@ export const VpnView = ({
               <div className="torrent-move-results">
                 <h3>Move results</h3>
                 <ul>
-                  {moveResults.map((result): ReactElement => (
+                  {moveResults.map((result) => (
                     <li className={(result['result'] === 'failed') ? 'move-failed' : 'move-succeeded'} key={result['hash']}>
                       <strong>{result['name']}</strong>
                       <span className="move-result-copy">
                         <span className="move-result-state">{(result['result'] === 'moved') ? 'Moved' : result['error'] ?? 'Failed'}</span>
-                        {(result['result'] !== 'moved') ? null : result['warnings']?.map((warning): ReactElement => <small key={warning}>{warning}</small>)}
+                        {(result['result'] !== 'moved' || result['warnings'] === undefined) ? null : result['warnings'].map((warning) => <small key={warning}>{warning}</small>)}
                       </span>
                     </li>
                   ))}
@@ -1892,19 +2324,21 @@ export const VpnView = ({
               </div>
             )}
             <div className="dialog-actions">
-              {(removalComplete) ? (
-                <Button onClick={(): void => setRemoveState(null)} variant="primary">Done</Button>
+              {(removalComplete === true) ? (
+                <Button onClick={() => setRemoveState(null)} variant="primary">Done</Button>
               ) : (
                 <>
-                  <Button disabled={removing} onClick={(): void => setRemoveState(null)}>Cancel</Button>
+                  <Button disabled={removing} onClick={() => setRemoveState(null)}>Cancel</Button>
                   <Button
                     disabled={removing || moveTo === ''}
-                    onClick={(): void => {
+                    onClick={() => {
                       void moveAndRemove();
+
+                      return;
                     }}
                     variant="danger"
                   >
-                    {(removing) ? 'Moving…' : 'Move and remove'}
+                    {(removing === true) ? 'Moving…' : 'Move and remove'}
                   </Button>
                 </>
               )}

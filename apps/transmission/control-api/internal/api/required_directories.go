@@ -11,6 +11,7 @@ import (
 	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/directorybrowser"
 	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/settings"
 	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/storage"
+	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/transmissionrpc"
 )
 
 // storageDirectories are the effective folders Transmission depends on.
@@ -137,13 +138,19 @@ func (server *Server) ensureRPCSessionDirectories(
 
 	snapshot, err := server.store.EffectiveConfiguration(ctx, server.registry)
 	if err != nil {
-		server.logInternalError("read required storage directories after session-set", err)
+		server.logInternalError(
+			"read required storage directories after "+transmissionrpc.MethodSessionSet.String(),
+			err,
+		)
 
 		return
 	}
 	directories, err := configuredStorageDirectories(snapshot)
 	if err != nil {
-		server.logInternalError("decode required storage directories after session-set", err)
+		server.logInternalError(
+			"decode required storage directories after "+transmissionrpc.MethodSessionSet.String(),
+			err,
+		)
 
 		return
 	}

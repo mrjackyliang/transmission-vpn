@@ -10,6 +10,7 @@ import (
 	"syscall"
 
 	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/transmissionconfig"
+	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/transmissionrpc"
 )
 
 // liveDaemonSettingMapping connects one legacy RPC field to its settings.json key.
@@ -30,40 +31,107 @@ var (
 	// excluding derived status, listener, script, and other appliance-owned fields.
 	//
 	// Since: 2.0.0
-	liveDaemonSettingMappings = map[string]liveDaemonSettingMapping{
-		"alt-speed-down":               {settingsKey: "alt-speed-down"},
-		"alt-speed-enabled":            {settingsKey: "alt-speed-enabled"},
-		"alt-speed-time-begin":         {settingsKey: "alt-speed-time-begin"},
-		"alt-speed-time-day":           {settingsKey: "alt-speed-time-day"},
-		"alt-speed-time-enabled":       {settingsKey: "alt-speed-time-enabled"},
-		"alt-speed-time-end":           {settingsKey: "alt-speed-time-end"},
-		"alt-speed-up":                 {settingsKey: "alt-speed-up"},
-		"blocklist-enabled":            {settingsKey: "blocklist-enabled"},
-		"cache-size-mb":                {settingsKey: "cache-size-mb"},
-		"dht-enabled":                  {settingsKey: "dht-enabled"},
-		"download-dir":                 {settingsKey: "download-dir"},
-		"download-queue-enabled":       {settingsKey: "download-queue-enabled"},
-		"download-queue-size":          {settingsKey: "download-queue-size"},
-		"encryption":                   {settingsKey: "encryption", convert: convertLiveEncryptionSetting},
-		"idle-seeding-limit":           {settingsKey: "idle-seeding-limit"},
-		"idle-seeding-limit-enabled":   {settingsKey: "idle-seeding-limit-enabled"},
-		"incomplete-dir":               {settingsKey: "incomplete-dir"},
-		"incomplete-dir-enabled":       {settingsKey: "incomplete-dir-enabled"},
-		"lpd-enabled":                  {settingsKey: "lpd-enabled"},
-		"peer-limit-global":            {settingsKey: "peer-limit-global"},
-		"pex-enabled":                  {settingsKey: "pex-enabled"},
-		"queue-stalled-enabled":        {settingsKey: "queue-stalled-enabled"},
-		"queue-stalled-minutes":        {settingsKey: "queue-stalled-minutes"},
-		"rename-partial-files":         {settingsKey: "rename-partial-files"},
-		"seed-queue-enabled":           {settingsKey: "seed-queue-enabled"},
-		"seed-queue-size":              {settingsKey: "seed-queue-size"},
-		"speed-limit-down":             {settingsKey: "speed-limit-down"},
-		"speed-limit-down-enabled":     {settingsKey: "speed-limit-down-enabled"},
-		"speed-limit-up":               {settingsKey: "speed-limit-up"},
-		"speed-limit-up-enabled":       {settingsKey: "speed-limit-up-enabled"},
-		"start-added-torrents":         {settingsKey: "start-added-torrents"},
-		"trash-original-torrent-files": {settingsKey: "trash-original-torrent-files"},
-		"utp-enabled":                  {settingsKey: "utp-enabled"},
+	liveDaemonSettingMappings = map[transmissionrpc.SessionField]liveDaemonSettingMapping{
+		transmissionrpc.SessionFieldAlternateSpeedDown: {
+			settingsKey: string(transmissionrpc.SessionFieldAlternateSpeedDown),
+		},
+		transmissionrpc.SessionFieldAlternateSpeedEnabled: {
+			settingsKey: string(transmissionrpc.SessionFieldAlternateSpeedEnabled),
+		},
+		transmissionrpc.SessionFieldAlternateSpeedTimeBegin: {
+			settingsKey: string(transmissionrpc.SessionFieldAlternateSpeedTimeBegin),
+		},
+		transmissionrpc.SessionFieldAlternateSpeedTimeDay: {
+			settingsKey: string(transmissionrpc.SessionFieldAlternateSpeedTimeDay),
+		},
+		transmissionrpc.SessionFieldAlternateSpeedTimeEnabled: {
+			settingsKey: string(transmissionrpc.SessionFieldAlternateSpeedTimeEnabled),
+		},
+		transmissionrpc.SessionFieldAlternateSpeedTimeEnd: {
+			settingsKey: string(transmissionrpc.SessionFieldAlternateSpeedTimeEnd),
+		},
+		transmissionrpc.SessionFieldAlternateSpeedUp: {
+			settingsKey: string(transmissionrpc.SessionFieldAlternateSpeedUp),
+		},
+		transmissionrpc.SessionFieldBlocklistEnabled: {
+			settingsKey: string(transmissionrpc.SessionFieldBlocklistEnabled),
+		},
+		transmissionrpc.SessionFieldCacheSizeMB: {
+			settingsKey: string(transmissionrpc.SessionFieldCacheSizeMB),
+		},
+		transmissionrpc.SessionFieldDHTEnabled: {
+			settingsKey: string(transmissionrpc.SessionFieldDHTEnabled),
+		},
+		transmissionrpc.SessionFieldDownloadDirectory: {
+			settingsKey: string(transmissionrpc.SessionFieldDownloadDirectory),
+		},
+		transmissionrpc.SessionFieldDownloadQueueEnabled: {
+			settingsKey: string(transmissionrpc.SessionFieldDownloadQueueEnabled),
+		},
+		transmissionrpc.SessionFieldDownloadQueueSize: {
+			settingsKey: string(transmissionrpc.SessionFieldDownloadQueueSize),
+		},
+		transmissionrpc.SessionFieldEncryption: {
+			settingsKey: string(transmissionrpc.SessionFieldEncryption),
+			convert:     convertLiveEncryptionSetting,
+		},
+		transmissionrpc.SessionFieldIdleSeedingLimit: {
+			settingsKey: string(transmissionrpc.SessionFieldIdleSeedingLimit),
+		},
+		transmissionrpc.SessionFieldIdleSeedingLimitEnabled: {
+			settingsKey: string(transmissionrpc.SessionFieldIdleSeedingLimitEnabled),
+		},
+		transmissionrpc.SessionFieldIncompleteDirectory: {
+			settingsKey: string(transmissionrpc.SessionFieldIncompleteDirectory),
+		},
+		transmissionrpc.SessionFieldIncompleteDirectoryEnabled: {
+			settingsKey: string(transmissionrpc.SessionFieldIncompleteDirectoryEnabled),
+		},
+		transmissionrpc.SessionFieldLPDEnabled: {
+			settingsKey: string(transmissionrpc.SessionFieldLPDEnabled),
+		},
+		transmissionrpc.SessionFieldPeerLimitGlobal: {
+			settingsKey: string(transmissionrpc.SessionFieldPeerLimitGlobal),
+		},
+		transmissionrpc.SessionFieldPEXEnabled: {
+			settingsKey: string(transmissionrpc.SessionFieldPEXEnabled),
+		},
+		transmissionrpc.SessionFieldQueueStalledEnabled: {
+			settingsKey: string(transmissionrpc.SessionFieldQueueStalledEnabled),
+		},
+		transmissionrpc.SessionFieldQueueStalledMinutes: {
+			settingsKey: string(transmissionrpc.SessionFieldQueueStalledMinutes),
+		},
+		transmissionrpc.SessionFieldRenamePartialFiles: {
+			settingsKey: string(transmissionrpc.SessionFieldRenamePartialFiles),
+		},
+		transmissionrpc.SessionFieldSeedQueueEnabled: {
+			settingsKey: string(transmissionrpc.SessionFieldSeedQueueEnabled),
+		},
+		transmissionrpc.SessionFieldSeedQueueSize: {
+			settingsKey: string(transmissionrpc.SessionFieldSeedQueueSize),
+		},
+		transmissionrpc.SessionFieldSpeedLimitDown: {
+			settingsKey: string(transmissionrpc.SessionFieldSpeedLimitDown),
+		},
+		transmissionrpc.SessionFieldSpeedLimitDownEnabled: {
+			settingsKey: string(transmissionrpc.SessionFieldSpeedLimitDownEnabled),
+		},
+		transmissionrpc.SessionFieldSpeedLimitUp: {
+			settingsKey: string(transmissionrpc.SessionFieldSpeedLimitUp),
+		},
+		transmissionrpc.SessionFieldSpeedLimitUpEnabled: {
+			settingsKey: string(transmissionrpc.SessionFieldSpeedLimitUpEnabled),
+		},
+		transmissionrpc.SessionFieldStartAddedTorrents: {
+			settingsKey: string(transmissionrpc.SessionFieldStartAddedTorrents),
+		},
+		transmissionrpc.SessionFieldTrashOriginalTorrentFiles: {
+			settingsKey: string(transmissionrpc.SessionFieldTrashOriginalTorrentFiles),
+		},
+		transmissionrpc.SessionFieldUTPEnabled: {
+			settingsKey: string(transmissionrpc.SessionFieldUTPEnabled),
+		},
 	}
 )
 
@@ -224,22 +292,22 @@ func (runner *runner) reloadDaemon(ctx context.Context, process daemonProcess) e
 		process.Entry.ConnectionID,
 		"settings.json",
 	)
-	fields := make([]string, 0, len(liveDaemonSettingMappings))
-	for key := range liveDaemonSettingMappings {
-		fields = append(fields, key)
+	fields := make([]transmissionrpc.SessionField, 0, len(liveDaemonSettingMappings))
+	for field := range liveDaemonSettingMappings {
+		fields = append(fields, field)
 	}
-	sort.Strings(fields)
+	sort.Slice(fields, func(left int, right int) bool {
+		return fields[left] < fields[right]
+	})
 
 	runner.reloadMutex.Lock()
 	defer runner.reloadMutex.Unlock()
 
-	liveSettings := map[string]json.RawMessage{}
-	if err := process.Client.Call(
+	liveSettings, err := process.Client.GetSession(
 		ctx,
-		"session-get",
-		map[string]any{"fields": fields},
-		&liveSettings,
-	); err != nil {
+		transmissionrpc.GetSessionRequest{Fields: fields},
+	)
+	if err != nil {
 		return fmt.Errorf("read live state for daemon %s: %w", process.Entry.ConnectionID, err)
 	}
 
@@ -255,7 +323,7 @@ func (runner *runner) reloadDaemon(ctx context.Context, process daemonProcess) e
 		return fmt.Errorf("read live settings for daemon %s: %w", process.Entry.ConnectionID, err)
 	}
 	for rpcKey, mapping := range liveDaemonSettingMappings {
-		liveValue, found := liveSettings[rpcKey]
+		liveValue, found := liveSettings[string(rpcKey)]
 		if !found {
 			continue
 		}

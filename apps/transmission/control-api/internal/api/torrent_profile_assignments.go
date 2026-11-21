@@ -5,6 +5,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/transmissionrpc"
 )
 
 const torrentProfileAssignmentPruneInterval = time.Minute
@@ -128,7 +130,7 @@ func (server *Server) addTorrentProfileAssignments(
 ) {
 	activeHashes := make(map[string]struct{}, len(torrents))
 	for _, torrent := range torrents {
-		hash, _ := torrent["hashString"].(string)
+		hash, _ := torrent[string(transmissionrpc.TorrentFieldHashString)].(string)
 		if hash != "" {
 			activeHashes[strings.ToLower(hash)] = struct{}{}
 		}
@@ -149,7 +151,7 @@ func (server *Server) addTorrentProfileAssignments(
 	for _, torrent := range torrents {
 		torrent["profileId"] = nil
 		torrent["needsProfile"] = nil
-		hash, _ := torrent["hashString"].(string)
+		hash, _ := torrent[string(transmissionrpc.TorrentFieldHashString)].(string)
 		if profileID, found := server.torrentProfileAssignments.profileID(hash); found {
 			torrent["profileId"] = profileID
 		}

@@ -15,68 +15,98 @@ import {
 import { useEscapeKey } from '@/web/use-escape-key.ts';
 
 import type {
-  FormEvent,
-  ReactElement,
-} from 'react';
-
-import type {
-  Web_Components_TorrentOrganizationDialog_Props,
-  Web_Components_TorrentOrganizationLabelDraft,
-} from '@/types/web/components.d.ts';
+  Web_TorrentOrganizationDialog_TorrentOrganizationDialog_AddLabel,
+  Web_TorrentOrganizationDialog_TorrentOrganizationDialog_AddLabel_NormalizedLabel,
+  Web_TorrentOrganizationDialog_TorrentOrganizationDialog_AddLabel_Returns,
+  Web_TorrentOrganizationDialog_TorrentOrganizationDialog_Busy,
+  Web_TorrentOrganizationDialog_TorrentOrganizationDialog_BusyState,
+  Web_TorrentOrganizationDialog_TorrentOrganizationDialog_Error,
+  Web_TorrentOrganizationDialog_TorrentOrganizationDialog_ErrorState,
+  Web_TorrentOrganizationDialog_TorrentOrganizationDialog_Initialized,
+  Web_TorrentOrganizationDialog_TorrentOrganizationDialog_InitializedState,
+  Web_TorrentOrganizationDialog_TorrentOrganizationDialog_LabelDrafts,
+  Web_TorrentOrganizationDialog_TorrentOrganizationDialog_LabelDraftsState,
+  Web_TorrentOrganizationDialog_TorrentOrganizationDialog_Labels,
+  Web_TorrentOrganizationDialog_TorrentOrganizationDialog_NewLabel,
+  Web_TorrentOrganizationDialog_TorrentOrganizationDialog_NewLabelState,
+  Web_TorrentOrganizationDialog_TorrentOrganizationDialog_NextLabelId,
+  Web_TorrentOrganizationDialog_TorrentOrganizationDialog_OnClose,
+  Web_TorrentOrganizationDialog_TorrentOrganizationDialog_OnSave,
+  Web_TorrentOrganizationDialog_TorrentOrganizationDialog_Open,
+  Web_TorrentOrganizationDialog_TorrentOrganizationDialog_OpenedLabels,
+  Web_TorrentOrganizationDialog_TorrentOrganizationDialog_OpenedLabelsState,
+  Web_TorrentOrganizationDialog_TorrentOrganizationDialog_Organization,
+  Web_TorrentOrganizationDialog_TorrentOrganizationDialog_Props,
+  Web_TorrentOrganizationDialog_TorrentOrganizationDialog_Returns,
+  Web_TorrentOrganizationDialog_TorrentOrganizationDialog_Save,
+  Web_TorrentOrganizationDialog_TorrentOrganizationDialog_Save_Event,
+  Web_TorrentOrganizationDialog_TorrentOrganizationDialog_Save_NormalizedLabels,
+  Web_TorrentOrganizationDialog_TorrentOrganizationDialog_Save_Returns,
+  Web_TorrentOrganizationDialog_TorrentOrganizationDialog_SetBusy,
+  Web_TorrentOrganizationDialog_TorrentOrganizationDialog_SetError,
+  Web_TorrentOrganizationDialog_TorrentOrganizationDialog_SetInitialized,
+  Web_TorrentOrganizationDialog_TorrentOrganizationDialog_SetLabelDrafts,
+  Web_TorrentOrganizationDialog_TorrentOrganizationDialog_SetNewLabel,
+  Web_TorrentOrganizationDialog_TorrentOrganizationDialog_SetOpenedLabels,
+  Web_TorrentOrganizationDialog_TorrentOrganizationDialog_SortedLabels,
+  Web_TorrentOrganizationDialog_TorrentOrganizationDialog_UpdateLabel,
+  Web_TorrentOrganizationDialog_TorrentOrganizationDialog_UpdateLabel_Id,
+  Web_TorrentOrganizationDialog_TorrentOrganizationDialog_UpdateLabel_Returns,
+  Web_TorrentOrganizationDialog_TorrentOrganizationDialog_UpdateLabel_Value,
+} from '@/types/web/torrent-organization-dialog.d.ts';
 
 /**
- * Torrent Organization Dialog.
+ * Torrent Organization Dialog - Torrent Organization Dialog.
  *
  * Edits saved and in-use labels while retaining their original identities for
  * torrent-wide removal and rename operations.
  *
+ * @param {Web_TorrentOrganizationDialog_TorrentOrganizationDialog_Props} props - Props.
+ *
+ * @returns {Web_TorrentOrganizationDialog_TorrentOrganizationDialog_Returns}
+ *
  * @since 2.0.0
  */
-export const TorrentOrganizationDialog = ({
-  labels,
-  onClose,
-  onSave,
-  open,
-  organization,
-}: Web_Components_TorrentOrganizationDialog_Props): ReactElement | null => {
-  const [
-    labelDrafts,
-    setLabelDrafts,
-  ] = useState<Web_Components_TorrentOrganizationLabelDraft[]>([]);
-  const [
-    openedLabels,
-    setOpenedLabels,
-  ] = useState<string[]>([]);
-  const [
-    newLabel,
-    setNewLabel,
-  ] = useState<string>('');
-  const [
-    busy,
-    setBusy,
-  ] = useState<boolean>(false);
-  const [
-    error,
-    setError,
-  ] = useState<string>('');
-  const [
-    initialized,
-    setInitialized,
-  ] = useState<boolean>(false);
-  const nextLabelID = useRef<number>(0);
+export const TorrentOrganizationDialog = (props: Web_TorrentOrganizationDialog_TorrentOrganizationDialog_Props): Web_TorrentOrganizationDialog_TorrentOrganizationDialog_Returns => {
+  const labels: Web_TorrentOrganizationDialog_TorrentOrganizationDialog_Labels = props['labels'];
+  const onClose: Web_TorrentOrganizationDialog_TorrentOrganizationDialog_OnClose = props['onClose'];
+  const onSave: Web_TorrentOrganizationDialog_TorrentOrganizationDialog_OnSave = props['onSave'];
+  const open: Web_TorrentOrganizationDialog_TorrentOrganizationDialog_Open = props['open'];
+  const organization: Web_TorrentOrganizationDialog_TorrentOrganizationDialog_Organization = props['organization'];
+  const labelDraftsState: Web_TorrentOrganizationDialog_TorrentOrganizationDialog_LabelDraftsState = useState<Web_TorrentOrganizationDialog_TorrentOrganizationDialog_LabelDrafts>([]);
+  const labelDrafts: Web_TorrentOrganizationDialog_TorrentOrganizationDialog_LabelDrafts = labelDraftsState[0];
+  const setLabelDrafts: Web_TorrentOrganizationDialog_TorrentOrganizationDialog_SetLabelDrafts = labelDraftsState[1];
+  const openedLabelsState: Web_TorrentOrganizationDialog_TorrentOrganizationDialog_OpenedLabelsState = useState<Web_TorrentOrganizationDialog_TorrentOrganizationDialog_OpenedLabels>([]);
+  const openedLabels: Web_TorrentOrganizationDialog_TorrentOrganizationDialog_OpenedLabels = openedLabelsState[0];
+  const setOpenedLabels: Web_TorrentOrganizationDialog_TorrentOrganizationDialog_SetOpenedLabels = openedLabelsState[1];
+  const newLabelState: Web_TorrentOrganizationDialog_TorrentOrganizationDialog_NewLabelState = useState<Web_TorrentOrganizationDialog_TorrentOrganizationDialog_NewLabel>('');
+  const newLabel: Web_TorrentOrganizationDialog_TorrentOrganizationDialog_NewLabel = newLabelState[0];
+  const setNewLabel: Web_TorrentOrganizationDialog_TorrentOrganizationDialog_SetNewLabel = newLabelState[1];
+  const busyState: Web_TorrentOrganizationDialog_TorrentOrganizationDialog_BusyState = useState<Web_TorrentOrganizationDialog_TorrentOrganizationDialog_Busy>(false);
+  const busy: Web_TorrentOrganizationDialog_TorrentOrganizationDialog_Busy = busyState[0];
+  const setBusy: Web_TorrentOrganizationDialog_TorrentOrganizationDialog_SetBusy = busyState[1];
+  const errorState: Web_TorrentOrganizationDialog_TorrentOrganizationDialog_ErrorState = useState<Web_TorrentOrganizationDialog_TorrentOrganizationDialog_Error>('');
+  const error: Web_TorrentOrganizationDialog_TorrentOrganizationDialog_Error = errorState[0];
+  const setError: Web_TorrentOrganizationDialog_TorrentOrganizationDialog_SetError = errorState[1];
+  const initializedState: Web_TorrentOrganizationDialog_TorrentOrganizationDialog_InitializedState = useState<Web_TorrentOrganizationDialog_TorrentOrganizationDialog_Initialized>(false);
+  const initialized: Web_TorrentOrganizationDialog_TorrentOrganizationDialog_Initialized = initializedState[0];
+  const setInitialized: Web_TorrentOrganizationDialog_TorrentOrganizationDialog_SetInitialized = initializedState[1];
+  const nextLabelID: Web_TorrentOrganizationDialog_TorrentOrganizationDialog_NextLabelId = useRef<number>(0);
 
-  useEffect((): void => {
-    if (!open) {
+  useEffect(() => {
+    if (open === false) {
       setInitialized(false);
 
       return;
     }
-    if (initialized || organization === null) {
+
+    if (initialized === true || organization === null) {
       return;
     }
 
-    const sortedLabels: string[] = sortTorrentOrganizationValues(labels);
-    setLabelDrafts(sortedLabels.map((label: string, index: number): Web_Components_TorrentOrganizationLabelDraft => ({
+    const sortedLabels: Web_TorrentOrganizationDialog_TorrentOrganizationDialog_SortedLabels = sortTorrentOrganizationValues(labels);
+
+    setLabelDrafts(sortedLabels.map((label, index) => ({
       id: `opened-${String(index)}`,
       original: label,
       value: label,
@@ -87,6 +117,8 @@ export const TorrentOrganizationDialog = ({
     setError('');
     nextLabelID.current = 0;
     setInitialized(true);
+
+    return;
   }, [
     initialized,
     labels,
@@ -96,34 +128,38 @@ export const TorrentOrganizationDialog = ({
 
   useEscapeKey(onClose, open);
 
-  if (!open || organization === null) {
+  if (open === false || organization === null) {
     return null;
   }
 
   /**
-   * Torrent Organization Dialog - Adds label.
+   * Torrent Organization Dialog - Add Label.
    *
    * Adds one unsaved label draft after checking the same length and uniqueness
    * rules used by the request parser.
    *
+   * @returns {Web_TorrentOrganizationDialog_TorrentOrganizationDialog_AddLabel_Returns}
+   *
    * @since 2.0.0
    */
-  const addLabel = (): void => {
-    const normalizedLabel: string = newLabel.trim();
+  const addLabel: Web_TorrentOrganizationDialog_TorrentOrganizationDialog_AddLabel = (): Web_TorrentOrganizationDialog_TorrentOrganizationDialog_AddLabel_Returns => {
+    const normalizedLabel: Web_TorrentOrganizationDialog_TorrentOrganizationDialog_AddLabel_NormalizedLabel = newLabel.trim();
+
     if (normalizedLabel === '' || normalizedLabel.length > 128) {
       setError('Labels must contain between 1 and 128 characters.');
 
       return;
     }
+
     if (labelDrafts.some(
-      (draft: Web_Components_TorrentOrganizationLabelDraft): boolean => draft['value'].trim().toLowerCase() === normalizedLabel.toLowerCase(),
-    )) {
+      (draft) => draft['value'].trim().toLowerCase() === normalizedLabel.toLowerCase(),
+    ) === true) {
       setError('That label is already listed.');
 
       return;
     }
 
-    setLabelDrafts((currentDrafts: Web_Components_TorrentOrganizationLabelDraft[]): Web_Components_TorrentOrganizationLabelDraft[] => [
+    setLabelDrafts((currentDrafts) => [
       ...currentDrafts,
       {
         id: `new-${String(nextLabelID.current)}`,
@@ -134,25 +170,34 @@ export const TorrentOrganizationDialog = ({
     nextLabelID.current += 1;
     setNewLabel('');
     setError('');
+
+    return;
   };
 
   /**
-   * Torrent Organization Dialog - Updates label.
+   * Torrent Organization Dialog - Update Label.
    *
    * Changes only the displayed value while preserving the original label used
    * to build a rename operation.
    *
+   * @param {Web_TorrentOrganizationDialog_TorrentOrganizationDialog_UpdateLabel_Id}    id    - Id.
+   * @param {Web_TorrentOrganizationDialog_TorrentOrganizationDialog_UpdateLabel_Value} value - Value.
+   *
+   * @returns {Web_TorrentOrganizationDialog_TorrentOrganizationDialog_UpdateLabel_Returns}
+   *
    * @since 2.0.0
    */
-  const updateLabel = (id: string, value: string): void => {
-    setLabelDrafts((currentDrafts: Web_Components_TorrentOrganizationLabelDraft[]): Web_Components_TorrentOrganizationLabelDraft[] => currentDrafts.map(
-      (draft: Web_Components_TorrentOrganizationLabelDraft): Web_Components_TorrentOrganizationLabelDraft => (
+  const updateLabel: Web_TorrentOrganizationDialog_TorrentOrganizationDialog_UpdateLabel = (id: Web_TorrentOrganizationDialog_TorrentOrganizationDialog_UpdateLabel_Id, value: Web_TorrentOrganizationDialog_TorrentOrganizationDialog_UpdateLabel_Value): Web_TorrentOrganizationDialog_TorrentOrganizationDialog_UpdateLabel_Returns => {
+    setLabelDrafts((currentDrafts) => currentDrafts.map(
+      (draft) => (
         (draft['id'] === id) ? {
           ...draft,
           value,
         } : draft
       ),
     ));
+
+    return;
   };
 
   /**
@@ -161,19 +206,26 @@ export const TorrentOrganizationDialog = ({
    * Sends the complete label set together with explicit removal and rename
    * operations so the server can update affected torrents.
    *
+   * @param {Web_TorrentOrganizationDialog_TorrentOrganizationDialog_Save_Event} event - Event.
+   *
+   * @returns {Web_TorrentOrganizationDialog_TorrentOrganizationDialog_Save_Returns}
+   *
    * @since 2.0.0
    */
-  const save = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
+  const save: Web_TorrentOrganizationDialog_TorrentOrganizationDialog_Save = async (event: Web_TorrentOrganizationDialog_TorrentOrganizationDialog_Save_Event): Web_TorrentOrganizationDialog_TorrentOrganizationDialog_Save_Returns => {
     event.preventDefault();
-    const normalizedLabels: string[] = labelDrafts.map(
-      (draft: Web_Components_TorrentOrganizationLabelDraft): string => draft['value'].trim(),
+
+    const normalizedLabels: Web_TorrentOrganizationDialog_TorrentOrganizationDialog_Save_NormalizedLabels = labelDrafts.map(
+      (draft) => draft['value'].trim(),
     );
-    if (normalizedLabels.some((label: string): boolean => label === '' || label.length > 128)) {
+
+    if (normalizedLabels.some((label) => label === '' || label.length > 128) === true) {
       setError('Labels must contain between 1 and 128 characters.');
 
       return;
     }
-    if (new Set(normalizedLabels.map((label: string): string => label.toLowerCase())).size !== normalizedLabels.length) {
+
+    if (new Set(normalizedLabels.map((label) => label.toLowerCase())).size !== normalizedLabels.length) {
       setError('Labels must be unique.');
 
       return;
@@ -181,18 +233,22 @@ export const TorrentOrganizationDialog = ({
 
     setBusy(true);
     setError('');
+
     try {
       await onSave(buildTorrentOrganizationUpdate(
         organization['revision'],
         openedLabels,
         labelDrafts,
       ));
+
       onClose();
     } catch (caughtError) {
       setError((caughtError instanceof Error) ? caughtError.message : 'The labels couldn\'t be saved.');
     } finally {
       setBusy(false);
     }
+
+    return;
   };
 
   return (
@@ -211,7 +267,7 @@ export const TorrentOrganizationDialog = ({
             <div className="organization-add-row">
               <input
                 aria-label="New label"
-                onChange={(event): void => setNewLabel(event.currentTarget.value)}
+                onChange={(event) => setNewLabel(event.currentTarget.value)}
                 placeholder="e.g. Archive"
                 type="text"
                 value={newLabel}
@@ -221,20 +277,24 @@ export const TorrentOrganizationDialog = ({
             <div className="organization-value-list">
               {(labelDrafts.length === 0) ? (
                 <p className="organization-empty">No labels yet.</p>
-              ) : labelDrafts.map((draft: Web_Components_TorrentOrganizationLabelDraft, index: number): ReactElement => (
+              ) : labelDrafts.map((draft, index) => (
                 <div className="organization-value-row" key={draft['id']}>
                   <input
                     aria-label={`Label ${index + 1}`}
-                    onChange={(event): void => updateLabel(draft['id'], event.currentTarget.value)}
+                    onChange={(event) => updateLabel(draft['id'], event.currentTarget.value)}
                     type="text"
                     value={draft['value']}
                   />
                   <button
                     aria-label={`Remove ${draft['value']}`}
                     className="icon-button organization-remove-button"
-                    onClick={(): void => setLabelDrafts((currentDrafts: Web_Components_TorrentOrganizationLabelDraft[]): Web_Components_TorrentOrganizationLabelDraft[] => currentDrafts.filter(
-                      (currentDraft: Web_Components_TorrentOrganizationLabelDraft): boolean => currentDraft['id'] !== draft['id'],
-                    ))}
+                    onClick={() => {
+                      setLabelDrafts((currentDrafts) => currentDrafts.filter(
+                        (currentDraft) => currentDraft['id'] !== draft['id'],
+                      ));
+
+                      return;
+                    }}
                     type="button"
                   >
                     <Icon name="remove" size={16} />
@@ -248,7 +308,7 @@ export const TorrentOrganizationDialog = ({
           {(error === '') ? null : <div className="form-error" role="alert">{error}</div>}
           <div className="dialog-actions">
             <Button onClick={onClose}>Cancel</Button>
-            <Button disabled={busy} icon="check" type="submit" variant="primary">{(busy) ? 'Saving…' : 'Save'}</Button>
+            <Button disabled={busy} icon="check" type="submit" variant="primary">{(busy === true) ? 'Saving…' : 'Save'}</Button>
           </div>
         </form>
       </section>

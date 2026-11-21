@@ -102,10 +102,10 @@ verify_dockerfile() {
     "${assembly_directory}/rootfs/etc/s6-overlay/s6-rc.d/directory-controller/run" \
     "/usr/local/bin/transmission-vpn-directory-controller"
   assert_file_contains \
-    "${assembly_directory}/rootfs/usr/local/libexec/transmission-vpn/config-init.sh" \
+    "${assembly_directory}/project/usr/local/libexec/transmission-vpn/config-init.sh" \
     "--migrate-state-only"
   assert_file_contains \
-    "${assembly_directory}/rootfs/usr/local/libexec/transmission-vpn/config-init.sh" \
+    "${assembly_directory}/project/usr/local/libexec/transmission-vpn/config-init.sh" \
     "--initialize-only"
   assert_file_contains \
     "${assembly_directory}/rootfs/etc/s6-overlay/s6-rc.d/vpn-controller/run" \
@@ -120,31 +120,31 @@ verify_dockerfile() {
     "${application_directory}/control-api/cmd/transmission-runner/main.go" \
     '"/usr/local/bin/transmission-daemon"'
   assert_file_contains \
-    "${assembly_directory}/rootfs/usr/local/libexec/transmission-vpn/config-init.sh" \
+    "${assembly_directory}/project/usr/local/libexec/transmission-vpn/config-init.sh" \
     '"${runtime_directory}/transmission-config"'
   assert_file_contains \
-    "${assembly_directory}/rootfs/usr/local/libexec/transmission-vpn/config-init.sh" \
+    "${assembly_directory}/project/usr/local/libexec/transmission-vpn/config-init.sh" \
     '"${runtime_directory}/transmission-state"'
   assert_file_contains \
-    "${assembly_directory}/rootfs/usr/local/libexec/transmission-vpn/firewall-common.sh" \
+    "${assembly_directory}/project/usr/local/libexec/transmission-vpn/firewall-common.sh" \
     'firewall.interfaces'
   assert_file_contains \
-    "${assembly_directory}/rootfs/usr/local/libexec/transmission-vpn/firewall-common.sh" \
+    "${assembly_directory}/project/usr/local/libexec/transmission-vpn/firewall-common.sh" \
     '-s "${local_address}/32" -o "${interface_name}" -j ACCEPT'
   assert_file_contains \
-    "${assembly_directory}/rootfs/usr/local/libexec/transmission-vpn/firewall-common.sh" \
+    "${assembly_directory}/project/usr/local/libexec/transmission-vpn/firewall-common.sh" \
     '-j SNAT --to-source "${provider_address}"'
   assert_file_contains \
-    "${assembly_directory}/rootfs/usr/local/libexec/transmission-vpn/firewall-common.sh" \
+    "${assembly_directory}/project/usr/local/libexec/transmission-vpn/firewall-common.sh" \
     'readonly source_backstop_firewall_chain="TVPN_SOURCE_BACKSTOP"'
   assert_file_contains \
-    "${assembly_directory}/rootfs/usr/local/libexec/transmission-vpn/firewall-common.sh" \
+    "${assembly_directory}/project/usr/local/libexec/transmission-vpn/firewall-common.sh" \
     'readonly firewall_ipv6_path="/run/transmission-vpn/firewall.ipv6"'
   assert_file_contains \
-    "${assembly_directory}/rootfs/usr/local/libexec/transmission-vpn/firewall-common.sh" \
+    "${assembly_directory}/project/usr/local/libexec/transmission-vpn/firewall-common.sh" \
     'flock -x 9'
   assert_file_contains \
-    "${assembly_directory}/rootfs/usr/local/libexec/transmission-vpn/firewall-common.sh" \
+    "${assembly_directory}/project/usr/local/libexec/transmission-vpn/firewall-common.sh" \
     'mv -f "${temporary_path}" "${state_path}"'
   assert_file_contains \
     "${application_directory}/control-api/cmd/transmission-runner/runner.go" \
@@ -167,7 +167,7 @@ verify_dockerfile() {
 }
 
 verify_runtime_directory_ownership() {
-  local config_init_path="${assembly_directory}/rootfs/usr/local/libexec/transmission-vpn/config-init.sh"
+  local config_init_path="${assembly_directory}/project/usr/local/libexec/transmission-vpn/config-init.sh"
   local controller_path="${application_directory}/control-api/internal/controller/daemon.go"
 
   assert_file_contains "${config_init_path}" '-o "${PUID}" -g "${PGID}"'
@@ -186,7 +186,7 @@ verify_runtime_directory_ownership() {
 }
 
 verify_firewall_variable_scopes() {
-  local firewall_directory="${assembly_directory}/rootfs/usr/local/libexec/transmission-vpn"
+  local firewall_directory="${assembly_directory}/project/usr/local/libexec/transmission-vpn"
   local firewall_scripts=(
     "${firewall_directory}/firewall-common.sh"
     "${firewall_directory}/firewall-init.sh"
@@ -237,7 +237,7 @@ verify_service_graph() {
   local user_bundle_root="${assembly_directory}/rootfs/etc/s6-overlay/user-bundles.d/user/contents.d"
 
   local required_files=(
-    "${service_root}/config-init/dependencies.d/base"
+    "${assembly_directory}/project/etc/s6-overlay/s6-rc.d/config-init/dependencies.d/base"
     "${service_root}/config-init/dependencies.d/nova-container-init"
     "${service_root}/config-init/type"
     "${service_root}/config-init/up"
@@ -334,11 +334,12 @@ verify_service_graph() {
 
 verify_shell_syntax() {
   local rootfs_directory="${assembly_directory}/rootfs"
+  local project_directory_root="${assembly_directory}/project"
   local shell_scripts=()
 
   while IFS= read -r -d '' shell_script; do
     shell_scripts+=("${shell_script}")
-  done < <(find "${rootfs_directory}" -type f \
+  done < <(find "${rootfs_directory}" "${project_directory_root}" -type f \
     \( -name '*.sh' -o -name 'run' -o -name 'finish' \) -print0)
 
   local shell_script

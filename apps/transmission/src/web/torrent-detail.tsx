@@ -35,90 +35,247 @@ import { torrentNameMatchesPattern } from '@/web/torrent-profile-matcher.ts';
 import { useEscapeKey } from '@/web/use-escape-key.ts';
 
 import type {
-  ChangeEvent,
-  FormEvent,
-  ReactElement,
-} from 'react';
-
-import type {
-  Web_Api_DefaultTorrentProfile,
-  Web_Api_MovedTorrent,
-  Web_Api_SetTorrentProfileResponse,
-  Web_Api_TorrentChanges,
-  Web_Api_TorrentFile,
-  Web_Api_TorrentFileStats,
-  Web_Api_TorrentPeer,
-  Web_Api_TorrentProfile,
-  Web_Api_TorrentTrackerStats,
-} from '@/types/web/api.d.ts';
-import type {
-  Web_Components_TorrentDetail_Props,
-  Web_Components_TorrentDetail_Tab,
-  Web_Components_TorrentFileDraft,
-  Web_Components_TorrentFileDrafts,
-  Web_Components_TorrentFileRow,
-  Web_Components_TorrentOptionsDraft,
-} from '@/types/web/components.d.ts';
+  Web_TorrentDetail_CopyText_Returns,
+  Web_TorrentDetail_CopyText_Value,
+  Web_TorrentDetail_FileDraftsFromDetail_Drafts,
+  Web_TorrentDetail_FileDraftsFromDetail_FileCount,
+  Web_TorrentDetail_FileDraftsFromDetail_Files,
+  Web_TorrentDetail_FileDraftsFromDetail_FileStats,
+  Web_TorrentDetail_FileDraftsFromDetail_Returns,
+  Web_TorrentDetail_FileDraftsFromDetail_Statistics,
+  Web_TorrentDetail_FileDraftsFromDetail_StatisticsPriority,
+  Web_TorrentDetail_FileDraftsFromDetail_StatisticsWanted,
+  Web_TorrentDetail_OptionsFromDetail_Detail,
+  Web_TorrentDetail_OptionsFromDetail_Returns,
+  Web_TorrentDetail_TorrentDetail_ApplyProfileOptions,
+  Web_TorrentDetail_TorrentDetail_ApplyProfileOptionsState,
+  Web_TorrentDetail_TorrentDetail_ApplyTorrentProfile,
+  Web_TorrentDetail_TorrentDetail_ApplyTorrentProfile_DefaultConnection,
+  Web_TorrentDetail_TorrentDetail_ApplyTorrentProfile_Response,
+  Web_TorrentDetail_TorrentDetail_ApplyTorrentProfile_Returns,
+  Web_TorrentDetail_TorrentDetail_ApplyTorrentProfile_SelectedProfile,
+  Web_TorrentDetail_TorrentDetail_ApplyTorrentProfile_TargetConnection,
+  Web_TorrentDetail_TorrentDetail_ApplyTorrentProfile_TargetConnectionId,
+  Web_TorrentDetail_TorrentDetail_ApplyTorrentProfile_TargetConnectionName,
+  Web_TorrentDetail_TorrentDetail_AssignedProfile,
+  Web_TorrentDetail_TorrentDetail_AssignedProfileName,
+  Web_TorrentDetail_TorrentDetail_Busy,
+  Web_TorrentDetail_TorrentDetail_BusyState,
+  Web_TorrentDetail_TorrentDetail_Completed,
+  Web_TorrentDetail_TorrentDetail_Connections,
+  Web_TorrentDetail_TorrentDetail_DefaultConnection,
+  Web_TorrentDetail_TorrentDetail_DefaultProfile,
+  Web_TorrentDetail_TorrentDetail_Detail,
+  Web_TorrentDetail_TorrentDetail_DetailConnection,
+  Web_TorrentDetail_TorrentDetail_DetailConnectionId,
+  Web_TorrentDetail_TorrentDetail_DetailDownloadDir,
+  Web_TorrentDetail_TorrentDetail_DetailFiles,
+  Web_TorrentDetail_TorrentDetail_DetailId,
+  Web_TorrentDetail_TorrentDetail_DetailName,
+  Web_TorrentDetail_TorrentDetail_DetailNeedsProfile,
+  Web_TorrentDetail_TorrentDetail_DetailProfileId,
+  Web_TorrentDetail_TorrentDetail_Draft,
+  Web_TorrentDetail_TorrentDetail_EtaLabel,
+  Web_TorrentDetail_TorrentDetail_FileDrafts,
+  Web_TorrentDetail_TorrentDetail_FileDraftsState,
+  Web_TorrentDetail_TorrentDetail_FileQuery,
+  Web_TorrentDetail_TorrentDetail_FileQueryState,
+  Web_TorrentDetail_TorrentDetail_FilteredFiles,
+  Web_TorrentDetail_TorrentDetail_LabelPresets,
+  Web_TorrentDetail_TorrentDetail_Length,
+  Web_TorrentDetail_TorrentDetail_Loading,
+  Web_TorrentDetail_TorrentDetail_MatchingPattern,
+  Web_TorrentDetail_TorrentDetail_MatchingResolutionProfiles,
+  Web_TorrentDetail_TorrentDetail_NextPriority,
+  Web_TorrentDetail_TorrentDetail_NextWanted,
+  Web_TorrentDetail_TorrentDetail_NormalizedQuery,
+  Web_TorrentDetail_TorrentDetail_OnAction,
+  Web_TorrentDetail_TorrentDetail_OnClose,
+  Web_TorrentDetail_TorrentDetail_OnRefresh,
+  Web_TorrentDetail_TorrentDetail_OnRename,
+  Web_TorrentDetail_TorrentDetail_OnSetProfile,
+  Web_TorrentDetail_TorrentDetail_OnUpdate,
+  Web_TorrentDetail_TorrentDetail_Options,
+  Web_TorrentDetail_TorrentDetail_OptionsBandwidthPriority,
+  Web_TorrentDetail_TorrentDetail_OptionsSeedIdleMode,
+  Web_TorrentDetail_TorrentDetail_OptionsSeedRatioMode,
+  Web_TorrentDetail_TorrentDetail_OptionsState,
+  Web_TorrentDetail_TorrentDetail_ProfileChangeHint,
+  Web_TorrentDetail_TorrentDetail_ProfileId,
+  Web_TorrentDetail_TorrentDetail_ProfileIdState,
+  Web_TorrentDetail_TorrentDetail_ProfileMoveResults,
+  Web_TorrentDetail_TorrentDetail_ProfileMoveResultsState,
+  Web_TorrentDetail_TorrentDetail_Profiles,
+  Web_TorrentDetail_TorrentDetail_Progress,
+  Web_TorrentDetail_TorrentDetail_Props,
+  Web_TorrentDetail_TorrentDetail_RenameAvailable,
+  Web_TorrentDetail_TorrentDetail_RenameName,
+  Web_TorrentDetail_TorrentDetail_RenameNameState,
+  Web_TorrentDetail_TorrentDetail_RenameTorrent,
+  Web_TorrentDetail_TorrentDetail_RenameTorrent_Event,
+  Web_TorrentDetail_TorrentDetail_RenameTorrent_Returns,
+  Web_TorrentDetail_TorrentDetail_ResolutionAllowsAnyProfile,
+  Web_TorrentDetail_TorrentDetail_ResolutionError,
+  Web_TorrentDetail_TorrentDetail_ResolutionErrorState,
+  Web_TorrentDetail_TorrentDetail_ResolutionOpen,
+  Web_TorrentDetail_TorrentDetail_ResolutionOpenState,
+  Web_TorrentDetail_TorrentDetail_ResolutionProfileIDs,
+  Web_TorrentDetail_TorrentDetail_ResolutionProfiles,
+  Web_TorrentDetail_TorrentDetail_ResolutionResults,
+  Web_TorrentDetail_TorrentDetail_ResolutionResultsState,
+  Web_TorrentDetail_TorrentDetail_ResolveTorrentProfile,
+  Web_TorrentDetail_TorrentDetail_ResolveTorrentProfile_Response,
+  Web_TorrentDetail_TorrentDetail_ResolveTorrentProfile_Returns,
+  Web_TorrentDetail_TorrentDetail_ResolveTorrentProfile_SelectedProfileId,
+  Web_TorrentDetail_TorrentDetail_Returns,
+  Web_TorrentDetail_TorrentDetail_RunMutation,
+  Web_TorrentDetail_TorrentDetail_RunMutation_Mutation,
+  Web_TorrentDetail_TorrentDetail_RunMutation_Returns,
+  Web_TorrentDetail_TorrentDetail_RunMutation_SuccessMessage,
+  Web_TorrentDetail_TorrentDetail_SaveFiles,
+  Web_TorrentDetail_TorrentDetail_SaveFiles_Changes,
+  Web_TorrentDetail_TorrentDetail_SaveFiles_Draft,
+  Web_TorrentDetail_TorrentDetail_SaveFiles_FilesUnwanted,
+  Web_TorrentDetail_TorrentDetail_SaveFiles_FilesWanted,
+  Web_TorrentDetail_TorrentDetail_SaveFiles_Index,
+  Web_TorrentDetail_TorrentDetail_SaveFiles_IndexValue,
+  Web_TorrentDetail_TorrentDetail_SaveFiles_PriorityHigh,
+  Web_TorrentDetail_TorrentDetail_SaveFiles_PriorityLow,
+  Web_TorrentDetail_TorrentDetail_SaveFiles_PriorityNormal,
+  Web_TorrentDetail_TorrentDetail_SaveFiles_Returns,
+  Web_TorrentDetail_TorrentDetail_SaveOptions,
+  Web_TorrentDetail_TorrentDetail_SaveOptions_Changes,
+  Web_TorrentDetail_TorrentDetail_SaveOptions_Event,
+  Web_TorrentDetail_TorrentDetail_SaveOptions_Labels,
+  Web_TorrentDetail_TorrentDetail_SaveOptions_Returns,
+  Web_TorrentDetail_TorrentDetail_SaveTrackers,
+  Web_TorrentDetail_TorrentDetail_SaveTrackers_Returns,
+  Web_TorrentDetail_TorrentDetail_SelectedProfile,
+  Web_TorrentDetail_TorrentDetail_SelectedProfileChanged,
+  Web_TorrentDetail_TorrentDetail_SelectedProfileConnection,
+  Web_TorrentDetail_TorrentDetail_SelectedProfileConnectionID,
+  Web_TorrentDetail_TorrentDetail_SelectedProfileConnectionName,
+  Web_TorrentDetail_TorrentDetail_SelectedProfileData,
+  Web_TorrentDetail_TorrentDetail_SetAllFiles,
+  Web_TorrentDetail_TorrentDetail_SetAllFiles_Draft,
+  Web_TorrentDetail_TorrentDetail_SetAllFiles_Index,
+  Web_TorrentDetail_TorrentDetail_SetAllFiles_NextDrafts,
+  Web_TorrentDetail_TorrentDetail_SetAllFiles_Returns,
+  Web_TorrentDetail_TorrentDetail_SetAllFiles_Wanted,
+  Web_TorrentDetail_TorrentDetail_SetAllPriorities,
+  Web_TorrentDetail_TorrentDetail_SetAllPriorities_Draft,
+  Web_TorrentDetail_TorrentDetail_SetAllPriorities_Index,
+  Web_TorrentDetail_TorrentDetail_SetAllPriorities_NextDrafts,
+  Web_TorrentDetail_TorrentDetail_SetAllPriorities_Priority,
+  Web_TorrentDetail_TorrentDetail_SetAllPriorities_Returns,
+  Web_TorrentDetail_TorrentDetail_SetApplyProfileOptions,
+  Web_TorrentDetail_TorrentDetail_SetBusy,
+  Web_TorrentDetail_TorrentDetail_SetFileDrafts,
+  Web_TorrentDetail_TorrentDetail_SetFileQuery,
+  Web_TorrentDetail_TorrentDetail_SetOptions,
+  Web_TorrentDetail_TorrentDetail_SetProfileId,
+  Web_TorrentDetail_TorrentDetail_SetProfileMoveResults,
+  Web_TorrentDetail_TorrentDetail_SetRenameName,
+  Web_TorrentDetail_TorrentDetail_SetResolutionError,
+  Web_TorrentDetail_TorrentDetail_SetResolutionOpen,
+  Web_TorrentDetail_TorrentDetail_SetResolutionResults,
+  Web_TorrentDetail_TorrentDetail_SetTab,
+  Web_TorrentDetail_TorrentDetail_SetTrackerList,
+  Web_TorrentDetail_TorrentDetail_Tab,
+  Web_TorrentDetail_TorrentDetail_TabKeys,
+  Web_TorrentDetail_TorrentDetail_TabLabels,
+  Web_TorrentDetail_TorrentDetail_TabState,
+  Web_TorrentDetail_TorrentDetail_TrackerIssue,
+  Web_TorrentDetail_TorrentDetail_TrackerList,
+  Web_TorrentDetail_TorrentDetail_TrackerListState,
+  Web_TorrentDetail_TorrentDetail_TrackerStatus,
+  Web_TorrentDetail_TrackerListFromDetail_Group,
+  Web_TorrentDetail_TrackerListFromDetail_Returns,
+  Web_TorrentDetail_TrackerListFromDetail_TrackerGroups,
+  Web_TorrentDetail_TrackerListFromDetail_TrackerList,
+  Web_TorrentDetail_TrackerListFromDetail_Trackers,
+} from '@/types/web/torrent-detail.d.ts';
 
 /**
- * Torrent Detail - Copies text.
+ * Torrent Detail - Copy Text.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @param {Web_TorrentDetail_CopyText_Value} value - Value.
+ *
+ * @returns {Web_TorrentDetail_CopyText_Returns}
+ *
  * @since 2.0.0
  */
-const copyText = async (value: string): Promise<void> => {
+const copyText = async (value: Web_TorrentDetail_CopyText_Value): Web_TorrentDetail_CopyText_Returns => {
   await navigator.clipboard.writeText(value);
+
+  return;
 };
 
 /**
- * Torrent Detail - Tracker list from detail.
+ * Torrent Detail - Tracker List From Detail.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
+ *
+ * @param {Web_TorrentDetail_TrackerListFromDetail_TrackerList} trackerList - Tracker list.
+ * @param {Web_TorrentDetail_TrackerListFromDetail_Trackers}    trackers    - Trackers.
+ *
+ * @returns {Web_TorrentDetail_TrackerListFromDetail_Returns}
  *
  * @since 2.0.0
  */
 const trackerListFromDetail = (
-  trackerList: string | undefined,
-  trackers: Array<{
-    announce: string
-    tier: number
-  }> | undefined,
-): string => {
+  trackerList: Web_TorrentDetail_TrackerListFromDetail_TrackerList,
+  trackers: Web_TorrentDetail_TrackerListFromDetail_Trackers,
+): Web_TorrentDetail_TrackerListFromDetail_Returns => {
   if (trackerList !== undefined) {
     return trackerList;
   }
 
-  const trackerGroups: Map<number, string[]> = new Map<number, string[]>();
+  const trackerGroups: Web_TorrentDetail_TrackerListFromDetail_TrackerGroups = new Map();
+
   for (const tracker of trackers ?? []) {
-    const group: string[] = trackerGroups.get(tracker['tier']) ?? [];
+    const group: Web_TorrentDetail_TrackerListFromDetail_Group = trackerGroups.get(tracker['tier']) ?? [];
+
     group.push(tracker['announce']);
+
     trackerGroups.set(tracker['tier'], group);
   }
 
-  return [...trackerGroups.values()].map((group: string[]): string => group.join('\n')).join('\n\n');
+  return [...trackerGroups.values()].map((group) => group.join('\n')).join('\n\n');
 };
 
 /**
- * Torrent Detail - File drafts from detail.
+ * Torrent Detail - File Drafts From Detail.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
+ * @param {Web_TorrentDetail_FileDraftsFromDetail_Files}     files     - Files.
+ * @param {Web_TorrentDetail_FileDraftsFromDetail_FileStats} fileStats - File stats.
+ *
+ * @returns {Web_TorrentDetail_FileDraftsFromDetail_Returns}
+ *
  * @since 2.0.0
  */
 const fileDraftsFromDetail = (
-  files: Web_Api_TorrentFile[] | undefined,
-  fileStats: Web_Api_TorrentFileStats[] | undefined,
-): Web_Components_TorrentFileDrafts => {
-  const drafts: Web_Components_TorrentFileDrafts = {};
-  for (let index: number = 0; index < (files?.length ?? 0); index += 1) {
-    const statistics: Web_Api_TorrentFileStats | undefined = fileStats?.[index];
+  files: Web_TorrentDetail_FileDraftsFromDetail_Files,
+  fileStats: Web_TorrentDetail_FileDraftsFromDetail_FileStats,
+): Web_TorrentDetail_FileDraftsFromDetail_Returns => {
+  const drafts: Web_TorrentDetail_FileDraftsFromDetail_Drafts = {};
+  const fileCount: Web_TorrentDetail_FileDraftsFromDetail_FileCount = (files !== undefined) ? files.length : 0;
+
+  for (let index = 0; index < fileCount; index += 1) {
+    const statistics: Web_TorrentDetail_FileDraftsFromDetail_Statistics = (fileStats !== undefined) ? fileStats[index] : undefined;
+    const statisticsPriority: Web_TorrentDetail_FileDraftsFromDetail_StatisticsPriority = (statistics !== undefined) ? statistics['priority'] : undefined;
+    const statisticsWanted: Web_TorrentDetail_FileDraftsFromDetail_StatisticsWanted = (statistics !== undefined) ? statistics['wanted'] : undefined;
+
     Reflect.set(drafts, index, {
-      priority: statistics?.['priority'] ?? 0,
-      wanted: statistics?.['wanted'] ?? true,
+      priority: statisticsPriority ?? 0,
+      wanted: statisticsWanted ?? true,
     });
   }
 
@@ -126,22 +283,30 @@ const fileDraftsFromDetail = (
 };
 
 /**
- * Torrent Detail - Options from detail.
+ * Torrent Detail - Options From Detail.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
+ * @param {Web_TorrentDetail_OptionsFromDetail_Detail} detail - Detail.
+ *
+ * @returns {Web_TorrentDetail_OptionsFromDetail_Returns}
+ *
  * @since 2.0.0
  */
 const optionsFromDetail = (
-  detail: NonNullable<Web_Components_TorrentDetail_Props['detail']>,
-): Web_Components_TorrentOptionsDraft => ({
+  detail: Web_TorrentDetail_OptionsFromDetail_Detail,
+): Web_TorrentDetail_OptionsFromDetail_Returns => ({
   bandwidthPriority: detail['bandwidthPriority'] ?? 0,
   downloadLimit: detail['downloadLimit'] ?? 0,
   downloadLimited: detail['downloadLimited'] ?? false,
   honorsSessionLimits: detail['honorsSessionLimits'] ?? true,
   labels: detail['labels'].join(', '),
-  peerLimit: detail['peer-limit'] ?? detail['maxConnectedPeers'] ?? 50,
+  peerLimit: (
+    detail['peer-limit']
+    ?? detail['maxConnectedPeers']
+    ?? 50
+  ),
   seedIdleLimit: detail['seedIdleLimit'] ?? 30,
   seedIdleMode: (detail['seedIdleMode'] === 1) ? 1 : 2,
   seedRatioLimit: detail['seedRatioLimit'] ?? 2,
@@ -151,81 +316,74 @@ const optionsFromDetail = (
 });
 
 /**
- * Torrent Detail.
+ * Torrent Detail - Torrent Detail.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
+ * @param {Web_TorrentDetail_TorrentDetail_Props} props - Props.
+ *
+ * @returns {Web_TorrentDetail_TorrentDetail_Returns}
+ *
  * @since 2.0.0
  */
-export const TorrentDetail = ({
-  connections,
-  defaultProfile,
-  detail,
-  labelPresets,
-  loading,
-  onAction,
-  onClose,
-  onRefresh,
-  onRename,
-  onSetProfile,
-  onUpdate,
-  profiles,
-}: Web_Components_TorrentDetail_Props): ReactElement => {
-  const [
-    tab,
-    setTab,
-  ] = useState<Web_Components_TorrentDetail_Tab>('overview');
-  const [
-    fileQuery,
-    setFileQuery,
-  ] = useState<string>('');
-  const [
-    fileDrafts,
-    setFileDrafts,
-  ] = useState<Web_Components_TorrentFileDrafts>({});
-  const [
-    trackerList,
-    setTrackerList,
-  ] = useState<string>('');
-  const [
-    options,
-    setOptions,
-  ] = useState<Web_Components_TorrentOptionsDraft | null>(null);
-  const [
-    renameName,
-    setRenameName,
-  ] = useState<string>('');
-  const [
-    busy,
-    setBusy,
-  ] = useState<boolean>(false);
-  const [
-    profileId,
-    setProfileId,
-  ] = useState<string>('');
-  const [
-    applyProfileOptions,
-    setApplyProfileOptions,
-  ] = useState<boolean>(true);
-  const [
-    profileMoveResults,
-    setProfileMoveResults,
-  ] = useState<Web_Api_MovedTorrent[]>([]);
-  const [
-    resolutionOpen,
-    setResolutionOpen,
-  ] = useState<boolean>(false);
-  const [
-    resolutionResults,
-    setResolutionResults,
-  ] = useState<Web_Api_MovedTorrent[] | null>(null);
-  const [
-    resolutionError,
-    setResolutionError,
-  ] = useState<string>('');
+export const TorrentDetail = (props: Web_TorrentDetail_TorrentDetail_Props): Web_TorrentDetail_TorrentDetail_Returns => {
+  const connections: Web_TorrentDetail_TorrentDetail_Connections = props['connections'];
+  const defaultProfile: Web_TorrentDetail_TorrentDetail_DefaultProfile = props['defaultProfile'];
+  const detail: Web_TorrentDetail_TorrentDetail_Detail = props['detail'];
+  const labelPresets: Web_TorrentDetail_TorrentDetail_LabelPresets = props['labelPresets'];
+  const loading: Web_TorrentDetail_TorrentDetail_Loading = props['loading'];
+  const onAction: Web_TorrentDetail_TorrentDetail_OnAction = props['onAction'];
+  const onClose: Web_TorrentDetail_TorrentDetail_OnClose = props['onClose'];
+  const onRefresh: Web_TorrentDetail_TorrentDetail_OnRefresh = props['onRefresh'];
+  const onRename: Web_TorrentDetail_TorrentDetail_OnRename = props['onRename'];
+  const onSetProfile: Web_TorrentDetail_TorrentDetail_OnSetProfile = props['onSetProfile'];
+  const onUpdate: Web_TorrentDetail_TorrentDetail_OnUpdate = props['onUpdate'];
+  const profiles: Web_TorrentDetail_TorrentDetail_Profiles = props['profiles'];
+  const tabState: Web_TorrentDetail_TorrentDetail_TabState = useState<Web_TorrentDetail_TorrentDetail_Tab>('overview');
+  const tab: Web_TorrentDetail_TorrentDetail_Tab = tabState[0];
+  const setTab: Web_TorrentDetail_TorrentDetail_SetTab = tabState[1];
+  const fileQueryState: Web_TorrentDetail_TorrentDetail_FileQueryState = useState<Web_TorrentDetail_TorrentDetail_FileQuery>('');
+  const fileQuery: Web_TorrentDetail_TorrentDetail_FileQuery = fileQueryState[0];
+  const setFileQuery: Web_TorrentDetail_TorrentDetail_SetFileQuery = fileQueryState[1];
+  const fileDraftsState: Web_TorrentDetail_TorrentDetail_FileDraftsState = useState<Web_TorrentDetail_TorrentDetail_FileDrafts>({});
+  const fileDrafts: Web_TorrentDetail_TorrentDetail_FileDrafts = fileDraftsState[0];
+  const setFileDrafts: Web_TorrentDetail_TorrentDetail_SetFileDrafts = fileDraftsState[1];
+  const trackerListState: Web_TorrentDetail_TorrentDetail_TrackerListState = useState<Web_TorrentDetail_TorrentDetail_TrackerList>('');
+  const trackerList: Web_TorrentDetail_TorrentDetail_TrackerList = trackerListState[0];
+  const setTrackerList: Web_TorrentDetail_TorrentDetail_SetTrackerList = trackerListState[1];
+  const optionsState: Web_TorrentDetail_TorrentDetail_OptionsState = useState<Web_TorrentDetail_TorrentDetail_Options>(null);
+  const options: Web_TorrentDetail_TorrentDetail_Options = optionsState[0];
+  const setOptions: Web_TorrentDetail_TorrentDetail_SetOptions = optionsState[1];
+  const renameNameState: Web_TorrentDetail_TorrentDetail_RenameNameState = useState<Web_TorrentDetail_TorrentDetail_RenameName>('');
+  const renameName: Web_TorrentDetail_TorrentDetail_RenameName = renameNameState[0];
+  const setRenameName: Web_TorrentDetail_TorrentDetail_SetRenameName = renameNameState[1];
+  const busyState: Web_TorrentDetail_TorrentDetail_BusyState = useState<Web_TorrentDetail_TorrentDetail_Busy>(false);
+  const busy: Web_TorrentDetail_TorrentDetail_Busy = busyState[0];
+  const setBusy: Web_TorrentDetail_TorrentDetail_SetBusy = busyState[1];
+  const profileIdState: Web_TorrentDetail_TorrentDetail_ProfileIdState = useState<Web_TorrentDetail_TorrentDetail_ProfileId>('');
+  const profileId: Web_TorrentDetail_TorrentDetail_ProfileId = profileIdState[0];
+  const setProfileId: Web_TorrentDetail_TorrentDetail_SetProfileId = profileIdState[1];
+  const applyProfileOptionsState: Web_TorrentDetail_TorrentDetail_ApplyProfileOptionsState = useState<Web_TorrentDetail_TorrentDetail_ApplyProfileOptions>(true);
+  const applyProfileOptions: Web_TorrentDetail_TorrentDetail_ApplyProfileOptions = applyProfileOptionsState[0];
+  const setApplyProfileOptions: Web_TorrentDetail_TorrentDetail_SetApplyProfileOptions = applyProfileOptionsState[1];
+  const profileMoveResultsState: Web_TorrentDetail_TorrentDetail_ProfileMoveResultsState = useState<Web_TorrentDetail_TorrentDetail_ProfileMoveResults>([]);
+  const profileMoveResults: Web_TorrentDetail_TorrentDetail_ProfileMoveResults = profileMoveResultsState[0];
+  const setProfileMoveResults: Web_TorrentDetail_TorrentDetail_SetProfileMoveResults = profileMoveResultsState[1];
+  const resolutionOpenState: Web_TorrentDetail_TorrentDetail_ResolutionOpenState = useState<Web_TorrentDetail_TorrentDetail_ResolutionOpen>(false);
+  const resolutionOpen: Web_TorrentDetail_TorrentDetail_ResolutionOpen = resolutionOpenState[0];
+  const setResolutionOpen: Web_TorrentDetail_TorrentDetail_SetResolutionOpen = resolutionOpenState[1];
+  const resolutionResultsState: Web_TorrentDetail_TorrentDetail_ResolutionResultsState = useState<Web_TorrentDetail_TorrentDetail_ResolutionResults>(null);
+  const resolutionResults: Web_TorrentDetail_TorrentDetail_ResolutionResults = resolutionResultsState[0];
+  const setResolutionResults: Web_TorrentDetail_TorrentDetail_SetResolutionResults = resolutionResultsState[1];
+  const resolutionErrorState: Web_TorrentDetail_TorrentDetail_ResolutionErrorState = useState<Web_TorrentDetail_TorrentDetail_ResolutionError>('');
+  const resolutionError: Web_TorrentDetail_TorrentDetail_ResolutionError = resolutionErrorState[0];
+  const setResolutionError: Web_TorrentDetail_TorrentDetail_SetResolutionError = resolutionErrorState[1];
+  const detailId: Web_TorrentDetail_TorrentDetail_DetailId = (detail !== null) ? detail['id'] : undefined;
+  const detailProfileId: Web_TorrentDetail_TorrentDetail_DetailProfileId = (detail !== null) ? detail['profileId'] : undefined;
+  const detailFiles: Web_TorrentDetail_TorrentDetail_DetailFiles = (detail !== null) ? detail['files'] : undefined;
 
-  useEffect((): void => {
+  useEffect(() => {
     setTab('overview');
     setFileQuery('');
     if (detail !== null) {
@@ -240,40 +398,49 @@ export const TorrentDetail = ({
       setResolutionResults(null);
       setResolutionError('');
     }
-  }, [detail?.id]);
 
-  useEffect((): void => {
-    setProfileId(detail?.['profileId'] ?? '');
-  }, [detail?.profileId]);
+    return;
+  }, [detailId]);
 
-  const filteredFiles: Web_Components_TorrentFileRow[] = useMemo((): Web_Components_TorrentFileRow[] => {
-    const normalizedQuery: string = fileQuery.trim().toLowerCase();
+  useEffect(() => {
+    setProfileId(detailProfileId ?? '');
 
-    return (detail?.['files'] ?? [])
-      .map((file: Web_Api_TorrentFile, index: number): Web_Components_TorrentFileRow => ({
+    return;
+  }, [detailProfileId]);
+
+  const filteredFiles: Web_TorrentDetail_TorrentDetail_FilteredFiles = useMemo(() => {
+    const normalizedQuery: Web_TorrentDetail_TorrentDetail_NormalizedQuery = fileQuery.trim().toLowerCase();
+
+    return (detailFiles ?? [])
+      .map((file, index) => ({
         file,
         index,
       }))
-      .filter((row: Web_Components_TorrentFileRow): boolean => (
+      .filter((row) => (
         normalizedQuery === '' || row['file']['name'].toLowerCase().includes(normalizedQuery)
       ));
   }, [
-    detail?.files,
+    detailFiles,
     fileQuery,
   ]);
 
   /**
-   * Torrent Detail - Run mutation.
+   * Torrent Detail - Run Mutation.
    *
    * Stores this module-level value in one named location.
    * Related code reuses it instead of duplicating the definition.
    *
+   * @param {Web_TorrentDetail_TorrentDetail_RunMutation_Mutation}       mutation       - Mutation.
+   * @param {Web_TorrentDetail_TorrentDetail_RunMutation_SuccessMessage} successMessage - Success message.
+   *
+   * @returns {Web_TorrentDetail_TorrentDetail_RunMutation_Returns}
+   *
    * @since 2.0.0
    */
-  const runMutation = async (
-    mutation: () => Promise<void>,
-    successMessage: string,
-  ): Promise<void> => {
+  const runMutation: Web_TorrentDetail_TorrentDetail_RunMutation = async (
+    mutation: Web_TorrentDetail_TorrentDetail_RunMutation_Mutation,
+    successMessage: Web_TorrentDetail_TorrentDetail_RunMutation_SuccessMessage,
+  ): Web_TorrentDetail_TorrentDetail_RunMutation_Returns => {
     if (detail === null) {
       return;
     }
@@ -288,32 +455,38 @@ export const TorrentDetail = ({
     } finally {
       setBusy(false);
     }
+
+    return;
   };
 
   /**
-   * Torrent Detail - Save files.
+   * Torrent Detail - Save Files.
    *
    * Centralizes this operation for the surrounding workflow.
    * Callers reuse one implementation instead of repeating the behavior.
    *
+   * @returns {Web_TorrentDetail_TorrentDetail_SaveFiles_Returns}
+   *
    * @since 2.0.0
    */
-  const saveFiles = async (): Promise<void> => {
+  const saveFiles: Web_TorrentDetail_TorrentDetail_SaveFiles = async (): Web_TorrentDetail_TorrentDetail_SaveFiles_Returns => {
     if (detail === null) {
       return;
     }
 
-    const filesWanted: number[] = [];
-    const filesUnwanted: number[] = [];
-    const priorityHigh: number[] = [];
-    const priorityLow: number[] = [];
-    const priorityNormal: number[] = [];
-    for (const [
-      indexValue,
-      draft,
-    ] of Object.entries(fileDrafts)) {
-      const index: number = Number(indexValue);
-      ((draft['wanted']) ? filesWanted : filesUnwanted).push(index);
+    const filesWanted: Web_TorrentDetail_TorrentDetail_SaveFiles_FilesWanted = [];
+    const filesUnwanted: Web_TorrentDetail_TorrentDetail_SaveFiles_FilesUnwanted = [];
+    const priorityHigh: Web_TorrentDetail_TorrentDetail_SaveFiles_PriorityHigh = [];
+    const priorityLow: Web_TorrentDetail_TorrentDetail_SaveFiles_PriorityLow = [];
+    const priorityNormal: Web_TorrentDetail_TorrentDetail_SaveFiles_PriorityNormal = [];
+
+    for (const fileDraftEntry of Object.entries(fileDrafts)) {
+      const indexValue: Web_TorrentDetail_TorrentDetail_SaveFiles_IndexValue = fileDraftEntry[0];
+      const draft: Web_TorrentDetail_TorrentDetail_SaveFiles_Draft = fileDraftEntry[1];
+      const index: Web_TorrentDetail_TorrentDetail_SaveFiles_Index = Number(indexValue);
+
+      ((draft['wanted'] === true) ? filesWanted : filesUnwanted).push(index);
+
       if (draft['priority'] === 1) {
         priorityHigh.push(index);
       } else if (draft['priority'] === -1) {
@@ -323,57 +496,68 @@ export const TorrentDetail = ({
       }
     }
 
-    const changes: Web_Api_TorrentChanges = {
+    const changes: Web_TorrentDetail_TorrentDetail_SaveFiles_Changes = {
       filesUnwanted,
       filesWanted,
       priorityHigh,
       priorityLow,
       priorityNormal,
     };
+
     await runMutation(
-      async (): Promise<void> => onUpdate([detail['hashString']], changes),
+      async () => onUpdate([detail['hashString']], changes),
       'File selection and priorities saved.',
     );
+
+    return;
   };
 
   /**
-   * Torrent Detail - Save trackers.
+   * Torrent Detail - Save Trackers.
    *
    * Centralizes this operation for the surrounding workflow.
    * Callers reuse one implementation instead of repeating the behavior.
    *
+   * @returns {Web_TorrentDetail_TorrentDetail_SaveTrackers_Returns}
+   *
    * @since 2.0.0
    */
-  const saveTrackers = async (): Promise<void> => {
+  const saveTrackers: Web_TorrentDetail_TorrentDetail_SaveTrackers = async (): Web_TorrentDetail_TorrentDetail_SaveTrackers_Returns => {
     if (detail === null) {
       return;
     }
 
     await runMutation(
-      async (): Promise<void> => onUpdate([detail['hashString']], { trackerList: trackerList.trim() }),
+      async () => onUpdate([detail['hashString']], { trackerList: trackerList.trim() }),
       'Tracker tiers saved.',
     );
+
+    return;
   };
 
   /**
-   * Torrent Detail - Save options.
+   * Torrent Detail - Save Options.
    *
    * Centralizes this operation for the surrounding workflow.
    * Callers reuse one implementation instead of repeating the behavior.
    *
+   * @param {Web_TorrentDetail_TorrentDetail_SaveOptions_Event} event - Event.
+   *
+   * @returns {Web_TorrentDetail_TorrentDetail_SaveOptions_Returns}
+   *
    * @since 2.0.0
    */
-  const saveOptions = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
+  const saveOptions: Web_TorrentDetail_TorrentDetail_SaveOptions = async (event: Web_TorrentDetail_TorrentDetail_SaveOptions_Event): Web_TorrentDetail_TorrentDetail_SaveOptions_Returns => {
     event.preventDefault();
     if (detail === null || options === null) {
       return;
     }
 
-    const labels: string[] = options['labels']
+    const labels: Web_TorrentDetail_TorrentDetail_SaveOptions_Labels = options['labels']
       .split(',')
-      .map((label: string): string => label.trim())
-      .filter((label: string): boolean => label !== '');
-    const changes: Web_Api_TorrentChanges = {
+      .map((label) => label.trim())
+      .filter((label) => label !== '');
+    const changes: Web_TorrentDetail_TorrentDetail_SaveOptions_Changes = {
       bandwidthPriority: options['bandwidthPriority'],
       downloadLimit: options['downloadLimit'],
       downloadLimited: options['downloadLimited'],
@@ -387,68 +571,84 @@ export const TorrentDetail = ({
       uploadLimit: options['uploadLimit'],
       uploadLimited: options['uploadLimited'],
     };
+
     await runMutation(
-      async (): Promise<void> => onUpdate([detail['hashString']], changes),
+      async () => onUpdate([detail['hashString']], changes),
       'Torrent options saved.',
     );
+
+    return;
   };
 
   /**
-   * Torrent Detail - Rename torrent.
+   * Torrent Detail - Rename Torrent.
    *
    * Centralizes this operation for the surrounding workflow.
    * Callers reuse one implementation instead of repeating the behavior.
    *
+   * @param {Web_TorrentDetail_TorrentDetail_RenameTorrent_Event} event - Event.
+   *
+   * @returns {Web_TorrentDetail_TorrentDetail_RenameTorrent_Returns}
+   *
    * @since 2.0.0
    */
-  const renameTorrent = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
+  const renameTorrent: Web_TorrentDetail_TorrentDetail_RenameTorrent = async (event: Web_TorrentDetail_TorrentDetail_RenameTorrent_Event): Web_TorrentDetail_TorrentDetail_RenameTorrent_Returns => {
     event.preventDefault();
     if (detail === null) {
       return;
     }
 
     await runMutation(
-      async (): Promise<void> => onRename({
+      async () => onRename({
         hashes: [detail['hashString']],
         name: renameName.trim(),
         path: detail['name'],
       }),
       'Torrent root renamed.',
     );
+
+    return;
   };
 
   /**
-   * Torrent Detail - Applies torrent profile.
+   * Torrent Detail - Apply Torrent Profile.
    *
    * Assigns or clears the profile and optionally copies its labels and limits.
    * The refreshed detail becomes the source of truth after the mutation.
    *
+   * @returns {Web_TorrentDetail_TorrentDetail_ApplyTorrentProfile_Returns}
+   *
    * @since 2.0.0
    */
-  const applyTorrentProfile = async (): Promise<void> => {
+  const applyTorrentProfile: Web_TorrentDetail_TorrentDetail_ApplyTorrentProfile = async (): Web_TorrentDetail_TorrentDetail_ApplyTorrentProfile_Returns => {
     if (detail === null) {
       return;
     }
 
-    const selectedProfile: Web_Api_TorrentProfile | undefined = profiles.find(
-      (profile: Web_Api_TorrentProfile): boolean => profile['id'] === profileId,
+    const selectedProfile: Web_TorrentDetail_TorrentDetail_ApplyTorrentProfile_SelectedProfile = profiles.find(
+      (profile) => profile['id'] === profileId,
     );
-    let targetConnectionId: string | undefined = selectedProfile?.['connectionId'] ?? undefined;
-    if (selectedProfile === undefined || selectedProfile['connectionId'] === null) {
-      targetConnectionId = connections.find((connection): boolean => connection['default'])?.['id'];
+    const defaultConnection: Web_TorrentDetail_TorrentDetail_ApplyTorrentProfile_DefaultConnection = connections.find((connection) => connection['default'] === true);
+    let targetConnectionId: Web_TorrentDetail_TorrentDetail_ApplyTorrentProfile_TargetConnectionId = (defaultConnection !== undefined) ? defaultConnection['id'] : undefined;
+
+    if (selectedProfile !== undefined && selectedProfile['connectionId'] !== null) {
+      targetConnectionId = selectedProfile['connectionId'];
     }
-    const targetConnectionName: string = connections.find(
-      (connection): boolean => connection['id'] === targetConnectionId,
-    )?.['name'] ?? 'The selected connection';
+
+    const targetConnection: Web_TorrentDetail_TorrentDetail_ApplyTorrentProfile_TargetConnection = connections.find(
+      (connection) => connection['id'] === targetConnectionId,
+    );
+    const targetConnectionName: Web_TorrentDetail_TorrentDetail_ApplyTorrentProfile_TargetConnectionName = (targetConnection !== undefined) ? targetConnection['name'] : 'The selected connection';
 
     setBusy(true);
     setProfileMoveResults([]);
     try {
-      const response: Web_Api_SetTorrentProfileResponse = await onSetProfile({
+      const response: Web_TorrentDetail_TorrentDetail_ApplyTorrentProfile_Response = await onSetProfile({
         applyOptions: applyProfileOptions,
         hashes: [detail['hashString']],
         profileId: (profileId === '') ? null : profileId,
       });
+
       setProfileMoveResults(response['moved']);
       await onRefresh(torrentProfileRefreshID(detail['id'], detail['hashString'], response['moved']));
       showToast((profileId === '') ? `${defaultProfile['name']} applied.` : 'Torrent profile applied.', true);
@@ -459,17 +659,23 @@ export const TorrentDetail = ({
     } finally {
       setBusy(false);
     }
+
+    return;
   };
 
   /**
-   * Torrent Detail - Resolves an ambiguous profile match.
+   * Torrent Detail - Resolve Torrent Profile.
    *
    * Applies the selected profile's labels and limits, then leaves move outcomes in
    * the dialog using the same result rows as an ordinary profile change.
    *
+   * @param {Web_TorrentDetail_TorrentDetail_ResolveTorrentProfile_SelectedProfileId} selectedProfileId - Selected profile id.
+   *
+   * @returns {Web_TorrentDetail_TorrentDetail_ResolveTorrentProfile_Returns}
+   *
    * @since 2.0.0
    */
-  const resolveTorrentProfile = async (selectedProfileId: string | null): Promise<void> => {
+  const resolveTorrentProfile: Web_TorrentDetail_TorrentDetail_ResolveTorrentProfile = async (selectedProfileId: Web_TorrentDetail_TorrentDetail_ResolveTorrentProfile_SelectedProfileId): Web_TorrentDetail_TorrentDetail_ResolveTorrentProfile_Returns => {
     if (detail === null) {
       return;
     }
@@ -477,11 +683,12 @@ export const TorrentDetail = ({
     setBusy(true);
     setResolutionError('');
     try {
-      const response: Web_Api_SetTorrentProfileResponse = await onSetProfile({
+      const response: Web_TorrentDetail_TorrentDetail_ResolveTorrentProfile_Response = await onSetProfile({
         applyOptions: true,
         hashes: [detail['hashString']],
         profileId: selectedProfileId,
       });
+
       setResolutionResults(response['moved']);
       await onRefresh(torrentProfileRefreshID(detail['id'], detail['hashString'], response['moved']));
     } catch (caughtError) {
@@ -489,23 +696,30 @@ export const TorrentDetail = ({
     } finally {
       setBusy(false);
     }
+
+    return;
   };
 
   /**
-   * Torrent Detail - Set all files.
+   * Torrent Detail - Set All Files.
    *
    * Centralizes this operation for the surrounding workflow.
    * Callers reuse one implementation instead of repeating the behavior.
    *
+   * @param {Web_TorrentDetail_TorrentDetail_SetAllFiles_Wanted} wanted - Wanted.
+   *
+   * @returns {Web_TorrentDetail_TorrentDetail_SetAllFiles_Returns}
+   *
    * @since 2.0.0
    */
-  const setAllFiles = (wanted: boolean): void => {
-    setFileDrafts((currentDrafts: Web_Components_TorrentFileDrafts): Web_Components_TorrentFileDrafts => {
-      const nextDrafts: Web_Components_TorrentFileDrafts = {};
-      for (const [
-        index,
-        draft,
-      ] of Object.entries(currentDrafts)) {
+  const setAllFiles: Web_TorrentDetail_TorrentDetail_SetAllFiles = (wanted: Web_TorrentDetail_TorrentDetail_SetAllFiles_Wanted): Web_TorrentDetail_TorrentDetail_SetAllFiles_Returns => {
+    setFileDrafts((currentDrafts) => {
+      const nextDrafts: Web_TorrentDetail_TorrentDetail_SetAllFiles_NextDrafts = {};
+
+      for (const currentDraftEntry of Object.entries(currentDrafts)) {
+        const index: Web_TorrentDetail_TorrentDetail_SetAllFiles_Index = currentDraftEntry[0];
+        const draft: Web_TorrentDetail_TorrentDetail_SetAllFiles_Draft = currentDraftEntry[1];
+
         Reflect.set(nextDrafts, Number(index), {
           ...draft,
           wanted,
@@ -514,23 +728,30 @@ export const TorrentDetail = ({
 
       return nextDrafts;
     });
+
+    return;
   };
 
   /**
-   * Torrent Detail - Set all priorities.
+   * Torrent Detail - Set All Priorities.
    *
    * Centralizes this operation for the surrounding workflow.
    * Callers reuse one implementation instead of repeating the behavior.
    *
+   * @param {Web_TorrentDetail_TorrentDetail_SetAllPriorities_Priority} priority - Priority.
+   *
+   * @returns {Web_TorrentDetail_TorrentDetail_SetAllPriorities_Returns}
+   *
    * @since 2.0.0
    */
-  const setAllPriorities = (priority: -1 | 0 | 1): void => {
-    setFileDrafts((currentDrafts: Web_Components_TorrentFileDrafts): Web_Components_TorrentFileDrafts => {
-      const nextDrafts: Web_Components_TorrentFileDrafts = {};
-      for (const [
-        index,
-        draft,
-      ] of Object.entries(currentDrafts)) {
+  const setAllPriorities: Web_TorrentDetail_TorrentDetail_SetAllPriorities = (priority: Web_TorrentDetail_TorrentDetail_SetAllPriorities_Priority): Web_TorrentDetail_TorrentDetail_SetAllPriorities_Returns => {
+    setFileDrafts((currentDrafts) => {
+      const nextDrafts: Web_TorrentDetail_TorrentDetail_SetAllPriorities_NextDrafts = {};
+
+      for (const currentDraftEntry of Object.entries(currentDrafts)) {
+        const index: Web_TorrentDetail_TorrentDetail_SetAllPriorities_Index = currentDraftEntry[0];
+        const draft: Web_TorrentDetail_TorrentDetail_SetAllPriorities_Draft = currentDraftEntry[1];
+
         Reflect.set(nextDrafts, Number(index), {
           ...draft,
           priority,
@@ -539,48 +760,66 @@ export const TorrentDetail = ({
 
       return nextDrafts;
     });
+
+    return;
   };
 
-  useEscapeKey(onClose, !resolutionOpen);
+  useEscapeKey(onClose, resolutionOpen === false);
 
-  const tabLabels: Record<Web_Components_TorrentDetail_Tab, string> = {
+  const tabLabels: Web_TorrentDetail_TorrentDetail_TabLabels = {
     files: 'Files',
     options: 'Options',
     overview: 'Overview',
     peers: 'Peers',
     trackers: 'Trackers',
   };
-  const assignedProfile: Web_Api_TorrentProfile | undefined = profiles.find(
-    (profile: Web_Api_TorrentProfile): boolean => profile['id'] === detail?.['profileId'],
+  const assignedProfile: Web_TorrentDetail_TorrentDetail_AssignedProfile = profiles.find(
+    (profile) => profile['id'] === detailProfileId,
   );
-  const detailConnection = connections.find((connection): boolean => connection['id'] === detail?.['connectionId']);
-  const selectedProfile = profiles.find((profile: Web_Api_TorrentProfile): boolean => profile['id'] === profileId);
-  const defaultConnection = connections.find((connection): boolean => connection['default']);
-  const selectedProfileData: Web_Api_DefaultTorrentProfile | Web_Api_TorrentProfile = selectedProfile ?? defaultProfile;
-  const selectedProfileConnectionID: string | undefined = (
-    !('connectionId' in selectedProfileData) || selectedProfileData['connectionId'] === null
-  ) ? defaultConnection?.['id'] : selectedProfileData['connectionId'];
-  const selectedProfileConnection = connections.find((connection): boolean => connection['id'] === selectedProfileConnectionID);
-  const selectedProfileChanged: boolean = profileId !== (detail?.['profileId'] ?? '')
-    || selectedProfileData['downloadDirectory'] !== detail?.['downloadDir']
-    || selectedProfileConnectionID !== detail?.['connectionId'];
-  const profileChangeHint: string = describeTorrentProfileChange(
+  const detailConnectionId: Web_TorrentDetail_TorrentDetail_DetailConnectionId = (detail !== null) ? detail['connectionId'] : undefined;
+  const detailConnection: Web_TorrentDetail_TorrentDetail_DetailConnection = connections.find((connection) => connection['id'] === detailConnectionId);
+  const selectedProfile: Web_TorrentDetail_TorrentDetail_SelectedProfile = profiles.find((profile) => profile['id'] === profileId);
+  const defaultConnection: Web_TorrentDetail_TorrentDetail_DefaultConnection = connections.find((connection) => connection['default'] === true);
+  const selectedProfileData: Web_TorrentDetail_TorrentDetail_SelectedProfileData = selectedProfile ?? defaultProfile;
+  let selectedProfileConnectionID: Web_TorrentDetail_TorrentDetail_SelectedProfileConnectionID = (defaultConnection !== undefined) ? defaultConnection['id'] : undefined;
+
+  if ('connectionId' in selectedProfileData && selectedProfileData['connectionId'] !== null) {
+    selectedProfileConnectionID = selectedProfileData['connectionId'];
+  }
+
+  const selectedProfileConnection: Web_TorrentDetail_TorrentDetail_SelectedProfileConnection = connections.find((connection) => connection['id'] === selectedProfileConnectionID);
+  const detailDownloadDir: Web_TorrentDetail_TorrentDetail_DetailDownloadDir = (detail !== null) ? detail['downloadDir'] : undefined;
+  const selectedProfileChanged: Web_TorrentDetail_TorrentDetail_SelectedProfileChanged = (
+    profileId !== (detailProfileId ?? '')
+    || selectedProfileData['downloadDirectory'] !== detailDownloadDir
+    || selectedProfileConnectionID !== detailConnectionId
+  );
+  const selectedProfileConnectionName: Web_TorrentDetail_TorrentDetail_SelectedProfileConnectionName = (selectedProfileConnection !== undefined) ? selectedProfileConnection['name'] : 'the profile connection';
+  const profileChangeHint: Web_TorrentDetail_TorrentDetail_ProfileChangeHint = describeTorrentProfileChange(
     selectedProfileData['downloadDirectory'],
-    detail?.['connectionId'],
+    detailConnectionId,
     selectedProfileConnectionID,
-    selectedProfileConnection?.['name'] ?? 'the profile connection',
+    selectedProfileConnectionName,
   );
-  const renameAvailable: boolean = detail !== null
+  const renameAvailable: Web_TorrentDetail_TorrentDetail_RenameAvailable = (
+    detail !== null
     && detail['metadataPercentComplete'] >= 1
     && detail['name'].trim() !== ''
-    && (detail['files']?.length ?? 0) > 0;
-  const resolutionProfileIDs: string[] = detail?.['needsProfile']?.['profileIds'] ?? [];
-  const matchingResolutionProfiles: Web_Api_TorrentProfile[] = profiles.filter(
-    (candidate: Web_Api_TorrentProfile): boolean => resolutionProfileIDs.includes(candidate['id']),
+    && detailFiles !== undefined
+    && detailFiles.length > 0
   );
-  const resolutionAllowsAnyProfile: boolean = resolutionProfileIDs.length === 0
+  const detailNeedsProfile: Web_TorrentDetail_TorrentDetail_DetailNeedsProfile = (detail !== null) ? detail['needsProfile'] : null;
+  const resolutionProfileIDs: Web_TorrentDetail_TorrentDetail_ResolutionProfileIDs = (detailNeedsProfile !== null) ? detailNeedsProfile['profileIds'] : [];
+  const matchingResolutionProfiles: Web_TorrentDetail_TorrentDetail_MatchingResolutionProfiles = profiles.filter(
+    (candidate) => resolutionProfileIDs.includes(candidate['id']),
+  );
+  const resolutionAllowsAnyProfile: Web_TorrentDetail_TorrentDetail_ResolutionAllowsAnyProfile = resolutionProfileIDs.length === 0
     || matchingResolutionProfiles.length === 0;
-  const resolutionProfiles: Web_Api_TorrentProfile[] = (resolutionAllowsAnyProfile) ? profiles : matchingResolutionProfiles;
+  const resolutionProfiles: Web_TorrentDetail_TorrentDetail_ResolutionProfiles = (resolutionAllowsAnyProfile === true) ? profiles : matchingResolutionProfiles;
+  const detailName: Web_TorrentDetail_TorrentDetail_DetailName = (detail !== null) ? detail['name'] : undefined;
+  const trackerIssue: Web_TorrentDetail_TorrentDetail_TrackerIssue = (detail !== null) ? describeTrackerIssue(detail) : null;
+  const etaLabel: Web_TorrentDetail_TorrentDetail_EtaLabel = (detail !== null && detail['eta'] >= 0) ? formatDuration(detail['eta']) : '—';
+  const assignedProfileName: Web_TorrentDetail_TorrentDetail_AssignedProfileName = (assignedProfile !== undefined) ? assignedProfile['name'] : defaultProfile['name'];
 
   return (
     <>
@@ -588,20 +827,20 @@ export const TorrentDetail = ({
       <aside className="detail-panel" aria-label="Torrent details">
         <header className="detail-header">
           <div className="detail-title">
-            <h2 title={detail?.name}>{detail?.name ?? 'Loading…'}</h2>
+            <h2 title={detailName}>{detailName ?? 'Loading…'}</h2>
             {(detail === null) ? null : (
               <p className={(describeTorrentState(detail)['tone'] === 'error') ? 'torrent-meta torrent-meta-error' : 'torrent-meta'}>
                 <span className={`status-dot status-${describeTorrentState(detail)['tone']}`} />
                 <span className="torrent-state">{describeTorrentState(detail)['label']}</span>
                 <span>{`· queue #${detail['queuePosition'] + 1}`}</span>
-                {(describeTrackerIssue(detail) === null) ? null : <span className="torrent-tracker-issue" title={describeTrackerIssue(detail)?.['reply']}>{describeTrackerIssue(detail)?.['label']}</span>}
+                {(trackerIssue === null) ? null : <span className="torrent-tracker-issue" title={trackerIssue['reply']}>{trackerIssue['label']}</span>}
               </p>
             )}
           </div>
           <button aria-label="Close torrent details" className="icon-button" onClick={onClose} type="button"><Icon name="x" /></button>
         </header>
 
-        {(loading || detail === null) ? (
+        {(loading === true || detail === null) ? (
           <div className="detail-loading">
             <span className="spinner" />
             Loading…
@@ -623,7 +862,7 @@ export const TorrentDetail = ({
                   <Icon name="arrow-up" size={14} />
                   {formatRate(detail['rateUpload'])}
                 </span>
-                <span>{`ETA ${(detail['eta'] >= 0) ? formatDuration(detail['eta']) : '—'}`}</span>
+                <span>{`ETA ${etaLabel}`}</span>
               </div>
             </div>
 
@@ -631,10 +870,12 @@ export const TorrentDetail = ({
               {(detail['needsProfile'] === null) ? null : (
                 <Button
                   disabled={busy}
-                  onClick={(): void => {
+                  onClick={() => {
                     setResolutionError('');
                     setResolutionResults(null);
                     setResolutionOpen(true);
+
+                    return;
                   }}
                   variant="primary"
                 >
@@ -646,8 +887,10 @@ export const TorrentDetail = ({
                 <Button
                   disabled={busy}
                   icon="play"
-                  onClick={(): void => {
-                    void runMutation(async (): Promise<void> => onAction('start', [detail['hashString']]), 'Started.');
+                  onClick={() => {
+                    void runMutation(async () => onAction('start', [detail['hashString']]), 'Started.');
+
+                    return;
                   }}
                 >
                   Start
@@ -656,8 +899,10 @@ export const TorrentDetail = ({
                 <Button
                   disabled={busy}
                   icon="pause"
-                  onClick={(): void => {
-                    void runMutation(async (): Promise<void> => onAction('stop', [detail['hashString']]), 'Paused.');
+                  onClick={() => {
+                    void runMutation(async () => onAction('stop', [detail['hashString']]), 'Paused.');
+
+                    return;
                   }}
                 >
                   Pause
@@ -666,8 +911,10 @@ export const TorrentDetail = ({
               <Button
                 disabled={busy}
                 icon="check"
-                onClick={(): void => {
-                  void runMutation(async (): Promise<void> => onAction('verify', [detail['hashString']]), 'Verifying local data.');
+                onClick={() => {
+                  void runMutation(async () => onAction('verify', [detail['hashString']]), 'Verifying local data.');
+
+                  return;
                 }}
               >
                 Verify
@@ -675,8 +922,10 @@ export const TorrentDetail = ({
               <Button
                 disabled={busy}
                 icon="refresh"
-                onClick={(): void => {
-                  void runMutation(async (): Promise<void> => onAction('reannounce', [detail['hashString']]), 'Asked trackers for more peers.');
+                onClick={() => {
+                  void runMutation(async () => onAction('reannounce', [detail['hashString']]), 'Asked trackers for more peers.');
+
+                  return;
                 }}
               >
                 Reannounce
@@ -684,7 +933,7 @@ export const TorrentDetail = ({
             </div>
 
             <div className="detail-tabs" role="tablist">
-              {(Object.keys(tabLabels) as Web_Components_TorrentDetail_Tab[]).sort((left, right): number => (
+              {(Object.keys(tabLabels) as Web_TorrentDetail_TorrentDetail_TabKeys).sort((left, right) => (
                 [
                   'overview',
                   'files',
@@ -698,8 +947,8 @@ export const TorrentDetail = ({
                   'trackers',
                   'options',
                 ].indexOf(right)
-              )).map((item: Web_Components_TorrentDetail_Tab): ReactElement => (
-                <button aria-selected={tab === item} key={item} onClick={(): void => setTab(item)} role="tab" type="button">{tabLabels[item]}</button>
+              )).map((item) => (
+                <button aria-selected={tab === item} key={item} onClick={() => setTab(item)} role="tab" type="button">{tabLabels[item]}</button>
               ))}
             </div>
 
@@ -741,7 +990,7 @@ export const TorrentDetail = ({
                   </div>
                   <div className="details-wide">
                     <dt>VPN connection</dt>
-                    <dd className="profile-derived-value">{detailConnection?.['name'] ?? detail['connectionId']}</dd>
+                    <dd className="profile-derived-value">{(detailConnection !== undefined) ? detailConnection['name'] : detail['connectionId']}</dd>
                   </div>
                   <div>
                     <dt>Time downloading</dt>
@@ -766,10 +1015,12 @@ export const TorrentDetail = ({
                       <button
                         className="icon-button"
                         disabled={detail['magnetLink'] === undefined}
-                        onClick={(): void => {
+                        onClick={() => {
                           if (detail['magnetLink'] !== undefined) {
-                            void copyText(detail['magnetLink']).then((): void => showToast('Magnet link copied.', true));
+                            void copyText(detail['magnetLink']).then(() => showToast('Magnet link copied.', true));
                           }
+
+                          return;
                         }}
                         title="Copy magnet link"
                         type="button"
@@ -784,7 +1035,7 @@ export const TorrentDetail = ({
                       <dd>{detail['creator']}</dd>
                     </div>
                   )}
-                  {(detail['isPrivate']) ? (
+                  {(detail['isPrivate'] === true) ? (
                     <div>
                       <dt>Tracker type</dt>
                       <dd>Private</dd>
@@ -805,14 +1056,14 @@ export const TorrentDetail = ({
                     <label className="search-field">
                       <Icon name="search" size={15} />
                       <span className="visually-hidden">Filter files</span>
-                      <input onChange={(event): void => setFileQuery(event.currentTarget.value)} placeholder="Filter files" type="search" value={fileQuery} />
+                      <input onChange={(event) => setFileQuery(event.currentTarget.value)} placeholder="Filter files" type="search" value={fileQuery} />
                     </label>
-                    <button className="text-button" onClick={(): void => setAllFiles(true)} type="button">All</button>
-                    <button className="text-button" onClick={(): void => setAllFiles(false)} type="button">None</button>
+                    <button className="text-button" onClick={() => setAllFiles(true)} type="button">All</button>
+                    <button className="text-button" onClick={() => setAllFiles(false)} type="button">None</button>
                     <select
                       aria-label="Set priority for all files"
                       className="select-control"
-                      onChange={(event: ChangeEvent<HTMLSelectElement>): void => setAllPriorities(Number(event.currentTarget.value) as -1 | 0 | 1)}
+                      onChange={(event) => setAllPriorities(Number(event.currentTarget.value) as Web_TorrentDetail_TorrentDetail_SetAllPriorities_Priority)}
                       value=""
                     >
                       <option value="">Priority for all…</option>
@@ -823,30 +1074,32 @@ export const TorrentDetail = ({
                   </div>
 
                   <div className="detail-list" role="table" aria-label="Torrent files">
-                    {filteredFiles.map((row: Web_Components_TorrentFileRow): ReactElement => {
-                      const draft: Web_Components_TorrentFileDraft = fileDrafts[row['index']] ?? {
+                    {filteredFiles.map((row) => {
+                      const draft: Web_TorrentDetail_TorrentDetail_Draft = fileDrafts[row['index']] ?? {
                         priority: 0,
                         wanted: true,
                       };
-                      const completed: number = row['file']['bytesCompleted'];
-                      const length: number = row['file']['length'];
-                      const progress: number = (length <= 0) ? 1 : completed / length;
+                      const completed: Web_TorrentDetail_TorrentDetail_Completed = row['file']['bytesCompleted'];
+                      const length: Web_TorrentDetail_TorrentDetail_Length = row['file']['length'];
+                      const progress: Web_TorrentDetail_TorrentDetail_Progress = (length <= 0) ? 1 : completed / length;
 
                       return (
-                        <div className={(draft['wanted']) ? 'file-row' : 'file-row file-row-unwanted'} key={`${row['file']['name']}-${row['index']}`} role="row">
+                        <div className={(draft['wanted'] === true) ? 'file-row' : 'file-row file-row-unwanted'} key={`${row['file']['name']}-${row['index']}`} role="row">
                           <input
                             aria-label={`Download ${row['file']['name']}`}
                             checked={draft['wanted']}
-                            onChange={(event): void => {
-                              const nextWanted: boolean = event.currentTarget.checked;
+                            onChange={(event) => {
+                              const nextWanted: Web_TorrentDetail_TorrentDetail_NextWanted = event.currentTarget.checked;
 
-                              setFileDrafts((currentDrafts: Web_Components_TorrentFileDrafts): Web_Components_TorrentFileDrafts => ({
+                              setFileDrafts((currentDrafts) => ({
                                 ...currentDrafts,
                                 [row['index']]: {
                                   ...draft,
                                   wanted: nextWanted,
                                 },
                               }));
+
+                              return;
                             }}
                             type="checkbox"
                           />
@@ -858,17 +1111,19 @@ export const TorrentDetail = ({
                           <select
                             aria-label={`Priority for ${row['file']['name']}`}
                             className="select-control"
-                            disabled={!draft['wanted']}
-                            onChange={(event: ChangeEvent<HTMLSelectElement>): void => {
-                              const nextPriority: -1 | 0 | 1 = Number(event.currentTarget.value) as -1 | 0 | 1;
+                            disabled={draft['wanted'] === false}
+                            onChange={(event) => {
+                              const nextPriority: Web_TorrentDetail_TorrentDetail_NextPriority = Number(event.currentTarget.value) as Web_TorrentDetail_TorrentDetail_NextPriority;
 
-                              setFileDrafts((currentDrafts: Web_Components_TorrentFileDrafts): Web_Components_TorrentFileDrafts => ({
+                              setFileDrafts((currentDrafts) => ({
                                 ...currentDrafts,
                                 [row['index']]: {
                                   ...draft,
                                   priority: nextPriority,
                                 },
                               }));
+
+                              return;
                             }}
                             value={draft['priority']}
                           >
@@ -882,11 +1137,13 @@ export const TorrentDetail = ({
                     {(filteredFiles.length === 0) ? <p className="detail-empty">No matching files.</p> : null}
                   </div>
                   <div className="detail-footer">
-                    <span>{`${Object.values(fileDrafts).filter((draft: Web_Components_TorrentFileDraft): boolean => draft['wanted']).length} of ${Object.keys(fileDrafts).length} files selected`}</span>
+                    <span>{`${Object.values(fileDrafts).filter((draft) => draft['wanted']).length} of ${Object.keys(fileDrafts).length} files selected`}</span>
                     <Button
                       disabled={busy || Object.keys(fileDrafts).length === 0}
-                      onClick={(): void => {
+                      onClick={() => {
                         void saveFiles();
+
+                        return;
                       }}
                       variant="primary"
                     >
@@ -908,14 +1165,14 @@ export const TorrentDetail = ({
                     </tr>
                   </thead>
                   <tbody>
-                    {(detail['peers'] ?? []).map((peer: Web_Api_TorrentPeer, index: number): ReactElement => (
+                    {(detail['peers'] ?? []).map((peer, index) => (
                       <tr key={`${peer['address']}-${peer['port']}-${index}`}>
                         <td>
                           <span className="mono">{`${peer['address']}:${peer['port']}`}</span>
                           <small>
                             {[
-                              (peer['isEncrypted']) ? 'encrypted' : 'plain',
-                              (peer['isIncoming']) ? 'incoming' : 'outgoing',
+                              (peer['isEncrypted'] === true) ? 'encrypted' : 'plain',
+                              (peer['isIncoming'] === true) ? 'incoming' : 'outgoing',
                               peer['flagStr'],
                             ].join(' · ')}
                           </small>
@@ -936,29 +1193,37 @@ export const TorrentDetail = ({
               {(tab === 'trackers') ? (
                 <div className="detail-section">
                   <div className="detail-list">
-                    {(detail['trackerStats'] ?? []).map((tracker: Web_Api_TorrentTrackerStats): ReactElement => (
-                      <div className="tracker-row" key={tracker['id']}>
-                        <div className="tracker-row-head">
-                          <span className={`status-dot ${(tracker['lastAnnounceSucceeded']) ? 'status-seeding' : 'status-error'}`} />
-                          <span className="mono" title={tracker['announce']}>{tracker['host']}</span>
-                          <span className="tag">{`tier ${tracker['tier'] + 1}`}</span>
+                    {(detail['trackerStats'] ?? []).map((tracker) => {
+                      const trackerStatus: Web_TorrentDetail_TorrentDetail_TrackerStatus = (tracker['lastAnnounceSucceeded'] === true) ? 'status-seeding' : 'status-error';
+
+                      return (
+                        <div className="tracker-row" key={tracker['id']}>
+                          <div className="tracker-row-head">
+                            <span className={`status-dot ${trackerStatus}`} />
+                            <span className="mono" title={tracker['announce']}>{tracker['host']}</span>
+                            <span className="tag">{`tier ${tracker['tier'] + 1}`}</span>
+                          </div>
+                          <p className={(tracker['lastAnnounceSucceeded'] === true) ? 'tracker-row-result' : 'tracker-row-result tracker-row-failed'}>
+                            {tracker['lastAnnounceResult'] || 'No announce yet'}
+                          </p>
+                          <p className="tracker-row-stats">
+                            {`${tracker['seederCount']} seeders · ${tracker['leecherCount']} leechers · ${tracker['downloadCount']} downloads · next announce ${formatDate(tracker['nextAnnounceTime'])}`}
+                          </p>
                         </div>
-                        <p className={(tracker['lastAnnounceSucceeded']) ? 'tracker-row-result' : 'tracker-row-result tracker-row-failed'}>
-                          {tracker['lastAnnounceResult'] || 'No announce yet'}
-                        </p>
-                        <p className="tracker-row-stats">
-                          {`${tracker['seederCount']} seeders · ${tracker['leecherCount']} leechers · ${tracker['downloadCount']} downloads · next announce ${formatDate(tracker['nextAnnounceTime'])}`}
-                        </p>
-                      </div>
-                    ))}
+                      );
+                    })}
                     {((detail['trackerStats'] ?? []).length === 0) ? <p className="detail-empty">No trackers.</p> : null}
                   </div>
                   <FieldLabel>
                     <span>Tracker list</span>
                     <textarea
                       className="monospace"
-                      onChange={(event): void => setTrackerList(event.currentTarget.value)}
-                      placeholder={'e.g. https://tracker.example/announce\n\nhttps://backup.example/announce'}
+                      onChange={(event) => setTrackerList(event.currentTarget.value)}
+                      placeholder={[
+                        'e.g. https://tracker.example/announce',
+                        '',
+                        'https://backup.example/announce',
+                      ].join('\n')}
                       rows={7}
                       value={trackerList}
                     />
@@ -968,8 +1233,10 @@ export const TorrentDetail = ({
                     <span />
                     <Button
                       disabled={busy}
-                      onClick={(): void => {
+                      onClick={() => {
                         void saveTrackers();
+
+                        return;
                       }}
                       variant="primary"
                     >
@@ -989,34 +1256,38 @@ export const TorrentDetail = ({
                         <div className="profile-apply-controls">
                           <select
                             aria-label="Profile"
-                            onChange={(event): void => {
+                            onChange={(event) => {
                               setProfileId(event.currentTarget.value);
                               setProfileMoveResults([]);
+
+                              return;
                             }}
                             value={profileId}
                           >
                             <option value="">{defaultProfile['name']}</option>
-                            {profiles.map((profile: Web_Api_TorrentProfile): ReactElement => (
+                            {profiles.map((profile) => (
                               <option key={profile['id']} value={profile['id']}>{profile['name']}</option>
                             ))}
                           </select>
                           <Button
                             disabled={busy}
-                            onClick={(): void => {
+                            onClick={() => {
                               void applyTorrentProfile();
+
+                              return;
                             }}
                             variant="primary"
                           >
                             Apply
                           </Button>
                         </div>
-                        {(selectedProfileChanged) ? <small>{profileChangeHint}</small> : null}
+                        {(selectedProfileChanged === true) ? <small>{profileChangeHint}</small> : null}
                       </div>
                     </div>
                     <label aria-label="Also apply its labels and limits" className="check-row">
                       <input
                         checked={applyProfileOptions}
-                        onChange={(event): void => setApplyProfileOptions(event.currentTarget.checked)}
+                        onChange={(event) => setApplyProfileOptions(event.currentTarget.checked)}
                         type="checkbox"
                       />
                       <span>
@@ -1027,12 +1298,12 @@ export const TorrentDetail = ({
                     {(profileMoveResults.length === 0) ? null : (
                       <div className="torrent-move-results">
                         <ul>
-                          {profileMoveResults.map((result): ReactElement => (
+                          {profileMoveResults.map((result) => (
                             <li className={(result['result'] === 'failed') ? 'move-failed' : 'move-succeeded'} key={result['hash']}>
                               <strong>{result['name']}</strong>
                               <span className="move-result-copy">
                                 <span className="move-result-state">{torrentMoveResultLabel(result)}</span>
-                                {result['warnings']?.map((warning): ReactElement => <small key={warning}>{warning}</small>)}
+                                {(result['warnings'] !== undefined) ? result['warnings'].map((warning) => <small key={warning}>{warning}</small>) : undefined}
                               </span>
                             </li>
                           ))}
@@ -1045,7 +1316,7 @@ export const TorrentDetail = ({
                     <h3>Labels and limits</h3>
                     <LabelPicker
                       labels={labelPresets}
-                      onChange={(value: string): void => setOptions({
+                      onChange={(value) => setOptions({
                         ...options,
                         labels: value,
                       })}
@@ -1056,9 +1327,9 @@ export const TorrentDetail = ({
                       <FieldLabel>
                         <span>Bandwidth priority</span>
                         <select
-                          onChange={(event): void => setOptions({
+                          onChange={(event) => setOptions({
                             ...options,
-                            bandwidthPriority: Number(event.currentTarget.value) as -1 | 0 | 1,
+                            bandwidthPriority: Number(event.currentTarget.value) as Web_TorrentDetail_TorrentDetail_OptionsBandwidthPriority,
                           })}
                           value={options['bandwidthPriority']}
                         >
@@ -1070,7 +1341,7 @@ export const TorrentDetail = ({
                       <FieldLabel>
                         <span>Maximum peers</span>
                         <input
-                          onChange={(event): void => setOptions({
+                          onChange={(event) => setOptions({
                             ...options,
                             peerLimit: Number(event.currentTarget.value),
                           })}
@@ -1082,7 +1353,7 @@ export const TorrentDetail = ({
                     <label aria-label="Follow global speed limits" className="check-row">
                       <input
                         checked={options['honorsSessionLimits']}
-                        onChange={(event): void => setOptions({
+                        onChange={(event) => setOptions({
                           ...options,
                           honorsSessionLimits: event.currentTarget.checked,
                         })}
@@ -1095,7 +1366,7 @@ export const TorrentDetail = ({
                         <label aria-label="Limit download (KB/s)" className="check-row">
                           <input
                             checked={options['downloadLimited']}
-                            onChange={(event): void => setOptions({
+                            onChange={(event) => setOptions({
                               ...options,
                               downloadLimited: event.currentTarget.checked,
                             })}
@@ -1106,8 +1377,8 @@ export const TorrentDetail = ({
                         <input
                           aria-label="Download limit in KB/s"
                           className="setting-input"
-                          disabled={!options['downloadLimited']}
-                          onChange={(event): void => setOptions({
+                          disabled={options['downloadLimited'] === false}
+                          onChange={(event) => setOptions({
                             ...options,
                             downloadLimit: Number(event.currentTarget.value),
                           })}
@@ -1119,7 +1390,7 @@ export const TorrentDetail = ({
                         <label aria-label="Limit upload (KB/s)" className="check-row">
                           <input
                             checked={options['uploadLimited']}
-                            onChange={(event): void => setOptions({
+                            onChange={(event) => setOptions({
                               ...options,
                               uploadLimited: event.currentTarget.checked,
                             })}
@@ -1130,8 +1401,8 @@ export const TorrentDetail = ({
                         <input
                           aria-label="Upload limit in KB/s"
                           className="setting-input"
-                          disabled={!options['uploadLimited']}
-                          onChange={(event): void => setOptions({
+                          disabled={options['uploadLimited'] === false}
+                          onChange={(event) => setOptions({
                             ...options,
                             uploadLimit: Number(event.currentTarget.value),
                           })}
@@ -1146,9 +1417,9 @@ export const TorrentDetail = ({
                       <FieldLabel>
                         <span>Stop at ratio</span>
                         <select
-                          onChange={(event): void => setOptions({
+                          onChange={(event) => setOptions({
                             ...options,
-                            seedRatioMode: Number(event.currentTarget.value) as 0 | 1 | 2,
+                            seedRatioMode: Number(event.currentTarget.value) as Web_TorrentDetail_TorrentDetail_OptionsSeedRatioMode,
                           })}
                           value={options['seedRatioMode']}
                         >
@@ -1160,7 +1431,7 @@ export const TorrentDetail = ({
                         <span>Ratio</span>
                         <input
                           disabled={options['seedRatioMode'] !== 1}
-                          onChange={(event): void => setOptions({
+                          onChange={(event) => setOptions({
                             ...options,
                             seedRatioLimit: Number(event.currentTarget.value),
                           })}
@@ -1172,9 +1443,9 @@ export const TorrentDetail = ({
                       <FieldLabel>
                         <span>Stop when idle</span>
                         <select
-                          onChange={(event): void => setOptions({
+                          onChange={(event) => setOptions({
                             ...options,
-                            seedIdleMode: Number(event.currentTarget.value) as 0 | 1 | 2,
+                            seedIdleMode: Number(event.currentTarget.value) as Web_TorrentDetail_TorrentDetail_OptionsSeedIdleMode,
                           })}
                           value={options['seedIdleMode']}
                         >
@@ -1186,7 +1457,7 @@ export const TorrentDetail = ({
                         <span>Idle minutes</span>
                         <input
                           disabled={options['seedIdleMode'] !== 1}
-                          onChange={(event): void => setOptions({
+                          onChange={(event) => setOptions({
                             ...options,
                             seedIdleLimit: Number(event.currentTarget.value),
                           })}
@@ -1196,7 +1467,7 @@ export const TorrentDetail = ({
                       </FieldLabel>
                     </div>
                     <p className="form-section-note">
-                      {`${assignedProfile?.['name'] ?? defaultProfile['name']} supplies the defaults, so each option can be custom or never stop.`}
+                      {`${assignedProfileName} supplies the defaults, so each option can be custom or never stop.`}
                     </p>
                     <div className="detail-footer">
                       <span />
@@ -1209,16 +1480,26 @@ export const TorrentDetail = ({
                     <FieldLabel>
                       <span>Top-level file or folder name</span>
                       <input
-                        disabled={!renameAvailable}
-                        onChange={(event): void => setRenameName(event.currentTarget.value)}
+                        disabled={renameAvailable === false}
+                        onChange={(event) => setRenameName(event.currentTarget.value)}
                         type="text"
                         value={renameName}
                       />
-                      {(renameAvailable) ? null : <small>Available once the torrent&apos;s metadata has downloaded.</small>}
+                      {(renameAvailable === true) ? null : <small>Available once the torrent&apos;s metadata has downloaded.</small>}
                     </FieldLabel>
                     <div className="detail-footer">
                       <span />
-                      <Button disabled={busy || !renameAvailable || renameName.trim() === detail['name'] || renameName.trim() === ''} type="submit">Rename</Button>
+                      <Button
+                        disabled={(
+                          busy === true
+                          || renameAvailable === false
+                          || renameName.trim() === detail['name']
+                          || renameName.trim() === ''
+                        )}
+                        type="submit"
+                      >
+                        Rename
+                      </Button>
                     </div>
                   </form>
                 </div>
@@ -1227,7 +1508,7 @@ export const TorrentDetail = ({
           </>
         )}
       </aside>
-      {(!resolutionOpen || detail === null) ? null : (
+      {(resolutionOpen === false || detail === null) ? null : (
         <div className="dialog-backdrop" role="presentation">
           <section aria-labelledby="resolve-profile-title" aria-modal="true" className="dialog dialog-small" role="dialog">
             <div className="dialog-heading">
@@ -1239,7 +1520,7 @@ export const TorrentDetail = ({
                 aria-label="Close"
                 className="icon-button"
                 disabled={busy}
-                onClick={(): void => setResolutionOpen(false)}
+                onClick={() => setResolutionOpen(false)}
                 type="button"
               >
                 <Icon name="x" />
@@ -1247,30 +1528,36 @@ export const TorrentDetail = ({
             </div>
             {(resolutionResults === null) ? (
               <>
-                <p>{(resolutionAllowsAnyProfile) ? 'The original matches are no longer available. Choose any profile.' : 'Choose the profile this torrent belongs to.'}</p>
+                <p>{(resolutionAllowsAnyProfile === true) ? 'The original matches are no longer available. Choose any profile.' : 'Choose the profile this torrent belongs to.'}</p>
                 <div className="profile-resolution-list">
-                  {(resolutionAllowsAnyProfile) ? (
+                  {(resolutionAllowsAnyProfile === true) ? (
                     <button
                       disabled={busy}
-                      onClick={(): void => {
+                      onClick={() => {
                         void resolveTorrentProfile(null);
+
+                        return;
                       }}
                       type="button"
                     >
                       <strong>{defaultProfile['name']}</strong>
                     </button>
                   ) : null}
-                  {resolutionProfiles.map((candidate: Web_Api_TorrentProfile): ReactElement => {
-                    const matchingPattern: string = candidate['matchPatterns'].find(
-                      (pattern: string): boolean => torrentNameMatchesPattern(detail['name'], pattern),
-                    ) ?? candidate['matchPatterns'][0] ?? 'No current matching pattern';
+                  {resolutionProfiles.map((candidate) => {
+                    const matchingPattern: Web_TorrentDetail_TorrentDetail_MatchingPattern = (
+                      candidate['matchPatterns'].find((pattern) => torrentNameMatchesPattern(detail['name'], pattern))
+                      ?? candidate['matchPatterns'][0]
+                      ?? 'No current matching pattern'
+                    );
 
                     return (
                       <button
                         disabled={busy}
                         key={candidate['id']}
-                        onClick={(): void => {
+                        onClick={() => {
                           void resolveTorrentProfile(candidate['id']);
+
+                          return;
                         }}
                         type="button"
                       >
@@ -1282,26 +1569,26 @@ export const TorrentDetail = ({
                 </div>
                 {(resolutionError === '') ? null : <div className="form-error" role="alert">{resolutionError}</div>}
                 <div className="dialog-actions">
-                  <Button disabled={busy} onClick={(): void => setResolutionOpen(false)}>Cancel</Button>
+                  <Button disabled={busy} onClick={() => setResolutionOpen(false)}>Cancel</Button>
                 </div>
               </>
             ) : (
               <>
                 <div className="torrent-move-results">
                   <ul>
-                    {resolutionResults.map((result: Web_Api_MovedTorrent): ReactElement => (
+                    {resolutionResults.map((result) => (
                       <li className={(result['result'] === 'failed') ? 'move-failed' : 'move-succeeded'} key={result['hash']}>
                         <strong>{result['name']}</strong>
                         <span className="move-result-copy">
                           <span className="move-result-state">{torrentMoveResultLabel(result)}</span>
-                          {result['warnings']?.map((warning: string): ReactElement => <small key={warning}>{warning}</small>)}
+                          {(result['warnings'] !== undefined) ? result['warnings'].map((warning) => <small key={warning}>{warning}</small>) : undefined}
                         </span>
                       </li>
                     ))}
                   </ul>
                 </div>
                 <div className="dialog-actions">
-                  <Button onClick={(): void => setResolutionOpen(false)} variant="primary">Done</Button>
+                  <Button onClick={() => setResolutionOpen(false)} variant="primary">Done</Button>
                 </div>
               </>
             )}

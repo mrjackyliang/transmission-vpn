@@ -4,426 +4,839 @@ import {
 } from 'node:crypto';
 import { crc32 } from 'node:zlib';
 
+import {
+  administratorUsernamePattern,
+  backupImportPathPattern,
+  connectionRefusedPattern,
+  contentDownloadPathPattern,
+  edgeHyphensPattern,
+  edgeSpacesAndDotsPattern,
+  fileExtensionPattern,
+  headerQuoteCharactersPattern,
+  isoTimestampPattern,
+  loginUsernamePattern,
+  lookupHostPattern,
+  magnetInfoHashPattern,
+  nonSlugCharactersPattern,
+  notificationPathPattern,
+  openVpnRemotePattern,
+  openVpnTcpPattern,
+  printableAsciiPattern,
+  profileExtensionPattern,
+  rpcLoginPathPattern,
+  separatorsPattern,
+  sixDigitCodePattern,
+  timeoutPattern,
+  tlsErrorPattern,
+  torrentDetailPathPattern,
+  torrentExtensionPattern,
+  torrentProfileIdPattern,
+  torrentProfilePathPattern,
+  trailingSlashesPattern,
+  transportHostPattern,
+  unknownHostPattern,
+  vpnCatalogRefreshPathPattern,
+  vpnConnectionPathPattern,
+  webProxyLoginPathPattern,
+  wireGuardEndpointPattern,
+  wireGuardInterfacePattern,
+} from './src/web/regex.js';
+
 import type {
-  IncomingMessage,
-  ServerResponse,
-} from 'node:http';
-
-import type { Plugin } from 'vite';
-
-/**
- * Mock API - Mock notification service.
- *
- * Names this local contract so fixtures and handlers agree.
- * Keeping one shape prevents the surrounding workflow from drifting.
- *
- * @since 2.0.0
- */
-type MockNotificationService = 'apprise' | 'discord' | 'email' | 'gotify' | 'matrix' | 'ntfy' | 'ntfy-reverse-proxy' | 'pushover' | 'slack' | 'telegram' | 'webhook';
-
-/**
- * Mock API - Mock notification.
- *
- * Names this local contract so fixtures and handlers agree.
- * Keeping one shape prevents the surrounding workflow from drifting.
- *
- * @since 2.0.0
- */
-type MockNotification = {
-  createdAt: string
-  events: string[]
-  id: string
-  lastAttemptAt: string | null
-  lastError: string | null
-  lastErrorDetails: string | null
-  name: string
-  secrets: Record<string, true>
-  secretsMissing: string[]
-  service: MockNotificationService
-  settings: Record<string, string>
-  updatedAt: string
-};
-
-// MockNotificationField is one service field: [key, message when missing, secret, required].
-
-/**
- * Mock API - Mock notification field.
- *
- * Names this local contract so fixtures and handlers agree.
- * Keeping one shape prevents the surrounding workflow from drifting.
- *
- * @since 2.0.0
- */
-type MockNotificationField = [string, string, boolean, boolean];
-
-// MockNotificationInput is a checked create or edit body, with the optional secrets to clear.
-
-/**
- * Mock API - Mock notification input.
- *
- * Names this local contract so fixtures and handlers agree.
- * Keeping one shape prevents the surrounding workflow from drifting.
- *
- * @since 2.0.0
- */
-type MockNotificationInput = Pick<MockNotification, 'events' | 'name' | 'secrets' | 'service' | 'settings'> & {
-  clearSecrets: string[]
-};
-
-/**
- * Mock API - Mock RPC login.
- *
- * Stores safe RPC login metadata without retaining generated plaintext passwords.
- * Matches the public fields returned by the control API.
- *
- * @since 2.0.0
- */
-type MockRPCLogin = {
-  createdAt: string
-  id: string
-  lastUsedAt: string | null
-  username: string
-};
-
-/**
- * Mock API - Blocklist source status.
- *
- * Mirrors the runner-owned per-source observation exposed by the versioned API.
- * Failed sources may retain ranges and identify the last-good copy still in use.
- *
- * @since 2.0.0
- */
-type MockBlocklistSourceStatus = {
-  copyFrom?: string
-  error?: string
-  ranges: number
-  state: 'error' | 'ok' | 'pending'
-  updatedAt?: string
-  url: string
-};
-
-/**
- * Mock API - Blocklist status.
- *
- * Provides realistic aggregate scheduling data for the backend contract without
- * describing or implementing the console presentation that still awaits approval.
- *
- * @since 2.0.0
- */
-type MockBlocklistStatus = {
-  lastAttemptAt?: string
-  lastSuccessAt?: string
-  nextUpdateAt?: string
-  sources: MockBlocklistSourceStatus[]
-  state: 'disabled' | 'idle' | 'no-sources' | 'updating' | 'waiting-for-vpn'
-  totalRanges: number
-};
-
-/**
- * Mock API - Mock web proxy login.
- *
- * Mirrors the safe login view returned by the control API.
- * Generated passwords appear only in create and regenerate responses.
- *
- * @since 2.0.0
- */
-type MockWebProxyLogin = {
-  connectionId: string | null
-  id: string
-  passwordSet: boolean
-  username: string
-};
-
-/**
- * Mock API - Backup import source item.
- *
- * Keeps the saved torrent intent needed to derive changing public job progress.
- * The source document itself is not retained after the mock job is created.
- *
- * @since 2.0.0
- */
-type MockBackupImportSourceItem = {
-  complete: boolean
-  duplicate: boolean
-  folder: string
-  hash: string
-  missing: boolean
-  name: string
-  paused: boolean
-  profileName: string
-};
-
-/**
- * Mock API - Backup import.
- *
- * Stores the minimum durable-job simulation state for the standalone console mock.
- * Public responses are recomputed from elapsed time so polling visibly advances.
- *
- * @since 2.0.0
- */
-type MockBackupImport = {
-  actions: string[]
-  createdAt: string
-  id: string
-  items: MockBackupImportSourceItem[]
-  profileCount: number
-  settingCount: number
-  source: 'another-transmission' | 'transmission-vpn-export'
-  startedAtMilliseconds: number
-  totalSizeBytes: number
-};
-
-/**
- * Mock API - Backup merge result.
- *
- * Keeps preview and apply counts in one shape so both surfaces use identical copy.
- * Capacity and duplicate skips remain separate because they explain different causes.
- *
- * @since 2.0.0
- */
-type MockBackupMergeResult = {
-  apiTokenAdditions: number
-  apiTokenDuplicateSkips: number
-  apiTokenMaximumSkips: number
-  notificationAdditions: number
-  notificationMaximumSkips: number
-  notificationReplacements: number
-  rpcLoginAdditions: number
-  rpcLoginMaximumSkips: number
-  rpcLoginReplacements: number
-};
-
-/**
- * Mock API - Mock VPN connection.
- *
- * Stores one durable connection and its controller and daemon state.
- * The shape follows the multi-connection API contract used by the console.
- *
- * @since 2.0.0
- */
-type MockVPNConnection = {
-  changeRunning: boolean
-  createdAt: string
-  daemon: {
-    bindAddress: string
-    peerPort: number
-    rpcPort: number
-    state: 'exited' | 'missing' | 'ready' | 'starting'
-  }
-  default: boolean
-  dnsServers: string[]
-  enabled: boolean
-  endpointStrategy: 'ordered' | 'randomized' | 'sticky'
-  id: string
-  name: string
-  needsSetup: boolean
-  peerPort: number
-  profileIds: string[]
-  providerId: string
-  revision: number
-  retryIntervalSeconds: number
-  savedCredentials: string[]
-  runtime: Record<string, unknown>
-  slot: number
-  tunnel: 'openvpn' | 'wireguard'
-  updatedAt: string
-};
-
-/**
- * Mock API - Mock VPN credential field.
- *
- * Keeps the provider metadata needed to validate required mock sign-in fields.
- * Credential values remain in a separate private map and never enter responses.
- *
- * @since 2.0.0
- */
-type MockVPNCredentialField = {
-  key: string
-  label: string
-  required: boolean
-};
-
-/**
- * Mock API - Mock torrent.
- *
- * Names this local contract so fixtures and handlers agree.
- * Keeping one shape prevents the surrounding workflow from drifting.
- *
- * @since 2.0.0
- */
-type MockTorrent = {
-  'activityDate': number
-  'addedDate': number
-  'bandwidthPriority': -1 | 0 | 1
-  'comment': string
-  'connectionId': string
-  'doneDate': number
-  'downloadDir': string
-  'downloadLimit': number
-  'downloadLimited': boolean
-  'downloadedEver': number
-  'error': number
-  'errorString': string
-  'eta': number
-  'hashString': string
-  'honorsSessionLimits': boolean
-  'id': number
-  'isFinished': boolean
-  'isPrivate': boolean
-  'isStalled': boolean
-  'labels': string[]
-  'leftUntilDone': number
-  'metadataPercentComplete': number
-  'name': string
-  'needsProfile': {
-    profileIds: string[]
-  } | null
-  'peersConnected': number
-  'peersGettingFromUs': number
-  'peersSendingToUs': number
-  'percentDone': number
-  'peer-limit': number
-  'profileId': string | null
-  'queuePosition': number
-  'rateDownload': number
-  'rateUpload': number
-  'recheckProgress': number
-  'secondsDownloading': number
-  'secondsSeeding': number
-  'seedIdleLimit': number
-  'seedIdleMode': 0 | 1 | 2
-  'seedRatioLimit': number
-  'seedRatioMode': 0 | 1 | 2
-  'sizeWhenDone': number
-  'status': number
-  'totalSize': number
-  'uploadedEver': number
-  'uploadLimit': number
-  'uploadLimited': boolean
-  'uploadRatio': number
-};
-
-/**
- * Mock API - Mock torrent profile.
- *
- * Mirrors the application-owned profile returned by the control API.
- * The in-memory collection supports CRUD, overlaps, and torrent assignment.
- *
- * @since 2.0.0
- */
-type MockTorrentProfile = {
-  connectionId: string | null
-  createdAt: string
-  downloadDirectory: string
-  id: string
-  labels: string[]
-  matchPatterns: string[]
-  name: string
-  overlaps: {
-    ownPattern: string
-    pattern: string
-    profileId: string
-    profileName: string
-  }[]
-  options: {
-    bandwidthPriority: -1 | 0 | 1
-    downloadLimitKBps: number | null
-    peerLimit: number
-    queue: 'normal' | 'top'
-    seeding: {
-      idleMinutes: number | null
-      mode: 'limit' | 'never'
-      ratio: number | null
-    }
-    uploadLimitKBps: number | null
-  }
-  startPaused: boolean
-  updatedAt: string
-};
-
-/**
- * Mock API - Mock Default torrent profile.
- *
- * Stores the editable Default profile fields and its managed-folder state.
- * Named-profile identity and matching fields are intentionally absent.
- *
- * @since 2.0.0
- */
-type MockDefaultTorrentProfile = Pick<MockTorrentProfile, 'downloadDirectory' | 'labels' | 'name' | 'options' | 'startPaused'> & {
-  downloadDirectoryLocked: boolean
-};
-
-/**
- * Mock API - Mock directory metadata.
- *
- * Records the controller facts that are not derivable from the folder path alone.
- * Child relationships remain implicit in the keyed in-memory tree.
- *
- * @since 2.0.0
- */
-type MockDirectoryMetadata = {
-  files: number
-  mountPoint: boolean
-  readable: boolean
-};
-
-/**
- * Mock API - Mock directory purpose.
- *
- * Keeps purpose validation and policy evaluation on the contract's closed vocabulary.
- * Both GET and DELETE share this exact type.
- *
- * @since 2.0.0
- */
-type MockDirectoryPurpose = 'download' | 'incomplete' | 'profile';
-
-/**
- * Mock API - Mock directory deletion policy.
- *
- * Carries the first matching advisory rule into listing and delete responses.
- * The code distinguishes assigned-folder conflicts from non-empty folders.
- *
- * @since 2.0.0
- */
-type MockDirectoryDeletionPolicy = {
-  code: 'directory_browser_unavailable' | 'directory_in_use' | 'directory_not_empty' | 'torrent_locations_unavailable' | ''
-  message: string
-};
-
-/**
- * Mock API - Mock torrent link preview.
- *
- * Mirrors the protected preview route fields used by the Add torrent dialog.
- * Magnet links omit total size in the same way as the control API.
- *
- * @since 2.0.0
- */
-type MockTorrentLinkPreview = {
-  hash: string
-  index: number
-  name: string
-  totalSize?: number
-};
-
-/**
- * Mock API - Mock torrent seed.
- *
- * Names this local contract so fixtures and handlers agree.
- * Keeping one shape prevents the surrounding workflow from drifting.
- *
- * @since 2.0.0
- */
-type MockTorrentSeed = {
-  comment?: string
-  dir: string
-  error?: string
-  labels: string[]
-  name: string
-  percent: number
-  privateTracker?: boolean
-  size: number
-  status: number
-};
+  MockApi_Account,
+  MockApi_AddedTorrentName_FallbackId,
+  MockApi_AddedTorrentName_Filename,
+  MockApi_AddedTorrentName_LastSegment,
+  MockApi_AddedTorrentName_Returns,
+  MockApi_AddedTorrentName_SourceURL,
+  MockApi_ApplianceStatus_Protection,
+  MockApi_ApplianceStatus_Returns,
+  MockApi_ApplyAction_Action,
+  MockApi_ApplyAction_Ids,
+  MockApi_ApplyAction_Returns,
+  MockApi_ApplySavedLabelEdits_Labels,
+  MockApi_ApplySavedLabelEdits_NextLabel,
+  MockApi_ApplySavedLabelEdits_NextLabels,
+  MockApi_ApplySavedLabelEdits_RemovedLabels,
+  MockApi_ApplySavedLabelEdits_Rename,
+  MockApi_ApplySavedLabelEdits_RenamedLabels,
+  MockApi_ApplySavedLabelEdits_Returns,
+  MockApi_ApplyTorrentProfileOptions_Profile,
+  MockApi_ApplyTorrentProfileOptions_Returns,
+  MockApi_ApplyTorrentProfileOptions_Torrent,
+  MockApi_ApplyTorrentProfileSeeding_Profile,
+  MockApi_ApplyTorrentProfileSeeding_Returns,
+  MockApi_ApplyTorrentProfileSeeding_Torrent,
+  MockApi_AttachmentDisposition_FileName,
+  MockApi_AttachmentDisposition_Returns,
+  MockApi_BackupGrants,
+  MockApi_BackupImportJob,
+  MockApi_BlocklistStatus,
+  MockApi_ConnectionBeingRemovedId,
+  MockApi_ConsumeMockBackupGrant_Confirmation,
+  MockApi_ConsumeMockBackupGrant_Grant,
+  MockApi_ConsumeMockBackupGrant_Purpose,
+  MockApi_ConsumeMockBackupGrant_Returns,
+  MockApi_ConsumeMockBackupGrant_Value,
+  MockApi_ContosoConnectionId,
+  MockApi_CreateTorrents_AddedDate,
+  MockApi_CreateTorrents_ConnectionId,
+  MockApi_CreateTorrents_DoneDate,
+  MockApi_CreateTorrents_Downloaded,
+  MockApi_CreateTorrents_Now,
+  MockApi_CreateTorrents_Returns,
+  MockApi_CreateTorrents_SecondsDownloading,
+  MockApi_CreateTorrents_Torrent,
+  MockApi_CreateTorrents_Uploaded,
+  MockApi_DataPathContains_Candidate,
+  MockApi_DataPathContains_CandidatePath,
+  MockApi_DataPathContains_Parent,
+  MockApi_DataPathContains_ParentPath,
+  MockApi_DataPathContains_Returns,
+  MockApi_DataPathContainsIgnoringCase_CandidatePath,
+  MockApi_DataPathContainsIgnoringCase_ParentPath,
+  MockApi_DataPathContainsIgnoringCase_Returns,
+  MockApi_DataPathsEqualIgnoringCase_FirstPath,
+  MockApi_DataPathsEqualIgnoringCase_Returns,
+  MockApi_DataPathsEqualIgnoringCase_SecondPath,
+  MockApi_DefaultTorrentProfile,
+  MockApi_DefaultTorrentProfileResponse_Returns,
+  MockApi_DefaultVPNConnection_Returns,
+  MockApi_DefaultVPNStatus_Connection,
+  MockApi_DefaultVPNStatus_Returns,
+  MockApi_DefaultVPNStatus_Runtime,
+  MockApi_Directories,
+  MockApi_DirectoryChildren_DirectoryPath,
+  MockApi_DirectoryChildren_Returns,
+  MockApi_DirectoryDeletionPolicy_AssignedProfile,
+  MockApi_DirectoryDeletionPolicy_DirectoryPath,
+  MockApi_DirectoryDeletionPolicy_FolderName,
+  MockApi_DirectoryDeletionPolicy_IncompleteDirectory,
+  MockApi_DirectoryDeletionPolicy_Metadata,
+  MockApi_DirectoryDeletionPolicy_ProfileFolder,
+  MockApi_DirectoryDeletionPolicy_Returns,
+  MockApi_DirectorySelection_DirectoryPath,
+  MockApi_DirectorySelection_ProfileID,
+  MockApi_DirectorySelection_Purpose,
+  MockApi_DirectorySelection_Returns,
+  MockApi_DirectoryTags_DirectoryPath,
+  MockApi_DirectoryTags_Returns,
+  MockApi_DirectoryTags_Tags,
+  MockApi_DownloadDataPathRootMessage,
+  MockApi_DownloadFolderIssue_IncompleteDirectory,
+  MockApi_DownloadFolderIssue_Returns,
+  MockApi_DownloadFolderIssue_Value,
+  MockApi_DownloadSelection_DirectoryPath,
+  MockApi_DownloadSelection_IncompleteDirectory,
+  MockApi_DownloadSelection_Returns,
+  MockApi_DuplicateTorrentEnabled,
+  MockApi_EffectiveStringSetting_Key,
+  MockApi_EffectiveStringSetting_MatchedSetting,
+  MockApi_EffectiveStringSetting_Returns,
+  MockApi_EffectiveWebProxyConnectionId_Login,
+  MockApi_EffectiveWebProxyConnectionId_Returns,
+  MockApi_EffectiveWebProxyLogin_Login,
+  MockApi_EffectiveWebProxyLogin_Returns,
+  MockApi_EnsureConfiguredDirectories_IncompleteEnabled,
+  MockApi_EnsureConfiguredDirectories_IncompleteSetting,
+  MockApi_EnsureConfiguredDirectories_Returns,
+  MockApi_EnsureDirectory_CurrentPath,
+  MockApi_EnsureDirectory_DirectoryPath,
+  MockApi_EnsureDirectory_Returns,
+  MockApi_ExpandScopes_Expanded,
+  MockApi_ExpandScopes_Returns,
+  MockApi_ExpandScopes_Scopes,
+  MockApi_FabrikamConnectionId,
+  MockApi_FormatRecoveryCode_Code,
+  MockApi_FormatRecoveryCode_Returns,
+  MockApi_Gibibyte,
+  MockApi_HandleRequest_Action,
+  MockApi_HandleRequest_AlreadyThere,
+  MockApi_HandleRequest_AppliedKeys,
+  MockApi_HandleRequest_BackupImportMatch,
+  MockApi_HandleRequest_BackupPurpose,
+  MockApi_HandleRequest_BandwidthPriority,
+  MockApi_HandleRequest_Body,
+  MockApi_HandleRequest_Catalog,
+  MockApi_HandleRequest_ChangedTorrents,
+  MockApi_HandleRequest_Changes,
+  MockApi_HandleRequest_ClaimCode,
+  MockApi_HandleRequest_Clash,
+  MockApi_HandleRequest_ClashDestination,
+  MockApi_HandleRequest_Code,
+  MockApi_HandleRequest_CompletedAt,
+  MockApi_HandleRequest_Configuration,
+  MockApi_HandleRequest_ConfiguredSources,
+  MockApi_HandleRequest_Connection,
+  MockApi_HandleRequest_ConnectionChanged,
+  MockApi_HandleRequest_ConnectionId,
+  MockApi_HandleRequest_Content,
+  MockApi_HandleRequest_ContentDownloadMatch,
+  MockApi_HandleRequest_Created,
+  MockApi_HandleRequest_CreatedAt,
+  MockApi_HandleRequest_Credentials,
+  MockApi_HandleRequest_CustomProfileContent,
+  MockApi_HandleRequest_CustomProfileName,
+  MockApi_HandleRequest_CustomTunnel,
+  MockApi_HandleRequest_DefaultProfileTorrents,
+  MockApi_HandleRequest_DeletionPolicy,
+  MockApi_HandleRequest_DependentLogins,
+  MockApi_HandleRequest_DependentProfiles,
+  MockApi_HandleRequest_DependentTorrents,
+  MockApi_HandleRequest_DetailMatch,
+  MockApi_HandleRequest_DetailTorrent,
+  MockApi_HandleRequest_DirectoryPath,
+  MockApi_HandleRequest_DisplayName,
+  MockApi_HandleRequest_Document,
+  MockApi_HandleRequest_DocumentRecord,
+  MockApi_HandleRequest_Download,
+  MockApi_HandleRequest_DownloadDirectory,
+  MockApi_HandleRequest_DownloadHeaders,
+  MockApi_HandleRequest_DownloadIssue,
+  MockApi_HandleRequest_DownloadToken,
+  MockApi_HandleRequest_DuplicateTorrent,
+  MockApi_HandleRequest_Enabled,
+  MockApi_HandleRequest_EndpointMatches,
+  MockApi_HandleRequest_EndpointStrategy,
+  MockApi_HandleRequest_ExactFolder,
+  MockApi_HandleRequest_ExistingLabels,
+  MockApi_HandleRequest_ExistingTorrentProfile,
+  MockApi_HandleRequest_Failed,
+  MockApi_HandleRequest_Fields,
+  MockApi_HandleRequest_FileName,
+  MockApi_HandleRequest_FirstTorrent,
+  MockApi_HandleRequest_FolderChanged,
+  MockApi_HandleRequest_FolderMappings,
+  MockApi_HandleRequest_FolderOwner,
+  MockApi_HandleRequest_FollowingProfileIDs,
+  MockApi_HandleRequest_FollowingProfileTorrents,
+  MockApi_HandleRequest_FoundNotification,
+  MockApi_HandleRequest_FoundRpcLogin,
+  MockApi_HandleRequest_FoundWebProxyLogin,
+  MockApi_HandleRequest_GeneratedPassword,
+  MockApi_HandleRequest_Hash,
+  MockApi_HandleRequest_Identifiers,
+  MockApi_HandleRequest_IdPrefix,
+  MockApi_HandleRequest_IdSuffix,
+  MockApi_HandleRequest_Index,
+  MockApi_HandleRequest_Input,
+  MockApi_HandleRequest_Issue,
+  MockApi_HandleRequest_Issues,
+  MockApi_HandleRequest_Job,
+  MockApi_HandleRequest_JobResponse,
+  MockApi_HandleRequest_LooksLikeWireGuard,
+  MockApi_HandleRequest_Message,
+  MockApi_HandleRequest_Method,
+  MockApi_HandleRequest_Missing,
+  MockApi_HandleRequest_MissingCredential,
+  MockApi_HandleRequest_Moved,
+  MockApi_HandleRequest_MovedTorrents,
+  MockApi_HandleRequest_MoveResult,
+  MockApi_HandleRequest_MoveTo,
+  MockApi_HandleRequest_MutatingConnectionRoute,
+  MockApi_HandleRequest_Name,
+  MockApi_HandleRequest_NewConnection,
+  MockApi_HandleRequest_NewToken,
+  MockApi_HandleRequest_NewTorrent,
+  MockApi_HandleRequest_NextDefault,
+  MockApi_HandleRequest_NextDownloadDirectory,
+  MockApi_HandleRequest_NextId,
+  MockApi_HandleRequest_NextIncompleteDirectory,
+  MockApi_HandleRequest_NextLabels,
+  MockApi_HandleRequest_NextProfileSequence,
+  MockApi_HandleRequest_Normalized,
+  MockApi_HandleRequest_Notification,
+  MockApi_HandleRequest_NotificationInput,
+  MockApi_HandleRequest_NotificationInput_Body,
+  MockApi_HandleRequest_NotificationInput_Clearable,
+  MockApi_HandleRequest_NotificationInput_ClearSecretKeys,
+  MockApi_HandleRequest_NotificationInput_ClearSecrets,
+  MockApi_HandleRequest_NotificationInput_Events,
+  MockApi_HandleRequest_NotificationInput_Existing,
+  MockApi_HandleRequest_NotificationInput_InvalidIndex,
+  MockApi_HandleRequest_NotificationInput_Key,
+  MockApi_HandleRequest_NotificationInput_Missing,
+  MockApi_HandleRequest_NotificationInput_Name,
+  MockApi_HandleRequest_NotificationInput_PlainSettings,
+  MockApi_HandleRequest_NotificationInput_Replaced,
+  MockApi_HandleRequest_NotificationInput_Required,
+  MockApi_HandleRequest_NotificationInput_Returns,
+  MockApi_HandleRequest_NotificationInput_Saved,
+  MockApi_HandleRequest_NotificationInput_Secret,
+  MockApi_HandleRequest_NotificationInput_Secrets,
+  MockApi_HandleRequest_NotificationInput_Service,
+  MockApi_HandleRequest_NotificationInput_Value,
+  MockApi_HandleRequest_NotificationInput_Values,
+  MockApi_HandleRequest_NotificationMatch,
+  MockApi_HandleRequest_Now,
+  MockApi_HandleRequest_NowSeconds,
+  MockApi_HandleRequest_OptionalPassword,
+  MockApi_HandleRequest_Overlap,
+  MockApi_HandleRequest_Passkey,
+  MockApi_HandleRequest_PasskeyId,
+  MockApi_HandleRequest_Password,
+  MockApi_HandleRequest_Path,
+  MockApi_HandleRequest_Paused,
+  MockApi_HandleRequest_PeerPort,
+  MockApi_HandleRequest_PendingKeys,
+  MockApi_HandleRequest_Plaintext,
+  MockApi_HandleRequest_Preview,
+  MockApi_HandleRequest_PreviewItems,
+  MockApi_HandleRequest_PreviousDefault,
+  MockApi_HandleRequest_ProfileData,
+  MockApi_HandleRequest_ProfileId,
+  MockApi_HandleRequest_ProfileID,
+  MockApi_HandleRequest_ProfileIds,
+  MockApi_HandleRequest_ProfileIndex,
+  MockApi_HandleRequest_ProfileLabel,
+  MockApi_HandleRequest_ProfileName,
+  MockApi_HandleRequest_ProfileTorrents,
+  MockApi_HandleRequest_ProviderId,
+  MockApi_HandleRequest_Purpose,
+  MockApi_HandleRequest_PurposeText,
+  MockApi_HandleRequest_PurposeValue,
+  MockApi_HandleRequest_RecoveryIndex,
+  MockApi_HandleRequest_RefreshCatalogMatch,
+  MockApi_HandleRequest_RefreshedCatalog,
+  MockApi_HandleRequest_RegeneratePassword,
+  MockApi_HandleRequest_RemoteProtocol,
+  MockApi_HandleRequest_RemovedLabels,
+  MockApi_HandleRequest_RenamedLabelRecord,
+  MockApi_HandleRequest_RenamedLabels,
+  MockApi_HandleRequest_RenamedLabelValue,
+  MockApi_HandleRequest_RenamedTorrent,
+  MockApi_HandleRequest_Request,
+  MockApi_HandleRequest_RequestedConnectionId,
+  MockApi_HandleRequest_RequestedCount,
+  MockApi_HandleRequest_RequestedEnabled,
+  MockApi_HandleRequest_ResolvingProfile,
+  MockApi_HandleRequest_ResolvingSelection,
+  MockApi_HandleRequest_Response,
+  MockApi_HandleRequest_Returns,
+  MockApi_HandleRequest_RootDownloadSetting,
+  MockApi_HandleRequest_RpcLogin,
+  MockApi_HandleRequest_RpcLoginMatch,
+  MockApi_HandleRequest_RuntimeApply,
+  MockApi_HandleRequest_SeedIdleMode,
+  MockApi_HandleRequest_SeedRatioMode,
+  MockApi_HandleRequest_Selected,
+  MockApi_HandleRequest_SelectedProfile,
+  MockApi_HandleRequest_SelectedTunnelDefinition,
+  MockApi_HandleRequest_SelectionParam,
+  MockApi_HandleRequest_Send,
+  MockApi_HandleRequest_Send_Returns,
+  MockApi_HandleRequest_Setting,
+  MockApi_HandleRequest_SettingKey,
+  MockApi_HandleRequest_Slot,
+  MockApi_HandleRequest_Slug,
+  MockApi_HandleRequest_SourceDirectory,
+  MockApi_HandleRequest_SourceValue,
+  MockApi_HandleRequest_Status,
+  MockApi_HandleRequest_StoredMoveTo,
+  MockApi_HandleRequest_SubmittedCredentials,
+  MockApi_HandleRequest_TargetConnection,
+  MockApi_HandleRequest_TargetConnectionId,
+  MockApi_HandleRequest_TargetConnectionName,
+  MockApi_HandleRequest_TargetDirectory,
+  MockApi_HandleRequest_Tcp,
+  MockApi_HandleRequest_Timer,
+  MockApi_HandleRequest_Token,
+  MockApi_HandleRequest_TokenId,
+  MockApi_HandleRequest_TorrentItems,
+  MockApi_HandleRequest_TorrentProfile,
+  MockApi_HandleRequest_TorrentProfileMatch,
+  MockApi_HandleRequest_TorrentSelection,
+  MockApi_HandleRequest_TotalSize,
+  MockApi_HandleRequest_TransitionSequence,
+  MockApi_HandleRequest_Tunnel,
+  MockApi_HandleRequest_TunnelCandidate,
+  MockApi_HandleRequest_TunnelCandidateMatches,
+  MockApi_HandleRequest_TunnelDefinition,
+  MockApi_HandleRequest_TunnelFilter,
+  MockApi_HandleRequest_TunnelLabel,
+  MockApi_HandleRequest_TunnelName,
+  MockApi_HandleRequest_UpdatedDefaultProfile,
+  MockApi_HandleRequest_UpdateRequestedAt,
+  MockApi_HandleRequest_UploadedProfiles,
+  MockApi_HandleRequest_Url,
+  MockApi_HandleRequest_Username,
+  MockApi_HandleRequest_UsernameMessage,
+  MockApi_HandleRequest_VpnConnectionMatch,
+  MockApi_HandleRequest_WebProxyLogin,
+  MockApi_HandleRequest_WebProxyLoginMatch,
+  MockApi_HandleRequest_ZipFile,
+  MockApi_IncompleteSelection_Clash,
+  MockApi_IncompleteSelection_Destination,
+  MockApi_IncompleteSelection_DirectoryPath,
+  MockApi_IncompleteSelection_ExactFolder,
+  MockApi_IncompleteSelection_Returns,
+  MockApi_IsConnectionBeingRemoved_ConnectionId,
+  MockApi_IsConnectionBeingRemoved_Returns,
+  MockApi_IsDownloadDataRoot_Returns,
+  MockApi_IsDownloadDataRoot_Value,
+  MockApi_IssueMockBackupGrant_ExpiresAt,
+  MockApi_IssueMockBackupGrant_Grant,
+  MockApi_IssueMockBackupGrant_Purpose,
+  MockApi_IssueMockBackupGrant_Returns,
+  MockApi_KeyReplaced,
+  MockApi_ListDirectory_ChildDirectories,
+  MockApi_ListDirectory_DeletionPolicy,
+  MockApi_ListDirectory_Directory,
+  MockApi_ListDirectory_DirectoryPath,
+  MockApi_ListDirectory_Metadata,
+  MockApi_ListDirectory_ProfileID,
+  MockApi_ListDirectory_Purpose,
+  MockApi_ListDirectory_PurposeSelection,
+  MockApi_ListDirectory_Returns,
+  MockApi_ListDirectory_Selection,
+  MockApi_LiveVPNConnections_Connections,
+  MockApi_LiveVPNConnections_Returns,
+  MockApi_LiveVPNConnections_Runtime,
+  MockApi_MaximumBackupAPITokens,
+  MockApi_MaximumBackupNotificationDestinations,
+  MockApi_MaximumBackupRPCLogins,
+  MockApi_MergedMockVPNCredentials_Connection,
+  MockApi_MergedMockVPNCredentials_Credentials,
+  MockApi_MergedMockVPNCredentials_ProviderId,
+  MockApi_MergedMockVPNCredentials_Returns,
+  MockApi_MergedMockVPNCredentials_SavedCredentials,
+  MockApi_MergedMockVPNCredentials_SubmittedCredentials,
+  MockApi_MergedMockVPNCredentials_Tunnel,
+  MockApi_MergeMockBackupAccess_Apply,
+  MockApi_MergeMockBackupAccess_Digest,
+  MockApi_MergeMockBackupAccess_Document,
+  MockApi_MergeMockBackupAccess_Duplicate,
+  MockApi_MergeMockBackupAccess_Event,
+  MockApi_MergeMockBackupAccess_Id,
+  MockApi_MergeMockBackupAccess_ImportedLogins,
+  MockApi_MergeMockBackupAccess_ImportedNotifications,
+  MockApi_MergeMockBackupAccess_ImportedRecord,
+  MockApi_MergeMockBackupAccess_ImportedTokens,
+  MockApi_MergeMockBackupAccess_Login,
+  MockApi_MergeMockBackupAccess_MergedNotifications,
+  MockApi_MergeMockBackupAccess_MergedRPCLoginDigests,
+  MockApi_MergeMockBackupAccess_MergedRPCLogins,
+  MockApi_MergeMockBackupAccess_MergedTokenDigests,
+  MockApi_MergeMockBackupAccess_MergedTokens,
+  MockApi_MergeMockBackupAccess_Name,
+  MockApi_MergeMockBackupAccess_Notification,
+  MockApi_MergeMockBackupAccess_Now,
+  MockApi_MergeMockBackupAccess_RemoteAccess,
+  MockApi_MergeMockBackupAccess_ReplacedLogin,
+  MockApi_MergeMockBackupAccess_ReplaceIndex,
+  MockApi_MergeMockBackupAccess_Result,
+  MockApi_MergeMockBackupAccess_Returns,
+  MockApi_MergeMockBackupAccess_Scope,
+  MockApi_MergeMockBackupAccess_SecretFields,
+  MockApi_MergeMockBackupAccess_SecretValues,
+  MockApi_MergeMockBackupAccess_Service,
+  MockApi_MergeMockBackupAccess_Username,
+  MockApi_MergeTorrentLabels_Existing,
+  MockApi_MergeTorrentLabels_Merged,
+  MockApi_MergeTorrentLabels_ProfileLabels,
+  MockApi_MergeTorrentLabels_Returns,
+  MockApi_MergeTorrentLabels_Seen,
+  MockApi_MissingMockVPNCredential_Credentials,
+  MockApi_MissingMockVPNCredential_ProviderId,
+  MockApi_MissingMockVPNCredential_Returns,
+  MockApi_MissingMockVPNCredential_Tunnel,
+  MockApi_MissingWebProxyConnectionId,
+  MockApi_MockAnotherTransmissionPreview_DataFoundStatus,
+  MockApi_MockAnotherTransmissionPreview_FolderFixtures,
+  MockApi_MockAnotherTransmissionPreview_FolderMappings,
+  MockApi_MockAnotherTransmissionPreview_Folders,
+  MockApi_MockAnotherTransmissionPreview_Found,
+  MockApi_MockAnotherTransmissionPreview_ImportProfiles,
+  MockApi_MockAnotherTransmissionPreview_MappedPath,
+  MockApi_MockAnotherTransmissionPreview_MappedSettings,
+  MockApi_MockAnotherTransmissionPreview_Returns,
+  MockApi_MockAnotherTransmissionPreview_SkippedSettings,
+  MockApi_MockAnotherTransmissionPreview_Total,
+  MockApi_MockApi_Next,
+  MockApi_MockApi_Request,
+  MockApi_MockApi_Response,
+  MockApi_MockApi_Returns,
+  MockApi_MockBackupActionLines_Actions,
+  MockApi_MockBackupActionLines_Result,
+  MockApi_MockBackupActionLines_Returns,
+  MockApi_MockBackupActionLines_Verb,
+  MockApi_MockBackupCountLabel_Count,
+  MockApi_MockBackupCountLabel_Noun,
+  MockApi_MockBackupCountLabel_Plural,
+  MockApi_MockBackupCountLabel_Returns,
+  MockApi_MockBackupCountLabel_Singular,
+  MockApi_MockBackupDocument_Document,
+  MockApi_MockBackupDocument_Metainfo,
+  MockApi_MockBackupDocument_Returns,
+  MockApi_MockBackupDocument_SecretEntry,
+  MockApi_MockBackupDocument_Selected,
+  MockApi_MockBackupDocument_SelectedConnections,
+  MockApi_MockBackupDocument_SelectedProfileIDs,
+  MockApi_MockBackupDocument_SourceProfile,
+  MockApi_MockBackupDocument_SourceTorrent,
+  MockApi_MockBackupIDIsUsed_AllowedIndex,
+  MockApi_MockBackupIDIsUsed_Id,
+  MockApi_MockBackupIDIsUsed_Items,
+  MockApi_MockBackupIDIsUsed_Returns,
+  MockApi_MockBackupImportResponse_Complete,
+  MockApi_MockBackupImportResponse_CompletedTorrents,
+  MockApi_MockBackupImportResponse_Detail,
+  MockApi_MockBackupImportResponse_ElapsedSeconds,
+  MockApi_MockBackupImportResponse_EmptyJobComplete,
+  MockApi_MockBackupImportResponse_Items,
+  MockApi_MockBackupImportResponse_ItemSeconds,
+  MockApi_MockBackupImportResponse_Job,
+  MockApi_MockBackupImportResponse_Now,
+  MockApi_MockBackupImportResponse_Progress,
+  MockApi_MockBackupImportResponse_Returns,
+  MockApi_MockBackupImportResponse_SecondsPerItem,
+  MockApi_MockBackupImportResponse_State,
+  MockApi_MockBackupImportResponse_Status,
+  MockApi_MockBackupMetainfo_Info,
+  MockApi_MockBackupMetainfo_Metainfo,
+  MockApi_MockBackupMetainfo_Returns,
+  MockApi_MockBackupPreview_CurrentSetting,
+  MockApi_MockBackupPreview_Document,
+  MockApi_MockBackupPreview_Existing,
+  MockApi_MockBackupPreview_FolderPaths,
+  MockApi_MockBackupPreview_ImportedDefault,
+  MockApi_MockBackupPreview_ImportedProfiles,
+  MockApi_MockBackupPreview_ImportedRecord,
+  MockApi_MockBackupPreview_ImportedSettings,
+  MockApi_MockBackupPreview_ProfilePreview,
+  MockApi_MockBackupPreview_RemoteAccess,
+  MockApi_MockBackupPreview_Returns,
+  MockApi_MockBackupPreview_SectionNames,
+  MockApi_MockBackupPreview_SettingsAndProfiles,
+  MockApi_MockBackupStringMap_EntryValue,
+  MockApi_MockBackupStringMap_Returns,
+  MockApi_MockBackupStringMap_Value,
+  MockApi_MockBackupStringMap_Values,
+  MockApi_MockContentDownloads,
+  MockApi_MockFinishedFiles_Returns,
+  MockApi_MockFinishedFiles_Torrent,
+  MockApi_MockImportSourceDirectory_ChildPath,
+  MockApi_MockImportSourceDirectory_Children,
+  MockApi_MockImportSourceDirectory_Path,
+  MockApi_MockImportSourceDirectory_Returns,
+  MockApi_MockImportSourceDirectory_Tree,
+  MockApi_MockNotificationTransportFailure_LookupHost,
+  MockApi_MockNotificationTransportFailure_LookupMatch,
+  MockApi_MockNotificationTransportFailure_Raw,
+  MockApi_MockNotificationTransportFailure_Returns,
+  MockApi_MockNotificationTransportFailure_TransportHost,
+  MockApi_MockNotificationTransportFailure_TransportMatch,
+  MockApi_MockPieces_Bytes,
+  MockApi_MockPieces_End,
+  MockApi_MockPieces_Filled,
+  MockApi_MockPieces_Have,
+  MockApi_MockPieces_PieceCount,
+  MockApi_MockPieces_PieceSize,
+  MockApi_MockPieces_Random,
+  MockApi_MockPieces_Random_Returns,
+  MockApi_MockPieces_Returns,
+  MockApi_MockPieces_Seed,
+  MockApi_MockPieces_Start,
+  MockApi_MockPieces_Target,
+  MockApi_MockPieces_Torrent,
+  MockApi_MockQrCode_Path,
+  MockApi_MockQrCode_Returns,
+  MockApi_MockQrCode_Row,
+  MockApi_MockQrCode_Size,
+  MockApi_MockQrCode_Svg,
+  MockApi_MockQrRows,
+  MockApi_MockTorrentFile_Announce,
+  MockApi_MockTorrentFile_Name,
+  MockApi_MockTorrentFile_Returns,
+  MockApi_MockTorrentFile_Torrent,
+  MockApi_MockTotpUri,
+  MockApi_MockVPNCredentialFields_ProviderDefinition,
+  MockApi_MockVPNCredentialFields_ProviderId,
+  MockApi_MockVPNCredentialFields_Returns,
+  MockApi_MockVPNCredentialFields_Tunnel,
+  MockApi_MockVPNCredentialFields_TunnelDefinition,
+  MockApi_MockVPNCredentialFields_TunnelDefinitions,
+  MockApi_MockVPNTestFailureMessage,
+  MockApi_MoveTorrentsToQueueTop_OrderedTorrents,
+  MockApi_MoveTorrentsToQueueTop_Returns,
+  MockApi_MoveTorrentsToQueueTop_SelectedIDs,
+  MockApi_MoveTorrentsToQueueTop_SelectedTorrents,
+  MockApi_NeedsProfileTorrent,
+  MockApi_NewRecoveryCodes_Alphabet,
+  MockApi_NewRecoveryCodes_Code,
+  MockApi_NewRecoveryCodes_Returns,
+  MockApi_NorthwindConnectionId,
+  MockApi_NotificationEvents,
+  MockApi_NotificationFields,
+  MockApi_NotificationMinute,
+  MockApi_Notifications,
+  MockApi_NotificationsStartedAt,
+  MockApi_NotificationTransportError,
+  MockApi_NoVPNConnections,
+  MockApi_OrganizationRevision,
+  MockApi_PasswordIssue_Password,
+  MockApi_PasswordIssue_Returns,
+  MockApi_PendingPasskeyName,
+  MockApi_PendingRestartKeys,
+  MockApi_PreviewTorrentLink_DisplayName,
+  MockApi_PreviewTorrentLink_EncodedName,
+  MockApi_PreviewTorrentLink_ExactTopic,
+  MockApi_PreviewTorrentLink_Index,
+  MockApi_PreviewTorrentLink_Link,
+  MockApi_PreviewTorrentLink_Name,
+  MockApi_PreviewTorrentLink_ParsedLink,
+  MockApi_PreviewTorrentLink_PathSegments,
+  MockApi_PreviewTorrentLink_Returns,
+  MockApi_PreviewTorrentLink_TotalSize,
+  MockApi_Profile,
+  MockApi_ProfileFolderOverlaps_DefaultOwner,
+  MockApi_ProfileFolderOverlaps_Overlaps,
+  MockApi_ProfileFolderOverlaps_Owner,
+  MockApi_ProfileFolderOverlaps_Returns,
+  MockApi_ProfileFolderOwner_DefaultRelation,
+  MockApi_ProfileFolderOwner_DirectoryPath,
+  MockApi_ProfileFolderOwner_ExcludedProfileID,
+  MockApi_ProfileFolderOwner_RelationTo,
+  MockApi_ProfileFolderOwner_RelationTo_OwnerPath,
+  MockApi_ProfileFolderOwner_RelationTo_Returns,
+  MockApi_ProfileFolderOwner_RelationValue,
+  MockApi_ProfileFolderOwner_Returns,
+  MockApi_ProfileFolderTakenMessage_DirectoryPath,
+  MockApi_ProfileFolderTakenMessage_FolderName,
+  MockApi_ProfileFolderTakenMessage_OwnerName,
+  MockApi_ProfileFolderTakenMessage_Relation,
+  MockApi_ProfileFolderTakenMessage_Returns,
+  MockApi_Profiles,
+  MockApi_ProfileSelection_DirectoryPath,
+  MockApi_ProfileSelection_DownloadPolicy,
+  MockApi_ProfileSelection_Owner,
+  MockApi_ProfileSelection_ProfileID,
+  MockApi_ProfileSelection_Returns,
+  MockApi_ProtectedVPNRuntime_EndpointStrategy,
+  MockApi_ProtectedVPNRuntime_Profile,
+  MockApi_ProtectedVPNRuntime_ProfileIds,
+  MockApi_ProtectedVPNRuntime_ProviderId,
+  MockApi_ProtectedVPNRuntime_Returns,
+  MockApi_ProtectedVPNRuntime_Slot,
+  MockApi_ProtectedVPNRuntime_Tunnel,
+  MockApi_Providers,
+  MockApi_RawNotificationTransportError,
+  MockApi_ReadBody_Chunks,
+  MockApi_ReadBody_Request,
+  MockApi_ReadBody_Returns,
+  MockApi_ReadBody_Text,
+  MockApi_ReadDefaultTorrentProfile_Body,
+  MockApi_ReadDefaultTorrentProfile_NormalizedProfile,
+  MockApi_ReadDefaultTorrentProfile_Returns,
+  MockApi_ReadIDs_Body,
+  MockApi_ReadIDs_Id,
+  MockApi_ReadIDs_Ids,
+  MockApi_ReadIDs_Returns,
+  MockApi_ReadTokenFields_Body,
+  MockApi_ReadTokenFields_ExpiresAt,
+  MockApi_ReadTokenFields_Issues,
+  MockApi_ReadTokenFields_Name,
+  MockApi_ReadTokenFields_Request,
+  MockApi_ReadTokenFields_Response,
+  MockApi_ReadTokenFields_Returns,
+  MockApi_ReadTokenFields_Scopes,
+  MockApi_ReadTokenFields_TokenId,
+  MockApi_ReadTokenFields_UnknownField,
+  MockApi_ReadTorrentProfile_BandwidthPriority,
+  MockApi_ReadTorrentProfile_Body,
+  MockApi_ReadTorrentProfile_CreatedAt,
+  MockApi_ReadTorrentProfile_Id,
+  MockApi_ReadTorrentProfile_Options,
+  MockApi_ReadTorrentProfile_Returns,
+  MockApi_ReadTorrentProfile_Seeding,
+  MockApi_ReadTorrentProfile_UpdatedAt,
+  MockApi_ReadTorrentSelection_Body,
+  MockApi_ReadTorrentSelection_Hashes,
+  MockApi_ReadTorrentSelection_HexadecimalCharacters,
+  MockApi_ReadTorrentSelection_Ids,
+  MockApi_ReadTorrentSelection_Items,
+  MockApi_ReadTorrentSelection_RequestedHashes,
+  MockApi_ReadTorrentSelection_Response,
+  MockApi_ReadTorrentSelection_Returns,
+  MockApi_ReadTorrentSelection_Starting,
+  MockApi_ReadTorrentSelection_Valid,
+  MockApi_RefreshTorrentProfilePresentation_Overlaps,
+  MockApi_RefreshTorrentProfilePresentation_Returns,
+  MockApi_RemoteUsernameIssue_Returns,
+  MockApi_RemoteUsernameIssue_Username,
+  MockApi_RemovedSecrets,
+  MockApi_RpcLoginDigests,
+  MockApi_RpcLoginDigests_Entry,
+  MockApi_RpcLogins,
+  MockApi_RpcLoginSequence,
+  MockApi_SavedLabels,
+  MockApi_SavedMockVPNCredentialKeys_Credentials,
+  MockApi_SavedMockVPNCredentialKeys_ProviderId,
+  MockApi_SavedMockVPNCredentialKeys_Returns,
+  MockApi_SavedMockVPNCredentialKeys_Tunnel,
+  MockApi_SaveUsedLabels_AdvanceRevision,
+  MockApi_SaveUsedLabels_Changed,
+  MockApi_SaveUsedLabels_Key,
+  MockApi_SaveUsedLabels_Labels,
+  MockApi_SaveUsedLabels_Returns,
+  MockApi_SaveUsedLabels_SavedKeys,
+  MockApi_SecretKeys,
+  MockApi_SendConnectionBeingRemoved_Response,
+  MockApi_SendConnectionBeingRemoved_Returns,
+  MockApi_SendError_Code,
+  MockApi_SendError_Details,
+  MockApi_SendError_Message,
+  MockApi_SendError_Response,
+  MockApi_SendError_Returns,
+  MockApi_SendError_Status,
+  MockApi_SendFieldError_Code,
+  MockApi_SendFieldError_Field,
+  MockApi_SendFieldError_Message,
+  MockApi_SendFieldError_Response,
+  MockApi_SendFieldError_Returns,
+  MockApi_SendFieldError_Status,
+  MockApi_SendIssues_FirstIssue,
+  MockApi_SendIssues_Issues,
+  MockApi_SendIssues_Response,
+  MockApi_SendIssues_Returns,
+  MockApi_SendJSON_Body,
+  MockApi_SendJSON_Response,
+  MockApi_SendJSON_Returns,
+  MockApi_SendJSON_Status,
+  MockApi_SendMockVPNCredentialError_Field,
+  MockApi_SendMockVPNCredentialError_FieldName,
+  MockApi_SendMockVPNCredentialError_Message,
+  MockApi_SendMockVPNCredentialError_Prefix,
+  MockApi_SendMockVPNCredentialError_Response,
+  MockApi_SendMockVPNCredentialError_Returns,
+  MockApi_Sequence,
+  MockApi_Settings,
+  MockApi_SettingsRevision,
+  MockApi_SetupRequired,
+  MockApi_SetupStartedAt,
+  MockApi_SignedIn,
+  MockApi_Snapshot_ActiveTorrentCount,
+  MockApi_Snapshot_DownloadSpeed,
+  MockApi_Snapshot_Protection,
+  MockApi_Snapshot_Returns,
+  MockApi_Snapshot_UploadSpeed,
+  MockApi_StartMockAnotherTransmissionImport_Body,
+  MockApi_StartMockAnotherTransmissionImport_FolderMappings,
+  MockApi_StartMockAnotherTransmissionImport_Job,
+  MockApi_StartMockAnotherTransmissionImport_ProfileIncluded,
+  MockApi_StartMockAnotherTransmissionImport_ProfileNames,
+  MockApi_StartMockAnotherTransmissionImport_Returns,
+  MockApi_StartMockAnotherTransmissionImport_SourceItems,
+  MockApi_StartMockBackupImport_Document,
+  MockApi_StartMockBackupImport_FolderMappings,
+  MockApi_StartMockBackupImport_Hash,
+  MockApi_StartMockBackupImport_ImportedRecord,
+  MockApi_StartMockBackupImport_ImportedTorrents,
+  MockApi_StartMockBackupImport_Job,
+  MockApi_StartMockBackupImport_Returns,
+  MockApi_StartMockBackupImport_SourceFolder,
+  MockApi_StartMockBackupImport_UnknownList,
+  MockApi_StartSession_Response,
+  MockApi_StartSession_Returns,
+  MockApi_StoredZip_BaseName,
+  MockApi_StoredZip_Central,
+  MockApi_StoredZip_CentralFileSignature,
+  MockApi_StoredZip_CentralParts,
+  MockApi_StoredZip_CentralSize,
+  MockApi_StoredZip_Checksum,
+  MockApi_StoredZip_End,
+  MockApi_StoredZip_EndSignature,
+  MockApi_StoredZip_EntryName,
+  MockApi_StoredZip_Extension,
+  MockApi_StoredZip_ExtensionMatch,
+  MockApi_StoredZip_Files,
+  MockApi_StoredZip_FirstDosDate,
+  MockApi_StoredZip_Local,
+  MockApi_StoredZip_LocalFileSignature,
+  MockApi_StoredZip_LocalParts,
+  MockApi_StoredZip_NameBytes,
+  MockApi_StoredZip_Offset,
+  MockApi_StoredZip_Returns,
+  MockApi_StoredZip_UsedNames,
+  MockApi_StoredZip_Utf8NamesFlag,
+  MockApi_SubmittedMockVPNCredentials_Credentials,
+  MockApi_SubmittedMockVPNCredentials_CredentialValue,
+  MockApi_SubmittedMockVPNCredentials_Key,
+  MockApi_SubmittedMockVPNCredentials_Returns,
+  MockApi_SubmittedMockVPNCredentials_Value,
+  MockApi_Tick_Downloading,
+  MockApi_Tick_Returns,
+  MockApi_Tick_Seeding,
+  MockApi_Tick_Step,
+  MockApi_TokenDigests,
+  MockApi_TokenDigests_Entry,
+  MockApi_TokenDigests_TokenID,
+  MockApi_Tokens,
+  MockApi_TokenScopes,
+  MockApi_TokenSequence,
+  MockApi_TokenValues,
+  MockApi_TorrentAddAttempt,
+  MockApi_TorrentAddOutcome,
+  MockApi_TorrentDownloadName_Cleaned,
+  MockApi_TorrentDownloadName_FileStem,
+  MockApi_TorrentDownloadName_Returns,
+  MockApi_TorrentDownloadName_Torrent,
+  MockApi_TorrentErrors_Returns,
+  MockApi_TorrentMoveWarnings,
+  MockApi_TorrentMutationResponse_Returns,
+  MockApi_TorrentMutationResponse_Selection,
+  MockApi_TorrentPatternsOverlap_LeftCharacter,
+  MockApi_TorrentPatternsOverlap_LeftCharacters,
+  MockApi_TorrentPatternsOverlap_LeftIndex,
+  MockApi_TorrentPatternsOverlap_LeftPattern,
+  MockApi_TorrentPatternsOverlap_LeftStar,
+  MockApi_TorrentPatternsOverlap_NextState,
+  MockApi_TorrentPatternsOverlap_Queue,
+  MockApi_TorrentPatternsOverlap_Returns,
+  MockApi_TorrentPatternsOverlap_RightCharacter,
+  MockApi_TorrentPatternsOverlap_RightCharacters,
+  MockApi_TorrentPatternsOverlap_RightIndex,
+  MockApi_TorrentPatternsOverlap_RightPattern,
+  MockApi_TorrentPatternsOverlap_RightStar,
+  MockApi_TorrentPatternsOverlap_State,
+  MockApi_TorrentPatternsOverlap_StateKey,
+  MockApi_TorrentPatternsOverlap_Visited,
+  MockApi_TorrentProfileNameTaken_ExcludedProfileID,
+  MockApi_TorrentProfileNameTaken_Name,
+  MockApi_TorrentProfileNameTaken_Returns,
+  MockApi_TorrentProfiles,
+  MockApi_TorrentProfileSequence,
+  MockApi_Torrents,
+  MockApi_TorrentSeeds,
+  MockApi_TorrentSummary_Entry,
+  MockApi_TorrentSummary_Returns,
+  MockApi_TorrentSummary_Torrent,
+  MockApi_TorrentSummaryFields,
+  MockApi_UsernameIssue_Returns,
+  MockApi_UsernameIssue_Username,
+  MockApi_VpnCapacitySource,
+  MockApi_VpnChangeRunning,
+  MockApi_VpnConnectionResponse_Connection,
+  MockApi_VpnConnectionResponse_Returns,
+  MockApi_VpnConnections,
+  MockApi_VpnConnectionSequence,
+  MockApi_VpnConnectionsResponse_Returns,
+  MockApi_VpnCredentialValues,
+  MockApi_VpnProtection_Enabled,
+  MockApi_VpnProtection_ProtectedCount,
+  MockApi_VpnProtection_Returns,
+  MockApi_VpnProtection_State,
+  MockApi_WebProxyEnabled,
+  MockApi_WebProxyLogins,
+  MockApi_WebProxyLoginSequence,
+  MockApi_WebProxyResponse_Available,
+  MockApi_WebProxyResponse_EffectiveConnection,
+  MockApi_WebProxyResponse_Logins,
+  MockApi_WebProxyResponse_Returns,
+  MockApi_WebProxyResponse_State,
+  MockApi_WebProxyRuntimeEnabled,
+  MockApi_WebProxyTransitionSequence,
+} from './src/types/mock-api.d.ts';
 
 /**
  * Mock API - Gibibyte.
@@ -433,162 +846,178 @@ type MockTorrentSeed = {
  *
  * @since 2.0.0
  */
-const gibibyte: number = 1024 * 1024 * 1024;
+const gibibyte: MockApi_Gibibyte = 1024 * 1024 * 1024;
 
 /**
- * Mock API - Download data path root message.
+ * Mock API - Download Data Path Root Message.
  *
  * Keeps mock destination failures aligned with the control API and console.
  * Every affected mock route reuses this exact corrective guidance.
  *
  * @since 2.0.0
  */
-const downloadDataPathRootMessage: string = 'Choose a folder inside /data, not /data itself.';
+const downloadDataPathRootMessage: MockApi_DownloadDataPathRootMessage = 'Choose a folder inside /data, not /data itself.';
 
 /**
- * Mock API - Checks download data root.
+ * Mock API - Is Download Data Root.
  *
  * Treats trailing slashes like the control API's path normalization does.
  * Non-string values remain available to the mock's existing validation flow.
  *
+ * @returns {MockApi_IsDownloadDataRoot_Returns}
+ *
  * @since 2.0.0
  */
-const isDownloadDataRoot = (value: unknown): boolean => (
-  typeof value === 'string' && value.replace(/\/+$/u, '') === '/data'
+const isDownloadDataRoot = (value: MockApi_IsDownloadDataRoot_Value): MockApi_IsDownloadDataRoot_Returns => (
+  typeof value === 'string' && value.replace(new RegExp(trailingSlashesPattern, 'u'), '') === '/data'
 );
 
 /**
- * Mock API - Checks path containment.
+ * Mock API - Data Path Contains.
  *
  * A slash boundary mirrors the control API's path-segment comparison and keeps
  * similarly prefixed sibling folders independent.
  *
+ * @returns {MockApi_DataPathContains_Returns}
+ *
  * @since 2.0.0
  */
-const dataPathContains = (parentPath: string, candidatePath: string): boolean => {
-  const parent: string = parentPath.replace(/\/+$/u, '');
-  const candidate: string = candidatePath.replace(/\/+$/u, '');
+const dataPathContains = (parentPath: MockApi_DataPathContains_ParentPath, candidatePath: MockApi_DataPathContains_CandidatePath): MockApi_DataPathContains_Returns => {
+  const parent: MockApi_DataPathContains_Parent = parentPath.replace(new RegExp(trailingSlashesPattern, 'u'), '');
+  const candidate: MockApi_DataPathContains_Candidate = candidatePath.replace(new RegExp(trailingSlashesPattern, 'u'), '');
 
   return candidate === parent || candidate.startsWith(`${parent}/`);
 };
 
 /**
- * Mock API - Checks path containment ignoring case.
+ * Mock API - Data Path Contains Ignoring Case.
  *
  * Deletion protects assigned paths on case-insensitive storage without changing
  * the case-sensitive navigation behavior of the in-memory directory map.
  *
+ * @returns {MockApi_DataPathContainsIgnoringCase_Returns}
+ *
  * @since 2.0.0
  */
-const dataPathContainsIgnoringCase = (parentPath: string, candidatePath: string): boolean => dataPathContains(
+const dataPathContainsIgnoringCase = (parentPath: MockApi_DataPathContainsIgnoringCase_ParentPath, candidatePath: MockApi_DataPathContainsIgnoringCase_CandidatePath): MockApi_DataPathContainsIgnoringCase_Returns => dataPathContains(
   parentPath.toLocaleLowerCase('en-US'),
   candidatePath.toLocaleLowerCase('en-US'),
 );
 
 /**
- * Mock API - Checks path equality ignoring case.
+ * Mock API - Data Paths Equal Ignoring Case.
  *
  * The first seven deletion rules share the production contract's case-folded
  * comparisons while later controller facts continue to use exact paths.
  *
+ * @returns {MockApi_DataPathsEqualIgnoringCase_Returns}
+ *
  * @since 2.0.0
  */
-const dataPathsEqualIgnoringCase = (firstPath: string, secondPath: string): boolean => (
+const dataPathsEqualIgnoringCase = (firstPath: MockApi_DataPathsEqualIgnoringCase_FirstPath, secondPath: MockApi_DataPathsEqualIgnoringCase_SecondPath): MockApi_DataPathsEqualIgnoringCase_Returns => (
   firstPath.toLocaleLowerCase('en-US') === secondPath.toLocaleLowerCase('en-US')
 );
 
 /**
- * Mock API - Duplicate torrent enabled.
+ * Mock API - Duplicate Torrent Enabled.
  *
  * Adds the same hash on two VPN connections so the console's quiet duplicate
  * notice can be exercised without changing the normal screenshot fixtures.
  *
  * @since 2.0.0
  */
-const duplicateTorrentEnabled: boolean = process.env['MOCK_DUPLICATE_TORRENT'] === 'true';
+const duplicateTorrentEnabled: MockApi_DuplicateTorrentEnabled = process.env['MOCK_DUPLICATE_TORRENT'] === 'true';
 
 /**
- * Mock API - No VPN connections.
+ * Mock API - No Vpn Connections.
  *
  * Produces the first-run torrent and web-proxy states without changing the normal
  * screenshot fixture.
  *
  * @since 2.0.0
  */
-const noVPNConnections: boolean = process.env['MOCK_NO_VPN_CONNECTIONS'] === 'true';
+const noVPNConnections: MockApi_NoVPNConnections = process.env['MOCK_NO_VPN_CONNECTIONS'] === 'true';
 
 /**
- * Mock API - Torrent add outcome.
+ * Mock API - Torrent Add Outcome.
  *
  * Supports failed and alternating mixed batches for dialog result checks. The normal
  * fixture continues to add every valid source.
  *
  * @since 2.0.0
  */
-const torrentAddOutcome: string = process.env['MOCK_TORRENT_ADD_OUTCOME'] ?? 'success';
+const torrentAddOutcome: MockApi_TorrentAddOutcome = process.env['MOCK_TORRENT_ADD_OUTCOME'] ?? 'success';
 
 /**
- * Mock API - Torrent add attempt.
+ * Mock API - Torrent Add Attempt.
  *
  * Counts requests so the mixed outcome alternates deterministically.
  * The counter starts fresh with each mock process.
  *
  * @since 2.0.0
  */
-let torrentAddAttempt: number = 0;
+let torrentAddAttempt: MockApi_TorrentAddAttempt = 0;
 
 /**
- * Mock API - Notification transport error.
+ * Mock API - Notification Transport Error.
  *
  * Produces a refused connection with safe wording and expandable raw diagnostics.
  * The normal fixture keeps its existing HTTP failure.
  *
  * @since 2.0.0
  */
-const notificationTransportError: boolean = process.env['MOCK_NOTIFICATION_TRANSPORT_ERROR'] === 'true';
+const notificationTransportError: MockApi_NotificationTransportError = process.env['MOCK_NOTIFICATION_TRANSPORT_ERROR'] === 'true';
 
 /**
- * Mock API - Raw notification transport error.
+ * Mock API - Raw Notification Transport Error.
  *
  * Matches the diagnostic returned by a refused local TCP connection.
  * The public fixture keeps it separate from the plain-language message.
  *
  * @since 2.0.0
  */
-const rawNotificationTransportError: string = 'dial tcp 127.0.0.1:9: connect: connection refused';
+const rawNotificationTransportError: MockApi_RawNotificationTransportError = 'dial tcp 127.0.0.1:9: connect: connection refused';
 
 /**
- * Mock API - VPN test failure message.
+ * Mock API - Mock Vpn Test Failure Message.
  *
  * Mirrors the control API's secret-free fallback for an unclassified failure.
  * The mock never returns its internal controller diagnostic to the console.
  *
  * @since 2.0.0
  */
-const mockVPNTestFailureMessage: string = 'The VPN connection couldn\'t be verified. Check its endpoints and credentials, then try again.';
+const mockVPNTestFailureMessage: MockApi_MockVPNTestFailureMessage = 'The VPN connection couldn\'t be verified. Check its endpoints and credentials, then try again.';
 
 /**
- * Mock API - Notification transport failure.
+ * Mock API - Mock Notification Transport Failure.
  *
  * Mirrors the control API's host-specific wording for common delivery errors.
  * It falls back to the original already-public sender message when unclassified.
  *
+ * @returns {MockApi_MockNotificationTransportFailure_Returns}
+ *
  * @since 2.0.0
  */
-const mockNotificationTransportFailure = (raw: string): string => {
-  const lookupHost: string | undefined = raw.match(/lookup\s+([^\s:]+)/iu)?.[1];
-  if (lookupHost !== undefined && /no such host|name or service not known|temporary failure in name resolution/iu.test(raw)) {
+const mockNotificationTransportFailure = (raw: MockApi_MockNotificationTransportFailure_Raw): MockApi_MockNotificationTransportFailure_Returns => {
+  const lookupMatch: MockApi_MockNotificationTransportFailure_LookupMatch = raw.match(new RegExp(lookupHostPattern, 'iu'));
+  const lookupHost: MockApi_MockNotificationTransportFailure_LookupHost = (lookupMatch !== null) ? lookupMatch[1] : undefined;
+
+  if (lookupHost !== undefined && new RegExp(unknownHostPattern, 'iu').test(raw) === true) {
     return `Couldn't find ${lookupHost}. Check the address.`;
   }
 
-  const transportHost: string | undefined = raw.match(/(?:dial|read) tcp\s+\[?([^\]\s:]+)\]?(?::\d+)?/iu)?.[1];
-  if (/connection refused/iu.test(raw)) {
+  const transportMatch: MockApi_MockNotificationTransportFailure_TransportMatch = raw.match(new RegExp(transportHostPattern, 'iu'));
+  const transportHost: MockApi_MockNotificationTransportFailure_TransportHost = (transportMatch !== null) ? transportMatch[1] : undefined;
+
+  if (new RegExp(connectionRefusedPattern, 'iu').test(raw) === true) {
     return (transportHost === undefined) ? 'The destination refused the connection.' : `${transportHost} refused the connection. Check the address.`;
   }
-  if (/context deadline exceeded|i\/o timeout|timed out/iu.test(raw)) {
+
+  if (new RegExp(timeoutPattern, 'iu').test(raw) === true) {
     return (transportHost === undefined) ? 'The destination timed out.' : `No reply from ${transportHost}. Check the address.`;
   }
-  if (/tls:|x509:|certificate/iu.test(raw)) {
+
+  if (new RegExp(tlsErrorPattern, 'iu').test(raw) === true) {
     return (transportHost === undefined) ? 'The secure connection to the destination failed.' : `The secure connection to ${transportHost} failed. Check its certificate.`;
   }
 
@@ -596,74 +1025,74 @@ const mockNotificationTransportFailure = (raw: string): string => {
 };
 
 /**
- * Mock API - Northwind connection identifier.
+ * Mock API - Northwind Connection ID.
  *
  * Keeps fixture relationships stable across torrents, profiles, and logins.
  * The hexadecimal suffix follows the production identifier format.
  *
  * @since 2.0.0
  */
-const northwindConnectionId: string = 'vpc-0000000000000000';
+const northwindConnectionId: MockApi_NorthwindConnectionId = 'vpc-0000000000000000';
 
 /**
- * Mock API - Fabrikam connection identifier.
+ * Mock API - Fabrikam Connection ID.
  *
  * Keeps fixture relationships stable across torrents, profiles, and logins.
  * The hexadecimal suffix follows the production identifier format.
  *
  * @since 2.0.0
  */
-const fabrikamConnectionId: string = 'vpc-0000000000000001';
+const fabrikamConnectionId: MockApi_FabrikamConnectionId = 'vpc-0000000000000001';
 
 /**
- * Mock API - Contoso connection identifier.
+ * Mock API - Contoso Connection ID.
  *
  * Keeps fixture relationships stable across torrents, profiles, and logins.
  * The hexadecimal suffix follows the production identifier format.
  *
  * @since 2.0.0
  */
-const contosoConnectionId: string = 'vpc-0000000000000002';
+const contosoConnectionId: MockApi_ContosoConnectionId = 'vpc-0000000000000002';
 
 /**
- * Mock API - Connection being removed identifier.
+ * Mock API - Connection Being Removed ID.
  *
  * Lets browser checks reproduce the stable conflict while targeting Fabrikam.
  * The normal mock remains fully mutable when the environment flag is absent.
  *
  * @since 2.0.0
  */
-const connectionBeingRemovedId: string | null = (process.env['MOCK_CONNECTION_BEING_REMOVED'] === 'true') ? fabrikamConnectionId : null;
+const connectionBeingRemovedId: MockApi_ConnectionBeingRemovedId = (process.env['MOCK_CONNECTION_BEING_REMOVED'] === 'true') ? fabrikamConnectionId : null;
 
 /**
- * Mock API - Torrent move warnings.
+ * Mock API - Torrent Move Warnings.
  *
  * Adds a successful post-move warning to every move result for browser checks.
  * The result remains moved, matching the backend's final-placement contract.
  *
  * @since 2.0.0
  */
-const torrentMoveWarnings: string[] = (process.env['MOCK_VPN_MOVE_WARNING'] === 'true') ? ['The torrent moved, but the mock restart check could not confirm that it resumed.'] : [];
+const torrentMoveWarnings: MockApi_TorrentMoveWarnings = (process.env['MOCK_VPN_MOVE_WARNING'] === 'true') ? ['The torrent moved, but the mock restart check could not confirm that it resumed.'] : [];
 
 /**
- * Mock API - Missing web proxy connection identifier.
+ * Mock API - Missing Web Proxy Connection ID.
  *
  * Reproduces a durable login whose former explicit connection was removed.
  * The public response safely resolves it through the current default.
  *
  * @since 2.0.0
  */
-const missingWebProxyConnectionId: string = 'vpc-ffffffffffffffff';
+const missingWebProxyConnectionId: MockApi_MissingWebProxyConnectionId = 'vpc-ffffffffffffffff';
 
 /**
- * Mock API - Torrent seeds.
+ * Mock API - Torrent Seeds.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
  * @since 2.0.0
  */
-const torrentSeeds: MockTorrentSeed[] = [
+const torrentSeeds: MockApi_TorrentSeeds = [
   {
     comment: 'Ubuntu CD releases.ubuntu.com',
     dir: '/data/linux',
@@ -783,21 +1212,23 @@ const torrentSeeds: MockTorrentSeed[] = [
 // seeded since. Hashes are SHA-1s of the names, so they look like real info hashes.
 
 /**
- * Mock API - Creates torrents.
+ * Mock API - Create Torrents.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @returns {MockApi_CreateTorrents_Returns}
+ *
  * @since 2.0.0
  */
-const createTorrents = (): MockTorrent[] => torrentSeeds.map((seed: MockTorrentSeed, index: number): MockTorrent => {
-  const now: number = Math.floor(Date.now() / 1000);
-  const downloaded: number = Math.round(seed['size'] * seed['percent']);
-  const uploaded: number = Math.round(downloaded * (((index % 4) * 0.45) + 0.2));
-  const addedDate: number = now - ((index + 2) * 86400) - (((index * 5) % 12) * 3600);
-  const secondsDownloading: number = Math.round(downloaded / (1.5 * 1024 * 1024));
-  const doneDate: number = (seed['percent'] >= 1) ? addedDate + secondsDownloading : 0;
-  let connectionId: string = northwindConnectionId;
+const createTorrents = (): MockApi_CreateTorrents_Returns => torrentSeeds.map((seed, index): MockApi_CreateTorrents_Torrent => {
+  const now: MockApi_CreateTorrents_Now = Math.floor(Date.now() / 1000);
+  const downloaded: MockApi_CreateTorrents_Downloaded = Math.round(seed['size'] * seed['percent']);
+  const uploaded: MockApi_CreateTorrents_Uploaded = Math.round(downloaded * (((index % 4) * 0.45) + 0.2));
+  const addedDate: MockApi_CreateTorrents_AddedDate = now - ((index + 2) * 86400) - (((index * 5) % 12) * 3600);
+  const secondsDownloading: MockApi_CreateTorrents_SecondsDownloading = Math.round(downloaded / (1.5 * 1024 * 1024));
+  const doneDate: MockApi_CreateTorrents_DoneDate = (seed['percent'] >= 1) ? addedDate + secondsDownloading : 0;
+  let connectionId: MockApi_CreateTorrents_ConnectionId = northwindConnectionId;
   if (index < 3) {
     connectionId = contosoConnectionId;
   } else if (index < 7) {
@@ -856,62 +1287,73 @@ const createTorrents = (): MockTorrent[] => torrentSeeds.map((seed: MockTorrentS
 });
 
 /**
- * Mock API - Pieces.
+ * Mock API - Mock Pieces.
  *
  * Builds the piece map for a torrent's details from its progress. Pieces arrive in runs,
  * and the stalled torrent keeps a stretch near the end that no connected peer has.
  *
+ * @returns {MockApi_MockPieces_Returns}
+ *
  * @since 2.0.0
  */
-const mockPieces = (torrent: MockTorrent): Record<string, unknown> => {
-  const pieceSize: number = (torrent['sizeWhenDone'] > 8 * gibibyte) ? 8 * 1024 * 1024 : 2 * 1024 * 1024;
-  const pieceCount: number = Math.max(1, Math.ceil(torrent['sizeWhenDone'] / pieceSize));
-  const target: number = Math.round(pieceCount * torrent['percentDone']);
-  const have: boolean[] = Array.from({ length: pieceCount }, (): boolean => torrent['percentDone'] >= 1);
-  let seed: number = torrent['id'] * 7919;
-  let filled: number = have.filter(Boolean).length;
+const mockPieces = (torrent: MockApi_MockPieces_Torrent): MockApi_MockPieces_Returns => {
+  const pieceSize: MockApi_MockPieces_PieceSize = (torrent['sizeWhenDone'] > 8 * gibibyte) ? 8 * 1024 * 1024 : 2 * 1024 * 1024;
+  const pieceCount: MockApi_MockPieces_PieceCount = Math.max(1, Math.ceil(torrent['sizeWhenDone'] / pieceSize));
+  const target: MockApi_MockPieces_Target = Math.round(pieceCount * torrent['percentDone']);
+  const have: MockApi_MockPieces_Have = Array.from({ length: pieceCount }, () => torrent['percentDone'] >= 1);
+  let seed: MockApi_MockPieces_Seed = torrent['id'] * 7919;
+  let filled: MockApi_MockPieces_Filled = have.filter(Boolean).length;
 
   /**
-   * Mock API - Pieces random.
+   * Mock API - Random.
    *
    * Repeats the same pieces for a torrent every time the mock starts.
    * A plain linear congruential generator is enough for sample data.
    *
+   * @returns {MockApi_MockPieces_Random_Returns}
+   *
    * @since 2.0.0
    */
-  const random = (): number => {
+  const random: MockApi_MockPieces_Random = (): MockApi_MockPieces_Random_Returns => {
     seed = ((seed * 1103515245) + 12345) % 2147483648;
 
     return seed / 2147483648;
   };
 
   while (filled < target) {
-    const start: number = Math.floor(random() * pieceCount);
-    const end: number = Math.min(pieceCount, start + 6 + Math.floor(random() * 42));
+    const start: MockApi_MockPieces_Start = Math.floor(random() * pieceCount);
+    const end: MockApi_MockPieces_End = Math.min(pieceCount, start + 6 + Math.floor(random() * 42));
 
     for (let index = start; index < end && filled < target; index += 1) {
       if (have[index] === false) {
-        have[index] = true;
+        Reflect.set(have, index, true);
+
         filled += 1;
       }
     }
   }
 
-  const bytes: number[] = Array.from({ length: Math.ceil(pieceCount / 8) }, (): number => 0);
+  const bytes: MockApi_MockPieces_Bytes = Array.from({ length: Math.ceil(pieceCount / 8) }, () => 0);
 
-  have.forEach((owned: boolean, index: number): void => {
-    if (owned) {
-      bytes[Math.floor(index / 8)] = (bytes[Math.floor(index / 8)] ?? 0) + (2 ** (7 - (index % 8)));
+  have.forEach((owned, index) => {
+    if (owned === true) {
+      Reflect.set(bytes, Math.floor(index / 8), (bytes[Math.floor(index / 8)] ?? 0) + (2 ** (7 - (index % 8))));
     }
+
+    return;
   });
 
   return {
-    availability: have.map((owned: boolean, index: number): number => {
-      if (owned) {
+    availability: have.map((owned, index) => {
+      if (owned === true) {
         return -1;
       }
 
-      return (torrent['isStalled'] && index > pieceCount * 0.86 && index < pieceCount * 0.9) ? 0 : 1 + Math.floor(random() * 12);
+      return (
+        torrent['isStalled'] === true
+        && index > pieceCount * 0.86
+        && index < pieceCount * 0.9
+      ) ? 0 : 1 + Math.floor(random() * 12);
     }),
     pieceCount,
     pieceSize,
@@ -920,14 +1362,14 @@ const mockPieces = (torrent: MockTorrent): Record<string, unknown> => {
 };
 
 /**
- * Mock API - Torrent profiles.
+ * Mock API - Torrent Profiles.
  *
  * Provides representative automatic matching and profile-assignment state.
  * Named profiles are returned alphabetically and overlapping patterns are allowed.
  *
  * @since 2.0.0
  */
-const torrentProfiles: MockTorrentProfile[] = [
+const torrentProfiles: MockApi_TorrentProfiles = [
   {
     connectionId: fabrikamConnectionId,
     createdAt: '2026-10-01T12:00:00Z',
@@ -1095,50 +1537,50 @@ if (process.env['MOCK_NESTED_PROFILE'] === 'true') {
 }
 
 /**
- * Mock API - Checks torrent profile pattern overlap.
+ * Mock API - Torrent Patterns Overlap.
  *
  * Mirrors the control API's memoized product walk for `*`, `?`, and literal
  * characters so mock overlap notes follow the production language exactly.
  *
+ * @returns {MockApi_TorrentPatternsOverlap_Returns}
+ *
  * @since 2.0.0
  */
-const torrentPatternsOverlap = (leftPattern: string, rightPattern: string): boolean => {
-  const leftCharacters: string[] = [...leftPattern];
-  const rightCharacters: string[] = [...rightPattern];
-  const queue: [number, number][] = [[
+const torrentPatternsOverlap = (leftPattern: MockApi_TorrentPatternsOverlap_LeftPattern, rightPattern: MockApi_TorrentPatternsOverlap_RightPattern): MockApi_TorrentPatternsOverlap_Returns => {
+  const leftCharacters: MockApi_TorrentPatternsOverlap_LeftCharacters = [...leftPattern];
+  const rightCharacters: MockApi_TorrentPatternsOverlap_RightCharacters = [...rightPattern];
+  const queue: MockApi_TorrentPatternsOverlap_Queue = [[
     0,
     0,
   ]];
-  const visited: Set<string> = new Set<string>();
+  const visited: MockApi_TorrentPatternsOverlap_Visited = new Set<string>();
 
   while (queue.length > 0) {
-    const state: [number, number] | undefined = queue.shift();
+    const state: MockApi_TorrentPatternsOverlap_State = queue.shift();
     if (state === undefined) {
       continue;
     }
-    const [
-      leftIndex,
-      rightIndex,
-    ] = state;
-    const stateKey: string = `${leftIndex}:${rightIndex}`;
-    if (visited.has(stateKey)) {
+    const leftIndex: MockApi_TorrentPatternsOverlap_LeftIndex = state[0];
+    const rightIndex: MockApi_TorrentPatternsOverlap_RightIndex = state[1];
+    const stateKey: MockApi_TorrentPatternsOverlap_StateKey = `${leftIndex}:${rightIndex}`;
+    if (visited.has(stateKey) === true) {
       continue;
     }
     visited.add(stateKey);
     if (leftIndex === leftCharacters.length && rightIndex === rightCharacters.length) {
       return true;
     }
-    const leftCharacter: string | undefined = leftCharacters[leftIndex];
-    const rightCharacter: string | undefined = rightCharacters[rightIndex];
-    const leftStar: boolean = leftCharacter === '*';
-    const rightStar: boolean = rightCharacter === '*';
-    if (leftStar) {
+    const leftCharacter: MockApi_TorrentPatternsOverlap_LeftCharacter = leftCharacters[leftIndex];
+    const rightCharacter: MockApi_TorrentPatternsOverlap_RightCharacter = rightCharacters[rightIndex];
+    const leftStar: MockApi_TorrentPatternsOverlap_LeftStar = leftCharacter === '*';
+    const rightStar: MockApi_TorrentPatternsOverlap_RightStar = rightCharacter === '*';
+    if (leftStar === true) {
       queue.push([
         leftIndex + 1,
         rightIndex,
       ]);
     }
-    if (rightStar) {
+    if (rightStar === true) {
       queue.push([
         leftIndex,
         rightIndex + 1,
@@ -1156,9 +1598,9 @@ const torrentPatternsOverlap = (leftPattern: string, rightPattern: string): bool
     ) {
       continue;
     }
-    const nextState: [number, number] = [
-      (leftStar) ? leftIndex : leftIndex + 1,
-      (rightStar) ? rightIndex : rightIndex + 1,
+    const nextState: MockApi_TorrentPatternsOverlap_NextState = [
+      (leftStar === true) ? leftIndex : leftIndex + 1,
+      (rightStar === true) ? rightIndex : rightIndex + 1,
     ];
     if (nextState[0] !== leftIndex || nextState[1] !== rightIndex) {
       queue.push(nextState);
@@ -1169,27 +1611,30 @@ const torrentPatternsOverlap = (leftPattern: string, rightPattern: string): bool
 };
 
 /**
- * Mock API - Refreshes torrent profile presentation.
+ * Mock API - Refresh Torrent Profile Presentation.
  *
  * Keeps named profiles alphabetized and rebuilds informational overlap pairs after
  * every in-memory create, edit, or delete.
  *
+ * @returns {MockApi_RefreshTorrentProfilePresentation_Returns}
+ *
  * @since 2.0.0
  */
-const refreshTorrentProfilePresentation = (): void => {
-  torrentProfiles.sort((leftProfile: MockTorrentProfile, rightProfile: MockTorrentProfile): number => (
+const refreshTorrentProfilePresentation = (): MockApi_RefreshTorrentProfilePresentation_Returns => {
+  torrentProfiles.sort((leftProfile, rightProfile) => (
     leftProfile['name'].localeCompare(rightProfile['name'], undefined, { sensitivity: 'base' })
     || leftProfile['name'].localeCompare(rightProfile['name'])
   ));
+
   for (const profile of torrentProfiles) {
-    profile.overlaps = torrentProfiles.flatMap((otherProfile: MockTorrentProfile): MockTorrentProfile['overlaps'] => {
+    profile.overlaps = torrentProfiles.flatMap((otherProfile): MockApi_RefreshTorrentProfilePresentation_Overlaps => {
       if (otherProfile['id'] === profile['id']) {
         return [];
       }
 
-      return profile['matchPatterns'].flatMap((ownPattern: string): MockTorrentProfile['overlaps'] => (
-        otherProfile['matchPatterns'].flatMap((otherPattern: string): MockTorrentProfile['overlaps'] => (
-          (torrentPatternsOverlap(ownPattern, otherPattern)) ? [{
+      return profile['matchPatterns'].flatMap((ownPattern): MockApi_RefreshTorrentProfilePresentation_Overlaps => (
+        otherProfile['matchPatterns'].flatMap((otherPattern): MockApi_RefreshTorrentProfilePresentation_Overlaps => (
+          (torrentPatternsOverlap(ownPattern, otherPattern) === true) ? [{
             ownPattern,
             pattern: otherPattern,
             profileId: otherProfile['id'],
@@ -1199,19 +1644,21 @@ const refreshTorrentProfilePresentation = (): void => {
       ));
     });
   }
+
+  return;
 };
 
 refreshTorrentProfilePresentation();
 
 /**
- * Mock API - Default torrent profile.
+ * Mock API - Default Torrent Profile.
  *
  * Mirrors the real Default profile that owns the Download directory and always
  * follows the default VPN connection.
  *
  * @since 2.0.0
  */
-const defaultTorrentProfile: MockDefaultTorrentProfile = {
+const defaultTorrentProfile: MockApi_DefaultTorrentProfile = {
   downloadDirectory: '/data/downloads',
   downloadDirectoryLocked: process.env['MOCK_MANAGED_DOWNLOAD_DIRECTORY'] === 'true',
   labels: [],
@@ -1232,37 +1679,37 @@ const defaultTorrentProfile: MockDefaultTorrentProfile = {
 };
 
 /**
- * Mock API - Profile folder owner.
+ * Mock API - Profile Folder Owner.
  *
  * Finds the Default or named profile that owns a case-insensitively equal
  * folder, excluding the profile currently being edited.
  *
+ * @returns {MockApi_ProfileFolderOwner_Returns}
+ *
  * @since 2.0.0
  */
 const profileFolderOwner = (
-  directoryPath: string,
-  excludedProfileID: string = '',
-): {
-  id: string
-  name: string
-  relation: 'contains' | 'inside' | 'same'
-} | undefined => {
+  directoryPath: MockApi_ProfileFolderOwner_DirectoryPath,
+  excludedProfileID: MockApi_ProfileFolderOwner_ExcludedProfileID = '',
+): MockApi_ProfileFolderOwner_Returns => {
   /**
-   * Mock API - Profile folder owner - Relation to.
+   * Mock API - Relation To.
    *
    * Compares the requested folder with one owner folder, ignoring case.
    * Returns same, inside, contains, or undefined when they are unrelated.
    *
+   * @returns {MockApi_ProfileFolderOwner_RelationTo_Returns}
+   *
    * @since 2.0.0
    */
-  const relationTo = (ownerPath: string): 'contains' | 'inside' | 'same' | undefined => {
-    if (dataPathsEqualIgnoringCase(ownerPath, directoryPath)) {
+  const relationTo: MockApi_ProfileFolderOwner_RelationTo = (ownerPath: MockApi_ProfileFolderOwner_RelationTo_OwnerPath): MockApi_ProfileFolderOwner_RelationTo_Returns => {
+    if (dataPathsEqualIgnoringCase(ownerPath, directoryPath) === true) {
       return 'same';
     }
-    if (dataPathContainsIgnoringCase(ownerPath, directoryPath)) {
+    if (dataPathContainsIgnoringCase(ownerPath, directoryPath) === true) {
       return 'inside';
     }
-    if (dataPathContainsIgnoringCase(directoryPath, ownerPath)) {
+    if (dataPathContainsIgnoringCase(directoryPath, ownerPath) === true) {
       return 'contains';
     }
 
@@ -1270,7 +1717,7 @@ const profileFolderOwner = (
   };
   if (excludedProfileID !== 'default') {
     // No profile folder may sit inside another profile's folder or contain one.
-    const defaultRelation = relationTo(defaultTorrentProfile['downloadDirectory']);
+    const defaultRelation: MockApi_ProfileFolderOwner_DefaultRelation = relationTo(defaultTorrentProfile['downloadDirectory']);
     if (defaultRelation !== undefined) {
       return {
         id: 'default',
@@ -1284,7 +1731,7 @@ const profileFolderOwner = (
     if (candidate['id'] === excludedProfileID) {
       continue;
     }
-    const relation = relationTo(candidate['downloadDirectory']);
+    const relation: MockApi_ProfileFolderOwner_RelationValue = relationTo(candidate['downloadDirectory']);
     if (relation === undefined) {
       continue;
     }
@@ -1300,24 +1747,44 @@ const profileFolderOwner = (
 };
 
 /**
- * Mock API - Profile folder overlaps.
+ * Mock API - Profile Folder Taken Message.
+ *
+ * Matches the backend's field error and curly-quoted folder name exactly.
+ * Profile editors render this actionable text beside the folder field.
+ *
+ * @returns {MockApi_ProfileFolderTakenMessage_Returns}
+ *
+ * @since 2.0.0
+ */
+const profileFolderTakenMessage = (
+  directoryPath: MockApi_ProfileFolderTakenMessage_DirectoryPath,
+  ownerName: MockApi_ProfileFolderTakenMessage_OwnerName,
+  relation: MockApi_ProfileFolderTakenMessage_Relation = 'same',
+): MockApi_ProfileFolderTakenMessage_Returns => {
+  const folderName: MockApi_ProfileFolderTakenMessage_FolderName = directoryPath.slice(directoryPath.lastIndexOf('/') + 1);
+  if (relation === 'inside') {
+    return `This folder is inside the ${ownerName}'s folder.`;
+  }
+  if (relation === 'contains') {
+    return `This folder contains the ${ownerName}'s folder.`;
+  }
+
+  return `“${folderName}” is already the ${ownerName}'s folder.`;
+};
+
+/**
+ * Mock API - Profile Folder Overlaps.
  *
  * Lists every saved profile whose folder sits inside or around another profile's
  * folder, matching the control API's folderOverlaps list.
  *
+ * @returns {MockApi_ProfileFolderOverlaps_Returns}
+ *
  * @since 2.0.0
  */
-const profileFolderOverlaps = (): {
-  message: string
-  profileId: string
-  profileName: string
-}[] => {
-  const overlaps: {
-    message: string
-    profileId: string
-    profileName: string
-  }[] = [];
-  const defaultOwner = profileFolderOwner(defaultTorrentProfile['downloadDirectory'], 'default');
+const profileFolderOverlaps = (): MockApi_ProfileFolderOverlaps_Returns => {
+  const overlaps: MockApi_ProfileFolderOverlaps_Overlaps = [];
+  const defaultOwner: MockApi_ProfileFolderOverlaps_DefaultOwner = profileFolderOwner(defaultTorrentProfile['downloadDirectory'], 'default');
   if (defaultOwner !== undefined) {
     overlaps.push({
       message: profileFolderTakenMessage(defaultTorrentProfile['downloadDirectory'], defaultOwner['name'], defaultOwner['relation']),
@@ -1325,8 +1792,9 @@ const profileFolderOverlaps = (): {
       profileName: defaultTorrentProfile['name'],
     });
   }
+
   for (const profile of torrentProfiles) {
-    const owner = profileFolderOwner(profile['downloadDirectory'], profile['id']);
+    const owner: MockApi_ProfileFolderOverlaps_Owner = profileFolderOwner(profile['downloadDirectory'], profile['id']);
     if (owner !== undefined) {
       overlaps.push({
         message: profileFolderTakenMessage(profile['downloadDirectory'], owner['name'], owner['relation']),
@@ -1340,53 +1808,36 @@ const profileFolderOverlaps = (): {
 };
 
 /**
- * Mock API - Profile folder taken message.
- *
- * Matches the backend's field error and curly-quoted folder name exactly.
- * Profile editors render this actionable text beside the folder field.
- *
- * @since 2.0.0
- */
-const profileFolderTakenMessage = (
-  directoryPath: string,
-  ownerName: string,
-  relation: 'contains' | 'inside' | 'same' = 'same',
-): string => {
-  const folderName: string = directoryPath.slice(directoryPath.lastIndexOf('/') + 1);
-  if (relation === 'inside') {
-    return `This folder is inside the ${ownerName}'s folder.`;
-  }
-  if (relation === 'contains') {
-    return `This folder contains the ${ownerName}'s folder.`;
-  }
-
-  return `“${folderName}” is already the ${ownerName}'s folder.`;
-};
-
-/**
- * Mock API - Checks profile-name ownership.
+ * Mock API - Torrent Profile Name Taken.
  *
  * Mirrors the database's cross-table, case-insensitive uniqueness rule.
  * The excluded identity lets either editor retain its current spelling.
  *
+ * @returns {MockApi_TorrentProfileNameTaken_Returns}
+ *
  * @since 2.0.0
  */
-const torrentProfileNameTaken = (name: string, excludedProfileID: string = ''): boolean => (
-  (excludedProfileID !== 'default' && defaultTorrentProfile['name'].toLowerCase() === name.toLowerCase())
-  || torrentProfiles.some((profile: MockTorrentProfile): boolean => (
+const torrentProfileNameTaken = (name: MockApi_TorrentProfileNameTaken_Name, excludedProfileID: MockApi_TorrentProfileNameTaken_ExcludedProfileID = ''): MockApi_TorrentProfileNameTaken_Returns => (
+  (
+    excludedProfileID !== 'default'
+    && defaultTorrentProfile['name'].toLowerCase() === name.toLowerCase()
+  )
+  || torrentProfiles.some((profile) => (
     profile['id'] !== excludedProfileID && profile['name'].toLowerCase() === name.toLowerCase()
   ))
 );
 
 /**
- * Mock API - Default torrent profile response.
+ * Mock API - Default Torrent Profile Response.
  *
  * Returns a detached response so move results can be added without mutating the
  * stored profile.
  *
+ * @returns {MockApi_DefaultTorrentProfileResponse_Returns}
+ *
  * @since 2.0.0
  */
-const defaultTorrentProfileResponse = (): MockDefaultTorrentProfile => ({
+const defaultTorrentProfileResponse = (): MockApi_DefaultTorrentProfileResponse_Returns => ({
   ...defaultTorrentProfile,
   labels: [...defaultTorrentProfile['labels']],
   options: {
@@ -1396,52 +1847,60 @@ const defaultTorrentProfileResponse = (): MockDefaultTorrentProfile => ({
 });
 
 /**
- * Mock API - Torrent profile sequence.
+ * Mock API - Torrent Profile Sequence.
  *
  * Produces stable server-shaped identifiers for newly-created profiles.
  * The hexadecimal suffix matches the production identifier validator.
  *
  * @since 2.0.0
  */
-let torrentProfileSequence: number = torrentProfiles.length;
+let torrentProfileSequence: MockApi_TorrentProfileSequence = torrentProfiles.length;
 
 /**
- * Mock API - Applies torrent profile seeding.
+ * Mock API - Apply Torrent Profile Seeding.
  *
  * Converts profile stop rules to Transmission's per-torrent mode values.
  * Seed fixtures and option assignment share this exact mapping.
  *
+ * @returns {MockApi_ApplyTorrentProfileSeeding_Returns}
+ *
  * @since 2.0.0
  */
 const applyTorrentProfileSeeding = (
-  torrent: MockTorrent,
-  profile: MockDefaultTorrentProfile | MockTorrentProfile,
-): void => {
+  torrent: MockApi_ApplyTorrentProfileSeeding_Torrent,
+  profile: MockApi_ApplyTorrentProfileSeeding_Profile,
+): MockApi_ApplyTorrentProfileSeeding_Returns => {
   if (profile['options']['seeding']['mode'] === 'never') {
     Reflect.set(torrent, 'seedRatioMode', 2);
     Reflect.set(torrent, 'seedIdleMode', 2);
   } else {
     Reflect.set(torrent, 'seedRatioMode', (profile['options']['seeding']['ratio'] === null) ? 2 : 1);
-    Reflect.set(torrent, 'seedRatioLimit', profile['options']['seeding']['ratio'] ?? torrent.seedRatioLimit);
+    Reflect.set(torrent, 'seedRatioLimit', profile['options']['seeding']['ratio'] ?? torrent['seedRatioLimit']);
     Reflect.set(torrent, 'seedIdleMode', (profile['options']['seeding']['idleMinutes'] === null) ? 2 : 1);
-    Reflect.set(torrent, 'seedIdleLimit', profile['options']['seeding']['idleMinutes'] ?? torrent.seedIdleLimit);
+    Reflect.set(torrent, 'seedIdleLimit', profile['options']['seeding']['idleMinutes'] ?? torrent['seedIdleLimit']);
   }
+
+  return;
 };
 
 /**
- * Mock API - Merges torrent labels.
+ * Mock API - Merge Torrent Labels.
  *
  * Preserves remote-app labels and appends profile labels once, ignoring case.
  * Profile resolution and automatic add behavior share this rule.
  *
+ * @returns {MockApi_MergeTorrentLabels_Returns}
+ *
  * @since 2.0.0
  */
-const mergeTorrentLabels = (existing: string[], profileLabels: string[]): string[] => {
-  const merged: string[] = [...existing];
-  const seen: Set<string> = new Set(existing.map((label: string): string => label.toLowerCase()));
+const mergeTorrentLabels = (existing: MockApi_MergeTorrentLabels_Existing, profileLabels: MockApi_MergeTorrentLabels_ProfileLabels): MockApi_MergeTorrentLabels_Returns => {
+  const merged: MockApi_MergeTorrentLabels_Merged = [...existing];
+  const seen: MockApi_MergeTorrentLabels_Seen = new Set(existing.map((label) => label.toLowerCase()));
+
   for (const label of profileLabels) {
-    if (!seen.has(label.toLowerCase())) {
+    if (seen.has(label.toLowerCase()) === false) {
       merged.push(label);
+
       seen.add(label.toLowerCase());
     }
   }
@@ -1450,17 +1909,19 @@ const mergeTorrentLabels = (existing: string[], profileLabels: string[]): string
 };
 
 /**
- * Mock API - Applies torrent profile options.
+ * Mock API - Apply Torrent Profile Options.
  *
  * Copies the labels and per-torrent Transmission limits used by add and profile
  * assignment. Folder, VPN, paused state, and queue order are handled by callers.
  *
+ * @returns {MockApi_ApplyTorrentProfileOptions_Returns}
+ *
  * @since 2.0.0
  */
 const applyTorrentProfileOptions = (
-  torrent: MockTorrent,
-  profile: MockDefaultTorrentProfile | MockTorrentProfile,
-): void => {
+  torrent: MockApi_ApplyTorrentProfileOptions_Torrent,
+  profile: MockApi_ApplyTorrentProfileOptions_Profile,
+): MockApi_ApplyTorrentProfileOptions_Returns => {
   Reflect.set(torrent, 'labels', [...profile['labels']]);
   Reflect.set(torrent, 'bandwidthPriority', profile['options']['bandwidthPriority']);
   Reflect.set(torrent, 'peer-limit', profile['options']['peerLimit']);
@@ -1468,7 +1929,10 @@ const applyTorrentProfileOptions = (
   Reflect.set(torrent, 'downloadLimit', profile['options']['downloadLimitKBps'] ?? 0);
   Reflect.set(torrent, 'uploadLimited', profile['options']['uploadLimitKBps'] !== null);
   Reflect.set(torrent, 'uploadLimit', profile['options']['uploadLimitKBps'] ?? 0);
+
   applyTorrentProfileSeeding(torrent, profile);
+
+  return;
 };
 
 /**
@@ -1479,9 +1943,9 @@ const applyTorrentProfileOptions = (
  *
  * @since 2.0.0
  */
-const torrents: MockTorrent[] = createTorrents();
+const torrents: MockApi_Torrents = createTorrents();
 
-if (duplicateTorrentEnabled && torrents[0] !== undefined) {
+if (duplicateTorrentEnabled === true && torrents[0] !== undefined) {
   torrents.push({
     ...torrents[0],
     connectionId: northwindConnectionId,
@@ -1491,8 +1955,8 @@ if (duplicateTorrentEnabled && torrents[0] !== undefined) {
 }
 
 for (const torrent of torrents) {
-  const profile: MockTorrentProfile | undefined = torrentProfiles.find(
-    (candidate: MockTorrentProfile): boolean => candidate['downloadDirectory'] === torrent['downloadDir'],
+  const profile: MockApi_Profile = torrentProfiles.find(
+    (candidate) => candidate['downloadDirectory'] === torrent['downloadDir'],
   );
   if (profile !== undefined) {
     torrent.profileId = profile['id'];
@@ -1506,15 +1970,15 @@ for (const torrent of torrents) {
 }
 
 /**
- * Mock API - Torrent needing a profile.
+ * Mock API - Needs Profile Torrent.
  *
  * Selects the seeded pattern tie so the banner, filter, tag, and resolver are
  * available immediately in the standalone mock.
  *
  * @since 2.0.0
  */
-const needsProfileTorrent: MockTorrent | undefined = torrents.find(
-  (torrent: MockTorrent): boolean => torrent['name'] === 'Example.Show.S01E04.2160p',
+const needsProfileTorrent: MockApi_NeedsProfileTorrent = torrents.find(
+  (torrent) => torrent['name'] === 'Example.Show.S01E04.2160p',
 );
 if (needsProfileTorrent !== undefined) {
   needsProfileTorrent.connectionId = northwindConnectionId;
@@ -1532,24 +1996,31 @@ if (needsProfileTorrent !== undefined) {
 }
 
 /**
- * Mock API - Moves torrents to queue top.
+ * Mock API - Move Torrents To Queue Top.
  *
  * Preserves the selected torrents' relative order and compacts every queue
  * position. Profile assignment uses it when requested options choose Top.
  *
+ * @returns {MockApi_MoveTorrentsToQueueTop_Returns}
+ *
  * @since 2.0.0
  */
-const moveTorrentsToQueueTop = (selectedTorrents: MockTorrent[]): void => {
-  const selectedIDs: Set<number> = new Set(selectedTorrents.map(
-    (torrent: MockTorrent): number => torrent['id'],
+const moveTorrentsToQueueTop = (selectedTorrents: MockApi_MoveTorrentsToQueueTop_SelectedTorrents): MockApi_MoveTorrentsToQueueTop_Returns => {
+  const selectedIDs: MockApi_MoveTorrentsToQueueTop_SelectedIDs = new Set(selectedTorrents.map(
+    (torrent) => torrent['id'],
   ));
-  const orderedTorrents: MockTorrent[] = [
+  const orderedTorrents: MockApi_MoveTorrentsToQueueTop_OrderedTorrents = [
     ...selectedTorrents,
-    ...torrents.filter((torrent: MockTorrent): boolean => !selectedIDs.has(torrent['id'])),
+    ...torrents.filter((torrent) => selectedIDs.has(torrent['id']) === false),
   ];
-  orderedTorrents.forEach((torrent: MockTorrent, index: number): void => {
+
+  orderedTorrents.forEach((torrent, index) => {
     Reflect.set(torrent, 'queuePosition', index);
+
+    return;
   });
+
+  return;
 };
 
 /**
@@ -1560,66 +2031,61 @@ const moveTorrentsToQueueTop = (selectedTorrents: MockTorrent[]): void => {
  *
  * @since 2.0.0
  */
-let sequence: number = 0;
+let sequence: MockApi_Sequence = 0;
 
 /**
- * Mock API - Signed in.
+ * Mock API - Signed In.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
  * @since 2.0.0
  */
-let signedIn: boolean = false;
+let signedIn: MockApi_SignedIn = false;
 
 // MOCK_SETUP_REQUIRED=true starts before setup, to show "Set up your account". The setup code is K7Q2M-XR9TD-P4W8N.
 
 /**
- * Mock API - Setup required.
+ * Mock API - Setup Required.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
  * @since 2.0.0
  */
-let setupRequired: boolean = process.env['MOCK_SETUP_REQUIRED'] === 'true';
+let setupRequired: MockApi_SetupRequired = process.env['MOCK_SETUP_REQUIRED'] === 'true';
 
 /**
- * Mock API - Setup started at.
+ * Mock API - Setup Started At.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
  * @since 2.0.0
  */
-const setupStartedAt: number = Date.now();
+const setupStartedAt: MockApi_SetupStartedAt = Date.now();
 
 // MOCK_KEY_REPLACED=true starts as if the installation key had been lost, to show the notice.
 
 /**
- * Mock API - Key replaced.
+ * Mock API - Key Replaced.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
  * @since 2.0.0
  */
-const keyReplaced: boolean = process.env['MOCK_KEY_REPLACED'] === 'true';
+const keyReplaced: MockApi_KeyReplaced = process.env['MOCK_KEY_REPLACED'] === 'true';
 
 /**
- * Mock API - Removed secrets.
+ * Mock API - Removed Secrets.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
  * @since 2.0.0
  */
-let removedSecrets: {
-  kind: 'authenticator' | 'notification' | 'vpn'
-  name?: string
-  notificationId?: string
-  removedAt: string
-}[] = (keyReplaced) ? [
+let removedSecrets: MockApi_RemovedSecrets = (keyReplaced === true) ? [
   {
     kind: 'authenticator',
     removedAt: new Date().toISOString(),
@@ -1633,14 +2099,14 @@ let removedSecrets: {
 // Each service's fields: [key, message when missing, secret, required].
 
 /**
- * Mock API - Notification fields.
+ * Mock API - Notification Fields.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
  * @since 2.0.0
  */
-const notificationFields: Record<MockNotificationService, [string, string, boolean, boolean][]> = {
+const notificationFields: MockApi_NotificationFields = {
   'apprise': [
     [
       'url',
@@ -1818,19 +2284,14 @@ const notificationFields: Record<MockNotificationService, [string, string, boole
 };
 
 /**
- * Mock API - Notification events.
+ * Mock API - Notification Events.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
  * @since 2.0.0
  */
-const notificationEvents: {
-  defaultEnabled: boolean
-  description: string
-  key: string
-  label: string
-}[] = [
+const notificationEvents: MockApi_NotificationEvents = [
   {
     defaultEnabled: true,
     description: 'The app started without its key and removed what it locked.',
@@ -1876,24 +2337,24 @@ const notificationEvents: {
 ];
 
 /**
- * Mock API - Notifications started at.
+ * Mock API - Notifications Started At.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
  * @since 2.0.0
  */
-const notificationsStartedAt: number = Date.now();
+const notificationsStartedAt: MockApi_NotificationsStartedAt = Date.now();
 
 /**
- * Mock API - Notification minute.
+ * Mock API - Notification Minute.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
  * @since 2.0.0
  */
-const notificationMinute: number = 60 * 1000;
+const notificationMinute: MockApi_NotificationMinute = 60 * 1000;
 
 /**
  * Mock API - Notifications.
@@ -1903,7 +2364,7 @@ const notificationMinute: number = 60 * 1000;
  *
  * @since 2.0.0
  */
-const notifications: MockNotification[] = [
+const notifications: MockApi_Notifications = [
   {
     createdAt: new Date(notificationsStartedAt - (30 * 24 * 60 * notificationMinute)).toISOString(),
     events: [
@@ -1947,8 +2408,8 @@ const notifications: MockNotification[] = [
     events: ['torrent-finished'],
     id: 'ntf-8e0a2c4e6a8c0e12',
     lastAttemptAt: new Date(notificationsStartedAt - (47 * notificationMinute)).toISOString(),
-    lastError: (notificationTransportError) ? mockNotificationTransportFailure(rawNotificationTransportError) : 'HTTP 502: Bad Gateway',
-    lastErrorDetails: (notificationTransportError) ? rawNotificationTransportError : null,
+    lastError: (notificationTransportError === true) ? mockNotificationTransportFailure(rawNotificationTransportError) : 'HTTP 502: Bad Gateway',
+    lastErrorDetails: (notificationTransportError === true) ? rawNotificationTransportError : null,
     name: 'Downloads feed',
     secrets: { token: true },
     secretsMissing: [],
@@ -1960,9 +2421,9 @@ const notifications: MockNotification[] = [
 
 // A lost key removes every destination's saved secrets, as the server does, and pauses
 // those destinations until the secrets are entered again.
-if (keyReplaced) {
-  for (const notification of [...notifications].sort((left: MockNotification, right: MockNotification): number => left.name.localeCompare(right.name))) {
-    const secretKeys: string[] = Object.keys(notification.secrets).sort();
+if (keyReplaced === true) {
+  for (const notification of [...notifications].sort((left, right) => left['name'].localeCompare(right['name']))) {
+    const secretKeys: MockApi_SecretKeys = Object.keys(notification['secrets']).sort();
 
     if (secretKeys.length === 0) {
       continue;
@@ -1972,8 +2433,8 @@ if (keyReplaced) {
     notification.secretsMissing = secretKeys;
     removedSecrets.push({
       kind: 'notification',
-      name: notification.name,
-      notificationId: notification.id,
+      name: notification['name'],
+      notificationId: notification['id'],
       removedAt: new Date().toISOString(),
     });
   }
@@ -1982,14 +2443,14 @@ if (keyReplaced) {
 // The name typed for the passkey being added; the browser's answer doesn't carry it.
 
 /**
- * Mock API - Pending passkey name.
+ * Mock API - Pending Passkey Name.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
  * @since 2.0.0
  */
-let pendingPasskeyName: string = 'Passkey';
+let pendingPasskeyName: MockApi_PendingPasskeyName = 'Passkey';
 
 // Mock account state for the sign-in and security screens.
 
@@ -2001,14 +2462,7 @@ let pendingPasskeyName: string = 'Passkey';
  *
  * @since 2.0.0
  */
-const account: {
-  password: string
-  passkeys: Record<string, unknown>[]
-  recoveryCodes: string[]
-  totpEnabled: boolean
-  totpSetupPending: boolean
-  username: string
-} = {
+const account: MockApi_Account = {
   password: 'transmission',
   passkeys: [
     {
@@ -2033,18 +2487,20 @@ const account: {
 };
 
 /**
- * Mock API - New recovery codes.
+ * Mock API - New Recovery Codes.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @returns {MockApi_NewRecoveryCodes_Returns}
+ *
  * @since 2.0.0
  */
-const newRecoveryCodes = (): string[] => Array.from({ length: 10 }, (): string => {
-  const alphabet: string = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
-  let code: string = '';
+const newRecoveryCodes = (): MockApi_NewRecoveryCodes_Returns => Array.from({ length: 10 }, () => {
+  const alphabet: MockApi_NewRecoveryCodes_Alphabet = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+  let code: MockApi_NewRecoveryCodes_Code = '';
 
-  for (let index: number = 0; index < 10; index += 1) {
+  for (let index = 0; index < 10; index += 1) {
     code += alphabet[Math.floor(Math.random() * alphabet.length)];
   }
 
@@ -2052,30 +2508,34 @@ const newRecoveryCodes = (): string[] => Array.from({ length: 10 }, (): string =
 });
 
 /**
- * Mock API - Formats recovery code.
+ * Mock API - Format Recovery Code.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @returns {MockApi_FormatRecoveryCode_Returns}
+ *
  * @since 2.0.0
  */
-const formatRecoveryCode = (code: string): string => `${code.slice(0, 5)}-${code.slice(5)}`;
+const formatRecoveryCode = (code: MockApi_FormatRecoveryCode_Code): MockApi_FormatRecoveryCode_Returns => `${code.slice(0, 5)}-${code.slice(5)}`;
 
 // Write scopes include their read scope, matching the real API.
 
 /**
- * Mock API - Expands scopes.
+ * Mock API - Expand Scopes.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @returns {MockApi_ExpandScopes_Returns}
+ *
  * @since 2.0.0
  */
-const expandScopes = (scopes: string[]): string[] => {
-  const expanded: Set<string> = new Set(scopes);
+const expandScopes = (scopes: MockApi_ExpandScopes_Scopes): MockApi_ExpandScopes_Returns => {
+  const expanded: MockApi_ExpandScopes_Expanded = new Set(scopes);
 
   for (const scope of scopes) {
-    if (scope.endsWith(':write')) {
+    if (scope.endsWith(':write') === true) {
       expanded.add(scope.replace(':write', ':read'));
     }
   }
@@ -2087,14 +2547,14 @@ const expandScopes = (scopes: string[]): string[] => {
 // level M like security.QRCodeDataURI. Remake them if the URI changes.
 
 /**
- * Mock API - Mock QR rows.
+ * Mock API - Mock Qr Rows.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
  * @since 2.0.0
  */
-const mockQrRows: string[] = [
+const mockQrRows: MockApi_MockQrRows = [
   '1111111000000001110101101100011011111100101111111',
   '1000001011000011111011010100100111000011101000001',
   '1011101000010001001010101111000001100001101011101',
@@ -2149,38 +2609,42 @@ const mockQrRows: string[] = [
 // The authenticator URI for the mock's fixed secret, in the form security.TOTPURI builds.
 
 /**
- * Mock API - Mock TOTP URI.
+ * Mock API - Mock Totp URI.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
  * @since 2.0.0
  */
-const mockTotpUri: string = 'otpauth://totp/Transmission%20VPN:admin?algorithm=SHA1&digits=6&issuer=Transmission+VPN&period=30&secret=JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP';
+const mockTotpUri: MockApi_MockTotpUri = 'otpauth://totp/Transmission%20VPN:admin?algorithm=SHA1&digits=6&issuer=Transmission+VPN&period=30&secret=JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP';
 
 // mockQrCode draws mockQrRows the way security.QRCodeDataURI does, with a four-module quiet zone.
 
 /**
- * Mock API - Mock QR code.
+ * Mock API - Mock Qr Code.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @returns {MockApi_MockQrCode_Returns}
+ *
  * @since 2.0.0
  */
-const mockQrCode = (): string => {
-  const size: number = mockQrRows.length;
-  let path: string = '';
+const mockQrCode = (): MockApi_MockQrCode_Returns => {
+  const size: MockApi_MockQrCode_Size = mockQrRows.length;
+  let path: MockApi_MockQrCode_Path = '';
 
-  for (let y: number = 0; y < size; y += 1) {
-    for (let x: number = 0; x < size; x += 1) {
-      if (mockQrRows[y]?.[x] === '1') {
+  for (let y = 0; y < size; y += 1) {
+    const row: MockApi_MockQrCode_Row = mockQrRows[y];
+
+    for (let x = 0; x < size; x += 1) {
+      if (row !== undefined && row[x] === '1') {
         path += `M${x + 4} ${y + 4}h1v1h-1z`;
       }
     }
   }
 
-  const svg: string = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size + 8} ${size + 8}" shape-rendering="crispEdges"><rect width="100%" height="100%" fill="#fff"/><path fill="#000" d="${path}"/></svg>`;
+  const svg: MockApi_MockQrCode_Svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size + 8} ${size + 8}" shape-rendering="crispEdges"><rect width="100%" height="100%" fill="#fff"/><path fill="#000" d="${path}"/></svg>`;
 
   return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
 };
@@ -2193,7 +2657,7 @@ const mockQrCode = (): string => {
  *
  * @since 2.0.0
  */
-const directories: Map<string, MockDirectoryMetadata> = new Map([
+const directories: MockApi_Directories = new Map([
   [
     '/data/downloads',
     {
@@ -2340,14 +2804,14 @@ if (process.env['MOCK_NESTED_PROFILE'] === 'true') {
 }
 
 /**
- * Mock API - Saved labels.
+ * Mock API - Saved Labels.
  *
  * Keeps the label presets that an organization save replaces.
  * The dialogs and the sidebar then show what was saved.
  *
  * @since 2.0.0
  */
-const savedLabels: string[] = [
+const savedLabels: MockApi_SavedLabels = [
   'arm',
   'linux',
   'music',
@@ -2356,86 +2820,100 @@ const savedLabels: string[] = [
 ];
 
 /**
- * Mock API - Organization revision.
+ * Mock API - Organization Revision.
  *
  * Counts organization saves, like the API's stored revision.
  * A save from a dialog opened on an older revision gets the API's conflict.
  *
  * @since 2.0.0
  */
-let organizationRevision: number = 1;
+let organizationRevision: MockApi_OrganizationRevision = 1;
 
 /**
- * Mock API - Save used labels.
+ * Mock API - Save Used Labels.
  *
  * Preserves the first case-insensitive spelling and advances the organization
  * revision once when a write introduces one or more new labels.
  *
+ * @returns {MockApi_SaveUsedLabels_Returns}
+ *
  * @since 2.0.0
  */
 const saveUsedLabels = (
-  labels: string[],
-  advanceRevision: boolean = true,
-): void => {
-  const savedKeys: Set<string> = new Set<string>(savedLabels.map(
-    (label: string): string => label.toLowerCase(),
+  labels: MockApi_SaveUsedLabels_Labels,
+  advanceRevision: MockApi_SaveUsedLabels_AdvanceRevision = true,
+): MockApi_SaveUsedLabels_Returns => {
+  const savedKeys: MockApi_SaveUsedLabels_SavedKeys = new Set<string>(savedLabels.map(
+    (label) => label.toLowerCase(),
   ));
-  let changed: boolean = false;
+  let changed: MockApi_SaveUsedLabels_Changed = false;
+
   for (const label of labels) {
-    const key: string = label.toLowerCase();
-    if (label === '' || savedKeys.has(key)) {
+    const key: MockApi_SaveUsedLabels_Key = label.toLowerCase();
+
+    if (label === '' || savedKeys.has(key) === true) {
       continue;
     }
+
     // A full list stays as it is, matching the API's 1,024-label cap.
     if (savedLabels.length >= 1024) {
       break;
     }
+
     savedKeys.add(key);
+
     savedLabels.push(label);
     changed = true;
   }
-  if (!changed) {
+
+  if (changed === false) {
     return;
   }
-  savedLabels.sort((leftLabel: string, rightLabel: string): number => (
+
+  savedLabels.sort((leftLabel, rightLabel) => (
     leftLabel.localeCompare(rightLabel, undefined, { sensitivity: 'base' })
     || leftLabel.localeCompare(rightLabel)
   ));
-  if (advanceRevision) {
+
+  if (advanceRevision === true) {
     organizationRevision += 1;
   }
+
+  return;
 };
 
 /**
- * Mock API - Apply saved label edits.
+ * Mock API - Apply Saved Label Edits.
  *
  * Uses the same case-insensitive deletion, rename, and de-duplication behavior for
  * torrents and profiles.
  *
+ * @returns {MockApi_ApplySavedLabelEdits_Returns}
+ *
  * @since 2.0.0
  */
 const applySavedLabelEdits = (
-  labels: string[],
-  removedLabels: string[],
-  renamedLabels: {
-    from: string
-    to: string
-  }[],
-): string[] => {
-  const nextLabels: string[] = [];
+  labels: MockApi_ApplySavedLabelEdits_Labels,
+  removedLabels: MockApi_ApplySavedLabelEdits_RemovedLabels,
+  renamedLabels: MockApi_ApplySavedLabelEdits_RenamedLabels,
+): MockApi_ApplySavedLabelEdits_Returns => {
+  const nextLabels: MockApi_ApplySavedLabelEdits_NextLabels = [];
+
   for (const label of labels) {
     if (removedLabels.some(
-      (removedLabel: string): boolean => removedLabel.toLowerCase() === label.toLowerCase(),
-    )) {
+      (removedLabel) => removedLabel.toLowerCase() === label.toLowerCase(),
+    ) === true) {
       continue;
     }
-    const rename = renamedLabels.find(
-      (candidate): boolean => candidate['from'].toLowerCase() === label.toLowerCase(),
+
+    const rename: MockApi_ApplySavedLabelEdits_Rename = renamedLabels.find(
+      (candidate) => candidate['from'].toLowerCase() === label.toLowerCase(),
     );
-    const nextLabel: string = rename?.['to'] ?? label;
-    if (!nextLabels.some(
-      (existingLabel: string): boolean => existingLabel.toLowerCase() === nextLabel.toLowerCase(),
-    )) {
+    const nextLabel: MockApi_ApplySavedLabelEdits_NextLabel = ((rename !== undefined) ? rename['to'] : undefined) ?? label;
+
+    if (nextLabels.some(
+      (existingLabel) => existingLabel.toLowerCase() === nextLabel.toLowerCase(),
+    ) === false) {
       nextLabels.push(nextLabel);
     }
   }
@@ -2445,8 +2923,8 @@ const applySavedLabelEdits = (
 
 saveUsedLabels([
   ...defaultTorrentProfile['labels'],
-  ...torrentProfiles.flatMap((profile: MockTorrentProfile): string[] => profile['labels']),
-  ...torrents.flatMap((torrent: MockTorrent): string[] => torrent['labels']),
+  ...torrentProfiles.flatMap((profile) => profile['labels']),
+  ...torrents.flatMap((torrent) => torrent['labels']),
 ], false);
 
 /**
@@ -2457,7 +2935,7 @@ saveUsedLabels([
  *
  * @since 2.0.0
  */
-const settings: Record<string, unknown>[] = [
+const settings: MockApi_Settings = [
   {
     'key': 'transmission.downloadDirectory',
     'category': 'transmission.storage',
@@ -2465,7 +2943,7 @@ const settings: Record<string, unknown>[] = [
     'description': 'Completed downloads are written beneath the approved /data mount.',
     'value': '/data/downloads',
     'defaultValue': '/data/downloads',
-    'source': (defaultTorrentProfile['downloadDirectoryLocked']) ? 'managed' : 'default',
+    'source': (defaultTorrentProfile['downloadDirectoryLocked'] === true) ? 'managed' : 'default',
     'locked': defaultTorrentProfile['downloadDirectoryLocked'],
     'valid': true,
     'applyImpact': 'live',
@@ -2571,7 +3049,7 @@ const settings: Record<string, unknown>[] = [
     'category': 'transmission.blocklists',
     'title': 'Enable blocklists',
     'description': 'Transmission rejects peers listed in any blocklist source.',
-    'value': !noVPNConnections,
+    'value': noVPNConnections === false,
     'defaultValue': false,
     'source': 'default',
     'locked': false,
@@ -2611,9 +3089,9 @@ const settings: Record<string, unknown>[] = [
     'category': 'access.rpc',
     'title': 'Transmission-compatible RPC',
     'description': 'Allow third-party Transmission clients through the authenticated control port.',
-    'value': !noVPNConnections,
+    'value': noVPNConnections === false,
     'defaultValue': false,
-    'source': (noVPNConnections) ? 'default' : 'user',
+    'source': (noVPNConnections === true) ? 'default' : 'user',
     'locked': false,
     'valid': true,
     'applyImpact': 'live',
@@ -2633,34 +3111,42 @@ const settings: Record<string, unknown>[] = [
 ];
 
 /**
- * Mock API - Effective string setting.
+ * Mock API - Effective String Setting.
  *
  * Resolves mutable mock settings for Default-profile and storage-policy responses.
  * Route handlers therefore observe Settings changes without duplicated state.
  *
+ * @returns {MockApi_EffectiveStringSetting_Returns}
+ *
  * @since 2.0.0
  */
-const effectiveStringSetting = (key: string): string => String(
-  settings.find((setting: Record<string, unknown>): boolean => setting['key'] === key)?.['value'] ?? '',
-);
+const effectiveStringSetting = (key: MockApi_EffectiveStringSetting_Key): MockApi_EffectiveStringSetting_Returns => {
+  const matchedSetting: MockApi_EffectiveStringSetting_MatchedSetting = settings.find((setting) => setting['key'] === key);
+
+  return String(((matchedSetting !== undefined) ? matchedSetting['value'] : undefined) ?? '');
+};
 
 /**
- * Mock API - Ensure directory.
+ * Mock API - Ensure Directory.
  *
  * Adds every missing parent beneath /data so the in-memory folder browser follows
  * the control API's controller-backed creation behavior.
  *
+ * @returns {MockApi_EnsureDirectory_Returns}
+ *
  * @since 2.0.0
  */
-const ensureDirectory = (directoryPath: string): void => {
-  if (!directoryPath.startsWith('/data/') || directoryPath.includes('/../')) {
+const ensureDirectory = (directoryPath: MockApi_EnsureDirectory_DirectoryPath): MockApi_EnsureDirectory_Returns => {
+  if (directoryPath.startsWith('/data/') === false || directoryPath.includes('/../') === true) {
     return;
   }
 
-  let currentPath: string = '/data';
+  let currentPath: MockApi_EnsureDirectory_CurrentPath = '/data';
+
   for (const component of directoryPath.slice('/data/'.length).split('/')) {
     currentPath = `${currentPath}/${component}`;
-    if (!directories.has(currentPath)) {
+
+    if (directories.has(currentPath) === false) {
       directories.set(currentPath, {
         files: 0,
         mountPoint: false,
@@ -2668,51 +3154,62 @@ const ensureDirectory = (directoryPath: string): void => {
       });
     }
   }
+
+  return;
 };
 
 /**
- * Mock API - Ensure configured directories.
+ * Mock API - Ensure Configured Directories.
  *
  * Keeps the Default profile and enabled incomplete folder visible after Settings
  * changes, matching the production startup and save behavior.
  *
+ * @returns {MockApi_EnsureConfiguredDirectories_Returns}
+ *
  * @since 2.0.0
  */
-const ensureConfiguredDirectories = (): void => {
+const ensureConfiguredDirectories = (): MockApi_EnsureConfiguredDirectories_Returns => {
   ensureDirectory(effectiveStringSetting('transmission.downloadDirectory'));
-  const incompleteEnabled: boolean = settings.find(
-    (setting: Record<string, unknown>): boolean => setting['key'] === 'transmission.incompleteDirectoryEnabled',
-  )?.['value'] === true;
-  if (incompleteEnabled) {
+
+  const incompleteSetting: MockApi_EnsureConfiguredDirectories_IncompleteSetting = settings.find(
+    (setting) => setting['key'] === 'transmission.incompleteDirectoryEnabled',
+  );
+  const incompleteEnabled: MockApi_EnsureConfiguredDirectories_IncompleteEnabled = incompleteSetting !== undefined && incompleteSetting['value'] === true;
+
+  if (incompleteEnabled === true) {
     ensureDirectory(effectiveStringSetting('transmission.incompleteDirectory'));
   }
+
+  return;
 };
 
 ensureConfiguredDirectories();
+
 for (const profile of torrentProfiles) {
   ensureDirectory(profile['downloadDirectory']);
 }
 
 /**
- * Mock API - Download selection.
+ * Mock API - Download Selection.
  *
  * Returns the listing fields supplied by the real storage-directory endpoint.
  * Navigation remains available even when final selection is unavailable.
  *
+ * @returns {MockApi_DownloadSelection_Returns}
+ *
  * @since 2.0.0
  */
-const downloadSelection = (directoryPath: string): {
-  allowed: boolean
-  reason: string
-} => {
+const downloadSelection = (directoryPath: MockApi_DownloadSelection_DirectoryPath): MockApi_DownloadSelection_Returns => {
   if (directoryPath === '/data') {
     return {
       allowed: false,
       reason: 'Open or create a folder inside /data. Torrents can\'t be saved in /data itself.',
     };
   }
-  const incompleteDirectory: string = effectiveStringSetting('transmission.incompleteDirectory');
-  if (dataPathContains(incompleteDirectory, directoryPath)) {
+
+  const incompleteDirectory: MockApi_DownloadSelection_IncompleteDirectory = effectiveStringSetting('transmission.incompleteDirectory');
+
+  if (dataPathContains(incompleteDirectory, directoryPath) === true) {
     return {
       allowed: false,
       reason: `This is in the incomplete folder, ${incompleteDirectory}, which only holds unfinished downloads. Pick a folder outside it.`,
@@ -2726,32 +3223,33 @@ const downloadSelection = (directoryPath: string): {
 };
 
 /**
- * Mock API - Directory children.
+ * Mock API - Directory Children.
  *
  * Lists immediate real subfolders in the same lexical order as the controller.
  * Deeper descendants are excluded until their own level is requested.
  *
+ * @returns {MockApi_DirectoryChildren_Returns}
+ *
  * @since 2.0.0
  */
-const directoryChildren = (directoryPath: string): string[] => [...directories.keys()].filter(
-  (candidate: string): boolean => (
-    candidate.startsWith(`${directoryPath}/`)
-    && !candidate.slice(directoryPath.length + 1).includes('/')
+const directoryChildren = (directoryPath: MockApi_DirectoryChildren_DirectoryPath): MockApi_DirectoryChildren_Returns => [...directories.keys()].filter(
+  (candidate) => (
+    candidate.startsWith(`${directoryPath}/`) === true
+    && candidate.slice(directoryPath.length + 1).includes('/') === false
   ),
 ).sort();
 
 /**
- * Mock API - Incomplete selection.
+ * Mock API - Incomplete Selection.
  *
  * Applies the reverse-containment policy used by the Incomplete directory field.
  * The current incomplete folder remains usable even when assignments sit elsewhere.
  *
+ * @returns {MockApi_IncompleteSelection_Returns}
+ *
  * @since 2.0.0
  */
-const incompleteSelection = (directoryPath: string): {
-  allowed: boolean
-  reason: string
-} => {
+const incompleteSelection = (directoryPath: MockApi_IncompleteSelection_DirectoryPath): MockApi_IncompleteSelection_Returns => {
   if (directoryPath === effectiveStringSetting('transmission.incompleteDirectory')) {
     return {
       allowed: true,
@@ -2759,22 +3257,16 @@ const incompleteSelection = (directoryPath: string): {
     };
   }
 
-  const clash: {
-    path: string
-    profileName: string
-  } | undefined = [
+  const clash: MockApi_IncompleteSelection_Clash = [
     {
       path: effectiveStringSetting('transmission.downloadDirectory'),
       profileName: defaultTorrentProfile['name'],
     },
-    ...torrentProfiles.map((profile: MockTorrentProfile): {
-      path: string
-      profileName: string
-    } => ({
+    ...torrentProfiles.map((profile): MockApi_IncompleteSelection_Destination => ({
       path: profile['downloadDirectory'],
       profileName: `${profile['name']} profile`,
     })),
-  ].find((destination): boolean => dataPathContains(directoryPath, destination['path']));
+  ].find((destination) => dataPathContains(directoryPath, destination['path']));
 
   if (clash === undefined) {
     return {
@@ -2782,35 +3274,34 @@ const incompleteSelection = (directoryPath: string): {
       reason: '',
     };
   }
-  const exactFolder: boolean = dataPathsEqualIgnoringCase(directoryPath, clash['path']);
+
+  const exactFolder: MockApi_IncompleteSelection_ExactFolder = dataPathsEqualIgnoringCase(directoryPath, clash['path']);
 
   return {
     allowed: false,
-    reason: (exactFolder) ? `“${clash['path'].slice(clash['path'].lastIndexOf('/') + 1)}” is the ${clash['profileName']}'s folder, so it can't be the incomplete folder.` : `Use a folder outside ${clash['path']}. Torrents in the ${clash['profileName']} finish there.`,
+    reason: (exactFolder === true) ? `“${clash['path'].slice(clash['path'].lastIndexOf('/') + 1)}” is the ${clash['profileName']}'s folder, so it can't be the incomplete folder.` : `Use a folder outside ${clash['path']}. Torrents in the ${clash['profileName']} finish there.`,
   };
 };
 
 /**
- * Mock API - Profile selection.
+ * Mock API - Profile Selection.
  *
  * Applies ordinary download-folder safety and reserves every other profile's
  * folder for its current owner.
  *
+ * @returns {MockApi_ProfileSelection_Returns}
+ *
  * @since 2.0.0
  */
-const profileSelection = (directoryPath: string, profileID: string): {
-  allowed: boolean
-  reason: string
-} => {
-  const downloadPolicy: {
-    allowed: boolean
-    reason: string
-  } = downloadSelection(directoryPath);
-  if (!downloadPolicy['allowed']) {
+const profileSelection = (directoryPath: MockApi_ProfileSelection_DirectoryPath, profileID: MockApi_ProfileSelection_ProfileID): MockApi_ProfileSelection_Returns => {
+  const downloadPolicy: MockApi_ProfileSelection_DownloadPolicy = downloadSelection(directoryPath);
+
+  if (downloadPolicy['allowed'] === false) {
     return downloadPolicy;
   }
 
-  const owner = profileFolderOwner(directoryPath, profileID);
+  const owner: MockApi_ProfileSelection_Owner = profileFolderOwner(directoryPath, profileID);
+
   if (owner === undefined) {
     return downloadPolicy;
   }
@@ -2822,21 +3313,26 @@ const profileSelection = (directoryPath: string, profileID: string): {
 };
 
 /**
- * Mock API - Directory tags.
+ * Mock API - Directory Tags.
  *
  * Builds the contract's stable tag order from effective Settings and profile state.
  * The Download directory leads named profile tags as the setting-backed Default.
  *
+ * @returns {MockApi_DirectoryTags_Returns}
+ *
  * @since 2.0.0
  */
-const directoryTags = (directoryPath: string): string[] => {
-  const tags: string[] = [];
+const directoryTags = (directoryPath: MockApi_DirectoryTags_DirectoryPath): MockApi_DirectoryTags_Returns => {
+  const tags: MockApi_DirectoryTags_Tags = [];
+
   if (directoryPath === effectiveStringSetting('transmission.incompleteDirectory')) {
     tags.push('Incomplete folder');
   }
+
   if (directoryPath === effectiveStringSetting('transmission.downloadDirectory')) {
     tags.push(defaultTorrentProfile['name']);
   }
+
   for (const profile of torrentProfiles) {
     if (directoryPath === profile['downloadDirectory']) {
       tags.push(`${profile['name']} profile`);
@@ -2847,52 +3343,49 @@ const directoryTags = (directoryPath: string): string[] => {
 };
 
 /**
- * Mock API - Directory deletion policy.
+ * Mock API - Directory Deletion Policy.
  *
  * Evaluates the contract's ordered advisory rules and returns the first match.
  * DELETE repeats this function so a listing never authorizes a stale mutation.
  *
+ * @returns {MockApi_DirectoryDeletionPolicy_Returns}
+ *
  * @since 2.0.0
  */
-const directoryDeletionPolicy = (directoryPath: string): MockDirectoryDeletionPolicy => {
-  const folderName: string = directoryPath.slice(directoryPath.lastIndexOf('/') + 1);
-  const incompleteDirectory: string = effectiveStringSetting('transmission.incompleteDirectory');
+const directoryDeletionPolicy = (directoryPath: MockApi_DirectoryDeletionPolicy_DirectoryPath): MockApi_DirectoryDeletionPolicy_Returns => {
+  const folderName: MockApi_DirectoryDeletionPolicy_FolderName = directoryPath.slice(directoryPath.lastIndexOf('/') + 1);
+  const incompleteDirectory: MockApi_DirectoryDeletionPolicy_IncompleteDirectory = effectiveStringSetting('transmission.incompleteDirectory');
+
   if (
-    !dataPathsEqualIgnoringCase(directoryPath, incompleteDirectory)
-    && dataPathContainsIgnoringCase(incompleteDirectory, directoryPath)
+    dataPathsEqualIgnoringCase(directoryPath, incompleteDirectory) === false
+    && dataPathContainsIgnoringCase(incompleteDirectory, directoryPath) === true
   ) {
     return {
       code: 'directory_in_use',
       message: 'Folders inside the incomplete folder belong to Transmission, so they can\'t be deleted here.',
     };
   }
-  if (dataPathsEqualIgnoringCase(directoryPath, incompleteDirectory)) {
+
+  if (dataPathsEqualIgnoringCase(directoryPath, incompleteDirectory) === true) {
     return {
       code: 'directory_in_use',
       message: `“${folderName}” is the Incomplete folder in Settings, so it can't be deleted.`,
     };
   }
 
-  const assignedProfile: {
-    name: string
-    path: string
-  } | undefined = torrentProfiles.map((profile: MockTorrentProfile): {
-    name: string
-    path: string
-  } => ({
+  const assignedProfile: MockApi_DirectoryDeletionPolicy_AssignedProfile = torrentProfiles.map((profile): MockApi_DirectoryDeletionPolicy_ProfileFolder => ({
     name: profile['name'],
     path: profile['downloadDirectory'],
-  })).find((profile: {
-    name: string
-    path: string
-  }): boolean => dataPathsEqualIgnoringCase(profile['path'], directoryPath));
+  })).find((profile) => dataPathsEqualIgnoringCase(profile['path'], directoryPath));
+
   if (assignedProfile !== undefined) {
     return {
       code: 'directory_in_use',
       message: `“${folderName}” is the ${assignedProfile['name']} profile's folder, so it can't be deleted.`,
     };
   }
-  if (dataPathsEqualIgnoringCase(directoryPath, effectiveStringSetting('transmission.downloadDirectory'))) {
+
+  if (dataPathsEqualIgnoringCase(directoryPath, effectiveStringSetting('transmission.downloadDirectory')) === true) {
     return {
       code: 'directory_in_use',
       message: `“${folderName}” is the ${defaultTorrentProfile['name']}'s folder, so it can't be deleted.`,
@@ -2905,8 +3398,8 @@ const directoryDeletionPolicy = (directoryPath: string): MockDirectoryDeletionPo
     };
   }
   if (torrents.some(
-    (torrent: MockTorrent): boolean => dataPathsEqualIgnoringCase(torrent['downloadDir'], directoryPath),
-  )) {
+    (torrent) => dataPathsEqualIgnoringCase(torrent['downloadDir'], directoryPath),
+  ) === true) {
     return {
       code: 'directory_in_use',
       message: `A torrent is saved in “${folderName}”, so it can't be deleted.`,
@@ -2919,20 +3412,23 @@ const directoryDeletionPolicy = (directoryPath: string): MockDirectoryDeletionPo
     };
   }
 
-  const metadata: MockDirectoryMetadata | undefined = directories.get(directoryPath);
-  if (metadata?.['mountPoint'] === true) {
+  const metadata: MockApi_DirectoryDeletionPolicy_Metadata = directories.get(directoryPath);
+
+  if (metadata !== undefined && metadata['mountPoint'] === true) {
     return {
       code: 'directory_in_use',
       message: `“${folderName}” is a separate mount, so it can't be deleted.`,
     };
   }
-  if (metadata?.['readable'] === false) {
+
+  if (metadata !== undefined && metadata['readable'] === false) {
     return {
       code: 'directory_in_use',
       message: `Transmission's account can't open “${folderName}”, so it can't be deleted here.`,
     };
   }
-  if ((metadata?.['files'] ?? 0) > 0 || directoryChildren(directoryPath).length > 0) {
+
+  if ((((metadata !== undefined) ? metadata['files'] : undefined) ?? 0) > 0 || directoryChildren(directoryPath).length > 0) {
     return {
       code: 'directory_not_empty',
       message: `Only empty folders can be deleted here. Remove what's inside “${folderName}” from your file system first.`,
@@ -2946,24 +3442,24 @@ const directoryDeletionPolicy = (directoryPath: string): MockDirectoryDeletionPo
 };
 
 /**
- * Mock API - Directory selection policy.
+ * Mock API - Directory Selection.
  *
  * Selects the purpose-specific usability rule for one directory. Profile
  * checks also receive the current owner identifier so its folder stays usable.
  *
+ * @returns {MockApi_DirectorySelection_Returns}
+ *
  * @since 2.0.0
  */
 const directorySelection = (
-  directoryPath: string,
-  purpose: MockDirectoryPurpose,
-  profileID: string,
-): {
-  allowed: boolean
-  reason: string
-} => {
+  directoryPath: MockApi_DirectorySelection_DirectoryPath,
+  purpose: MockApi_DirectorySelection_Purpose,
+  profileID: MockApi_DirectorySelection_ProfileID,
+): MockApi_DirectorySelection_Returns => {
   if (purpose === 'download') {
     return downloadSelection(directoryPath);
   }
+
   if (purpose === 'incomplete') {
     return incompleteSelection(directoryPath);
   }
@@ -2972,22 +3468,21 @@ const directorySelection = (
 };
 
 /**
- * Mock API - List directory.
+ * Mock API - List Directory.
  *
  * Returns one purpose-aware tree level using the full console contract.
  * The envelope's legacy download fields continue to describe the listed folder.
  *
+ * @returns {MockApi_ListDirectory_Returns}
+ *
  * @since 2.0.0
  */
 const listDirectory = (
-  directoryPath: string,
-  purpose: MockDirectoryPurpose,
-  profileID: string = '',
-): Record<string, unknown> => {
-  const selection: {
-    allowed: boolean
-    reason: string
-  } = directorySelection(directoryPath, purpose, profileID);
+  directoryPath: MockApi_ListDirectory_DirectoryPath,
+  purpose: MockApi_ListDirectory_Purpose,
+  profileID: MockApi_ListDirectory_ProfileID = '',
+): MockApi_ListDirectory_Returns => {
+  const selection: MockApi_ListDirectory_Selection = directorySelection(directoryPath, purpose, profileID);
 
   return {
     downloadAllowed: selection['allowed'],
@@ -2998,18 +3493,15 @@ const listDirectory = (
     ...((directoryPath === '/data') ? {} : {
       parentPath: directoryPath.slice(0, directoryPath.lastIndexOf('/')),
     }),
-    directories: directoryChildren(directoryPath).map((child: string): Record<string, unknown> => {
-      const metadata: MockDirectoryMetadata = directories.get(child) ?? {
+    directories: directoryChildren(directoryPath).map((child): MockApi_ListDirectory_Directory => {
+      const metadata: MockApi_ListDirectory_Metadata = directories.get(child) ?? {
         files: 0,
         mountPoint: false,
         readable: true,
       };
-      const childDirectories: string[] = directoryChildren(child);
-      const purposeSelection: {
-        allowed: boolean
-        reason: string
-      } = directorySelection(child, purpose, profileID);
-      const deletionPolicy: MockDirectoryDeletionPolicy = directoryDeletionPolicy(child);
+      const childDirectories: MockApi_ListDirectory_ChildDirectories = directoryChildren(child);
+      const purposeSelection: MockApi_ListDirectory_PurposeSelection = directorySelection(child, purpose, profileID);
+      const deletionPolicy: MockApi_ListDirectory_DeletionPolicy = directoryDeletionPolicy(child);
 
       return {
         name: child.slice(child.lastIndexOf('/') + 1),
@@ -3033,22 +3525,27 @@ const listDirectory = (
 };
 
 /**
- * Mock API - Download folder issue.
+ * Mock API - Download Folder Issue.
  *
  * Reuses effective incomplete-folder state across every mock destination route.
  * An empty result means the candidate passes both reserved-folder checks.
  *
+ * @returns {MockApi_DownloadFolderIssue_Returns}
+ *
  * @since 2.0.0
  */
-const downloadFolderIssue = (value: unknown): string => {
-  if (isDownloadDataRoot(value)) {
+const downloadFolderIssue = (value: MockApi_DownloadFolderIssue_Value): MockApi_DownloadFolderIssue_Returns => {
+  if (isDownloadDataRoot(value) === true) {
     return downloadDataPathRootMessage;
   }
+
   if (typeof value !== 'string' || value === '') {
     return 'Choose a normalized folder beneath /data.';
   }
-  const incompleteDirectory: string = effectiveStringSetting('transmission.incompleteDirectory');
-  if (dataPathContains(incompleteDirectory, value)) {
+
+  const incompleteDirectory: MockApi_DownloadFolderIssue_IncompleteDirectory = effectiveStringSetting('transmission.incompleteDirectory');
+
+  if (dataPathContains(incompleteDirectory, value) === true) {
     return `Choose a folder outside the incomplete folder, ${incompleteDirectory}.`;
   }
 
@@ -3056,34 +3553,34 @@ const downloadFolderIssue = (value: unknown): string => {
 };
 
 /**
- * Mock API - Settings revision.
+ * Mock API - Settings Revision.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
  * @since 2.0.0
  */
-let settingsRevision: number = 3;
+let settingsRevision: MockApi_SettingsRevision = 3;
 
 /**
- * Mock API - Pending Transmission restart keys.
+ * Mock API - Pending Restart Keys.
  *
  * Starts with the approved screenshot state and changes as settings are saved or applied.
  * Lets the restart notice exercise both its initial and cleared states.
  *
  * @since 2.0.0
  */
-let pendingRestartKeys: string[] = (noVPNConnections) ? [] : ['transmission.peerPortRandomOnStart'];
+let pendingRestartKeys: MockApi_PendingRestartKeys = (noVPNConnections === true) ? [] : ['transmission.peerPortRandomOnStart'];
 
 /**
- * Mock API - Blocklist status.
+ * Mock API - Blocklist Status.
  *
  * Starts with three representative source outcomes and changes briefly to updating
  * when the mock Update now endpoint is called.
  *
  * @since 2.0.0
  */
-let blocklistStatus: MockBlocklistStatus = {
+let blocklistStatus: MockApi_BlocklistStatus = {
   state: 'idle',
   lastAttemptAt: '2026-11-05T16:15:00Z',
   lastSuccessAt: '2026-11-05T16:15:00Z',
@@ -3124,7 +3621,7 @@ let blocklistStatus: MockBlocklistStatus = {
  *
  * @since 2.0.0
  */
-const providers: Record<string, unknown>[] = [
+const providers: MockApi_Providers = [
   {
     'id': 'custom',
     'displayName': 'Custom',
@@ -3665,7 +4162,7 @@ const providers: Record<string, unknown>[] = [
  *
  * @since 2.0.0
  */
-const profiles: Record<string, unknown>[] = [
+const profiles: MockApi_Profiles = [
   {
     'id': 'pia-ca-toronto-udp',
     'providerId': 'pia',
@@ -4348,7 +4845,7 @@ const profiles: Record<string, unknown>[] = [
  *
  * @since 2.0.0
  */
-const tokens: Record<string, unknown>[] = [
+const tokens: MockApi_Tokens = [
   {
     id: 'tok-3',
     name: 'Backup script',
@@ -4384,14 +4881,14 @@ const tokens: Record<string, unknown>[] = [
 // Each seeded token's value, so a client can try one as a bearer token.
 
 /**
- * Mock API - Token values.
+ * Mock API - Token Values.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
  * @since 2.0.0
  */
-const tokenValues: Map<string, string> = new Map([
+const tokenValues: MockApi_TokenValues = new Map([
   [
     'tvpn_mock_backup_script',
     'tok-3',
@@ -4407,16 +4904,16 @@ const tokenValues: Map<string, string> = new Map([
 ]);
 
 /**
- * Mock API - Token digests.
+ * Mock API - Token Digests.
  *
  * Retains the non-reusable digest needed to model backup duplicate detection.
  * Ordinary token routes continue returning only the safe metadata in `tokens`.
  *
  * @since 2.0.0
  */
-const tokenDigests: Map<string, string> = new Map(tokens.map(
-  (token: Record<string, unknown>): [string, string] => {
-    const tokenID: string = String(token['id']);
+const tokenDigests: MockApi_TokenDigests = new Map(tokens.map(
+  (token): MockApi_TokenDigests_Entry => {
+    const tokenID: MockApi_TokenDigests_TokenID = String(token['id']);
 
     return [
       tokenID,
@@ -4426,24 +4923,24 @@ const tokenDigests: Map<string, string> = new Map(tokens.map(
 ));
 
 /**
- * Mock API - Token sequence.
+ * Mock API - Token Sequence.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
  * @since 2.0.0
  */
-let tokenSequence: number = tokens.length;
+let tokenSequence: MockApi_TokenSequence = tokens.length;
 
 /**
- * Mock API - RPC logins.
+ * Mock API - Rpc Logins.
  *
  * Provides the stateful compatible-client credentials used by the Remote apps page.
  * Seed data covers both used and never-used timestamps.
  *
  * @since 2.0.0
  */
-const rpcLogins: MockRPCLogin[] = (noVPNConnections) ? [] : [
+const rpcLogins: MockApi_RpcLogins = (noVPNConnections === true) ? [] : [
   {
     createdAt: '2026-10-20T12:00:00Z',
     id: 'rpl-0000000000000001',
@@ -4459,39 +4956,39 @@ const rpcLogins: MockRPCLogin[] = (noVPNConnections) ? [] : [
 ];
 
 /**
- * Mock API - RPC login digests.
+ * Mock API - Rpc Login Digests.
  *
  * Retains the non-reusable digest exported and restored with each compatible-client
  * login while the ordinary management routes continue returning safe metadata.
  *
  * @since 2.0.0
  */
-const rpcLoginDigests: Map<string, string> = new Map(rpcLogins.map(
-  (login: MockRPCLogin): [string, string] => [
+const rpcLoginDigests: MockApi_RpcLoginDigests = new Map(rpcLogins.map(
+  (login): MockApi_RpcLoginDigests_Entry => [
     login['id'],
     createHash('sha256').update(login['id']).digest('base64'),
   ],
 ));
 
 /**
- * Mock API - RPC login sequence.
+ * Mock API - Rpc Login Sequence.
  *
  * Generates stable identifiers for newly added mock credentials.
  * The sequence advances with every successful create request.
  *
  * @since 2.0.0
  */
-let rpcLoginSequence: number = rpcLogins.length;
+let rpcLoginSequence: MockApi_RpcLoginSequence = rpcLogins.length;
 
 /**
- * Mock API - Web proxy logins.
+ * Mock API - Web Proxy Logins.
  *
  * Provides independently editable and revocable proxy credentials.
  * Seed data keeps the list state visible in documentation screenshots.
  *
  * @since 2.0.0
  */
-const webProxyLogins: MockWebProxyLogin[] = (noVPNConnections) ? [] : [
+const webProxyLogins: MockApi_WebProxyLogins = (noVPNConnections === true) ? [] : [
   {
     connectionId: null,
     id: 'wpl-0000000000000001',
@@ -4507,74 +5004,74 @@ const webProxyLogins: MockWebProxyLogin[] = (noVPNConnections) ? [] : [
 ];
 
 /**
- * Mock API - Web proxy state.
+ * Mock API - Web Proxy Enabled.
  *
  * Tracks the desired switch independently from observed VPN readiness.
  * This mirrors the control API's enabled and runtime state split.
  *
  * @since 2.0.0
  */
-let webProxyEnabled: boolean = !noVPNConnections;
+let webProxyEnabled: MockApi_WebProxyEnabled = noVPNConnections === false;
 
 /**
- * Mock API - Web proxy runtime enabled.
+ * Mock API - Web Proxy Runtime Enabled.
  *
  * Lags behind the desired switch so the Remote apps transition state can be
  * exercised against the same delayed observation as the real proxy process.
  *
  * @since 2.0.0
  */
-let webProxyRuntimeEnabled: boolean = !noVPNConnections;
+let webProxyRuntimeEnabled: MockApi_WebProxyRuntimeEnabled = noVPNConnections === false;
 
 /**
- * Mock API - Web proxy transition sequence.
+ * Mock API - Web Proxy Transition Sequence.
  *
  * Invalidates older delayed writes when the desired switch changes again.
  * Only the most recent mock transition may update observed runtime state.
  *
  * @since 2.0.0
  */
-let webProxyTransitionSequence: number = 0;
+let webProxyTransitionSequence: MockApi_WebProxyTransitionSequence = 0;
 
 /**
- * Mock API - Web proxy login sequence.
+ * Mock API - Web Proxy Login Sequence.
  *
  * Generates stable identifiers for newly added web proxy credentials.
  * The sequence advances after each successful create request.
  *
  * @since 2.0.0
  */
-let webProxyLoginSequence: number = webProxyLogins.length;
+let webProxyLoginSequence: MockApi_WebProxyLoginSequence = webProxyLogins.length;
 
 /**
- * Mock API - VPN change state.
+ * Mock API - Vpn Change Running.
  *
  * The environment flag reproduces the reload-during-change state for click tests.
  * The value is shared by snapshots and the VPN status response.
  *
  * @since 2.0.0
  */
-const vpnChangeRunning: boolean = process.env['MOCK_VPN_CHANGE_RUNNING'] === 'true';
+const vpnChangeRunning: MockApi_VpnChangeRunning = process.env['MOCK_VPN_CHANGE_RUNNING'] === 'true';
 
 /**
- * Mock API - VPN capacity source.
+ * Mock API - Vpn Capacity Source.
  *
  * The fallback mode mirrors containers whose memory files cannot be read.
  * Other values retain the representative cgroup-v2 fixture.
  *
  * @since 2.0.0
  */
-const vpnCapacitySource: 'cgroup-v2' | 'fallback' = (process.env['MOCK_CAPACITY_SOURCE'] === 'fallback') ? 'fallback' : 'cgroup-v2';
+const vpnCapacitySource: MockApi_VpnCapacitySource = (process.env['MOCK_CAPACITY_SOURCE'] === 'fallback') ? 'fallback' : 'cgroup-v2';
 
 /**
- * Mock API - VPN connections.
+ * Mock API - Vpn Connections.
  *
  * Starts with the three connections approved for the documentation mockups.
  * Mutating routes update this collection for the lifetime of the mock server.
  *
  * @since 2.0.0
  */
-const vpnConnections: MockVPNConnection[] = [
+const vpnConnections: MockApi_VpnConnections = [
   {
     changeRunning: vpnChangeRunning,
     createdAt: '2026-10-01T12:00:00Z',
@@ -4719,14 +5216,14 @@ const vpnConnections: MockVPNConnection[] = [
 ];
 
 /**
- * Mock API - VPN credential values.
+ * Mock API - Vpn Credential Values.
  *
  * Mirrors sealed server state without placing credential values on connection rows.
  * Public mock responses therefore expose only the corresponding saved field keys.
  *
  * @since 2.0.0
  */
-const vpnCredentialValues: Map<string, Record<string, string>> = new Map([
+const vpnCredentialValues: MockApi_VpnCredentialValues = new Map([
   [
     northwindConnectionId,
     {
@@ -4751,49 +5248,59 @@ const vpnCredentialValues: Map<string, Record<string, string>> = new Map([
 ]);
 
 /**
- * Mock API - VPN credential fields.
+ * Mock API - Mock Vpn Credential Fields.
  *
  * Reads the chosen provider tunnel's field metadata from the same mock payload the
  * console consumes, keeping required-field behavior aligned with the real API.
  *
+ * @returns {MockApi_MockVPNCredentialFields_Returns}
+ *
  * @since 2.0.0
  */
 const mockVPNCredentialFields = (
-  providerId: string,
-  tunnel: 'openvpn' | 'wireguard',
-): MockVPNCredentialField[] => {
-  const providerDefinition: Record<string, unknown> | undefined = providers.find(
-    (candidate: Record<string, unknown>): boolean => candidate['id'] === providerId,
+  providerId: MockApi_MockVPNCredentialFields_ProviderId,
+  tunnel: MockApi_MockVPNCredentialFields_Tunnel,
+): MockApi_MockVPNCredentialFields_Returns => {
+  const providerDefinition: MockApi_MockVPNCredentialFields_ProviderDefinition = providers.find(
+    (candidate) => candidate['id'] === providerId,
   );
-  const tunnelDefinitions: Record<string, unknown>[] = (
-    providerDefinition !== undefined && Array.isArray(providerDefinition['tunnels'])
-  ) ? providerDefinition['tunnels'] as Record<string, unknown>[] : [];
-  const tunnelDefinition: Record<string, unknown> | undefined = tunnelDefinitions.find(
-    (candidate: Record<string, unknown>): boolean => candidate['id'] === tunnel,
+  const tunnelDefinitions: MockApi_MockVPNCredentialFields_TunnelDefinitions = (
+    providerDefinition !== undefined && Array.isArray(providerDefinition['tunnels']) === true
+  ) ? providerDefinition['tunnels'] as MockApi_MockVPNCredentialFields_TunnelDefinitions : [];
+  const tunnelDefinition: MockApi_MockVPNCredentialFields_TunnelDefinition = tunnelDefinitions.find(
+    (candidate) => candidate['id'] === tunnel,
   );
 
   return (
-    tunnelDefinition !== undefined && Array.isArray(tunnelDefinition['credentialFields'])
-  ) ? tunnelDefinition['credentialFields'] as MockVPNCredentialField[] : [];
+    tunnelDefinition !== undefined && Array.isArray(tunnelDefinition['credentialFields']) === true
+  ) ? tunnelDefinition['credentialFields'] as MockApi_MockVPNCredentialFields_Returns : [];
 };
 
 /**
- * Mock API - Submitted VPN credentials.
+ * Mock API - Submitted Mock Vpn Credentials.
  *
  * Keeps only non-empty string fields, matching the console and server treatment of an
  * omitted or blank saved credential.
  *
+ * @returns {MockApi_SubmittedMockVPNCredentials_Returns}
+ *
  * @since 2.0.0
  */
-const submittedMockVPNCredentials = (value: unknown): Record<string, string> => {
-  const credentials: Record<string, string> = {};
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+const submittedMockVPNCredentials = (value: MockApi_SubmittedMockVPNCredentials_Value): MockApi_SubmittedMockVPNCredentials_Returns => {
+  const credentials: MockApi_SubmittedMockVPNCredentials_Credentials = {};
+
+  if (
+    typeof value !== 'object'
+    || value === null
+    || Array.isArray(value) === true
+  ) {
     return credentials;
   }
 
   for (const entry of Object.entries(value)) {
-    const key: string = entry[0];
-    const credentialValue: unknown = entry[1];
+    const key: MockApi_SubmittedMockVPNCredentials_Key = entry[0];
+    const credentialValue: MockApi_SubmittedMockVPNCredentials_CredentialValue = entry[1];
+
     if (typeof credentialValue === 'string' && credentialValue.trim() !== '') {
       Reflect.set(credentials, key, credentialValue);
     }
@@ -4803,21 +5310,23 @@ const submittedMockVPNCredentials = (value: unknown): Record<string, string> => 
 };
 
 /**
- * Mock API - Merged VPN credentials.
+ * Mock API - Merged Mock Vpn Credentials.
  *
  * Preserves saved values only while provider and tunnel still match, then overlays
  * every non-empty submitted replacement.
  *
+ * @returns {MockApi_MergedMockVPNCredentials_Returns}
+ *
  * @since 2.0.0
  */
 const mergedMockVPNCredentials = (
-  connection: MockVPNConnection,
-  providerId: string,
-  tunnel: 'openvpn' | 'wireguard',
-  submittedCredentials: Record<string, string>,
-): Record<string, string> => {
-  const savedCredentials: Record<string, string> = vpnCredentialValues.get(connection['id']) ?? {};
-  const credentials: Record<string, string> = (
+  connection: MockApi_MergedMockVPNCredentials_Connection,
+  providerId: MockApi_MergedMockVPNCredentials_ProviderId,
+  tunnel: MockApi_MergedMockVPNCredentials_Tunnel,
+  submittedCredentials: MockApi_MergedMockVPNCredentials_SubmittedCredentials,
+): MockApi_MergedMockVPNCredentials_Returns => {
+  const savedCredentials: MockApi_MergedMockVPNCredentials_SavedCredentials = vpnCredentialValues.get(connection['id']) ?? {};
+  const credentials: MockApi_MergedMockVPNCredentials_Credentials = (
     providerId === connection['providerId'] && tunnel === connection['tunnel']
   ) ? { ...savedCredentials } : {};
 
@@ -4829,52 +5338,76 @@ const mergedMockVPNCredentials = (
 };
 
 /**
- * Mock API - Saved VPN credential keys.
+ * Mock API - Saved Mock Vpn Credential Keys.
  *
  * Projects configured fields in provider order so mock reads expose stable metadata
  * without returning their values.
  *
+ * @returns {MockApi_SavedMockVPNCredentialKeys_Returns}
+ *
  * @since 2.0.0
  */
 const savedMockVPNCredentialKeys = (
-  providerId: string,
-  tunnel: 'openvpn' | 'wireguard',
-  credentials: Record<string, string>,
-): string[] => mockVPNCredentialFields(providerId, tunnel)
-  .filter((field: MockVPNCredentialField): boolean => (credentials[field['key']] ?? '') !== '')
-  .map((field: MockVPNCredentialField): string => field['key']);
+  providerId: MockApi_SavedMockVPNCredentialKeys_ProviderId,
+  tunnel: MockApi_SavedMockVPNCredentialKeys_Tunnel,
+  credentials: MockApi_SavedMockVPNCredentialKeys_Credentials,
+): MockApi_SavedMockVPNCredentialKeys_Returns => {
+  return mockVPNCredentialFields(providerId, tunnel)
+    .filter((field) => (credentials[field['key']] ?? '') !== '')
+    .map((field) => field['key']);
+};
 
 /**
- * Mock API - Missing VPN credential.
+ * Mock API - Missing Mock Vpn Credential.
  *
  * Returns the first required provider field that the candidate cannot satisfy.
  * The caller uses its safe label and key in the shared field-error envelope.
  *
+ * @returns {MockApi_MissingMockVPNCredential_Returns}
+ *
  * @since 2.0.0
  */
 const missingMockVPNCredential = (
-  providerId: string,
-  tunnel: 'openvpn' | 'wireguard',
-  credentials: Record<string, string>,
-): MockVPNCredentialField | undefined => mockVPNCredentialFields(providerId, tunnel).find(
-  (field: MockVPNCredentialField): boolean => field['required'] && (credentials[field['key']] ?? '') === '',
+  providerId: MockApi_MissingMockVPNCredential_ProviderId,
+  tunnel: MockApi_MissingMockVPNCredential_Tunnel,
+  credentials: MockApi_MissingMockVPNCredential_Credentials,
+): MockApi_MissingMockVPNCredential_Returns => mockVPNCredentialFields(providerId, tunnel).find(
+  (field) => field['required'] && (credentials[field['key']] ?? '') === '',
 );
 
 /**
- * Mock API - Sends VPN credential error.
+ * Mock API - Send JSON.
+ *
+ * Centralizes this operation for the surrounding workflow.
+ * Callers reuse one implementation instead of repeating the behavior.
+ *
+ * @returns {MockApi_SendJSON_Returns}
+ *
+ * @since 2.0.0
+ */
+const sendJSON = (response: MockApi_SendJSON_Response, status: MockApi_SendJSON_Status, body: MockApi_SendJSON_Body): MockApi_SendJSON_Returns => {
+  response.writeHead(status, { 'Content-Type': 'application/json' }).end(JSON.stringify(body));
+
+  return;
+};
+
+/**
+ * Mock API - Send Mock Vpn Credential Error.
  *
  * Mirrors the real API's dotted field name and segmented path for a missing sign-in
  * value while keeping the message free of credential contents.
  *
+ * @returns {MockApi_SendMockVPNCredentialError_Returns}
+ *
  * @since 2.0.0
  */
 const sendMockVPNCredentialError = (
-  response: ServerResponse,
-  prefix: string,
-  field: MockVPNCredentialField,
-): void => {
-  const fieldName: string = `${prefix}.${field['key']}`;
-  const message: string = `${field['label']} is required.`;
+  response: MockApi_SendMockVPNCredentialError_Response,
+  prefix: MockApi_SendMockVPNCredentialError_Prefix,
+  field: MockApi_SendMockVPNCredentialError_Field,
+): MockApi_SendMockVPNCredentialError_Returns => {
+  const fieldName: MockApi_SendMockVPNCredentialError_FieldName = `${prefix}.${field['key']}`;
+  const message: MockApi_SendMockVPNCredentialError_Message = `${field['label']} is required.`;
 
   sendJSON(response, 422, {
     error: {
@@ -4887,27 +5420,29 @@ const sendMockVPNCredentialError = (
       }],
     },
   });
+
+  return;
 };
 
 /**
- * Mock API - VPN connection sequence.
+ * Mock API - Vpn Connection Sequence.
  *
  * Produces stable server-shaped identifiers for connections added in the UI.
  * The counter advances only after a successful create request.
  *
  * @since 2.0.0
  */
-let vpnConnectionSequence: number = vpnConnections.length;
+let vpnConnectionSequence: MockApi_VpnConnectionSequence = vpnConnections.length;
 
 /**
- * Mock API - Token scopes.
+ * Mock API - Token Scopes.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
  * @since 2.0.0
  */
-const tokenScopes: string[] = [
+const tokenScopes: MockApi_TokenScopes = [
   'torrents:read',
   'torrents:write',
   'vpn:read',
@@ -4924,23 +5459,29 @@ const tokenScopes: string[] = [
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @returns {MockApi_Tick_Returns}
+ *
  * @since 2.0.0
  */
-const tick = (): void => {
+const tick = (): MockApi_Tick_Returns => {
   sequence += 1;
 
   for (const torrent of torrents) {
-    const downloading: boolean = torrent['status'] === 4 && torrent['error'] === 0 && !torrent['isStalled'];
-    const seeding: boolean = torrent['status'] === 6;
+    const downloading: MockApi_Tick_Downloading = (
+      torrent['status'] === 4
+      && torrent['error'] === 0
+      && torrent['isStalled'] === false
+    );
+    const seeding: MockApi_Tick_Seeding = torrent['status'] === 6;
 
-    torrent.rateDownload = (downloading) ? Math.round((1.5 + (Math.random() * 9)) * 1024 * 1024) : 0;
-    torrent.rateUpload = (downloading || seeding) ? Math.round(Math.random() * 1.8 * 1024 * 1024) : 0;
-    torrent.peersSendingToUs = (downloading) ? 8 + Math.floor(Math.random() * 30) : 0;
+    torrent.rateDownload = (downloading === true) ? Math.round((1.5 + (Math.random() * 9)) * 1024 * 1024) : 0;
+    torrent.rateUpload = (downloading === true || seeding === true) ? Math.round(Math.random() * 1.8 * 1024 * 1024) : 0;
+    torrent.peersSendingToUs = (downloading === true) ? 8 + Math.floor(Math.random() * 30) : 0;
     torrent.peersGettingFromUs = (torrent['rateUpload'] > 0) ? 1 + Math.floor(Math.random() * 6) : 0;
     torrent.peersConnected = torrent['peersSendingToUs'] + torrent['peersGettingFromUs'];
 
-    if (downloading) {
-      const step: number = Math.min(torrent['leftUntilDone'], torrent['rateDownload'] * 2);
+    if (downloading === true) {
+      const step: MockApi_Tick_Step = Math.min(torrent['leftUntilDone'], torrent['rateDownload'] * 2);
 
       torrent.downloadedEver += step;
       torrent.leftUntilDone -= step;
@@ -4958,17 +5499,19 @@ const tick = (): void => {
     torrent.uploadedEver += torrent['rateUpload'] * 2;
     torrent.uploadRatio = (torrent['downloadedEver'] === 0) ? -1 : torrent['uploadedEver'] / torrent['downloadedEver'];
   }
+
+  return;
 };
 
 /**
- * Mock API - Torrent summary fields.
+ * Mock API - Torrent Summary Fields.
  *
  * Mirrors the exact field inventory requested by the control API for lists and
  * live snapshots. Detail-only fixture fields stay private until the detail route.
  *
  * @since 2.0.0
  */
-const torrentSummaryFields: (keyof MockTorrent)[] = [
+const torrentSummaryFields: MockApi_TorrentSummaryFields = [
   'activityDate',
   'addedDate',
   'connectionId',
@@ -5004,31 +5547,35 @@ const torrentSummaryFields: (keyof MockTorrent)[] = [
 ];
 
 /**
- * Mock API - Torrent summary.
+ * Mock API - Torrent Summary.
  *
  * Projects one stateful mock row into the public summary contract.
  * The projection prevents detail-only fields from leaking into list events.
  *
+ * @returns {MockApi_TorrentSummary_Returns}
+ *
  * @since 2.0.0
  */
-const torrentSummary = (torrent: MockTorrent): Record<string, unknown> => Object.fromEntries(
-  torrentSummaryFields.map((field: keyof MockTorrent): [string, MockTorrent[keyof MockTorrent]] => [
+const torrentSummary = (torrent: MockApi_TorrentSummary_Torrent): MockApi_TorrentSummary_Returns => Object.fromEntries(
+  torrentSummaryFields.map((field): MockApi_TorrentSummary_Entry => [
     field,
     torrent[field],
   ]),
 );
 
 /**
- * Mock API - Previews torrent link.
+ * Mock API - Preview Torrent Link.
  *
  * Supplies deterministic metainfo-like names without making network requests.
  * The Arch release fixture reproduces the directory-style URL that prompted the
  * protected preview workflow.
  *
+ * @returns {MockApi_PreviewTorrentLink_Returns}
+ *
  * @since 2.0.0
  */
-const previewTorrentLink = (link: string, index: number): MockTorrentLinkPreview | null => {
-  let parsedLink: URL | undefined = undefined;
+const previewTorrentLink = (link: MockApi_PreviewTorrentLink_Link, index: MockApi_PreviewTorrentLink_Index): MockApi_PreviewTorrentLink_Returns => {
+  let parsedLink: MockApi_PreviewTorrentLink_ParsedLink = undefined;
   try {
     parsedLink = new URL(link);
   } catch {
@@ -5039,9 +5586,10 @@ const previewTorrentLink = (link: string, index: number): MockTorrentLinkPreview
     return null;
   }
   if (parsedLink.protocol === 'magnet:') {
-    const name: string = parsedLink.searchParams.get('dn')?.trim() ?? '';
-    const exactTopic: string | undefined = parsedLink.searchParams.getAll('xt').find(
-      (candidate: string): boolean => /^urn:btih:[0-9a-f]{40}$/iu.test(candidate),
+    const displayName: MockApi_PreviewTorrentLink_DisplayName = parsedLink.searchParams.get('dn');
+    const name: MockApi_PreviewTorrentLink_Name = ((displayName !== null) ? displayName.trim() : undefined) ?? '';
+    const exactTopic: MockApi_PreviewTorrentLink_ExactTopic = parsedLink.searchParams.getAll('xt').find(
+      (candidate) => new RegExp(magnetInfoHashPattern, 'iu').test(candidate),
     );
     if (name === '' || exactTopic === undefined) {
       return null;
@@ -5057,8 +5605,8 @@ const previewTorrentLink = (link: string, index: number): MockTorrentLinkPreview
     return null;
   }
 
-  let name: string = '';
-  let totalSize: number = 0;
+  let name: MockApi_PreviewTorrentLink_Name = '';
+  let totalSize: MockApi_PreviewTorrentLink_TotalSize = 0;
   if (
     parsedLink.hostname === 'archlinux.org'
     && parsedLink.pathname === '/releng/releases/2026.11.01/torrent/'
@@ -5066,14 +5614,14 @@ const previewTorrentLink = (link: string, index: number): MockTorrentLinkPreview
     name = 'archlinux-2026.11.01-x86_64.iso';
     totalSize = Math.round(1.3 * gibibyte);
   } else {
-    const pathSegments: string[] = parsedLink.pathname.split('/').filter(Boolean);
-    const encodedName: string = pathSegments.at(-1) ?? parsedLink.hostname;
+    const pathSegments: MockApi_PreviewTorrentLink_PathSegments = parsedLink.pathname.split('/').filter(Boolean);
+    const encodedName: MockApi_PreviewTorrentLink_EncodedName = pathSegments.at(-1) ?? parsedLink.hostname;
     try {
       name = decodeURIComponent(encodedName);
     } catch {
       name = encodedName;
     }
-    name = name.replace(/\.torrent$/iu, '');
+    name = name.replace(new RegExp(torrentExtensionPattern, 'iu'), '');
     totalSize = Math.round(2.4 * gibibyte);
   }
 
@@ -5086,48 +5634,54 @@ const previewTorrentLink = (link: string, index: number): MockTorrentLinkPreview
 };
 
 /**
- * Mock API - Default VPN connection.
+ * Mock API - Default Vpn Connection.
  *
  * Resolves the one slot used by the legacy-compatible snapshot vpn field.
  * Mutating the default only changes flags, so callers always resolve it fresh.
  *
+ * @returns {MockApi_DefaultVPNConnection_Returns}
+ *
  * @since 2.0.0
  */
-const defaultVPNConnection = (): MockVPNConnection => vpnConnections.find(
-  (connection: MockVPNConnection): boolean => connection['default'],
-) ?? vpnConnections[0] as MockVPNConnection;
+const defaultVPNConnection = (): MockApi_DefaultVPNConnection_Returns => vpnConnections.find(
+  (connection) => connection['default'],
+) ?? vpnConnections[0] as MockApi_DefaultVPNConnection_Returns;
 
 /**
- * Mock API - Is connection being removed.
+ * Mock API - Is Connection Being Removed.
  *
  * Reports whether a mutation targets the environment-selected removal marker.
  * Nullable default relationships do not name the marked non-default connection.
  *
+ * @returns {MockApi_IsConnectionBeingRemoved_Returns}
+ *
  * @since 2.0.0
  */
-const isConnectionBeingRemoved = (connectionId: string | null | undefined): boolean => (
+const isConnectionBeingRemoved = (connectionId: MockApi_IsConnectionBeingRemoved_ConnectionId): MockApi_IsConnectionBeingRemoved_Returns => (
   connectionId !== null
   && connectionId !== undefined
   && connectionId === connectionBeingRemovedId
 );
 
 /**
- * Mock API - VPN protection.
+ * Mock API - Vpn Protection.
  *
  * Counts enabled connections only and derives the aggregate protection state.
  * This matches the sidebar and mobile chip contract.
  *
+ * @returns {MockApi_VpnProtection_Returns}
+ *
  * @since 2.0.0
  */
-const vpnProtection = (): Record<string, unknown> => {
-  const enabled: MockVPNConnection[] = (noVPNConnections) ? [] : vpnConnections.filter((connection: MockVPNConnection): boolean => connection['enabled']);
-  const protectedCount: number = enabled.filter((connection: MockVPNConnection): boolean => connection['runtime']['state'] === 'protected').length;
-  let state: string = 'blocked';
+const vpnProtection = (): MockApi_VpnProtection_Returns => {
+  const enabled: MockApi_VpnProtection_Enabled = (noVPNConnections === true) ? [] : vpnConnections.filter((connection) => connection['enabled']);
+  const protectedCount: MockApi_VpnProtection_ProtectedCount = enabled.filter((connection) => connection['runtime']['state'] === 'protected').length;
+  let state: MockApi_VpnProtection_State = 'blocked';
   if (protectedCount === enabled.length && enabled.length > 0) {
     state = 'protected';
   } else if (protectedCount > 0) {
     state = 'partial';
-  } else if (enabled.some((connection: MockVPNConnection): boolean => connection['needsSetup'])) {
+  } else if (enabled.some((connection) => connection['needsSetup']) === true) {
     state = 'setup-required';
   }
 
@@ -5139,88 +5693,100 @@ const vpnProtection = (): Record<string, unknown> => {
 };
 
 /**
- * Mock API - Live VPN connections.
+ * Mock API - Live Vpn Connections.
  *
  * Combines durable identity with runtime and daemon state for event snapshots.
  * The list remains in stable slot order.
  *
+ * @returns {MockApi_LiveVPNConnections_Returns}
+ *
  * @since 2.0.0
  */
-const liveVPNConnections = (): Record<string, unknown>[] => ((noVPNConnections) ? [] : [...vpnConnections])
-  .sort((left: MockVPNConnection, right: MockVPNConnection): number => left['slot'] - right['slot'])
-  .map((connection: MockVPNConnection): Record<string, unknown> => {
-    const runtime: Record<string, unknown> = { ...connection['runtime'] };
+const liveVPNConnections = (): MockApi_LiveVPNConnections_Returns => {
+  const connections: MockApi_LiveVPNConnections_Connections = (noVPNConnections === true) ? [] : [...vpnConnections];
 
-    if (runtime['lastError'] === '') {
-      Reflect.deleteProperty(runtime, 'lastError');
-    }
+  return connections
+    .sort((left, right) => left['slot'] - right['slot'])
+    .map((connection) => {
+      const runtime: MockApi_LiveVPNConnections_Runtime = { ...connection['runtime'] };
 
-    return {
-      ...runtime,
-      connectionId: connection['id'],
-      daemon: connection['daemon'],
-      default: connection['default'],
-      enabled: connection['enabled'],
-      name: connection['name'],
-    };
-  });
+      if (runtime['lastError'] === '') {
+        Reflect.deleteProperty(runtime, 'lastError');
+      }
+
+      return {
+        ...runtime,
+        connectionId: connection['id'],
+        daemon: connection['daemon'],
+        default: connection['default'],
+        enabled: connection['enabled'],
+        name: connection['name'],
+      };
+    });
+};
 
 /**
- * Mock API - VPN connection response.
+ * Mock API - Vpn Connection Response.
  *
  * Derives the displayed count from the torrent collection inspected during
  * removal, so connection rows and dependency dialogs cannot drift apart.
  *
- * @param {MockVPNConnection} connection - Connection.
+ * @param {MockApi_VpnConnectionResponse_Connection} connection - Connection.
  *
- * @returns {Record<string, unknown>}
+ * @returns {MockApi_VpnConnectionResponse_Returns}
  *
  * @since 2.0.0
  */
-const vpnConnectionResponse = (connection: MockVPNConnection): Record<string, unknown> => ({
+const vpnConnectionResponse = (connection: MockApi_VpnConnectionResponse_Connection): MockApi_VpnConnectionResponse_Returns => ({
   ...connection,
-  torrentCount: torrents.filter((torrent: MockTorrent): boolean => torrent['connectionId'] === connection['id']).length,
+  torrentCount: torrents.filter((torrent) => torrent['connectionId'] === connection['id']).length,
 });
 
 /**
- * Mock API - VPN connection response.
+ * Mock API - Vpn Connections Response.
  *
  * Returns the stateful list with the capacity facts shown by the console.
  * A fresh object keeps route mutations visible to later requests.
  *
+ * @returns {MockApi_VpnConnectionsResponse_Returns}
+ *
  * @since 2.0.0
  */
-const vpnConnectionsResponse = (): Record<string, unknown> => ({
-  capacity: {
-    cpus: 4,
-    limit: 8,
-    memoryBytes: (vpnCapacitySource === 'fallback') ? 0 : 4 * gibibyte,
-    source: vpnCapacitySource,
-    used: (noVPNConnections) ? 0 : vpnConnections.length,
-  },
-  changeRunning: !noVPNConnections && vpnConnections.some((connection: MockVPNConnection): boolean => connection['changeRunning']),
-  connections: (noVPNConnections) ? [] : [...vpnConnections]
-    .sort((left: MockVPNConnection, right: MockVPNConnection): number => left['slot'] - right['slot'])
-    .map(vpnConnectionResponse),
-});
+const vpnConnectionsResponse = (): MockApi_VpnConnectionsResponse_Returns => {
+  return {
+    capacity: {
+      cpus: 4,
+      limit: 8,
+      memoryBytes: (vpnCapacitySource === 'fallback') ? 0 : 4 * gibibyte,
+      source: vpnCapacitySource,
+      used: (noVPNConnections === true) ? 0 : vpnConnections.length,
+    },
+    changeRunning: noVPNConnections === false && vpnConnections.some((connection) => connection['changeRunning']),
+    connections: (noVPNConnections === true) ? [] : [...vpnConnections]
+      .sort((left, right) => left['slot'] - right['slot'])
+      .map(vpnConnectionResponse),
+  };
+};
 
 /**
- * Mock API - Protected runtime.
+ * Mock API - Protected Vpn Runtime.
  *
  * Builds controller state from the first selected endpoint after a successful test.
  * This keeps create, update, and reconnect responses consistent.
  *
+ * @returns {MockApi_ProtectedVPNRuntime_Returns}
+ *
  * @since 2.0.0
  */
 const protectedVPNRuntime = (
-  providerId: string,
-  tunnel: 'openvpn' | 'wireguard',
-  profileIds: string[],
-  endpointStrategy: string,
-  slot: number,
-): Record<string, unknown> => {
-  const profile: Record<string, unknown> | undefined = profiles.find(
-    (candidate: Record<string, unknown>): boolean => candidate['id'] === profileIds[0],
+  providerId: MockApi_ProtectedVPNRuntime_ProviderId,
+  tunnel: MockApi_ProtectedVPNRuntime_Tunnel,
+  profileIds: MockApi_ProtectedVPNRuntime_ProfileIds,
+  endpointStrategy: MockApi_ProtectedVPNRuntime_EndpointStrategy,
+  slot: MockApi_ProtectedVPNRuntime_Slot,
+): MockApi_ProtectedVPNRuntime_Returns => {
+  const profile: MockApi_ProtectedVPNRuntime_Profile = profiles.find(
+    (candidate) => candidate['id'] === profileIds[0],
   );
 
   return {
@@ -5237,8 +5803,8 @@ const protectedVPNRuntime = (
     lastError: '',
     profileId: profileIds[0],
     providerId,
-    remoteHost: profile?.['remoteHost'] ?? 'vpn.example.com',
-    remotePort: profile?.['remotePort'] ?? ((tunnel === 'wireguard') ? 51820 : 1194),
+    remoteHost: ((profile !== undefined) ? profile['remoteHost'] : undefined) ?? 'vpn.example.com',
+    remotePort: ((profile !== undefined) ? profile['remotePort'] : undefined) ?? ((tunnel === 'wireguard') ? 51820 : 1194),
     state: 'protected',
     transitionedAt: new Date().toISOString(),
     tunnel,
@@ -5246,16 +5812,18 @@ const protectedVPNRuntime = (
 };
 
 /**
- * Mock API - Default VPN status.
+ * Mock API - Default Vpn Status.
  *
  * Expands the default connection's stored runtime into the controller status
  * embedded by live events.
  *
+ * @returns {MockApi_DefaultVPNStatus_Returns}
+ *
  * @since 2.0.0
  */
-const defaultVPNStatus = (): Record<string, unknown> => {
-  const connection: MockVPNConnection = defaultVPNConnection();
-  const runtime: Record<string, unknown> = { ...connection['runtime'] };
+const defaultVPNStatus = (): MockApi_DefaultVPNStatus_Returns => {
+  const connection: MockApi_DefaultVPNStatus_Connection = defaultVPNConnection();
+  const runtime: MockApi_DefaultVPNStatus_Runtime = { ...connection['runtime'] };
 
   if (runtime['lastError'] === '') {
     Reflect.deleteProperty(runtime, 'lastError');
@@ -5272,15 +5840,17 @@ const defaultVPNStatus = (): Record<string, unknown> => {
 };
 
 /**
- * Mock API - Appliance status.
+ * Mock API - Appliance Status.
  *
  * Matches the authenticated status route and the optional status object in a
  * live snapshot.
  *
+ * @returns {MockApi_ApplianceStatus_Returns}
+ *
  * @since 2.0.0
  */
-const applianceStatus = (): Record<string, unknown> => {
-  const protection: Record<string, unknown> = vpnProtection();
+const applianceStatus = (): MockApi_ApplianceStatus_Returns => {
+  const protection: MockApi_ApplianceStatus_Protection = vpnProtection();
 
   return {
     claimed: true,
@@ -5292,9 +5862,9 @@ const applianceStatus = (): Record<string, unknown> => {
       configurationReady: true,
       firewall: {
         backend: 'nftables',
-        interfaces: ((noVPNConnections) ? [] : vpnConnections).filter(
-          (connection: MockVPNConnection): boolean => connection['runtime']['state'] === 'protected',
-        ).map((connection: MockVPNConnection): Record<string, unknown> => ({
+        interfaces: ((noVPNConnections === true) ? [] : vpnConnections).filter(
+          (connection) => connection['runtime']['state'] === 'protected',
+        ).map((connection) => ({
           address: connection['runtime']['address'],
           interface: connection['runtime']['interface'],
         })),
@@ -5319,15 +5889,17 @@ const applianceStatus = (): Record<string, unknown> => {
 };
 
 /**
- * Mock API - Torrent errors.
+ * Mock API - Torrent Errors.
  *
  * Emits one stable duplicate code even though both rows remain in the list.
  * Normal fixtures return an empty error collection.
  *
+ * @returns {MockApi_TorrentErrors_Returns}
+ *
  * @since 2.0.0
  */
-const torrentErrors = (): string[] => {
-  if (!duplicateTorrentEnabled || torrents[0] === undefined) {
+const torrentErrors = (): MockApi_TorrentErrors_Returns => {
+  if (duplicateTorrentEnabled === false || torrents[0] === undefined) {
     return [];
   }
 
@@ -5340,14 +5912,16 @@ const torrentErrors = (): string[] => {
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @returns {MockApi_Snapshot_Returns}
+ *
  * @since 2.0.0
  */
-const snapshot = (): Record<string, unknown> => {
-  const downloadSpeed: number = torrents.reduce((total: number, torrent: MockTorrent): number => total + torrent['rateDownload'], 0);
-  const uploadSpeed: number = torrents.reduce((total: number, torrent: MockTorrent): number => total + torrent['rateUpload'], 0);
-  const activeTorrentCount: number = torrents.filter((torrent: MockTorrent): boolean => torrent['rateDownload'] > 0 || torrent['rateUpload'] > 0).length;
+const snapshot = (): MockApi_Snapshot_Returns => {
+  const downloadSpeed: MockApi_Snapshot_DownloadSpeed = torrents.reduce((total, torrent) => total + torrent['rateDownload'], 0);
+  const uploadSpeed: MockApi_Snapshot_UploadSpeed = torrents.reduce((total, torrent) => total + torrent['rateUpload'], 0);
+  const activeTorrentCount: MockApi_Snapshot_ActiveTorrentCount = torrents.filter((torrent) => torrent['rateDownload'] > 0 || torrent['rateUpload'] > 0).length;
 
-  const protection: Record<string, unknown> = vpnProtection();
+  const protection: MockApi_Snapshot_Protection = vpnProtection();
 
   return {
     sequence,
@@ -5355,7 +5929,7 @@ const snapshot = (): Record<string, unknown> => {
     status: applianceStatus(),
     connections: liveVPNConnections(),
     protection,
-    ...((noVPNConnections) ? {} : { vpn: defaultVPNStatus() }),
+    ...((noVPNConnections === true) ? {} : { vpn: defaultVPNStatus() }),
     statistics: {
       activeTorrentCount,
       'cumulative-stats': {
@@ -5373,7 +5947,7 @@ const snapshot = (): Record<string, unknown> => {
         uploadedBytes: 31 * gibibyte,
       },
       downloadSpeed,
-      'pausedTorrentCount': torrents.filter((torrent: MockTorrent): boolean => torrent['status'] === 0).length,
+      'pausedTorrentCount': torrents.filter((torrent) => torrent['status'] === 0).length,
       'torrentCount': torrents.length,
       uploadSpeed,
     },
@@ -5384,32 +5958,22 @@ const snapshot = (): Record<string, unknown> => {
 };
 
 /**
- * Mock API - Sends JSON.
+ * Mock API - Send Error.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
- * @since 2.0.0
- */
-const sendJSON = (response: ServerResponse, status: number, body: unknown): void => {
-  response.writeHead(status, { 'Content-Type': 'application/json' }).end(JSON.stringify(body));
-};
-
-/**
- * Mock API - Sends error.
- *
- * Centralizes this operation for the surrounding workflow.
- * Callers reuse one implementation instead of repeating the behavior.
+ * @returns {MockApi_SendError_Returns}
  *
  * @since 2.0.0
  */
 const sendError = (
-  response: ServerResponse,
-  status: number,
-  code: string,
-  message: string,
-  details?: Record<string, unknown>,
-): void => {
+  response: MockApi_SendError_Response,
+  status: MockApi_SendError_Status,
+  code: MockApi_SendError_Code,
+  message: MockApi_SendError_Message,
+  details?: MockApi_SendError_Details,
+): MockApi_SendError_Returns => {
   sendJSON(response, status, {
     error: {
       code,
@@ -5417,59 +5981,67 @@ const sendError = (
       ...((details === undefined) ? {} : { details }),
     },
   });
+
+  return;
 };
 
 /**
- * Mock API - Sends connection being removed.
+ * Mock API - Send Connection Being Removed.
  *
  * Reuses the backend's status, code, and intentionally generic message.
  * The console supplies the visible connection name at the mutation surface.
  *
+ * @returns {MockApi_SendConnectionBeingRemoved_Returns}
+ *
  * @since 2.0.0
  */
-const sendConnectionBeingRemoved = (response: ServerResponse): void => {
+const sendConnectionBeingRemoved = (response: MockApi_SendConnectionBeingRemoved_Response): MockApi_SendConnectionBeingRemoved_Returns => {
   sendError(response, 409, 'connection_being_removed', 'The selected VPN connection is being removed.');
+
+  return;
 };
 
 // Reports every field that failed validation, like the control API's invalid_request.
 
 /**
- * Mock API - Send issues.
+ * Mock API - Send Issues.
  *
  * Stores this module-level value in one named location.
  * Related code reuses it instead of duplicating the definition.
  *
+ * @returns {MockApi_SendIssues_Returns}
+ *
  * @since 2.0.0
  */
-const sendIssues = (response: ServerResponse, issues: {
-  field: string
-  message: string
-}[]): void => {
+const sendIssues = (response: MockApi_SendIssues_Response, issues: MockApi_SendIssues_Issues): MockApi_SendIssues_Returns => {
+  const firstIssue: MockApi_SendIssues_FirstIssue = issues[0];
+
   sendJSON(response, 422, {
     error: {
       code: 'invalid_request',
-      message: issues[0]?.message ?? 'Check the highlighted fields.',
-      issues: issues.map((issue: {
-        field: string
-        message: string
-      }): Record<string, unknown> => ({
+      message: ((firstIssue !== undefined) ? firstIssue['message'] : undefined) ?? 'Check the highlighted fields.',
+      issues: issues.map((issue) => ({
         field: issue['field'],
         path: [issue['field']],
         message: issue['message'],
       })),
     },
   });
+
+  return;
 };
 
 /**
- * Mock API - Password issue.
+ * Mock API - Password Issue.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @returns {MockApi_PasswordIssue_Returns}
+ *
  * @since 2.0.0
  */
-const passwordIssue = (password: string): string => {
+const passwordIssue = (password: MockApi_PasswordIssue_Password): MockApi_PasswordIssue_Returns => {
   if (password.length < 12) {
     return 'Use at least 12 characters.';
   }
@@ -5478,52 +6050,58 @@ const passwordIssue = (password: string): string => {
 };
 
 /**
- * Mock API - Username issue.
+ * Mock API - Username Issue.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @returns {MockApi_UsernameIssue_Returns}
+ *
  * @since 2.0.0
  */
-const usernameIssue = (username: string): string => {
+const usernameIssue = (username: MockApi_UsernameIssue_Username): MockApi_UsernameIssue_Returns => {
   if (username === '') {
     return 'Enter a username.';
   }
 
-  return (/^[A-Za-z0-9][A-Za-z0-9._-]{2,63}$/u.test(username)) ? '' : 'Use 3 to 64 letters, numbers, periods, underscores, or hyphens, starting with a letter or number.';
+  return (new RegExp(administratorUsernamePattern, 'u').test(username) === true) ? '' : 'Use 3 to 64 letters, numbers, periods, underscores, or hyphens, starting with a letter or number.';
 };
 
 /**
- * Mock API - Remote username issue.
+ * Mock API - Remote Username Issue.
  *
  * Validates the broader username contract shared by the RPC and web proxies.
  * Returns an empty string when the candidate is valid.
  *
+ * @returns {MockApi_RemoteUsernameIssue_Returns}
+ *
  * @since 2.0.0
  */
-const remoteUsernameIssue = (username: string): string => {
+const remoteUsernameIssue = (username: MockApi_RemoteUsernameIssue_Username): MockApi_RemoteUsernameIssue_Returns => {
   if (username === '') {
     return 'Enter a username.';
   }
 
-  return (/^[A-Za-z0-9._-]{1,64}$/u.test(username)) ? '' : 'Use 1 to 64 letters, numbers, periods, underscores, or hyphens.';
+  return (new RegExp(loginUsernamePattern, 'u').test(username) === true) ? '' : 'Use 1 to 64 letters, numbers, periods, underscores, or hyphens.';
 };
 
 /**
- * Mock API - Effective web proxy connection identifier.
+ * Mock API - Effective Web Proxy Connection ID.
  *
  * Keeps a stored explicit relationship when its connection still exists.
  * Missing and nullable relationships safely resolve through the default.
  *
+ * @returns {MockApi_EffectiveWebProxyConnectionId_Returns}
+ *
  * @since 2.0.0
  */
-const effectiveWebProxyConnectionId = (login: MockWebProxyLogin): string => {
-  if (noVPNConnections) {
+const effectiveWebProxyConnectionId = (login: MockApi_EffectiveWebProxyConnectionId_Login): MockApi_EffectiveWebProxyConnectionId_Returns => {
+  if (noVPNConnections === true) {
     return '';
   }
   if (login['connectionId'] !== null && vpnConnections.some(
-    (connection: MockVPNConnection): boolean => connection['id'] === login['connectionId'],
-  )) {
+    (connection) => connection['id'] === login['connectionId'],
+  ) === true) {
     return login['connectionId'];
   }
 
@@ -5531,15 +6109,17 @@ const effectiveWebProxyConnectionId = (login: MockWebProxyLogin): string => {
 };
 
 /**
- * Mock API - Web proxy response.
+ * Mock API - Web Proxy Response.
  *
  * Combines the desired switch, VPN readiness, and safe login metadata.
  * Every web proxy route uses this canonical response shape.
  *
+ * @returns {MockApi_WebProxyResponse_Returns}
+ *
  * @since 2.0.0
  */
-const webProxyResponse = (): Record<string, unknown> => {
-  if (noVPNConnections) {
+const webProxyResponse = (): MockApi_WebProxyResponse_Returns => {
+  if (noVPNConnections === true) {
     return {
       enabled: false,
       port: 22605,
@@ -5548,16 +6128,20 @@ const webProxyResponse = (): Record<string, unknown> => {
     };
   }
 
-  const logins: Record<string, unknown>[] = webProxyLogins.map((login: MockWebProxyLogin): Record<string, unknown> => ({
+  const logins: MockApi_WebProxyResponse_Logins = webProxyLogins.map((login) => ({
     ...login,
     effectiveConnectionId: effectiveWebProxyConnectionId(login),
   }));
-  let state: string = 'off';
-  if (webProxyRuntimeEnabled) {
-    const available: boolean = logins.some((login: Record<string, unknown>): boolean => vpnConnections.find(
-      (connection: MockVPNConnection): boolean => connection['id'] === login['effectiveConnectionId'],
-    )?.['runtime']['state'] === 'protected');
-    state = (logins.length === 0 || available) ? 'listening' : 'waiting-for-vpn';
+  let state: MockApi_WebProxyResponse_State = 'off';
+  if (webProxyRuntimeEnabled === true) {
+    const available: MockApi_WebProxyResponse_Available = logins.some((login) => {
+      const effectiveConnection: MockApi_WebProxyResponse_EffectiveConnection = vpnConnections.find(
+        (connection) => connection['id'] === login['effectiveConnectionId'],
+      );
+
+      return ((effectiveConnection !== undefined) ? effectiveConnection['runtime']['state'] : undefined) === 'protected';
+    });
+    state = (logins.length === 0 || available === true) ? 'listening' : 'waiting-for-vpn';
   }
 
   return {
@@ -5569,27 +6153,31 @@ const webProxyResponse = (): Record<string, unknown> => {
 };
 
 /**
- * Mock API - Effective web proxy login.
+ * Mock API - Effective Web Proxy Login.
  *
  * Adds the resolved default identifier without changing the stored nullable choice.
  * Mutation responses and list responses share this exact public shape.
  *
+ * @returns {MockApi_EffectiveWebProxyLogin_Returns}
+ *
  * @since 2.0.0
  */
-const effectiveWebProxyLogin = (login: MockWebProxyLogin): Record<string, unknown> => ({
+const effectiveWebProxyLogin = (login: MockApi_EffectiveWebProxyLogin_Login): MockApi_EffectiveWebProxyLogin_Returns => ({
   ...login,
   effectiveConnectionId: effectiveWebProxyConnectionId(login),
 });
 
 /**
- * Mock API - Sends field error.
+ * Mock API - Send Field Error.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @returns {MockApi_SendFieldError_Returns}
+ *
  * @since 2.0.0
  */
-const sendFieldError = (response: ServerResponse, code: string, field: string, message: string, status: number = 422): void => {
+const sendFieldError = (response: MockApi_SendFieldError_Response, code: MockApi_SendFieldError_Code, field: MockApi_SendFieldError_Field, message: MockApi_SendFieldError_Message, status: MockApi_SendFieldError_Status = 422): MockApi_SendFieldError_Returns => {
   sendJSON(response, status, {
     error: {
       code,
@@ -5601,21 +6189,26 @@ const sendFieldError = (response: ServerResponse, code: string, field: string, m
       }],
     },
   });
+
+  return;
 };
 
 // Marks the mock signed in and answers like the real session response.
 
 /**
- * Mock API - Starts session.
+ * Mock API - Start Session.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @returns {MockApi_StartSession_Returns}
+ *
  * @since 2.0.0
  */
-const startSession = (response: ServerResponse): void => {
+const startSession = (response: MockApi_StartSession_Response): MockApi_StartSession_Returns => {
   signedIn = true;
   response.setHeader('Set-Cookie', 'tvpn_csrf=mock-csrf-token; Path=/; SameSite=Strict');
+
   sendJSON(response, 200, {
     status: 'authenticated',
     administrator: {
@@ -5625,24 +6218,28 @@ const startSession = (response: ServerResponse): void => {
     csrfToken: 'mock-csrf-token',
     expiresAt: new Date(Date.now() + (12 * 3600 * 1000)).toISOString(),
   });
+
+  return;
 };
 
 /**
- * Mock API - Reads body.
+ * Mock API - Read Body.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @returns {MockApi_ReadBody_Returns}
+ *
  * @since 2.0.0
  */
-const readBody = async (request: IncomingMessage): Promise<Record<string, unknown>> => {
-  const chunks: Buffer[] = [];
+const readBody = async (request: MockApi_ReadBody_Request): MockApi_ReadBody_Returns => {
+  const chunks: MockApi_ReadBody_Chunks = [];
 
   for await (const chunk of request) {
     chunks.push(Buffer.from(chunk));
   }
 
-  const text: string = Buffer.concat(chunks).toString('utf-8');
+  const text: MockApi_ReadBody_Text = Buffer.concat(chunks).toString('utf-8');
 
   if (text === '') {
     return {};
@@ -5655,20 +6252,22 @@ const readBody = async (request: IncomingMessage): Promise<Record<string, unknow
 // It answers the request itself and returns undefined when the body can't be used.
 
 /**
- * Mock API - Reads token fields.
+ * Mock API - Read Token Fields.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @returns {MockApi_ReadTokenFields_Returns}
+ *
  * @since 2.0.0
  */
-const readTokenFields = async (request: IncomingMessage, response: ServerResponse, tokenId: string): Promise<Record<string, unknown> | undefined> => {
-  const body: Record<string, unknown> = await readBody(request);
-  const unknownField: string | undefined = Object.keys(body).find((field: string): boolean => ![
+const readTokenFields = async (request: MockApi_ReadTokenFields_Request, response: MockApi_ReadTokenFields_Response, tokenId: MockApi_ReadTokenFields_TokenId): MockApi_ReadTokenFields_Returns => {
+  const body: MockApi_ReadTokenFields_Body = await readBody(request);
+  const unknownField: MockApi_ReadTokenFields_UnknownField = Object.keys(body).find((field) => [
     'name',
     'scopes',
     'expiresAt',
-  ].includes(field));
+  ].includes(field) === false);
 
   if (unknownField !== undefined) {
     sendIssues(response, [{
@@ -5679,11 +6278,8 @@ const readTokenFields = async (request: IncomingMessage, response: ServerRespons
     return undefined;
   }
 
-  const issues: {
-    field: string
-    message: string
-  }[] = [];
-  const name: string = (typeof body['name'] === 'string') ? body['name'].trim() : '';
+  const issues: MockApi_ReadTokenFields_Issues = [];
+  const name: MockApi_ReadTokenFields_Name = (typeof body['name'] === 'string') ? body['name'].trim() : '';
 
   if (name === '') {
     issues.push({
@@ -5697,14 +6293,14 @@ const readTokenFields = async (request: IncomingMessage, response: ServerRespons
     });
   }
 
-  const scopes: unknown[] = (Array.isArray(body['scopes'])) ? body['scopes'] : [];
+  const scopes: MockApi_ReadTokenFields_Scopes = (Array.isArray(body['scopes']) === true) ? body['scopes'] : [];
 
   if (scopes.length === 0) {
     issues.push({
       field: 'scopes',
       message: 'Choose at least one scope.',
     });
-  } else if (scopes.some((scope: unknown): boolean => typeof scope !== 'string' || !tokenScopes.includes(scope))) {
+  } else if (scopes.some((scope) => typeof scope !== 'string' || tokenScopes.includes(scope) === false) === true) {
     issues.push({
       field: 'scopes',
       message: `Choose from: ${tokenScopes.join(', ')}.`,
@@ -5716,10 +6312,14 @@ const readTokenFields = async (request: IncomingMessage, response: ServerRespons
     });
   }
 
-  const expiresAt: unknown = body['expiresAt'];
+  const expiresAt: MockApi_ReadTokenFields_ExpiresAt = body['expiresAt'];
 
   if (expiresAt !== undefined && expiresAt !== null) {
-    if (typeof expiresAt !== 'string' || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/u.test(expiresAt) || Number.isNaN(Date.parse(expiresAt))) {
+    if (
+      typeof expiresAt !== 'string'
+      || new RegExp(isoTimestampPattern, 'u').test(expiresAt) === false
+      || Number.isNaN(Date.parse(expiresAt)) === true
+    ) {
       issues.push({
         field: 'expiresAt',
         message: 'Use an ISO 8601 date and time with a time zone, like 2030-01-01T00:00:00Z.',
@@ -5738,7 +6338,7 @@ const readTokenFields = async (request: IncomingMessage, response: ServerRespons
     return undefined;
   }
 
-  if (tokens.some((token: Record<string, unknown>): boolean => token['id'] !== tokenId && String(token['name']).toLowerCase() === name.toLowerCase())) {
+  if (tokens.some((token) => token['id'] !== tokenId && String(token['name']).toLowerCase() === name.toLowerCase()) === true) {
     sendFieldError(response, 'token_exists', 'name', 'A token with this name already exists.', 409);
 
     return undefined;
@@ -5752,83 +6352,63 @@ const readTokenFields = async (request: IncomingMessage, response: ServerRespons
 };
 
 /**
- * Mock API - Reads IDs.
+ * Mock API - Read I Ds.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @returns {MockApi_ReadIDs_Returns}
+ *
  * @since 2.0.0
  */
-const readIDs = (body: Record<string, unknown>): number[] => {
-  const ids: unknown = body['ids'];
+const readIDs = (body: MockApi_ReadIDs_Body): MockApi_ReadIDs_Returns => {
+  const ids: MockApi_ReadIDs_Ids = body['ids'];
 
-  return (Array.isArray(ids)) ? ids.filter((id: unknown): id is number => typeof id === 'number') : [];
+  return (Array.isArray(ids) === true) ? ids.filter((id): id is MockApi_ReadIDs_Id => typeof id === 'number') : [];
 };
 
 /**
- * Mock API - Mock zip file.
- *
- * One named file written into a download zip.
- * Its content is stored as is, without compression.
- *
- * @since 2.2.0
- */
-type MockZipFile = {
-  content: Buffer
-  name: string
-};
-
-/**
- * Mock API - Mock content download.
- *
- * One prepared download of finished files, kept until the browser fetches its link.
- * The real control API streams it from disk instead.
- *
- * @since 2.2.0
- */
-type MockContentDownload = {
-  content: Buffer
-  fileName: string
-};
-
-/**
- * Mock API - Mock content downloads.
+ * Mock API - Mock Content Downloads.
  *
  * Prepared downloads of finished files by the token in their link.
  * They last until the mock restarts.
  *
  * @since 2.2.0
  */
-const mockContentDownloads: Map<string, MockContentDownload> = new Map();
+const mockContentDownloads: MockApi_MockContentDownloads = new Map();
 
 /**
- * Mock API - Mock finished files.
+ * Mock API - Mock Finished Files.
  *
  * The three files the detail panel lists for a torrent, each holding one line of
  * text, so a zip of them unpacks into the torrent's folder.
  *
+ * @returns {MockApi_MockFinishedFiles_Returns}
+ *
  * @since 2.2.0
  */
-const mockFinishedFiles = (torrent: MockTorrent): MockZipFile[] => [
+const mockFinishedFiles = (torrent: MockApi_MockFinishedFiles_Torrent): MockApi_MockFinishedFiles_Returns => [
   'main.bin',
   'extras.zip',
   'README.txt',
-].map((fileName: string): MockZipFile => ({
+].map((fileName) => ({
   content: Buffer.from(`Mock contents of ${torrent['name']}/${fileName}\n`, 'utf8'),
   name: `${torrent['name']}/${fileName}`,
 }));
 
 /**
- * Mock API - Mock torrent file.
+ * Mock API - Mock Torrent File.
  *
  * Builds a small bencoded metainfo file from one mock torrent's name and size.
  * The pieces are zeros, since it only has to look like a .torrent once downloaded.
  *
+ * @returns {MockApi_MockTorrentFile_Returns}
+ *
  * @since 2.2.0
  */
-const mockTorrentFile = (torrent: MockTorrent): Buffer => {
-  const name: Buffer = Buffer.from(torrent['name'], 'utf8');
-  const announce: string = 'https://tracker.example.com/announce';
+const mockTorrentFile = (torrent: MockApi_MockTorrentFile_Torrent): MockApi_MockTorrentFile_Returns => {
+  const name: MockApi_MockTorrentFile_Name = Buffer.from(torrent['name'], 'utf8');
+  const announce: MockApi_MockTorrentFile_Announce = 'https://tracker.example.com/announce';
 
   return Buffer.concat([
     Buffer.from(`d8:announce${announce.length}:${announce}4:infod6:lengthi${torrent['totalSize']}e4:name${name.length}:`),
@@ -5840,101 +6420,124 @@ const mockTorrentFile = (torrent: MockTorrent): Buffer => {
 };
 
 /**
- * Mock API - Torrent download name.
+ * Mock API - Torrent Download Name.
  *
  * Matches the control API: path separators and characters Windows forbids become
  * underscores, control characters are dropped, and an empty name uses the hash.
  *
+ * @returns {MockApi_TorrentDownloadName_Returns}
+ *
  * @since 2.2.0
  */
-const torrentDownloadName = (torrent: MockTorrent): string => {
-  const cleaned: string = [...torrent['name']]
-    .filter((character: string): boolean => character >= ' ' && character !== '\u007f')
-    .map((character: string): string => (('/\\:*?"<>|'.includes(character)) ? '_' : character))
+const torrentDownloadName = (torrent: MockApi_TorrentDownloadName_Torrent): MockApi_TorrentDownloadName_Returns => {
+  const cleaned: MockApi_TorrentDownloadName_Cleaned = [...torrent['name']]
+    .filter((character) => character >= ' ' && character !== '\u007f')
+    .map((character) => (('/\\:*?"<>|'.includes(character) === true) ? '_' : character))
     .join('')
-    .replace(/^[ .]+|[ .]+$/gu, '');
+    .replace(new RegExp(edgeSpacesAndDotsPattern, 'gu'), '');
+  const fileStem: MockApi_TorrentDownloadName_FileStem = (cleaned === '') ? torrent['hashString'] : cleaned;
 
-  return `${(cleaned === '') ? torrent['hashString'] : cleaned}.torrent`;
+  return `${fileStem}.torrent`;
 };
 
 /**
- * Mock API - Attachment disposition.
+ * Mock API - Attachment Disposition.
  *
  * Quotes a plain ASCII file name and encodes any other one as filename*, the two
  * forms Go's mime.FormatMediaType writes for the control API.
  *
+ * @returns {MockApi_AttachmentDisposition_Returns}
+ *
  * @since 2.2.0
  */
-const attachmentDisposition = (fileName: string): string => {
-  if (/^[ -~]*$/u.test(fileName)) {
-    return `attachment; filename="${fileName.replace(/["\\]/gu, '\\$&')}"`;
+const attachmentDisposition = (fileName: MockApi_AttachmentDisposition_FileName): MockApi_AttachmentDisposition_Returns => {
+  if (new RegExp(printableAsciiPattern, 'u').test(fileName) === true) {
+    return `attachment; filename="${fileName.replace(new RegExp(headerQuoteCharactersPattern, 'gu'), '\\$&')}"`;
   }
 
   return `attachment; filename*=utf-8''${encodeURIComponent(fileName)}`;
 };
 
 /**
- * Mock API - Stored zip.
+ * Mock API - Stored Zip.
  *
  * Writes files into one zip without compression and with UTF-8 names, like the
  * control API's torrent file download. Repeated names get " (2)", " (3)", and so on.
  *
+ * @returns {MockApi_StoredZip_Returns}
+ *
  * @since 2.2.0
  */
-const storedZip = (files: MockZipFile[]): Buffer => {
-  const localFileSignature: number = parseInt('04034b50', 16);
-  const centralFileSignature: number = parseInt('02014b50', 16);
-  const endSignature: number = parseInt('06054b50', 16);
-  const utf8NamesFlag: number = parseInt('0800', 16);
-  const firstDosDate: number = parseInt('21', 16);
-  const localParts: Buffer[] = [];
-  const centralParts: Buffer[] = [];
-  const usedNames: Set<string> = new Set();
-  let offset: number = 0;
+const storedZip = (files: MockApi_StoredZip_Files): MockApi_StoredZip_Returns => {
+  const localFileSignature: MockApi_StoredZip_LocalFileSignature = parseInt('04034b50', 16);
+  const centralFileSignature: MockApi_StoredZip_CentralFileSignature = parseInt('02014b50', 16);
+  const endSignature: MockApi_StoredZip_EndSignature = parseInt('06054b50', 16);
+  const utf8NamesFlag: MockApi_StoredZip_Utf8NamesFlag = parseInt('0800', 16);
+  const firstDosDate: MockApi_StoredZip_FirstDosDate = parseInt('21', 16);
+  const localParts: MockApi_StoredZip_LocalParts = [];
+  const centralParts: MockApi_StoredZip_CentralParts = [];
+  const usedNames: MockApi_StoredZip_UsedNames = new Set();
+  let offset: MockApi_StoredZip_Offset = 0;
 
   for (const file of files) {
-    const extension: string = /\.[^./]{1,16}$/u.exec(file['name'])?.[0] ?? '';
-    const baseName: string = file['name'].slice(0, file['name'].length - extension.length);
-    let entryName: string = file['name'];
-    for (let number: number = 2; usedNames.has(entryName.toLowerCase()); number += 1) {
+    const extensionMatch: MockApi_StoredZip_ExtensionMatch = new RegExp(fileExtensionPattern, 'u').exec(file['name']);
+    const extension: MockApi_StoredZip_Extension = ((extensionMatch !== null) ? extensionMatch[0] : undefined) ?? '';
+    const baseName: MockApi_StoredZip_BaseName = file['name'].slice(0, file['name'].length - extension.length);
+    let entryName: MockApi_StoredZip_EntryName = file['name'];
+
+    for (let number = 2; usedNames.has(entryName.toLowerCase()) === true; number += 1) {
       entryName = `${baseName} (${number})${extension}`;
     }
     usedNames.add(entryName.toLowerCase());
 
-    const nameBytes: Buffer = Buffer.from(entryName, 'utf8');
-    const checksum: number = crc32(file['content']);
-    const local: Buffer = Buffer.alloc(30);
+    const nameBytes: MockApi_StoredZip_NameBytes = Buffer.from(entryName, 'utf8');
+    const checksum: MockApi_StoredZip_Checksum = crc32(file['content']);
+    const local: MockApi_StoredZip_Local = Buffer.alloc(30);
+
     local.writeUInt32LE(localFileSignature, 0);
+
     local.writeUInt16LE(20, 4);
     local.writeUInt16LE(utf8NamesFlag, 6);
     local.writeUInt16LE(firstDosDate, 12);
+
     local.writeUInt32LE(checksum, 14);
     local.writeUInt32LE(file['content'].length, 18);
     local.writeUInt32LE(file['content'].length, 22);
+
     local.writeUInt16LE(nameBytes.length, 26);
+
     localParts.push(local, nameBytes, file['content']);
 
-    const central: Buffer = Buffer.alloc(46);
+    const central: MockApi_StoredZip_Central = Buffer.alloc(46);
+
     central.writeUInt32LE(centralFileSignature, 0);
+
     central.writeUInt16LE(20, 4);
     central.writeUInt16LE(20, 6);
     central.writeUInt16LE(utf8NamesFlag, 8);
     central.writeUInt16LE(firstDosDate, 14);
+
     central.writeUInt32LE(checksum, 16);
     central.writeUInt32LE(file['content'].length, 20);
     central.writeUInt32LE(file['content'].length, 24);
+
     central.writeUInt16LE(nameBytes.length, 28);
+
     central.writeUInt32LE(offset, 42);
+
     centralParts.push(central, nameBytes);
 
     offset += local.length + nameBytes.length + file['content'].length;
   }
 
-  const centralSize: number = centralParts.reduce((size: number, part: Buffer): number => size + part.length, 0);
-  const end: Buffer = Buffer.alloc(22);
+  const centralSize: MockApi_StoredZip_CentralSize = centralParts.reduce((size, part) => size + part.length, 0);
+  const end: MockApi_StoredZip_End = Buffer.alloc(22);
+
   end.writeUInt32LE(endSignature, 0);
+
   end.writeUInt16LE(files.length, 8);
   end.writeUInt16LE(files.length, 10);
+
   end.writeUInt32LE(centralSize, 12);
   end.writeUInt32LE(offset, 16);
 
@@ -5946,39 +6549,27 @@ const storedZip = (files: MockZipFile[]): Buffer => {
 };
 
 /**
- * Mock API - Mock torrent selection.
- *
- * Retains the response field selected by the request while resolving every
- * matching mock row, including the same hash on multiple connections.
- *
- * @since 2.0.0
- */
-type MockTorrentSelection = {
-  field: 'hashes' | 'ids'
-  hashes: string[]
-  ids: number[]
-  items: MockTorrent[]
-};
-
-/**
- * Mock API - Reads torrent selection.
+ * Mock API - Read Torrent Selection.
  *
  * Gives a present hash array precedence over facade IDs, just like the Go
  * mutation handlers. Missing hashes return the stable not-found error.
  *
+ * @returns {MockApi_ReadTorrentSelection_Returns}
+ *
  * @since 2.0.0
  */
 const readTorrentSelection = (
-  body: Record<string, unknown>,
-  response: ServerResponse,
-): MockTorrentSelection | undefined => {
+  body: MockApi_ReadTorrentSelection_Body,
+  response: MockApi_ReadTorrentSelection_Response,
+): MockApi_ReadTorrentSelection_Returns => {
   if (process.env['MOCK_DAEMON_UNAVAILABLE'] === 'true') {
-    const starting: boolean = process.env['MOCK_DAEMON_STARTING'] === 'true';
+    const starting: MockApi_ReadTorrentSelection_Starting = process.env['MOCK_DAEMON_STARTING'] === 'true';
+
     sendError(
       response,
       503,
       'daemon_unavailable',
-      (starting) ? 'Northwind Toronto\'s Transmission is still starting.' : 'Transmission is unavailable for the selected connection.',
+      (starting === true) ? 'Northwind Toronto\'s Transmission is still starting.' : 'Transmission is unavailable for the selected connection.',
     );
 
     return undefined;
@@ -5989,48 +6580,55 @@ const readTorrentSelection = (
     return undefined;
   }
 
-  if (Array.isArray(body['hashes'])) {
-    const requestedHashes: unknown[] = body['hashes'];
-    const hexadecimalCharacters: string = '0123456789abcdefABCDEF';
-    const valid: boolean = requestedHashes.length >= 1
+  if (Array.isArray(body['hashes']) === true) {
+    const requestedHashes: MockApi_ReadTorrentSelection_RequestedHashes = body['hashes'];
+    const hexadecimalCharacters: MockApi_ReadTorrentSelection_HexadecimalCharacters = '0123456789abcdefABCDEF';
+    const valid: MockApi_ReadTorrentSelection_Valid = requestedHashes.length >= 1
       && requestedHashes.length <= 1000
-      && requestedHashes.every((hash: unknown): boolean => (
+      && requestedHashes.every((hash) => (
         typeof hash === 'string'
-        && (hash.length === 40 || hash.length === 64)
-        && [...hash].every((character: string): boolean => hexadecimalCharacters.includes(character))
+        && (
+          hash.length === 40
+          || hash.length === 64
+        )
+        && [...hash].every((character) => hexadecimalCharacters.includes(character))
       ));
-    const hashes: string[] = requestedHashes.map(String).map((hash: string): string => hash.toLowerCase());
-    if (!valid || new Set(hashes).size !== hashes.length) {
+    const hashes: MockApi_ReadTorrentSelection_Hashes = requestedHashes.map(String).map((hash) => hash.toLowerCase());
+    if (valid === false || new Set(hashes).size !== hashes.length) {
       sendFieldError(response, 'torrent_selection_invalid', 'hashes', 'Torrent hashes must be unique 40 or 64 character hexadecimal values.');
 
       return undefined;
     }
-    if (hashes.some((hash: string): boolean => !torrents.some(
-      (torrent: MockTorrent): boolean => torrent['hashString'].toLowerCase() === hash,
-    ))) {
+    if (hashes.some((hash) => torrents.some(
+      (torrent) => torrent['hashString'].toLowerCase() === hash,
+    ) === false) === true) {
       sendError(response, 404, 'torrent_not_found', 'One or more torrents were not found.');
 
       return undefined;
     }
-    const items: MockTorrent[] = torrents.filter(
-      (torrent: MockTorrent): boolean => hashes.includes(torrent['hashString'].toLowerCase()),
+    const items: MockApi_ReadTorrentSelection_Items = torrents.filter(
+      (torrent) => hashes.includes(torrent['hashString'].toLowerCase()),
     );
 
     return {
       field: 'hashes',
       hashes,
-      ids: items.map((torrent: MockTorrent): number => torrent['id']),
+      ids: items.map((torrent) => torrent['id']),
       items,
     };
   }
 
-  const ids: number[] = readIDs(body);
-  if (ids.length < 1 || ids.length > 1000 || new Set(ids).size !== ids.length) {
+  const ids: MockApi_ReadTorrentSelection_Ids = readIDs(body);
+  if (
+    ids.length < 1
+    || ids.length > 1000
+    || new Set(ids).size !== ids.length
+  ) {
     sendFieldError(response, 'torrent_selection_invalid', 'ids', 'Select between 1 and 1,000 torrents without duplicates.');
 
     return undefined;
   }
-  const items: MockTorrent[] = torrents.filter((torrent: MockTorrent): boolean => ids.includes(torrent['id']));
+  const items: MockApi_ReadTorrentSelection_Items = torrents.filter((torrent) => ids.includes(torrent['id']));
   if (items.length !== ids.length) {
     sendError(response, 404, 'torrent_not_found', 'One or more torrents were not found.');
 
@@ -6039,52 +6637,56 @@ const readTorrentSelection = (
 
   return {
     field: 'ids',
-    hashes: items.map((torrent: MockTorrent): string => torrent['hashString']),
+    hashes: items.map((torrent) => torrent['hashString']),
     ids,
     items,
   };
 };
 
 /**
- * Mock API - Torrent mutation response.
+ * Mock API - Torrent Mutation Response.
  *
  * Mirrors the backend's selection-key echo without exposing both identifier
  * systems in one response.
  *
+ * @returns {MockApi_TorrentMutationResponse_Returns}
+ *
  * @since 2.0.0
  */
-const torrentMutationResponse = (selection: MockTorrentSelection): Record<string, unknown> => (
+const torrentMutationResponse = (selection: MockApi_TorrentMutationResponse_Selection): MockApi_TorrentMutationResponse_Returns => (
   (selection['field'] === 'hashes') ? { hashes: selection['hashes'] } : { ids: selection['ids'] }
 );
 
 /**
- * Mock API - Reads torrent profile.
+ * Mock API - Read Torrent Profile.
  *
  * Converts one already client-validated profile body into durable mock state.
  * Existing identity and creation metadata are supplied by the route handler.
  *
+ * @returns {MockApi_ReadTorrentProfile_Returns}
+ *
  * @since 2.0.0
  */
 const readTorrentProfile = (
-  body: Record<string, unknown>,
-  id: string,
-  createdAt: string,
-): MockTorrentProfile => {
-  const options: Record<string, unknown> = (typeof body['options'] === 'object' && body['options'] !== null) ? body['options'] as Record<string, unknown> : {};
-  const seeding: Record<string, unknown> = (typeof options['seeding'] === 'object' && options['seeding'] !== null) ? options['seeding'] as Record<string, unknown> : {};
-  const updatedAt: string = new Date().toISOString();
+  body: MockApi_ReadTorrentProfile_Body,
+  id: MockApi_ReadTorrentProfile_Id,
+  createdAt: MockApi_ReadTorrentProfile_CreatedAt,
+): MockApi_ReadTorrentProfile_Returns => {
+  const options: MockApi_ReadTorrentProfile_Options = (typeof body['options'] === 'object' && body['options'] !== null) ? body['options'] as MockApi_ReadTorrentProfile_Options : {};
+  const seeding: MockApi_ReadTorrentProfile_Seeding = (typeof options['seeding'] === 'object' && options['seeding'] !== null) ? options['seeding'] as MockApi_ReadTorrentProfile_Seeding : {};
+  const updatedAt: MockApi_ReadTorrentProfile_UpdatedAt = new Date().toISOString();
 
   return {
     connectionId: (typeof body['connectionId'] === 'string') ? body['connectionId'] : null,
     createdAt,
     downloadDirectory: String(body['downloadDirectory'] ?? '/data'),
     id,
-    labels: (Array.isArray(body['labels'])) ? body['labels'].map(String) : [],
-    matchPatterns: (Array.isArray(body['matchPatterns'])) ? body['matchPatterns'].map(String) : [],
+    labels: (Array.isArray(body['labels']) === true) ? body['labels'].map(String) : [],
+    matchPatterns: (Array.isArray(body['matchPatterns']) === true) ? body['matchPatterns'].map(String) : [],
     name: String(body['name'] ?? '').trim(),
     overlaps: [],
     options: {
-      bandwidthPriority: Number(options['bandwidthPriority'] ?? 0) as -1 | 0 | 1,
+      bandwidthPriority: Number(options['bandwidthPriority'] ?? 0) as MockApi_ReadTorrentProfile_BandwidthPriority,
       downloadLimitKBps: (options['downloadLimitKBps'] === null) ? null : Number(options['downloadLimitKBps']),
       peerLimit: Number(options['peerLimit'] ?? 50),
       queue: (options['queue'] === 'top') ? 'top' : 'normal',
@@ -6101,15 +6703,17 @@ const readTorrentProfile = (
 };
 
 /**
- * Mock API - Reads Default torrent profile.
+ * Mock API - Read Default Torrent Profile.
  *
  * Reuses named-profile option normalization while omitting fields the Default
  * editor cannot change.
  *
+ * @returns {MockApi_ReadDefaultTorrentProfile_Returns}
+ *
  * @since 2.0.0
  */
-const readDefaultTorrentProfile = (body: Record<string, unknown>): MockDefaultTorrentProfile => {
-  const normalizedProfile: MockTorrentProfile = readTorrentProfile(
+const readDefaultTorrentProfile = (body: MockApi_ReadDefaultTorrentProfile_Body): MockApi_ReadDefaultTorrentProfile_Returns => {
+  const normalizedProfile: MockApi_ReadDefaultTorrentProfile_NormalizedProfile = readTorrentProfile(
     {
       ...body,
       connectionId: null,
@@ -6133,16 +6737,18 @@ const readDefaultTorrentProfile = (body: Record<string, unknown>): MockDefaultTo
 // Applies one torrent action from the selection toolbar or context menu.
 
 /**
- * Mock API - Applies action.
+ * Mock API - Apply Action.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @returns {MockApi_ApplyAction_Returns}
+ *
  * @since 2.0.0
  */
-const applyAction = (action: string, ids: number[]): void => {
+const applyAction = (action: MockApi_ApplyAction_Action, ids: MockApi_ApplyAction_Ids): MockApi_ApplyAction_Returns => {
   for (const torrent of torrents) {
-    if (!ids.includes(torrent['id'])) {
+    if (ids.includes(torrent['id']) === false) {
       continue;
     }
 
@@ -6171,102 +6777,104 @@ const applyAction = (action: string, ids: number[]): void => {
       }
     }
   }
+
+  return;
 };
 
 /**
- * Mock API - Gets added torrent name.
+ * Mock API - Added Torrent Name.
  *
  * Derives a useful name from magnet display names and remote URL paths.
  * Metainfo bytes have no filename in the request, so they use a stable fallback.
  *
+ * @returns {MockApi_AddedTorrentName_Returns}
+ *
  * @since 2.0.0
  */
-const addedTorrentName = (filename: unknown, fallbackId: number): string => {
+const addedTorrentName = (filename: MockApi_AddedTorrentName_Filename, fallbackId: MockApi_AddedTorrentName_FallbackId): MockApi_AddedTorrentName_Returns => {
   if (typeof filename !== 'string') {
     return `Added torrent ${fallbackId}`;
   }
 
   try {
-    const sourceURL: URL = new URL(filename);
+    const sourceURL: MockApi_AddedTorrentName_SourceURL = new URL(filename);
     if (sourceURL.protocol === 'magnet:') {
       return sourceURL.searchParams.get('dn') ?? `Magnet torrent ${fallbackId}`;
     }
-    const lastSegment: string = sourceURL.pathname.split('/').filter(Boolean).at(-1) ?? `Remote torrent ${fallbackId}`;
+    const lastSegment: MockApi_AddedTorrentName_LastSegment = sourceURL.pathname.split('/').filter(Boolean).at(-1) ?? `Remote torrent ${fallbackId}`;
 
-    return decodeURIComponent(lastSegment).replace(/\.torrent$/iu, '');
+    return decodeURIComponent(lastSegment).replace(new RegExp(torrentExtensionPattern, 'iu'), '');
   } catch {
     return `Added torrent ${fallbackId}`;
   }
 };
 
 /**
- * Mock API - Backup grants.
+ * Mock API - Backup Grants.
  *
  * Models purpose-bound, short-lived and single-use confirmation grants in memory.
  * The mock stores only opaque values and never stores submitted passwords or codes.
  *
  * @since 2.0.0
  */
-const backupGrants: Map<string, {
-  expiresAt: number
-  purpose: 'export' | 'import'
-}> = new Map();
+const backupGrants: MockApi_BackupGrants = new Map();
 
 /**
- * Mock API - Backup import job.
+ * Mock API - Backup Import Job.
  *
  * Retains the active simulated job while Vite remains running.
  * Poll responses derive progress from its original start time.
  *
  * @since 2.0.0
  */
-let backupImportJob: MockBackupImport | null = null;
+let backupImportJob: MockApi_BackupImportJob = null;
 
 /**
- * Mock API - Maximum backup notification destinations.
+ * Mock API - Maximum Backup Notification Destinations.
  *
  * Mirrors the control API cap used when an import adds destinations.
  * Replacements remain available when the list is full.
  *
  * @since 2.0.0
  */
-const maximumBackupNotificationDestinations: number = 256;
+const maximumBackupNotificationDestinations: MockApi_MaximumBackupNotificationDestinations = 256;
 
 /**
- * Mock API - Maximum backup RPC logins.
+ * Mock API - Maximum Backup Rpc Logins.
  *
  * Mirrors the control API cap used when an import adds compatible-client logins.
  * Replacements remain available when the list is full.
  *
  * @since 2.0.0
  */
-const maximumBackupRPCLogins: number = 256;
+const maximumBackupRPCLogins: MockApi_MaximumBackupRPCLogins = 256;
 
 /**
- * Mock API - Maximum backup API tokens.
+ * Mock API - Maximum Backup API Tokens.
  *
  * Mirrors the control API cap used after duplicate imported tokens are skipped.
  * Existing and duplicate token records never consume new capacity.
  *
  * @since 2.0.0
  */
-const maximumBackupAPITokens: number = 256;
+const maximumBackupAPITokens: MockApi_MaximumBackupAPITokens = 256;
 
 /**
- * Mock API - Issues backup grant.
+ * Mock API - Issue Mock Backup Grant.
  *
  * Creates the same five-minute confirmation window exposed by the control API.
  * A matching export or import request removes the grant on first use.
  *
- * @param {'export' | 'import'} purpose - Purpose.
+ * @param {MockApi_IssueMockBackupGrant_Purpose} purpose - Purpose.
  *
- * @returns {Record<string, string>}
+ * @returns {MockApi_IssueMockBackupGrant_Returns}
  *
  * @since 2.0.0
  */
-const issueMockBackupGrant = (purpose: 'export' | 'import'): Record<string, string> => {
-  const grant: string = randomBytes(24).toString('base64url');
-  const expiresAt: number = Date.now() + (5 * 60 * 1000);
+const issueMockBackupGrant = (purpose: MockApi_IssueMockBackupGrant_Purpose): MockApi_IssueMockBackupGrant_Returns => {
+  const grant: MockApi_IssueMockBackupGrant_Grant = randomBytes(24).toString('base64url');
+  const expiresAt: MockApi_IssueMockBackupGrant_ExpiresAt = Date.now() + (5 * 60 * 1000);
+
   backupGrants.set(grant, {
     expiresAt,
     purpose,
@@ -6279,22 +6887,26 @@ const issueMockBackupGrant = (purpose: 'export' | 'import'): Record<string, stri
 };
 
 /**
- * Mock API - Consumes backup grant.
+ * Mock API - Consume Mock Backup Grant.
  *
  * Accepts only an unexpired grant issued for the requested sensitive operation.
  * Successful validation deletes it before the operation begins.
  *
- * @param {unknown}             value   - Value.
- * @param {'export' | 'import'} purpose - Purpose.
+ * @param {MockApi_ConsumeMockBackupGrant_Value}   value   - Value.
+ * @param {MockApi_ConsumeMockBackupGrant_Purpose} purpose - Purpose.
  *
- * @returns {boolean}
+ * @returns {MockApi_ConsumeMockBackupGrant_Returns}
  *
  * @since 2.0.0
  */
-const consumeMockBackupGrant = (value: unknown, purpose: 'export' | 'import'): boolean => {
-  const grant: string = String(value ?? '');
-  const confirmation = backupGrants.get(grant);
-  if (confirmation === undefined || confirmation['purpose'] !== purpose || confirmation['expiresAt'] <= Date.now()) {
+const consumeMockBackupGrant = (value: MockApi_ConsumeMockBackupGrant_Value, purpose: MockApi_ConsumeMockBackupGrant_Purpose): MockApi_ConsumeMockBackupGrant_Returns => {
+  const grant: MockApi_ConsumeMockBackupGrant_Grant = String(value ?? '');
+  const confirmation: MockApi_ConsumeMockBackupGrant_Confirmation = backupGrants.get(grant);
+  if (
+    confirmation === undefined
+    || confirmation['purpose'] !== purpose
+    || confirmation['expiresAt'] <= Date.now()
+  ) {
     return false;
   }
   backupGrants.delete(grant);
@@ -6303,25 +6915,22 @@ const consumeMockBackupGrant = (value: unknown, purpose: 'export' | 'import'): b
 };
 
 /**
- * Mock API - Creates portable metainfo.
+ * Mock API - Mock Backup Metainfo.
  *
  * Builds one valid single-file torrent and computes the hash over its info dictionary.
  * Mock exports can therefore be accepted by the real strict Go importer too.
  *
- * @returns {{ hash: string, metainfo: string }}
+ * @returns {MockApi_MockBackupMetainfo_Returns}
  *
  * @since 2.0.0
  */
-const mockBackupMetainfo = (): {
-  hash: string
-  metainfo: string
-} => {
-  const info: Buffer = Buffer.concat([
+const mockBackupMetainfo = (): MockApi_MockBackupMetainfo_Returns => {
+  const info: MockApi_MockBackupMetainfo_Info = Buffer.concat([
     Buffer.from('d6:lengthi3994028672e4:name29:debian-13.1.0-amd64-DVD-1.iso12:piece lengthi16384e6:pieces20:'),
     Buffer.alloc(20),
     Buffer.from('e'),
   ]);
-  const metainfo: Buffer = Buffer.concat([
+  const metainfo: MockApi_MockBackupMetainfo_Metainfo = Buffer.concat([
     Buffer.from('d4:info'),
     info,
     Buffer.from('e'),
@@ -6334,19 +6943,19 @@ const mockBackupMetainfo = (): {
 };
 
 /**
- * Mock API - Builds backup document.
+ * Mock API - Mock Backup Document.
  *
  * Projects current mock settings into the strict version-one portable contract.
  * Secret fields use obvious mock plaintext while digest-only credentials stay digests.
  *
- * @param {Record<string, unknown>} selected - Selected.
+ * @param {MockApi_MockBackupDocument_Selected} selected - Selected.
  *
- * @returns {Record<string, unknown>}
+ * @returns {MockApi_MockBackupDocument_Returns}
  *
  * @since 2.0.0
  */
-const mockBackupDocument = (selected: Record<string, unknown>): Record<string, unknown> => {
-  const document: Record<string, unknown> = {
+const mockBackupDocument = (selected: MockApi_MockBackupDocument_Selected): MockApi_MockBackupDocument_Returns => {
+  const document: MockApi_MockBackupDocument_Document = {
     appVersion: '2.0.0-dev',
     exportedAt: new Date().toISOString(),
     format: 'transmission-vpn-export',
@@ -6361,7 +6970,7 @@ const mockBackupDocument = (selected: Record<string, unknown>): Record<string, u
         options: structuredClone(defaultTorrentProfile['options']),
         startPaused: defaultTorrentProfile['startPaused'],
       },
-      profiles: torrentProfiles.map((profile: MockTorrentProfile): Record<string, unknown> => ({
+      profiles: torrentProfiles.map((profile) => ({
         connectionId: profile['connectionId'],
         createdAt: profile['createdAt'],
         downloadDirectory: profile['downloadDirectory'],
@@ -6373,7 +6982,7 @@ const mockBackupDocument = (selected: Record<string, unknown>): Record<string, u
         startPaused: profile['startPaused'],
         updatedAt: profile['updatedAt'],
       })),
-      settings: settings.slice(0, 8).map((setting: Record<string, unknown>): Record<string, unknown> => ({
+      settings: settings.slice(0, 8).map((setting) => ({
         key: setting['key'],
         value: setting['value'],
       })),
@@ -6383,11 +6992,11 @@ const mockBackupDocument = (selected: Record<string, unknown>): Record<string, u
     Reflect.set(document, 'labels', [...savedLabels]);
   }
   if (selected['notifications'] === true) {
-    Reflect.set(document, 'notifications', notifications.map((notification: MockNotification): Record<string, unknown> => ({
+    Reflect.set(document, 'notifications', notifications.map((notification) => ({
       events: [...notification['events']],
       id: notification['id'],
       name: notification['name'],
-      secrets: Object.fromEntries(Object.keys(notification['secrets']).map((key: string): [string, string] => [
+      secrets: Object.fromEntries(Object.keys(notification['secrets']).map((key): MockApi_MockBackupDocument_SecretEntry => [
         key,
         `mock-${key}-secret`,
       ])),
@@ -6396,11 +7005,12 @@ const mockBackupDocument = (selected: Record<string, unknown>): Record<string, u
     })));
   }
   if (selected['torrents'] === true) {
-    const sourceTorrent: MockTorrent | undefined = torrents[0];
-    const metainfo = mockBackupMetainfo();
-    const sourceProfile: MockTorrentProfile | undefined = torrentProfiles.find(
-      (profile: MockTorrentProfile): boolean => profile['id'] === sourceTorrent?.['profileId'],
+    const sourceTorrent: MockApi_MockBackupDocument_SourceTorrent = torrents[0];
+    const metainfo: MockApi_MockBackupDocument_Metainfo = mockBackupMetainfo();
+    const sourceProfile: MockApi_MockBackupDocument_SourceProfile = torrentProfiles.find(
+      (profile) => profile['id'] === ((sourceTorrent !== undefined) ? sourceTorrent['profileId'] : undefined),
     );
+
     Reflect.set(document, 'torrents', (sourceTorrent === undefined) ? [] : [{
       connectionId: sourceTorrent['connectionId'],
       downloadDirectory: sourceTorrent['downloadDir'],
@@ -6424,16 +7034,17 @@ const mockBackupDocument = (selected: Record<string, unknown>): Record<string, u
       paused: sourceTorrent['status'] === 0,
       percentDone: sourceTorrent['percentDone'],
       profileId: sourceTorrent['profileId'],
-      profileName: sourceProfile?.['name'] ?? defaultTorrentProfile['name'],
+      profileName: ((sourceProfile !== undefined) ? sourceProfile['name'] : undefined) ?? defaultTorrentProfile['name'],
     }]);
   }
   if (selected['vpnConnections'] === true) {
-    const selectedConnections: MockVPNConnection[] = vpnConnections.slice(0, 1);
-    const selectedProfileIDs: Set<string> = new Set(selectedConnections.flatMap(
-      (connection: MockVPNConnection): string[] => connection['profileIds'],
+    const selectedConnections: MockApi_MockBackupDocument_SelectedConnections = vpnConnections.slice(0, 1);
+    const selectedProfileIDs: MockApi_MockBackupDocument_SelectedProfileIDs = new Set(selectedConnections.flatMap(
+      (connection) => connection['profileIds'],
     ));
+
     Reflect.set(document, 'vpnConnections', {
-      connections: selectedConnections.map((connection: MockVPNConnection): Record<string, unknown> => ({
+      connections: selectedConnections.map((connection) => ({
         credentials: { ...(vpnCredentialValues.get(connection['id']) ?? {}) },
         default: connection['default'],
         dnsServers: [...connection['dnsServers']],
@@ -6448,10 +7059,14 @@ const mockBackupDocument = (selected: Record<string, unknown>): Record<string, u
         slot: connection['slot'],
         tunnel: connection['tunnel'],
       })),
-      profiles: profiles.filter((profile: Record<string, unknown>): boolean => selectedProfileIDs.has(String(profile['id']))).map(
-        (profile: Record<string, unknown>): Record<string, unknown> => ({
+      profiles: profiles.filter((profile) => selectedProfileIDs.has(String(profile['id']))).map(
+        (profile) => ({
           city: String(profile['city'] ?? ''),
-          configuration: `client\nremote ${String(profile['remoteHost'])} ${String(profile['remotePort'])}\n`,
+          configuration: [
+            'client',
+            `remote ${String(profile['remoteHost'])} ${String(profile['remotePort'])}`,
+            '',
+          ].join('\n'),
           continent: String(profile['continent'] ?? ''),
           country: String(profile['country'] ?? ''),
           countryCode: String(profile['countryCode'] ?? ''),
@@ -6470,7 +7085,7 @@ const mockBackupDocument = (selected: Record<string, unknown>): Record<string, u
   }
   if (selected['remoteAccess'] === true) {
     Reflect.set(document, 'remoteAccess', {
-      apiTokens: tokens.map((token: Record<string, unknown>): Record<string, unknown> => ({
+      apiTokens: tokens.map((token) => ({
         createdAt: token['createdAt'],
         expiresAt: token['expiresAt'],
         id: token['id'],
@@ -6479,7 +7094,7 @@ const mockBackupDocument = (selected: Record<string, unknown>): Record<string, u
         scopes: token['scopes'],
         tokenDigest: tokenDigests.get(String(token['id'])) ?? createHash('sha256').update(String(token['id'])).digest('base64'),
       })),
-      rpcLogins: rpcLogins.map((login: MockRPCLogin): Record<string, unknown> => ({
+      rpcLogins: rpcLogins.map((login) => ({
         createdAt: login['createdAt'],
         id: login['id'],
         lastUsedAt: login['lastUsedAt'],
@@ -6494,37 +7109,39 @@ const mockBackupDocument = (selected: Record<string, unknown>): Record<string, u
 };
 
 /**
- * Mock API - Backup count label.
+ * Mock API - Mock Backup Count Label.
  *
  * Formats one merge count with the same singular and plural wording as the API.
  * Review and progress summaries reuse the returned action sentences unchanged.
  *
- * @param {number} count    - Count.
- * @param {string} singular - Singular.
- * @param {string} plural   - Plural.
+ * @param {MockApi_MockBackupCountLabel_Count}    count    - Count.
+ * @param {MockApi_MockBackupCountLabel_Singular} singular - Singular.
+ * @param {MockApi_MockBackupCountLabel_Plural}   plural   - Plural.
  *
- * @returns {string}
+ * @returns {MockApi_MockBackupCountLabel_Returns}
  *
  * @since 2.0.0
  */
-const mockBackupCountLabel = (count: number, singular: string, plural: string): string => (
-  `${count} ${(count === 1) ? singular : plural}`
-);
+const mockBackupCountLabel = (count: MockApi_MockBackupCountLabel_Count, singular: MockApi_MockBackupCountLabel_Singular, plural: MockApi_MockBackupCountLabel_Plural): MockApi_MockBackupCountLabel_Returns => {
+  const noun: MockApi_MockBackupCountLabel_Noun = (count === 1) ? singular : plural;
+
+  return `${count} ${noun}`;
+};
 
 /**
- * Mock API - Backup action lines.
+ * Mock API - Mock Backup Action Lines.
  *
  * Produces the exact merge explanations returned by the control API preview.
  * Zero-count operations stay omitted so the wizard lists only observable changes.
  *
- * @param {MockBackupMergeResult} result - Result.
+ * @param {MockApi_MockBackupActionLines_Result} result - Result.
  *
- * @returns {string[]}
+ * @returns {MockApi_MockBackupActionLines_Returns}
  *
  * @since 2.0.0
  */
-const mockBackupActionLines = (result: MockBackupMergeResult): string[] => {
-  const actions: string[] = [];
+const mockBackupActionLines = (result: MockApi_MockBackupActionLines_Result): MockApi_MockBackupActionLines_Returns => {
+  const actions: MockApi_MockBackupActionLines_Actions = [];
   if (result['notificationReplacements'] > 0) {
     actions.push(`Replace ${mockBackupCountLabel(result['notificationReplacements'], 'notification destination', 'notification destinations')} with the same name`);
   }
@@ -6547,7 +7164,7 @@ const mockBackupActionLines = (result: MockBackupMergeResult): string[] => {
     actions.push(`Add ${mockBackupCountLabel(result['apiTokenAdditions'], 'API token', 'API tokens')}`);
   }
   if (result['apiTokenDuplicateSkips'] > 0) {
-    const verb: string = (result['apiTokenDuplicateSkips'] === 1) ? 'is' : 'are';
+    const verb: MockApi_MockBackupActionLines_Verb = (result['apiTokenDuplicateSkips'] === 1) ? 'is' : 'are';
 
     actions.push(`Skip ${mockBackupCountLabel(result['apiTokenDuplicateSkips'], 'API token', 'API tokens')} that ${verb} already here`);
   }
@@ -6559,24 +7176,29 @@ const mockBackupActionLines = (result: MockBackupMergeResult): string[] => {
 };
 
 /**
- * Mock API - Backup string map.
+ * Mock API - Mock Backup String Map.
  *
  * Keeps only string-valued properties from one imported settings or secrets object.
  * The strict real importer already guarantees this shape before merge planning.
  *
- * @param {unknown} value - Value.
+ * @param {MockApi_MockBackupStringMap_Value} value - Value.
  *
- * @returns {Record<string, string>}
+ * @returns {MockApi_MockBackupStringMap_Returns}
  *
  * @since 2.0.0
  */
-const mockBackupStringMap = (value: unknown): Record<string, string> => {
-  const values: Record<string, string> = {};
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+const mockBackupStringMap = (value: MockApi_MockBackupStringMap_Value): MockApi_MockBackupStringMap_Returns => {
+  const values: MockApi_MockBackupStringMap_Values = {};
+  if (
+    typeof value !== 'object'
+    || value === null
+    || Array.isArray(value) === true
+  ) {
     return values;
   }
+
   for (const entry of Object.entries(value)) {
-    const entryValue: unknown = entry[1];
+    const entryValue: MockApi_MockBackupStringMap_EntryValue = entry[1];
     if (typeof entryValue === 'string') {
       Reflect.set(values, entry[0], entryValue);
     }
@@ -6586,57 +7208,53 @@ const mockBackupStringMap = (value: unknown): Record<string, string> => {
 };
 
 /**
- * Mock API - Checks a backup identifier.
+ * Mock API - Mock Backup ID Is Used.
  *
  * Lets a replacement retain the identifier of the row it replaces while rejecting
  * collisions with every other retained row.
  *
- * @param {readonly { id: string }[]} items        - Items.
- * @param {string}                    id           - Id.
- * @param {number}                    allowedIndex - Allowed index.
+ * @param {MockApi_MockBackupIDIsUsed_Items}        items        - Items.
+ * @param {MockApi_MockBackupIDIsUsed_Id}           id           - Id.
+ * @param {MockApi_MockBackupIDIsUsed_AllowedIndex} allowedIndex - Allowed index.
  *
- * @returns {boolean}
+ * @returns {MockApi_MockBackupIDIsUsed_Returns}
  *
  * @since 2.0.0
  */
 const mockBackupIDIsUsed = (
-  items: readonly {
-    id: string
-  }[],
-  id: string,
-  allowedIndex: number,
-): boolean => items.some((item: {
-  id: string
-}, index: number): boolean => (
+  items: MockApi_MockBackupIDIsUsed_Items,
+  id: MockApi_MockBackupIDIsUsed_Id,
+  allowedIndex: MockApi_MockBackupIDIsUsed_AllowedIndex,
+): MockApi_MockBackupIDIsUsed_Returns => items.some((item, index) => (
   index !== allowedIndex && item['id'] === id
 ));
 
 /**
- * Mock API - Merges backup access lists.
+ * Mock API - Merge Mock Backup Access.
  *
  * Simulates the server merge against copies for preview and commits those copies for
  * import. Unlisted rows therefore remain identical in both modes.
  *
- * @param {Record<string, unknown>} document - Document.
- * @param {boolean}                 apply    - Apply.
+ * @param {MockApi_MergeMockBackupAccess_Document} document - Document.
+ * @param {MockApi_MergeMockBackupAccess_Apply}    apply    - Apply.
  *
- * @returns {string[]}
+ * @returns {MockApi_MergeMockBackupAccess_Returns}
  *
  * @since 2.0.0
  */
-const mergeMockBackupAccess = (document: Record<string, unknown>, apply: boolean): string[] => {
-  const mergedNotifications: MockNotification[] = notifications.map(
-    (notification: MockNotification): MockNotification => structuredClone(notification),
+const mergeMockBackupAccess = (document: MockApi_MergeMockBackupAccess_Document, apply: MockApi_MergeMockBackupAccess_Apply): MockApi_MergeMockBackupAccess_Returns => {
+  const mergedNotifications: MockApi_MergeMockBackupAccess_MergedNotifications = notifications.map(
+    (notification) => structuredClone(notification),
   );
-  const mergedRPCLogins: MockRPCLogin[] = rpcLogins.map(
-    (login: MockRPCLogin): MockRPCLogin => ({ ...login }),
+  const mergedRPCLogins: MockApi_MergeMockBackupAccess_MergedRPCLogins = rpcLogins.map(
+    (login) => ({ ...login }),
   );
-  const mergedRPCLoginDigests: Map<string, string> = new Map(rpcLoginDigests);
-  const mergedTokens: Record<string, unknown>[] = tokens.map(
-    (token: Record<string, unknown>): Record<string, unknown> => structuredClone(token),
+  const mergedRPCLoginDigests: MockApi_MergeMockBackupAccess_MergedRPCLoginDigests = new Map(rpcLoginDigests);
+  const mergedTokens: MockApi_MergeMockBackupAccess_MergedTokens = tokens.map(
+    (token) => structuredClone(token),
   );
-  const mergedTokenDigests: Map<string, string> = new Map(tokenDigests);
-  const result: MockBackupMergeResult = {
+  const mergedTokenDigests: MockApi_MergeMockBackupAccess_MergedTokenDigests = new Map(tokenDigests);
+  const result: MockApi_MergeMockBackupAccess_Result = {
     apiTokenAdditions: 0,
     apiTokenDuplicateSkips: 0,
     apiTokenMaximumSkips: 0,
@@ -6647,39 +7265,42 @@ const mergeMockBackupAccess = (document: Record<string, unknown>, apply: boolean
     rpcLoginMaximumSkips: 0,
     rpcLoginReplacements: 0,
   };
-  const importedNotifications: Record<string, unknown>[] = (Array.isArray(document['notifications'])) ? document['notifications'].filter(
-    (notification: unknown): notification is Record<string, unknown> => typeof notification === 'object' && notification !== null,
+  const importedNotifications: MockApi_MergeMockBackupAccess_ImportedNotifications = (Array.isArray(document['notifications']) === true) ? document['notifications'].filter(
+    (notification): notification is MockApi_MergeMockBackupAccess_ImportedRecord => typeof notification === 'object' && notification !== null,
   ) : [];
+
   for (const importedNotification of importedNotifications) {
-    const name: string = String(importedNotification['name']);
-    const replaceIndex: number = mergedNotifications.findIndex(
-      (notification: MockNotification): boolean => notification['name'].toLowerCase() === name.toLowerCase(),
+    const name: MockApi_MergeMockBackupAccess_Name = String(importedNotification['name']);
+    const replaceIndex: MockApi_MergeMockBackupAccess_ReplaceIndex = mergedNotifications.findIndex(
+      (notification) => notification['name'].toLowerCase() === name.toLowerCase(),
     );
     if (replaceIndex < 0 && mergedNotifications.length >= maximumBackupNotificationDestinations) {
-      result['notificationMaximumSkips'] += 1;
+      Reflect.set(result, 'notificationMaximumSkips', result['notificationMaximumSkips'] + 1);
 
       continue;
     }
     if (replaceIndex >= 0) {
-      result['notificationReplacements'] += 1;
+      Reflect.set(result, 'notificationReplacements', result['notificationReplacements'] + 1);
     } else {
-      result['notificationAdditions'] += 1;
+      Reflect.set(result, 'notificationAdditions', result['notificationAdditions'] + 1);
     }
 
-    let id: string = String(importedNotification['id']);
-    while (mockBackupIDIsUsed(mergedNotifications, id, replaceIndex)) {
+    let id: MockApi_MergeMockBackupAccess_Id = String(importedNotification['id']);
+
+    while (mockBackupIDIsUsed(mergedNotifications, id, replaceIndex) === true) {
       id = `ntf-${randomBytes(8).toString('hex')}`;
     }
-    const secretValues: Record<string, string> = mockBackupStringMap(importedNotification['secrets']);
-    const secretFields: Record<string, true> = {};
+    const secretValues: MockApi_MergeMockBackupAccess_SecretValues = mockBackupStringMap(importedNotification['secrets']);
+    const secretFields: MockApi_MergeMockBackupAccess_SecretFields = {};
+
     for (const secretKey of Object.keys(secretValues)) {
       Reflect.set(secretFields, secretKey, true);
     }
-    const now: string = new Date().toISOString();
-    const notification: MockNotification = {
+    const now: MockApi_MergeMockBackupAccess_Now = new Date().toISOString();
+    const notification: MockApi_MergeMockBackupAccess_Notification = {
       createdAt: now,
-      events: (Array.isArray(importedNotification['events'])) ? importedNotification['events'].filter(
-        (event: unknown): event is string => typeof event === 'string',
+      events: (Array.isArray(importedNotification['events']) === true) ? importedNotification['events'].filter(
+        (event): event is MockApi_MergeMockBackupAccess_Event => typeof event === 'string',
       ) : [],
       id,
       lastAttemptAt: null,
@@ -6688,7 +7309,7 @@ const mergeMockBackupAccess = (document: Record<string, unknown>, apply: boolean
       name,
       secrets: secretFields,
       secretsMissing: [],
-      service: importedNotification['service'] as MockNotificationService,
+      service: importedNotification['service'] as MockApi_MergeMockBackupAccess_Service,
       settings: mockBackupStringMap(importedNotification['settings']),
       updatedAt: now,
     };
@@ -6699,40 +7320,42 @@ const mergeMockBackupAccess = (document: Record<string, unknown>, apply: boolean
     }
   }
 
-  const remoteAccess: Record<string, unknown> | undefined = (
+  const remoteAccess: MockApi_MergeMockBackupAccess_RemoteAccess = (
     typeof document['remoteAccess'] === 'object' && document['remoteAccess'] !== null
-  ) ? document['remoteAccess'] as Record<string, unknown> : undefined;
-  const importedLogins: Record<string, unknown>[] = (Array.isArray(remoteAccess?.['rpcLogins'])) ? remoteAccess['rpcLogins'].filter(
-    (login: unknown): login is Record<string, unknown> => typeof login === 'object' && login !== null,
+  ) ? document['remoteAccess'] as MockApi_MergeMockBackupAccess_ImportedRecord : undefined;
+  const importedLogins: MockApi_MergeMockBackupAccess_ImportedLogins = (remoteAccess !== undefined && Array.isArray(remoteAccess['rpcLogins']) === true) ? remoteAccess['rpcLogins'].filter(
+    (login): login is MockApi_MergeMockBackupAccess_ImportedRecord => typeof login === 'object' && login !== null,
   ) : [];
+
   for (const importedLogin of importedLogins) {
-    const username: string = String(importedLogin['username']);
-    const replaceIndex: number = mergedRPCLogins.findIndex(
-      (login: MockRPCLogin): boolean => login['username'].toLowerCase() === username.toLowerCase(),
+    const username: MockApi_MergeMockBackupAccess_Username = String(importedLogin['username']);
+    const replaceIndex: MockApi_MergeMockBackupAccess_ReplaceIndex = mergedRPCLogins.findIndex(
+      (login) => login['username'].toLowerCase() === username.toLowerCase(),
     );
     if (replaceIndex < 0 && mergedRPCLogins.length >= maximumBackupRPCLogins) {
-      result['rpcLoginMaximumSkips'] += 1;
+      Reflect.set(result, 'rpcLoginMaximumSkips', result['rpcLoginMaximumSkips'] + 1);
 
       continue;
     }
     if (replaceIndex >= 0) {
-      result['rpcLoginReplacements'] += 1;
+      Reflect.set(result, 'rpcLoginReplacements', result['rpcLoginReplacements'] + 1);
     } else {
-      result['rpcLoginAdditions'] += 1;
+      Reflect.set(result, 'rpcLoginAdditions', result['rpcLoginAdditions'] + 1);
     }
 
-    let id: string = String(importedLogin['id']);
-    while (mockBackupIDIsUsed(mergedRPCLogins, id, replaceIndex)) {
+    let id: MockApi_MergeMockBackupAccess_Id = String(importedLogin['id']);
+
+    while (mockBackupIDIsUsed(mergedRPCLogins, id, replaceIndex) === true) {
       id = `rpl-${randomBytes(8).toString('hex')}`;
     }
-    const login: MockRPCLogin = {
+    const login: MockApi_MergeMockBackupAccess_Login = {
       createdAt: String(importedLogin['createdAt']),
       id,
       lastUsedAt: (typeof importedLogin['lastUsedAt'] === 'string') ? importedLogin['lastUsedAt'] : null,
       username,
     };
     if (replaceIndex >= 0) {
-      const replacedLogin: MockRPCLogin | undefined = mergedRPCLogins[replaceIndex];
+      const replacedLogin: MockApi_MergeMockBackupAccess_ReplacedLogin = mergedRPCLogins[replaceIndex];
       if (replacedLogin !== undefined) {
         mergedRPCLoginDigests.delete(replacedLogin['id']);
       }
@@ -6743,61 +7366,69 @@ const mergeMockBackupAccess = (document: Record<string, unknown>, apply: boolean
     mergedRPCLoginDigests.set(id, String(importedLogin['secretDigest']));
   }
 
-  const importedTokens: Record<string, unknown>[] = (Array.isArray(remoteAccess?.['apiTokens'])) ? remoteAccess['apiTokens'].filter(
-    (token: unknown): token is Record<string, unknown> => typeof token === 'object' && token !== null,
+  const importedTokens: MockApi_MergeMockBackupAccess_ImportedTokens = (remoteAccess !== undefined && Array.isArray(remoteAccess['apiTokens']) === true) ? remoteAccess['apiTokens'].filter(
+    (token): token is MockApi_MergeMockBackupAccess_ImportedRecord => typeof token === 'object' && token !== null,
   ) : [];
+
   for (const importedToken of importedTokens) {
-    const id: string = String(importedToken['id']);
-    const name: string = String(importedToken['name']);
-    const digest: string = String(importedToken['tokenDigest']);
-    const duplicate: boolean = mergedTokens.some((token: Record<string, unknown>): boolean => (
+    const id: MockApi_MergeMockBackupAccess_Id = String(importedToken['id']);
+    const name: MockApi_MergeMockBackupAccess_Name = String(importedToken['name']);
+    const digest: MockApi_MergeMockBackupAccess_Digest = String(importedToken['tokenDigest']);
+    const duplicate: MockApi_MergeMockBackupAccess_Duplicate = mergedTokens.some((token) => (
       String(token['id']) === id
       || String(token['name']).toLowerCase() === name.toLowerCase()
       || mergedTokenDigests.get(String(token['id'])) === digest
     ));
-    if (duplicate) {
-      result['apiTokenDuplicateSkips'] += 1;
+    if (duplicate === true) {
+      Reflect.set(result, 'apiTokenDuplicateSkips', result['apiTokenDuplicateSkips'] + 1);
 
       continue;
     }
     if (mergedTokens.length >= maximumBackupAPITokens) {
-      result['apiTokenMaximumSkips'] += 1;
+      Reflect.set(result, 'apiTokenMaximumSkips', result['apiTokenMaximumSkips'] + 1);
 
       continue;
     }
 
-    result['apiTokenAdditions'] += 1;
+    Reflect.set(result, 'apiTokenAdditions', result['apiTokenAdditions'] + 1);
+
     mergedTokens.push({
       createdAt: importedToken['createdAt'],
       expiresAt: importedToken['expiresAt'],
       id,
       lastUsedAt: importedToken['lastUsedAt'],
       name,
-      scopes: (Array.isArray(importedToken['scopes'])) ? importedToken['scopes'].filter(
-        (scope: unknown): scope is string => typeof scope === 'string',
+      scopes: (Array.isArray(importedToken['scopes']) === true) ? importedToken['scopes'].filter(
+        (scope): scope is MockApi_MergeMockBackupAccess_Scope => typeof scope === 'string',
       ) : [],
     });
+
     mergedTokenDigests.set(id, digest);
   }
 
-  if (apply) {
+  if (apply === true) {
     notifications.splice(0, notifications.length);
+
     for (const notification of mergedNotifications) {
       notifications.push(notification);
     }
     rpcLogins.splice(0, rpcLogins.length);
+
     for (const login of mergedRPCLogins) {
       rpcLogins.push(login);
     }
     rpcLoginDigests.clear();
+
     for (const digestEntry of mergedRPCLoginDigests) {
       rpcLoginDigests.set(digestEntry[0], digestEntry[1]);
     }
     tokens.splice(0, tokens.length);
+
     for (const token of mergedTokens) {
       tokens.push(token);
     }
     tokenDigests.clear();
+
     for (const digestEntry of mergedTokenDigests) {
       tokenDigests.set(digestEntry[0], digestEntry[1]);
     }
@@ -6807,30 +7438,32 @@ const mergeMockBackupAccess = (document: Record<string, unknown>, apply: boolean
 };
 
 /**
- * Mock API - Builds backup preview.
+ * Mock API - Mock Backup Preview.
  *
  * Finds missing folders and profile name conflicts against current mock state.
  * The result mirrors the safe projection consumed by the import wizard.
  *
- * @param {Record<string, unknown>} document - Document.
+ * @param {MockApi_MockBackupPreview_Document} document - Document.
  *
- * @returns {Record<string, unknown>}
+ * @returns {MockApi_MockBackupPreview_Returns}
  *
  * @since 2.0.0
  */
-const mockBackupPreview = (document: Record<string, unknown>): Record<string, unknown> => {
-  const settingsAndProfiles: Record<string, unknown> | undefined = (
+const mockBackupPreview = (document: MockApi_MockBackupPreview_Document): MockApi_MockBackupPreview_Returns => {
+  const settingsAndProfiles: MockApi_MockBackupPreview_SettingsAndProfiles = (
     typeof document['settingsAndProfiles'] === 'object' && document['settingsAndProfiles'] !== null
-  ) ? document['settingsAndProfiles'] as Record<string, unknown> : undefined;
-  const importedDefault: Record<string, unknown> | undefined = (
-    typeof settingsAndProfiles?.['defaultProfile'] === 'object' && settingsAndProfiles['defaultProfile'] !== null
-  ) ? settingsAndProfiles['defaultProfile'] as Record<string, unknown> : undefined;
-  const importedProfiles: Record<string, unknown>[] = (Array.isArray(settingsAndProfiles?.['profiles'])) ? settingsAndProfiles['profiles'].filter((profile: unknown): profile is Record<string, unknown> => typeof profile === 'object' && profile !== null) : [];
-  const folderPaths: Set<string> = new Set([
+  ) ? document['settingsAndProfiles'] as MockApi_MockBackupPreview_ImportedRecord : undefined;
+  const importedDefault: MockApi_MockBackupPreview_ImportedDefault = (
+    settingsAndProfiles !== undefined
+    && typeof settingsAndProfiles['defaultProfile'] === 'object'
+    && settingsAndProfiles['defaultProfile'] !== null
+  ) ? settingsAndProfiles['defaultProfile'] as MockApi_MockBackupPreview_ImportedRecord : undefined;
+  const importedProfiles: MockApi_MockBackupPreview_ImportedProfiles = (settingsAndProfiles !== undefined && Array.isArray(settingsAndProfiles['profiles']) === true) ? settingsAndProfiles['profiles'].filter((profile): profile is MockApi_MockBackupPreview_ImportedRecord => typeof profile === 'object' && profile !== null) : [];
+  const folderPaths: MockApi_MockBackupPreview_FolderPaths = new Set([
     ...((importedDefault === undefined) ? [] : [String(importedDefault['downloadDirectory'])]),
-    ...importedProfiles.map((profile: Record<string, unknown>): string => String(profile['downloadDirectory'])),
+    ...importedProfiles.map((profile) => String(profile['downloadDirectory'])),
   ]);
-  const profilePreview: Record<string, unknown>[] = [];
+  const profilePreview: MockApi_MockBackupPreview_ProfilePreview = [];
   if (importedDefault !== undefined) {
     profilePreview.push({
       default: true,
@@ -6842,22 +7475,24 @@ const mockBackupPreview = (document: Record<string, unknown>): Record<string, un
       suggestedAction: 'replace',
     });
   }
+
   for (const importedProfile of importedProfiles) {
-    const existing: MockTorrentProfile | undefined = torrentProfiles.find(
-      (profile: MockTorrentProfile): boolean => profile['name'].toLowerCase() === String(importedProfile['name']).toLowerCase(),
+    const existing: MockApi_MockBackupPreview_Existing = torrentProfiles.find(
+      (profile) => profile['name'].toLowerCase() === String(importedProfile['name']).toLowerCase(),
     );
+
     profilePreview.push({
       default: false,
-      existingId: existing?.['id'] ?? null,
-      existingName: existing?.['name'] ?? null,
+      existingId: ((existing !== undefined) ? existing['id'] : undefined) ?? null,
+      existingName: ((existing !== undefined) ? existing['name'] : undefined) ?? null,
       id: String(importedProfile['id']),
       included: true,
       name: String(importedProfile['name']),
       suggestedAction: 'replace',
     });
   }
-  const importedSettings: Record<string, unknown>[] = (Array.isArray(settingsAndProfiles?.['settings'])) ? settingsAndProfiles['settings'].filter((setting: unknown): setting is Record<string, unknown> => typeof setting === 'object' && setting !== null) : [];
-  const sectionNames: [string, string][] = [
+  const importedSettings: MockApi_MockBackupPreview_ImportedSettings = (settingsAndProfiles !== undefined && Array.isArray(settingsAndProfiles['settings']) === true) ? settingsAndProfiles['settings'].filter((setting): setting is MockApi_MockBackupPreview_ImportedRecord => typeof setting === 'object' && setting !== null) : [];
+  const sectionNames: MockApi_MockBackupPreview_SectionNames = [
     [
       'settingsAndProfiles',
       'Settings and profiles',
@@ -6883,34 +7518,44 @@ const mockBackupPreview = (document: Record<string, unknown>): Record<string, un
       'Remote app logins and API tokens',
     ],
   ];
-  const remoteAccess: Record<string, unknown> | undefined = (
+  const remoteAccess: MockApi_MockBackupPreview_RemoteAccess = (
     typeof document['remoteAccess'] === 'object' && document['remoteAccess'] !== null
-  ) ? document['remoteAccess'] as Record<string, unknown> : undefined;
+  ) ? document['remoteAccess'] as MockApi_MockBackupPreview_ImportedRecord : undefined;
 
   return {
     actions: mergeMockBackupAccess(document, false),
     appVersion: String(document['appVersion']),
-    connections: ((noVPNConnections) ? [] : vpnConnections).map((connection: MockVPNConnection): Record<string, unknown> => ({
+    connections: ((noVPNConnections === true) ? [] : vpnConnections).map((connection) => ({
       default: connection['default'],
       id: connection['id'],
       name: connection['name'],
     })),
     exportedAt: String(document['exportedAt']),
-    folders: [...folderPaths].filter((folderPath: string): boolean => !directories.has(folderPath)).map(
-      (folderPath: string): Record<string, unknown> => ({
+    folders: [...folderPaths].filter((folderPath) => directories.has(folderPath) === false).map(
+      (folderPath) => ({
         dataFound: false,
         sourcePath: folderPath,
       }),
     ),
-    hasRemoteLogins: (Array.isArray(remoteAccess?.['rpcLogins']) && remoteAccess['rpcLogins'].length > 0)
-      || (Array.isArray(remoteAccess?.['apiTokens']) && remoteAccess['apiTokens'].length > 0),
-    profiles: profilePreview,
-    sections: sectionNames.filter(([key]: [string, string]): boolean => Object.hasOwn(document, key)).map(
-      (entry: [string, string]): string => entry[1],
+    hasRemoteLogins: (
+      (
+        remoteAccess !== undefined
+        && Array.isArray(remoteAccess['rpcLogins']) === true
+        && remoteAccess['rpcLogins'].length > 0
+      )
+      || (
+        remoteAccess !== undefined
+        && Array.isArray(remoteAccess['apiTokens']) === true
+        && remoteAccess['apiTokens'].length > 0
+      )
     ),
-    settings: importedSettings.map((importedSetting: Record<string, unknown>): Record<string, unknown> => {
-      const currentSetting: Record<string, unknown> | undefined = settings.find(
-        (setting: Record<string, unknown>): boolean => setting['key'] === importedSetting['key'],
+    profiles: profilePreview,
+    sections: sectionNames.filter((entry) => Object.hasOwn(document, entry[0])).map(
+      (entry) => entry[1],
+    ),
+    settings: importedSettings.map((importedSetting) => {
+      const currentSetting: MockApi_MockBackupPreview_CurrentSetting = settings.find(
+        (setting) => setting['key'] === importedSetting['key'],
       );
 
       return (currentSetting === undefined) ? {
@@ -6928,30 +7573,25 @@ const mockBackupPreview = (document: Record<string, unknown>): Record<string, un
         willImport: currentSetting['locked'] !== true,
       };
     }),
-    totalSizeBytes: (Array.isArray(document['torrents'])) ? document['torrents'].length * 3994028672 : 0,
-    torrentCount: (Array.isArray(document['torrents'])) ? document['torrents'].length : 0,
+    totalSizeBytes: (Array.isArray(document['torrents']) === true) ? document['torrents'].length * 3994028672 : 0,
+    torrentCount: (Array.isArray(document['torrents']) === true) ? document['torrents'].length : 0,
   };
 };
 
 /**
- * Mock API - Builds another Transmission preview.
+ * Mock API - Mock Another Transmission Preview.
  *
  * Supplies a generic mounted config with used, incomplete, and empty sibling folders.
  * Every migration screen can be exercised without a Docker bind mount.
  *
- * @param {Record<string, unknown>} folderMappings - Folder mappings.
+ * @param {MockApi_MockAnotherTransmissionPreview_FolderMappings} folderMappings - Folder mappings.
  *
- * @returns {Record<string, unknown>}
+ * @returns {MockApi_MockAnotherTransmissionPreview_Returns}
  *
  * @since 2.0.0
  */
-const mockAnotherTransmissionPreview = (folderMappings: Record<string, unknown>): Record<string, unknown> => {
-  const folderFixtures: Array<{
-    description: string
-    kind: 'default' | 'download' | 'empty' | 'incomplete'
-    path: string
-    total: number
-  }> = [
+const mockAnotherTransmissionPreview = (folderMappings: MockApi_MockAnotherTransmissionPreview_FolderMappings): MockApi_MockAnotherTransmissionPreview_Returns => {
+  const folderFixtures: MockApi_MockAnotherTransmissionPreview_FolderFixtures = [
     {
       description: 'Old default folder',
       kind: 'default',
@@ -6983,10 +7623,10 @@ const mockAnotherTransmissionPreview = (folderMappings: Record<string, unknown>)
       total: 0,
     },
   ];
-  const folders: Record<string, unknown>[] = folderFixtures.map((fixture): Record<string, unknown> => {
-    const mappedPath: string = String(folderMappings[fixture['path']] ?? fixture['path']);
-    const found: number = (mappedPath.startsWith('/data/')) ? fixture['total'] : 0;
-    let dataFoundStatus: string = 'not-found';
+  const folders: MockApi_MockAnotherTransmissionPreview_Folders = folderFixtures.map((fixture) => {
+    const mappedPath: MockApi_MockAnotherTransmissionPreview_MappedPath = String(folderMappings[fixture['path']] ?? fixture['path']);
+    const found: MockApi_MockAnotherTransmissionPreview_Found = (mappedPath.startsWith('/data/') === true) ? fixture['total'] : 0;
+    let dataFoundStatus: MockApi_MockAnotherTransmissionPreview_DataFoundStatus = 'not-found';
     if (fixture['total'] === 0) {
       dataFoundStatus = 'empty';
     } else if (found === fixture['total']) {
@@ -7007,7 +7647,7 @@ const mockAnotherTransmissionPreview = (folderMappings: Record<string, unknown>)
       torrentCount: (fixture['kind'] === 'incomplete') ? 4 : fixture['total'],
     };
   });
-  const importProfiles: Record<string, unknown>[] = [
+  const importProfiles: MockApi_MockAnotherTransmissionPreview_ImportProfiles = [
     {
       default: true,
       empty: false,
@@ -7036,7 +7676,7 @@ const mockAnotherTransmissionPreview = (folderMappings: Record<string, unknown>)
         'Podcasts',
         true,
       ],
-    ].map((profile): Record<string, unknown> => ({
+    ].map((profile) => ({
       default: false,
       empty: profile[2],
       existingId: null,
@@ -7049,7 +7689,7 @@ const mockAnotherTransmissionPreview = (folderMappings: Record<string, unknown>)
       suggestedAction: 'replace',
     })),
   ];
-  const mappedSettings: Record<string, unknown>[] = [
+  const mappedSettings: MockApi_MockAnotherTransmissionPreview_MappedSettings = [
     {
       fileValue: {
         enabled: true,
@@ -7139,7 +7779,7 @@ const mockAnotherTransmissionPreview = (folderMappings: Record<string, unknown>)
       willImport: true,
     },
   ];
-  const skippedSettings: Record<string, unknown>[] = [
+  const skippedSettings: MockApi_MockAnotherTransmissionPreview_SkippedSettings = [
     [
       'rpc-bind-address',
       'Remote apps sign in with RPC logins here.',
@@ -7188,7 +7828,7 @@ const mockAnotherTransmissionPreview = (folderMappings: Record<string, unknown>)
       'rename-partial-files',
       'Renaming partial files is not supported.',
     ],
-  ].map((setting): Record<string, unknown> => ({
+  ].map((setting) => ({
     fileValue: 'Saved value',
     key: `old.${String(setting[0])}`,
     reason: setting[1],
@@ -7199,7 +7839,7 @@ const mockAnotherTransmissionPreview = (folderMappings: Record<string, unknown>)
   return {
     actions: [],
     appVersion: 'Transmission 4',
-    connections: (noVPNConnections) ? [] : [
+    connections: (noVPNConnections === true) ? [] : [
       {
         default: true,
         id: 'connection-default',
@@ -7231,9 +7871,9 @@ const mockAnotherTransmissionPreview = (folderMappings: Record<string, unknown>)
       torrentCount: 15,
       version: 4,
     },
-    dataMissingCount: folders.reduce((missing: number, folder: Record<string, unknown>): number => {
-      const total: number = (typeof folder['dataTotal'] === 'number') ? folder['dataTotal'] : 0;
-      const found: number = (typeof folder['dataFoundCount'] === 'number') ? folder['dataFoundCount'] : 0;
+    dataMissingCount: folders.reduce((missing, folder) => {
+      const total: MockApi_MockAnotherTransmissionPreview_Total = (typeof folder['dataTotal'] === 'number') ? folder['dataTotal'] : 0;
+      const found: MockApi_MockAnotherTransmissionPreview_Found = (typeof folder['dataFoundCount'] === 'number') ? folder['dataFoundCount'] : 0;
 
       return missing + total - found;
     }, 0),
@@ -7245,34 +7885,34 @@ const mockAnotherTransmissionPreview = (folderMappings: Record<string, unknown>)
 };
 
 /**
- * Mock API - Starts backup import.
+ * Mock API - Start Mock Backup Import.
  *
  * Converts imported torrents into a compact source list for changing job responses.
  * Folder mappings are applied before the simulated re-check starts.
  *
- * @param {Record<string, unknown>} document       - Document.
- * @param {Record<string, unknown>} folderMappings - Folder mappings.
+ * @param {MockApi_StartMockBackupImport_Document}       document       - Document.
+ * @param {MockApi_StartMockBackupImport_FolderMappings} folderMappings - Folder mappings.
  *
- * @returns {MockBackupImport}
+ * @returns {MockApi_StartMockBackupImport_Returns}
  *
  * @since 2.0.0
  */
 const startMockBackupImport = (
-  document: Record<string, unknown>,
-  folderMappings: Record<string, unknown>,
-): MockBackupImport => {
-  const importedTorrents: Record<string, unknown>[] = (Array.isArray(document['torrents'])) ? document['torrents'].filter((torrent: unknown): torrent is Record<string, unknown> => typeof torrent === 'object' && torrent !== null) : [];
-  const job: MockBackupImport = {
+  document: MockApi_StartMockBackupImport_Document,
+  folderMappings: MockApi_StartMockBackupImport_FolderMappings,
+): MockApi_StartMockBackupImport_Returns => {
+  const importedTorrents: MockApi_StartMockBackupImport_ImportedTorrents = (Array.isArray(document['torrents']) === true) ? document['torrents'].filter((torrent): torrent is MockApi_StartMockBackupImport_ImportedRecord => typeof torrent === 'object' && torrent !== null) : [];
+  const job: MockApi_StartMockBackupImport_Job = {
     actions: mergeMockBackupAccess(document, true),
     createdAt: new Date().toISOString(),
     id: `imp-${randomBytes(8).toString('hex')}`,
-    items: importedTorrents.map((torrent: Record<string, unknown>): MockBackupImportSourceItem => {
-      const sourceFolder: string = String(torrent['downloadDirectory']);
-      const hash: string = String(torrent['hash']).toLowerCase();
+    items: importedTorrents.map((torrent) => {
+      const sourceFolder: MockApi_StartMockBackupImport_SourceFolder = String(torrent['downloadDirectory']);
+      const hash: MockApi_StartMockBackupImport_Hash = String(torrent['hash']).toLowerCase();
 
       return {
         complete: Number(torrent['percentDone'] ?? 0) >= 1,
-        duplicate: torrents.some((currentTorrent: MockTorrent): boolean => currentTorrent['hashString'].toLowerCase() === hash),
+        duplicate: torrents.some((currentTorrent) => currentTorrent['hashString'].toLowerCase() === hash),
         folder: String(folderMappings[sourceFolder] ?? sourceFolder),
         hash,
         missing: false,
@@ -7281,8 +7921,12 @@ const startMockBackupImport = (
         profileName: String(torrent['profileName']),
       };
     }),
-    profileCount: (typeof document['settingsAndProfiles'] === 'object' && document['settingsAndProfiles'] !== null) ? 1 + ((Array.isArray((document['settingsAndProfiles'] as Record<string, unknown>)['profiles'])) ? ((document['settingsAndProfiles'] as Record<string, unknown>)['profiles'] as unknown[]).length : 0) : 0,
-    settingCount: (typeof document['settingsAndProfiles'] === 'object' && document['settingsAndProfiles'] !== null && Array.isArray((document['settingsAndProfiles'] as Record<string, unknown>)['settings'])) ? ((document['settingsAndProfiles'] as Record<string, unknown>)['settings'] as unknown[]).length : 0,
+    profileCount: (typeof document['settingsAndProfiles'] === 'object' && document['settingsAndProfiles'] !== null) ? 1 + ((Array.isArray((document['settingsAndProfiles'] as MockApi_StartMockBackupImport_ImportedRecord)['profiles']) === true) ? ((document['settingsAndProfiles'] as MockApi_StartMockBackupImport_ImportedRecord)['profiles'] as MockApi_StartMockBackupImport_UnknownList).length : 0) : 0,
+    settingCount: (
+      typeof document['settingsAndProfiles'] === 'object'
+      && document['settingsAndProfiles'] !== null
+      && Array.isArray((document['settingsAndProfiles'] as MockApi_StartMockBackupImport_ImportedRecord)['settings']) === true
+    ) ? ((document['settingsAndProfiles'] as MockApi_StartMockBackupImport_ImportedRecord)['settings'] as MockApi_StartMockBackupImport_UnknownList).length : 0,
     source: 'transmission-vpn-export',
     startedAtMilliseconds: Date.now(),
     totalSizeBytes: importedTorrents.length * 3994028672,
@@ -7293,37 +7937,29 @@ const startMockBackupImport = (
 };
 
 /**
- * Mock API - Starts another Transmission import.
+ * Mock API - Start Mock Another Transmission Import.
  *
  * Creates fifteen generic torrents across the fake mounted folders.
  * Early duplicate and missing rows make every progress pill observable.
  *
- * @param {Record<string, unknown>} body - Body.
+ * @param {MockApi_StartMockAnotherTransmissionImport_Body} body - Body.
  *
- * @returns {MockBackupImport}
+ * @returns {MockApi_StartMockAnotherTransmissionImport_Returns}
  *
  * @since 2.0.0
  */
-const startMockAnotherTransmissionImport = (body: Record<string, unknown>): MockBackupImport => {
-  const folderMappings: Record<string, unknown> = (
+const startMockAnotherTransmissionImport = (body: MockApi_StartMockAnotherTransmissionImport_Body): MockApi_StartMockAnotherTransmissionImport_Returns => {
+  const folderMappings: MockApi_StartMockAnotherTransmissionImport_FolderMappings = (
     typeof body['folderMappings'] === 'object' && body['folderMappings'] !== null
-  ) ? body['folderMappings'] as Record<string, unknown> : {};
-  const profileNames: Record<string, unknown> = (
+  ) ? body['folderMappings'] as MockApi_StartMockAnotherTransmissionImport_FolderMappings : {};
+  const profileNames: MockApi_StartMockAnotherTransmissionImport_ProfileNames = (
     typeof body['profileNames'] === 'object' && body['profileNames'] !== null
-  ) ? body['profileNames'] as Record<string, unknown> : {};
-  const profileIncluded: Record<string, unknown> = (
+  ) ? body['profileNames'] as MockApi_StartMockAnotherTransmissionImport_ProfileNames : {};
+  const profileIncluded: MockApi_StartMockAnotherTransmissionImport_ProfileIncluded = (
     typeof body['profileIncluded'] === 'object' && body['profileIncluded'] !== null
-  ) ? body['profileIncluded'] as Record<string, unknown> : {};
-  const sourceItems: Array<{
-    folder: string
-    name: string
-    profileName: string
-  }> = [
-    ...Array.from({ length: 12 }, (unusedValue: unknown, index: number): {
-      folder: string
-      name: string
-      profileName: string
-    } => {
+  ) ? body['profileIncluded'] as MockApi_StartMockAnotherTransmissionImport_ProfileIncluded : {};
+  const sourceItems: MockApi_StartMockAnotherTransmissionImport_SourceItems = [
+    ...Array.from({ length: 12 }, (unusedValue, index) => {
       void unusedValue;
 
       return {
@@ -7332,11 +7968,7 @@ const startMockAnotherTransmissionImport = (body: Record<string, unknown>): Mock
         profileName: String(profileNames['/data/downloads/linux-isos'] ?? 'Linux isos'),
       };
     }),
-    ...Array.from({ length: 3 }, (unusedValue: unknown, index: number): {
-      folder: string
-      name: string
-      profileName: string
-    } => {
+    ...Array.from({ length: 3 }, (unusedValue, index) => {
       void unusedValue;
 
       return {
@@ -7346,11 +7978,11 @@ const startMockAnotherTransmissionImport = (body: Record<string, unknown>): Mock
       };
     }),
   ];
-  const job: MockBackupImport = {
+  const job: MockApi_StartMockAnotherTransmissionImport_Job = {
     actions: [],
     createdAt: new Date().toISOString(),
     id: `imp-${randomBytes(8).toString('hex')}`,
-    items: sourceItems.map((item, index: number): MockBackupImportSourceItem => ({
+    items: sourceItems.map((item, index) => ({
       complete: index % 3 !== 0,
       duplicate: index === 0,
       folder: String(folderMappings[item['folder']] ?? item['folder']),
@@ -7372,38 +8004,38 @@ const startMockAnotherTransmissionImport = (body: Record<string, unknown>): Mock
 };
 
 /**
- * Mock API - Formats backup import.
+ * Mock API - Mock Backup Import Response.
  *
  * Advances queued torrents through re-checking to their saved final run state.
  * Duplicate and missing-data outcomes use the same durable state names as the API.
  *
- * @param {MockBackupImport} job - Job.
+ * @param {MockApi_MockBackupImportResponse_Job} job - Job.
  *
- * @returns {Record<string, unknown>}
+ * @returns {MockApi_MockBackupImportResponse_Returns}
  *
  * @since 2.0.0
  */
-const mockBackupImportResponse = (job: MockBackupImport): Record<string, unknown> => {
-  const elapsedSeconds: number = Math.max(0, (Date.now() - job['startedAtMilliseconds']) / 1000);
-  const secondsPerItem: number = 2.5;
-  const items: Record<string, unknown>[] = job['items'].map((item: MockBackupImportSourceItem, index: number): Record<string, unknown> => {
-    const itemSeconds: number = elapsedSeconds - 0.5 - (index * secondsPerItem);
-    let state: string = 'queued';
-    let progress: number = 0;
-    let detail: string = '';
-    if (itemSeconds > 0 && item['duplicate']) {
+const mockBackupImportResponse = (job: MockApi_MockBackupImportResponse_Job): MockApi_MockBackupImportResponse_Returns => {
+  const elapsedSeconds: MockApi_MockBackupImportResponse_ElapsedSeconds = Math.max(0, (Date.now() - job['startedAtMilliseconds']) / 1000);
+  const secondsPerItem: MockApi_MockBackupImportResponse_SecondsPerItem = 2.5;
+  const items: MockApi_MockBackupImportResponse_Items = job['items'].map((item, index) => {
+    const itemSeconds: MockApi_MockBackupImportResponse_ItemSeconds = elapsedSeconds - 0.5 - (index * secondsPerItem);
+    let state: MockApi_MockBackupImportResponse_State = 'queued';
+    let progress: MockApi_MockBackupImportResponse_Progress = 0;
+    let detail: MockApi_MockBackupImportResponse_Detail = '';
+    if (itemSeconds > 0 && item['duplicate'] === true) {
       state = 'already-added';
       progress = 1;
       detail = 'This torrent is already in the library.';
-    } else if (itemSeconds > 1 && item['missing']) {
+    } else if (itemSeconds > 1 && item['missing'] === true) {
       state = 'data-missing';
       progress = 1;
       detail = `No data was found in ${item['folder']}.`;
     } else if (itemSeconds >= 2) {
       state = 'downloading';
-      if (item['paused']) {
+      if (item['paused'] === true) {
         state = 'paused';
-      } else if (item['complete']) {
+      } else if (item['complete'] === true) {
         state = 'seeding';
       }
       progress = 1;
@@ -7422,21 +8054,27 @@ const mockBackupImportResponse = (job: MockBackupImport): Record<string, unknown
       state,
     };
   });
-  const completedTorrents: number = items.filter(
-    (item: Record<string, unknown>): boolean => item['state'] !== 'queued' && item['state'] !== 'rechecking',
+  const completedTorrents: MockApi_MockBackupImportResponse_CompletedTorrents = items.filter(
+    (item) => item['state'] !== 'queued' && item['state'] !== 'rechecking',
   ).length;
-  const emptyJobComplete: boolean = job['items'].length === 0 && elapsedSeconds >= 1;
-  const complete: boolean = emptyJobComplete || (job['items'].length > 0 && completedTorrents === job['items'].length);
-  let status: string = 'running';
-  if (complete) {
+  const emptyJobComplete: MockApi_MockBackupImportResponse_EmptyJobComplete = job['items'].length === 0 && elapsedSeconds >= 1;
+  const complete: MockApi_MockBackupImportResponse_Complete = (
+    emptyJobComplete === true
+    || (
+      job['items'].length > 0
+      && completedTorrents === job['items'].length
+    )
+  );
+  let status: MockApi_MockBackupImportResponse_Status = 'running';
+  if (complete === true) {
     status = 'completed';
   } else if (elapsedSeconds < 0.5) {
     status = 'queued';
   }
-  const now: string = new Date().toISOString();
+  const now: MockApi_MockBackupImportResponse_Now = new Date().toISOString();
 
   return {
-    completedAt: (complete) ? now : null,
+    completedAt: (complete === true) ? now : null,
     completedTorrents,
     createdAt: job['createdAt'],
     error: '',
@@ -7447,9 +8085,9 @@ const mockBackupImportResponse = (job: MockBackupImport): Record<string, unknown
     status,
     summary: {
       actions: job['actions'],
-      alreadyAdded: items.filter((item: Record<string, unknown>): boolean => item['state'] === 'already-added').length,
-      dataMissing: items.filter((item: Record<string, unknown>): boolean => item['state'] === 'data-missing').length,
-      imported: items.filter((item: Record<string, unknown>): boolean => [
+      alreadyAdded: items.filter((item) => item['state'] === 'already-added').length,
+      dataMissing: items.filter((item) => item['state'] === 'data-missing').length,
+      imported: items.filter((item) => [
         'downloading',
         'paused',
         'seeding',
@@ -7464,19 +8102,19 @@ const mockBackupImportResponse = (job: MockBackupImport): Record<string, unknown
 };
 
 /**
- * Mock API - Lists import source directory.
+ * Mock API - Mock Import Source Directory.
  *
  * Provides a small generic tree for the read-only mounted-folder picker.
  * Virtual system folders are absent just as they are from the real endpoint.
  *
- * @param {string} path - Path.
+ * @param {MockApi_MockImportSourceDirectory_Path} path - Path.
  *
- * @returns {Record<string, unknown> | null}
+ * @returns {MockApi_MockImportSourceDirectory_Returns}
  *
  * @since 2.0.0
  */
-const mockImportSourceDirectory = (path: string): Record<string, unknown> | null => {
-  const tree: Record<string, string[]> = {
+const mockImportSourceDirectory = (path: MockApi_MockImportSourceDirectory_Path): MockApi_MockImportSourceDirectory_Returns => {
+  const tree: MockApi_MockImportSourceDirectory_Tree = {
     '/': [
       'data',
       'import',
@@ -7499,17 +8137,18 @@ const mockImportSourceDirectory = (path: string): Record<string, unknown> | null
     '/mnt': ['archive'],
     '/mnt/archive': [],
   };
-  const children: string[] | undefined = tree[path];
+  const children: MockApi_MockImportSourceDirectory_Children = tree[path];
   if (children === undefined) {
     return null;
   }
 
   return {
-    directories: children.map((name: string): Record<string, unknown> => {
-      const childPath: string = (path === '/') ? `/${name}` : `${path}/${name}`;
+    directories: children.map((name) => {
+      const childPath: MockApi_MockImportSourceDirectory_ChildPath = (path === '/') ? `/${name}` : `${path}/${name}`;
+      const grandchildren: MockApi_MockImportSourceDirectory_Children = tree[childPath];
 
       return {
-        hasSubfolders: (tree[childPath]?.length ?? 0) > 0,
+        hasSubfolders: (((grandchildren !== undefined) ? grandchildren.length : undefined) ?? 0) > 0,
         name,
         path: childPath,
       };
@@ -7520,25 +8159,27 @@ const mockImportSourceDirectory = (path: string): Record<string, unknown> | null
 };
 
 /**
- * Mock API - Handles request.
+ * Mock API - Handle Request.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @returns {MockApi_HandleRequest_Returns}
+ *
  * @since 2.0.0
  */
-const handleRequest = async (request: IncomingMessage, response: ServerResponse): Promise<boolean> => {
+const handleRequest = async (request: MockApi_HandleRequest_Request, response: MockApi_HandleRequest_Response): MockApi_HandleRequest_Returns => {
   // The Host header gives the address the page was opened at, like the real server sees it.
-  const url: URL = new URL(request.url ?? '/', `http://${request.headers.host ?? 'localhost'}`);
-  const path: string = url.pathname;
-  const method: string = request.method ?? 'GET';
+  const url: MockApi_HandleRequest_Url = new URL(request.url ?? '/', `http://${request.headers.host ?? 'localhost'}`);
+  const path: MockApi_HandleRequest_Path = url.pathname;
+  const method: MockApi_HandleRequest_Method = request.method ?? 'GET';
 
-  if (!path.startsWith('/api/v1/')) {
+  if (path.startsWith('/api/v1/') === false) {
     return false;
   }
 
   if (path === '/api/v1/setup/status') {
-    sendJSON(response, 200, (setupRequired) ? {
+    sendJSON(response, 200, (setupRequired === true) ? {
       claimRequired: true,
       claimExpiresAt: new Date(setupStartedAt + (30 * 60 * 1000)).toISOString(),
     } : { claimRequired: false });
@@ -7548,20 +8189,17 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
 
   // Claims work like the real server: any letter case, with or without spaces and dashes.
   if (path === '/api/v1/setup/claim' && method === 'POST') {
-    if (!setupRequired) {
+    if (setupRequired === false) {
       sendError(response, 409, 'claim_unavailable', 'Setup is already complete. Sign in instead.');
 
       return true;
     }
 
-    const body: Record<string, unknown> = await readBody(request);
-    const claimCode: string = String(body['claimCode'] ?? '').trim();
-    const username: string = String(body['username'] ?? '').trim();
-    const password: string = String(body['password'] ?? '');
-    const issues: {
-      field: string
-      message: string
-    }[] = [];
+    const body: MockApi_HandleRequest_Body = await readBody(request);
+    const claimCode: MockApi_HandleRequest_ClaimCode = String(body['claimCode'] ?? '').trim();
+    const username: MockApi_HandleRequest_Username = String(body['username'] ?? '').trim();
+    const password: MockApi_HandleRequest_Password = String(body['password'] ?? '');
+    const issues: MockApi_HandleRequest_Issues = [];
 
     if (claimCode === '') {
       issues.push({
@@ -7590,7 +8228,7 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
       return true;
     }
 
-    if (claimCode.toUpperCase().replace(/[\s-]/gu, '') !== 'K7Q2MXR9TDP4W8N') {
+    if (claimCode.toUpperCase().replace(new RegExp(separatorsPattern, 'gu'), '') !== 'K7Q2MXR9TDP4W8N') {
       sendFieldError(response, 'claim_invalid', 'claimCode', 'That setup code is wrong or expired. Restart the container to print a new one.', 401);
 
       return true;
@@ -7605,13 +8243,10 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
   }
 
   if (path === '/api/v1/auth/login' && method === 'POST') {
-    const body: Record<string, unknown> = await readBody(request);
-    const username: string = String(body['username'] ?? '').trim();
-    const password: string = String(body['password'] ?? '');
-    const missing: {
-      field: string
-      message: string
-    }[] = [];
+    const body: MockApi_HandleRequest_Body = await readBody(request);
+    const username: MockApi_HandleRequest_Username = String(body['username'] ?? '').trim();
+    const password: MockApi_HandleRequest_Password = String(body['password'] ?? '');
+    const missing: MockApi_HandleRequest_Missing = [];
 
     if (username === '') {
       missing.push({
@@ -7633,13 +8268,17 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
       return true;
     }
 
-    if (setupRequired || username.toLowerCase() !== account['username'].toLowerCase() || password !== account['password']) {
+    if (
+      setupRequired === true
+      || username.toLowerCase() !== account['username'].toLowerCase()
+      || password !== account['password']
+    ) {
       sendError(response, 401, 'credentials_invalid', 'The username or password is incorrect.');
 
       return true;
     }
 
-    if (account['totpEnabled']) {
+    if (account['totpEnabled'] === true) {
       sendJSON(response, 200, {
         status: 'second_factor_required',
         challenge: 'mock-challenge',
@@ -7655,9 +8294,9 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
   }
 
   if (path === '/api/v1/auth/login/second-factor' && method === 'POST') {
-    const body: Record<string, unknown> = await readBody(request);
-    const code: string = String(body['code'] ?? '').trim().toUpperCase();
-    const recoveryIndex: number = account['recoveryCodes'].indexOf(code);
+    const body: MockApi_HandleRequest_Body = await readBody(request);
+    const code: MockApi_HandleRequest_Code = String(body['code'] ?? '').trim().toUpperCase();
+    const recoveryIndex: MockApi_HandleRequest_RecoveryIndex = account['recoveryCodes'].indexOf(code);
 
     if (code === '') {
       sendIssues(response, [{
@@ -7713,17 +8352,24 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
     return true;
   }
 
-  if (path === '/api/v1/auth/me' && (request.headers['authorization'] ?? '').startsWith('Bearer ')) {
-    const tokenId: string | undefined = tokenValues.get((request.headers['authorization'] ?? '').slice('Bearer '.length).trim());
-    const token: Record<string, unknown> | undefined = tokens.find((candidate: Record<string, unknown>): boolean => candidate['id'] === tokenId);
+  if (path === '/api/v1/auth/me' && (request.headers['authorization'] ?? '').startsWith('Bearer ') === true) {
+    const tokenId: MockApi_HandleRequest_TokenId = tokenValues.get((request.headers['authorization'] ?? '').slice('Bearer '.length).trim());
+    const token: MockApi_HandleRequest_Token = tokens.find((candidate) => candidate['id'] === tokenId);
 
-    if (token === undefined || (typeof token['expiresAt'] === 'string' && Date.parse(token['expiresAt']) <= Date.now())) {
+    if (
+      token === undefined
+      || (
+        typeof token['expiresAt'] === 'string'
+        && Date.parse(token['expiresAt']) <= Date.now()
+      )
+    ) {
       sendError(response, 401, 'authentication_required', 'Sign in, or send a valid API token.');
 
       return true;
     }
 
     Reflect.set(token, 'lastUsedAt', new Date().toISOString());
+
     sendJSON(response, 200, {
       authenticationType: 'token',
       id: token['id'],
@@ -7735,7 +8381,7 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
   }
 
   if (path === '/api/v1/auth/me') {
-    if (!signedIn) {
+    if (signedIn === false) {
       sendError(response, 401, 'authentication_required', 'Sign in, or send a valid API token.');
 
       return true;
@@ -7752,7 +8398,7 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
     return true;
   }
 
-  if (!signedIn) {
+  if (signedIn === false) {
     sendError(response, 401, 'authentication_required', 'Sign in to continue.');
 
     return true;
@@ -7786,8 +8432,8 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
   }
 
   if (path === '/api/v1/backup/confirmation' && method === 'POST') {
-    const body: Record<string, unknown> = await readBody(request);
-    const purpose: 'export' | 'import' | undefined = (body['purpose'] === 'export' || body['purpose'] === 'import') ? body['purpose'] : undefined;
+    const body: MockApi_HandleRequest_Body = await readBody(request);
+    const purpose: MockApi_HandleRequest_BackupPurpose = (body['purpose'] === 'export' || body['purpose'] === 'import') ? body['purpose'] : undefined;
     if (purpose === undefined) {
       sendFieldError(response, 'purpose_invalid', 'purpose', 'Choose export or import.');
 
@@ -7798,7 +8444,7 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
 
       return true;
     }
-    if (account['totpEnabled'] && String(body['code'] ?? '').trim() !== '123456') {
+    if (account['totpEnabled'] === true && String(body['code'] ?? '').trim() !== '123456') {
       sendFieldError(response, 'code_invalid', 'code', 'That code doesn\'t match. Check the time on your device and try again.', 401);
 
       return true;
@@ -7809,8 +8455,8 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
   }
 
   if (path === '/api/v1/backup/confirmation/passkey/options' && method === 'POST') {
-    const body: Record<string, unknown> = await readBody(request);
-    const purpose: string = String(body['purpose'] ?? '');
+    const body: MockApi_HandleRequest_Body = await readBody(request);
+    const purpose: MockApi_HandleRequest_PurposeText = String(body['purpose'] ?? '');
     if (purpose !== 'export' && purpose !== 'import') {
       sendFieldError(response, 'purpose_invalid', 'purpose', 'Choose export or import.');
 
@@ -7830,8 +8476,8 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
   }
 
   if (path === '/api/v1/backup/confirmation/passkey/verify' && method === 'POST') {
-    const body: Record<string, unknown> = await readBody(request);
-    const purpose: 'export' | 'import' | undefined = (body['purpose'] === 'export' || body['purpose'] === 'import') ? body['purpose'] : undefined;
+    const body: MockApi_HandleRequest_Body = await readBody(request);
+    const purpose: MockApi_HandleRequest_BackupPurpose = (body['purpose'] === 'export' || body['purpose'] === 'import') ? body['purpose'] : undefined;
     if (purpose === undefined || body['ceremonyId'] !== `mock-backup-${purpose}`) {
       sendError(response, 401, 'passkey_invalid', 'The passkey confirmation expired. Try again.');
 
@@ -7843,15 +8489,16 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
   }
 
   if (path === '/api/v1/backup/export' && method === 'POST') {
-    const body: Record<string, unknown> = await readBody(request);
-    if (!consumeMockBackupGrant(body['grant'], 'export')) {
+    const body: MockApi_HandleRequest_Body = await readBody(request);
+    if (consumeMockBackupGrant(body['grant'], 'export') === false) {
       sendError(response, 401, 'backup_confirmation_required', 'Confirm it\'s you again before exporting.');
 
       return true;
     }
-    const selected: Record<string, unknown> = (
+    const selected: MockApi_HandleRequest_Selected = (
       typeof body['sections'] === 'object' && body['sections'] !== null
-    ) ? body['sections'] as Record<string, unknown> : {};
+    ) ? body['sections'] as MockApi_HandleRequest_Selected : {};
+
     response.writeHead(200, {
       'Cache-Control': 'no-store',
       'Content-Disposition': `attachment; filename="transmission-vpn-export-${new Date().toISOString().slice(0, 10)}.json"`,
@@ -7862,7 +8509,7 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
   }
 
   if (path === '/api/v1/backup/imports/source-directories' && method === 'GET') {
-    const directory: Record<string, unknown> | null = mockImportSourceDirectory(url.searchParams.get('path') ?? '/');
+    const directory: MockApi_HandleRequest_SourceDirectory = mockImportSourceDirectory(url.searchParams.get('path') ?? '/');
     if (directory === null) {
       sendFieldError(response, 'source_directory_invalid', 'path', 'That folder cannot be read.');
 
@@ -7874,24 +8521,30 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
   }
 
   if (path === '/api/v1/backup/imports/preview' && method === 'POST') {
-    const body: Record<string, unknown> = await readBody(request);
+    const body: MockApi_HandleRequest_Body = await readBody(request);
     if (body['source'] === 'another-transmission') {
       if (body['configPath'] !== '/import') {
         sendFieldError(response, 'import_source_invalid', 'source', 'No settings.json was found in that folder.');
 
         return true;
       }
-      const folderMappings: Record<string, unknown> = (
+      const folderMappings: MockApi_HandleRequest_FolderMappings = (
         typeof body['folderMappings'] === 'object' && body['folderMappings'] !== null
-      ) ? body['folderMappings'] as Record<string, unknown> : {};
+      ) ? body['folderMappings'] as MockApi_HandleRequest_FolderMappings : {};
+
       sendJSON(response, 200, { preview: mockAnotherTransmissionPreview(folderMappings) });
 
       return true;
     }
-    const document: Record<string, unknown> | undefined = (
+    const document: MockApi_HandleRequest_Document = (
       typeof body['document'] === 'object' && body['document'] !== null
-    ) ? body['document'] as Record<string, unknown> : undefined;
-    if (body['source'] !== 'transmission-vpn-export' || document?.['format'] !== 'transmission-vpn-export' || document['version'] !== 1) {
+    ) ? body['document'] as MockApi_HandleRequest_DocumentRecord : undefined;
+    if (
+      body['source'] !== 'transmission-vpn-export'
+      || document === undefined
+      || document['format'] !== 'transmission-vpn-export'
+      || document['version'] !== 1
+    ) {
       sendFieldError(response, 'export_invalid', 'document', 'Choose a valid transmission-vpn version 1 export.');
 
       return true;
@@ -7902,55 +8555,69 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
   }
 
   if (path === '/api/v1/backup/imports' && method === 'POST') {
-    const body: Record<string, unknown> = await readBody(request);
+    const body: MockApi_HandleRequest_Body = await readBody(request);
     if (body['source'] === 'another-transmission') {
       if (body['configPath'] !== '/import') {
         sendFieldError(response, 'import_source_invalid', 'source', 'No settings.json was found in that folder.');
 
         return true;
       }
-      if (!consumeMockBackupGrant(body['grant'], 'import')) {
+      if (consumeMockBackupGrant(body['grant'], 'import') === false) {
         sendError(response, 401, 'backup_confirmation_required', 'Confirm it\'s you again before importing.');
 
         return true;
       }
-      const job: MockBackupImport = startMockAnotherTransmissionImport(body);
+      const job: MockApi_HandleRequest_Job = startMockAnotherTransmissionImport(body);
+
       sendJSON(response, 202, { job: mockBackupImportResponse(job) });
 
       return true;
     }
-    const document: Record<string, unknown> | undefined = (
+    const document: MockApi_HandleRequest_Document = (
       typeof body['document'] === 'object' && body['document'] !== null
-    ) ? body['document'] as Record<string, unknown> : undefined;
-    if (body['source'] !== 'transmission-vpn-export' || document?.['format'] !== 'transmission-vpn-export' || document['version'] !== 1) {
+    ) ? body['document'] as MockApi_HandleRequest_DocumentRecord : undefined;
+    if (
+      body['source'] !== 'transmission-vpn-export'
+      || document === undefined
+      || document['format'] !== 'transmission-vpn-export'
+      || document['version'] !== 1
+    ) {
       sendFieldError(response, 'export_invalid', 'document', 'Choose a valid transmission-vpn version 1 export.');
 
       return true;
     }
-    if (!consumeMockBackupGrant(body['grant'], 'import')) {
+    if (consumeMockBackupGrant(body['grant'], 'import') === false) {
       sendError(response, 401, 'backup_confirmation_required', 'Confirm it\'s you again before importing.');
 
       return true;
     }
-    const folderMappings: Record<string, unknown> = (
+    const folderMappings: MockApi_HandleRequest_FolderMappings = (
       typeof body['folderMappings'] === 'object' && body['folderMappings'] !== null
-    ) ? body['folderMappings'] as Record<string, unknown> : {};
-    const job: MockBackupImport = startMockBackupImport(document, folderMappings);
+    ) ? body['folderMappings'] as MockApi_HandleRequest_FolderMappings : {};
+    const job: MockApi_HandleRequest_Job = startMockBackupImport(document, folderMappings);
+
     sendJSON(response, 202, { job: mockBackupImportResponse(job) });
 
     return true;
   }
 
   if (path === '/api/v1/backup/imports/current' && method === 'GET') {
-    const job: Record<string, unknown> | null = (backupImportJob === null) ? null : mockBackupImportResponse(backupImportJob);
+    const job: MockApi_HandleRequest_JobResponse = (backupImportJob === null) ? null : mockBackupImportResponse(backupImportJob);
+
     sendJSON(response, 200, {
-      job: (job?.['status'] === 'queued' || job?.['status'] === 'running') ? job : null,
+      job: (
+        job !== null
+        && (
+          job['status'] === 'queued'
+          || job['status'] === 'running'
+        )
+      ) ? job : null,
     });
 
     return true;
   }
 
-  const backupImportMatch: RegExpMatchArray | null = path.match(/^\/api\/v1\/backup\/imports\/([^/]+)$/u);
+  const backupImportMatch: MockApi_HandleRequest_BackupImportMatch = path.match(new RegExp(backupImportPathPattern, 'u'));
   if (backupImportMatch !== null && method === 'GET') {
     if (backupImportJob === null || backupImportJob['id'] !== backupImportMatch[1]) {
       sendError(response, 404, 'backup_import_not_found', 'That import job was not found.');
@@ -7963,11 +8630,8 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
   }
 
   if (path === '/api/v1/auth/password' && method === 'POST') {
-    const body: Record<string, unknown> = await readBody(request);
-    const issues: {
-      field: string
-      message: string
-    }[] = [];
+    const body: MockApi_HandleRequest_Body = await readBody(request);
+    const issues: MockApi_HandleRequest_Issues = [];
 
     if (String(body['currentPassword'] ?? '') === '') {
       issues.push({
@@ -8002,12 +8666,9 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
   }
 
   if (path === '/api/v1/auth/username' && method === 'POST') {
-    const body: Record<string, unknown> = await readBody(request);
-    const username: string = String(body['username'] ?? '').trim();
-    const issues: {
-      field: string
-      message: string
-    }[] = [];
+    const body: MockApi_HandleRequest_Body = await readBody(request);
+    const username: MockApi_HandleRequest_Username = String(body['username'] ?? '').trim();
+    const issues: MockApi_HandleRequest_Issues = [];
 
     if (String(body['password'] ?? '') === '') {
       issues.push({
@@ -8047,7 +8708,7 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
   }
 
   if (path === '/api/v1/auth/totp/setup' && method === 'POST') {
-    const body: Record<string, unknown> = await readBody(request);
+    const body: MockApi_HandleRequest_Body = await readBody(request);
 
     if (String(body['password'] ?? '') === '') {
       sendIssues(response, [{
@@ -8064,7 +8725,7 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
       return true;
     }
 
-    if (account['totpEnabled']) {
+    if (account['totpEnabled'] === true) {
       sendError(response, 409, 'totp_enabled', 'The authenticator app is already on.');
 
       return true;
@@ -8082,9 +8743,9 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
   }
 
   if (path === '/api/v1/auth/totp/enable' && method === 'POST') {
-    const body: Record<string, unknown> = await readBody(request);
+    const body: MockApi_HandleRequest_Body = await readBody(request);
 
-    if (!/^\d{6}$/u.test(String(body['code'] ?? '').trim())) {
+    if (new RegExp(sixDigitCodePattern, 'u').test(String(body['code'] ?? '').trim()) === false) {
       sendIssues(response, [{
         field: 'code',
         message: 'Enter the 6-digit code from your app.',
@@ -8093,7 +8754,7 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
       return true;
     }
 
-    if (!account['totpSetupPending']) {
+    if (account['totpSetupPending'] === false) {
       sendError(response, 409, 'totp_setup_expired', 'Authenticator setup expired. Start again.');
 
       return true;
@@ -8109,14 +8770,20 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
     account.totpSetupPending = false;
     account.totpEnabled = true;
     account.recoveryCodes = newRecoveryCodes();
-    removedSecrets = removedSecrets.filter((removedSecret): boolean => removedSecret.kind !== 'authenticator');
+    removedSecrets = removedSecrets.filter((removedSecret) => removedSecret['kind'] !== 'authenticator');
     sendJSON(response, 200, { recoveryCodes: account['recoveryCodes'].map(formatRecoveryCode) });
 
     return true;
   }
 
-  if ((path === '/api/v1/auth/totp/disable' || path === '/api/v1/auth/recovery-codes') && method === 'POST') {
-    const body: Record<string, unknown> = await readBody(request);
+  if (
+    (
+      path === '/api/v1/auth/totp/disable'
+      || path === '/api/v1/auth/recovery-codes'
+    )
+    && method === 'POST'
+  ) {
+    const body: MockApi_HandleRequest_Body = await readBody(request);
 
     if (String(body['password'] ?? '') === '') {
       sendIssues(response, [{
@@ -8133,7 +8800,7 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
       return true;
     }
 
-    if (!account['totpEnabled']) {
+    if (account['totpEnabled'] === false) {
       sendError(response, 409, 'totp_disabled', (path === '/api/v1/auth/totp/disable') ? 'The authenticator app is already off.' : 'Turn on the authenticator app first.');
 
       return true;
@@ -8154,12 +8821,9 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
   }
 
   if (path === '/api/v1/auth/passkeys/register/options' && method === 'POST') {
-    const body: Record<string, unknown> = await readBody(request);
-    const name: string = String(body['name'] ?? '').trim();
-    const issues: {
-      field: string
-      message: string
-    }[] = [];
+    const body: MockApi_HandleRequest_Body = await readBody(request);
+    const name: MockApi_HandleRequest_Name = String(body['name'] ?? '').trim();
+    const issues: MockApi_HandleRequest_Issues = [];
 
     if (name === '') {
       issues.push({
@@ -8226,7 +8890,7 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
   if (path === '/api/v1/auth/passkeys/register/verify' && method === 'POST') {
     await readBody(request);
 
-    const passkey: Record<string, unknown> = {
+    const passkey: MockApi_HandleRequest_Passkey = {
       id: `pk-${Date.now()}`,
       name: pendingPasskeyName,
       hostname: url.hostname,
@@ -8235,14 +8899,15 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
     };
 
     account['passkeys'].push(passkey);
+
     sendJSON(response, 201, passkey);
 
     return true;
   }
 
-  if (path.startsWith('/api/v1/auth/passkeys/') && method === 'DELETE') {
-    const body: Record<string, unknown> = await readBody(request);
-    const passkeyId: string = decodeURIComponent(path.slice('/api/v1/auth/passkeys/'.length));
+  if (path.startsWith('/api/v1/auth/passkeys/') === true && method === 'DELETE') {
+    const body: MockApi_HandleRequest_Body = await readBody(request);
+    const passkeyId: MockApi_HandleRequest_PasskeyId = decodeURIComponent(path.slice('/api/v1/auth/passkeys/'.length));
 
     if (String(body['password'] ?? '') === '') {
       sendIssues(response, [{
@@ -8259,13 +8924,13 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
       return true;
     }
 
-    if (!account['passkeys'].some((passkey: Record<string, unknown>): boolean => passkey['id'] === passkeyId)) {
+    if (account['passkeys'].some((passkey) => passkey['id'] === passkeyId) === false) {
       sendError(response, 404, 'passkey_not_found', 'That passkey no longer exists.');
 
       return true;
     }
 
-    account.passkeys = account['passkeys'].filter((passkey: Record<string, unknown>): boolean => passkey['id'] !== passkeyId);
+    account.passkeys = account['passkeys'].filter((passkey) => passkey['id'] !== passkeyId);
     response.writeHead(204).end();
 
     return true;
@@ -8289,53 +8954,66 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
      * Centralizes this operation for the surrounding workflow.
      * Callers reuse one implementation instead of repeating the behavior.
      *
+     * @returns {MockApi_HandleRequest_Send_Returns}
+     *
      * @since 2.0.0
      */
-    const send = (): void => {
+    const send: MockApi_HandleRequest_Send = (): MockApi_HandleRequest_Send_Returns => {
       tick();
-      response.write(`event: snapshot\ndata: ${JSON.stringify(snapshot())}\n\n`);
+
+      response.write([
+        'event: snapshot',
+        `data: ${JSON.stringify(snapshot())}`,
+        '',
+        '',
+      ].join('\n'));
+
+      return;
     };
 
     send();
 
-    const timer: NodeJS.Timeout = setInterval(send, 2000);
+    const timer: MockApi_HandleRequest_Timer = setInterval(send, 2000);
 
-    request.on('close', (): void => clearInterval(timer));
+    request.on('close', () => clearInterval(timer));
 
     return true;
   }
 
   if (path === '/api/v1/rpc/logins') {
     if (method === 'POST') {
-      const body: Record<string, unknown> = await readBody(request);
-      const username: string = String(body['username'] ?? '').trim();
-      const issue: string = remoteUsernameIssue(username);
+      const body: MockApi_HandleRequest_Body = await readBody(request);
+      const username: MockApi_HandleRequest_Username = String(body['username'] ?? '').trim();
+      const issue: MockApi_HandleRequest_Issue = remoteUsernameIssue(username);
       if (issue !== '') {
         sendFieldError(response, 'invalid_request', 'username', issue);
 
         return true;
       }
-      if (noVPNConnections) {
+      if (noVPNConnections === true) {
         sendError(response, 409, 'vpn_connection_required', 'Add a VPN connection before adding a login.');
 
         return true;
       }
-      if (rpcLogins.some((login: MockRPCLogin): boolean => login.username.toLowerCase() === username.toLowerCase())) {
+      if (rpcLogins.some((login) => login['username'].toLowerCase() === username.toLowerCase()) === true) {
         sendFieldError(response, 'rpc_login_exists', 'username', 'An RPC login with this username already exists.', 409);
 
         return true;
       }
 
       rpcLoginSequence += 1;
-      const login: MockRPCLogin = {
+      const login: MockApi_HandleRequest_RpcLogin = {
         createdAt: new Date().toISOString(),
         id: `rpl-${rpcLoginSequence.toString(16).padStart(16, '0')}`,
         lastUsedAt: null,
         username,
       };
-      const password: string = `rpc_${randomBytes(18).toString('base64url')}`;
+      const password: MockApi_HandleRequest_GeneratedPassword = `rpc_${randomBytes(18).toString('base64url')}`;
+
       rpcLogins.push(login);
+
       rpcLoginDigests.set(login['id'], createHash('sha256').update(password).digest('base64'));
+
       sendJSON(response, 201, {
         login,
         password,
@@ -8349,10 +9027,10 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
     return true;
   }
 
-  const rpcLoginMatch: RegExpMatchArray | null = path.match(/^\/api\/v1\/rpc\/logins\/([^/]+)$/u);
+  const rpcLoginMatch: MockApi_HandleRequest_RpcLoginMatch = path.match(new RegExp(rpcLoginPathPattern, 'u'));
   if (rpcLoginMatch !== null) {
-    const login: MockRPCLogin | undefined = rpcLogins.find(
-      (candidate: MockRPCLogin): boolean => candidate.id === decodeURIComponent(rpcLoginMatch[1] ?? ''),
+    const login: MockApi_HandleRequest_FoundRpcLogin = rpcLogins.find(
+      (candidate) => candidate['id'] === decodeURIComponent(rpcLoginMatch[1] ?? ''),
     );
     if (login === undefined) {
       sendError(response, 404, 'rpc_login_not_found', 'That RPC login no longer exists.');
@@ -8361,22 +9039,24 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
     }
     if (method === 'DELETE') {
       rpcLogins.splice(rpcLogins.indexOf(login), 1);
+
       rpcLoginDigests.delete(login['id']);
+
       response.writeHead(204).end();
 
       return true;
     }
     if (method === 'PUT') {
-      const body: Record<string, unknown> = await readBody(request);
+      const body: MockApi_HandleRequest_Body = await readBody(request);
       if (body['username'] !== undefined) {
-        const username: string = String(body['username']).trim();
-        const issue: string = remoteUsernameIssue(username);
+        const username: MockApi_HandleRequest_Username = String(body['username']).trim();
+        const issue: MockApi_HandleRequest_Issue = remoteUsernameIssue(username);
         if (issue !== '') {
           sendFieldError(response, 'invalid_request', 'username', issue);
 
           return true;
         }
-        if (rpcLogins.some((candidate: MockRPCLogin): boolean => candidate !== login && candidate.username.toLowerCase() === username.toLowerCase())) {
+        if (rpcLogins.some((candidate) => candidate !== login && candidate['username'].toLowerCase() === username.toLowerCase()) === true) {
           sendFieldError(response, 'rpc_login_exists', 'username', 'An RPC login with this username already exists.', 409);
 
           return true;
@@ -8384,13 +9064,13 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
         login.username = username;
       }
 
-      const regeneratePassword: boolean = body['regeneratePassword'] === true;
-      if (body['username'] === undefined && !regeneratePassword) {
+      const regeneratePassword: MockApi_HandleRequest_RegeneratePassword = body['regeneratePassword'] === true;
+      if (body['username'] === undefined && regeneratePassword === false) {
         sendFieldError(response, 'invalid_request', 'regeneratePassword', 'Change the username or regenerate the password.');
 
         return true;
       }
-      const password: string | undefined = (regeneratePassword) ? `rpc_${randomBytes(18).toString('base64url')}` : undefined;
+      const password: MockApi_HandleRequest_OptionalPassword = (regeneratePassword === true) ? `rpc_${randomBytes(18).toString('base64url')}` : undefined;
       if (password !== undefined) {
         rpcLoginDigests.set(login['id'], createHash('sha256').update(password).digest('base64'));
       }
@@ -8405,25 +9085,28 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
 
   if (path === '/api/v1/web-proxy') {
     if (method === 'PUT') {
-      const body: Record<string, unknown> = await readBody(request);
+      const body: MockApi_HandleRequest_Body = await readBody(request);
       if (typeof body['enabled'] !== 'boolean') {
         sendFieldError(response, 'invalid_request', 'enabled', 'Choose whether the web proxy is on.');
 
         return true;
       }
-      if (body['enabled'] && noVPNConnections) {
+      if (body['enabled'] === true && noVPNConnections === true) {
         sendError(response, 409, 'vpn_connection_required', 'Add a VPN connection before turning on the web proxy.');
 
         return true;
       }
-      const requestedEnabled: boolean = body['enabled'];
+      const requestedEnabled: MockApi_HandleRequest_RequestedEnabled = body['enabled'];
       webProxyEnabled = requestedEnabled;
       webProxyTransitionSequence += 1;
-      const transitionSequence: number = webProxyTransitionSequence;
-      setTimeout((): void => {
+      const transitionSequence: MockApi_HandleRequest_TransitionSequence = webProxyTransitionSequence;
+
+      setTimeout(() => {
         if (transitionSequence === webProxyTransitionSequence) {
           webProxyRuntimeEnabled = requestedEnabled;
         }
+
+        return;
       }, 2000);
     }
 
@@ -8433,29 +9116,31 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
   }
 
   if (path === '/api/v1/web-proxy/logins' && method === 'POST') {
-    const body: Record<string, unknown> = await readBody(request);
+    const body: MockApi_HandleRequest_Body = await readBody(request);
     if (body['password'] !== undefined) {
       sendFieldError(response, 'invalid_request', 'password', 'This field isn\'t accepted.');
 
       return true;
     }
 
-    const username: string = String(body['username'] ?? '').trim();
-    const issues: {
-      field: string
-      message: string
-    }[] = [];
-    const usernameMessage: string = remoteUsernameIssue(username);
+    const username: MockApi_HandleRequest_Username = String(body['username'] ?? '').trim();
+    const issues: MockApi_HandleRequest_Issues = [];
+    const usernameMessage: MockApi_HandleRequest_UsernameMessage = remoteUsernameIssue(username);
     if (usernameMessage !== '') {
       issues.push({
         field: 'username',
         message: usernameMessage,
       });
     }
-    const requestedConnectionId: unknown = body['connectionId'];
-    if (requestedConnectionId !== undefined && requestedConnectionId !== null && (
-      typeof requestedConnectionId !== 'string' || requestedConnectionId === ''
-    )) {
+    const requestedConnectionId: MockApi_HandleRequest_RequestedConnectionId = body['connectionId'];
+    if (
+      requestedConnectionId !== undefined
+      && requestedConnectionId !== null
+      && (
+        typeof requestedConnectionId !== 'string'
+        || requestedConnectionId === ''
+      )
+    ) {
       issues.push({
         field: 'connectionId',
         message: 'Choose an existing VPN connection, or set up a default connection first.',
@@ -8466,9 +9151,9 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
 
       return true;
     }
-    if (typeof requestedConnectionId === 'string' && !vpnConnections.some(
-      (connection: MockVPNConnection): boolean => connection['id'] === requestedConnectionId,
-    )) {
+    if (typeof requestedConnectionId === 'string' && vpnConnections.some(
+      (connection) => connection['id'] === requestedConnectionId,
+    ) === false) {
       sendFieldError(
         response,
         'web_proxy_connection_invalid',
@@ -8478,30 +9163,32 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
 
       return true;
     }
-    if (noVPNConnections) {
+    if (noVPNConnections === true) {
       sendError(response, 409, 'vpn_connection_required', 'Add a VPN connection before adding a login.');
 
       return true;
     }
-    if (typeof requestedConnectionId === 'string' && isConnectionBeingRemoved(requestedConnectionId)) {
+    if (typeof requestedConnectionId === 'string' && isConnectionBeingRemoved(requestedConnectionId) === true) {
       sendConnectionBeingRemoved(response);
 
       return true;
     }
-    if (webProxyLogins.some((login: MockWebProxyLogin): boolean => login.username.toLowerCase() === username.toLowerCase())) {
+    if (webProxyLogins.some((login) => login['username'].toLowerCase() === username.toLowerCase()) === true) {
       sendFieldError(response, 'web_proxy_login_exists', 'username', 'A web proxy login with this username already exists.', 409);
 
       return true;
     }
 
     webProxyLoginSequence += 1;
-    const login: MockWebProxyLogin = {
+    const login: MockApi_HandleRequest_WebProxyLogin = {
       connectionId: (typeof body['connectionId'] === 'string') ? body['connectionId'] : null,
       id: `wpl-${webProxyLoginSequence.toString(16).padStart(16, '0')}`,
       passwordSet: true,
       username,
     };
+
     webProxyLogins.push(login);
+
     sendJSON(response, 201, {
       login: effectiveWebProxyLogin(login),
       password: `proxy_${randomBytes(18).toString('base64url')}`,
@@ -8510,10 +9197,10 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
     return true;
   }
 
-  const webProxyLoginMatch: RegExpMatchArray | null = path.match(/^\/api\/v1\/web-proxy\/logins\/([^/]+)$/u);
+  const webProxyLoginMatch: MockApi_HandleRequest_WebProxyLoginMatch = path.match(new RegExp(webProxyLoginPathPattern, 'u'));
   if (webProxyLoginMatch !== null) {
-    const login: MockWebProxyLogin | undefined = webProxyLogins.find(
-      (candidate: MockWebProxyLogin): boolean => candidate.id === decodeURIComponent(webProxyLoginMatch[1] ?? ''),
+    const login: MockApi_HandleRequest_FoundWebProxyLogin = webProxyLogins.find(
+      (candidate) => candidate['id'] === decodeURIComponent(webProxyLoginMatch[1] ?? ''),
     );
     if (login === undefined) {
       sendError(response, 404, 'web_proxy_login_not_found', 'That web proxy login no longer exists.');
@@ -8522,48 +9209,57 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
     }
     if (method === 'DELETE') {
       webProxyLogins.splice(webProxyLogins.indexOf(login), 1);
+
       response.writeHead(204).end();
 
       return true;
     }
     if (method === 'PUT') {
-      const body: Record<string, unknown> = await readBody(request);
+      const body: MockApi_HandleRequest_Body = await readBody(request);
       if (body['password'] !== undefined) {
         sendFieldError(response, 'invalid_request', 'password', 'This field isn\'t accepted.');
 
         return true;
       }
 
-      const regeneratePassword: boolean = body['regeneratePassword'] === true;
+      const regeneratePassword: MockApi_HandleRequest_RegeneratePassword = body['regeneratePassword'] === true;
       if (body['regeneratePassword'] !== undefined && typeof body['regeneratePassword'] !== 'boolean') {
         sendFieldError(response, 'invalid_request', 'regeneratePassword', 'Choose whether to regenerate the password.');
 
         return true;
       }
-      if (body['username'] === undefined && body['connectionId'] === undefined && !regeneratePassword) {
+      if (
+        body['username'] === undefined
+        && body['connectionId'] === undefined
+        && regeneratePassword === false
+      ) {
         sendFieldError(response, 'invalid_request', 'regeneratePassword', 'Change the username, VPN connection, or regenerate the password.');
 
         return true;
       }
       if (body['username'] !== undefined) {
-        const username: string = String(body['username']).trim();
-        const issue: string = remoteUsernameIssue(username);
+        const username: MockApi_HandleRequest_Username = String(body['username']).trim();
+        const issue: MockApi_HandleRequest_Issue = remoteUsernameIssue(username);
         if (issue !== '') {
           sendFieldError(response, 'invalid_request', 'username', issue);
 
           return true;
         }
-        if (webProxyLogins.some((candidate: MockWebProxyLogin): boolean => candidate !== login && candidate.username.toLowerCase() === username.toLowerCase())) {
+        if (webProxyLogins.some((candidate) => candidate !== login && candidate['username'].toLowerCase() === username.toLowerCase()) === true) {
           sendFieldError(response, 'web_proxy_login_exists', 'username', 'A web proxy login with this username already exists.', 409);
 
           return true;
         }
         login.username = username;
       }
-      if (body['connectionId'] !== undefined && body['connectionId'] !== null && (
-        typeof body['connectionId'] !== 'string'
-        || !vpnConnections.some((connection: MockVPNConnection): boolean => connection['id'] === body['connectionId'])
-      )) {
+      if (
+        body['connectionId'] !== undefined
+        && body['connectionId'] !== null
+        && (
+          typeof body['connectionId'] !== 'string'
+          || vpnConnections.some((connection) => connection['id'] === body['connectionId']) === false
+        )
+      ) {
         sendFieldError(
           response,
           'invalid_request',
@@ -8573,7 +9269,7 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
 
         return true;
       }
-      if (typeof body['connectionId'] === 'string' && isConnectionBeingRemoved(body['connectionId'])) {
+      if (typeof body['connectionId'] === 'string' && isConnectionBeingRemoved(body['connectionId']) === true) {
         sendConnectionBeingRemoved(response);
 
         return true;
@@ -8583,7 +9279,7 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
       }
       sendJSON(response, 200, {
         login: effectiveWebProxyLogin(login),
-        ...((regeneratePassword) ? { password: `proxy_${randomBytes(18).toString('base64url')}` } : {}),
+        ...((regeneratePassword === true) ? { password: `proxy_${randomBytes(18).toString('base64url')}` } : {}),
       });
 
       return true;
@@ -8592,14 +9288,14 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
 
   if (path === '/api/v1/vpn/connections') {
     if (method === 'POST') {
-      const body: Record<string, unknown> = await readBody(request);
-      const name: string = String(body['name'] ?? '').trim();
-      const peerPort: number = Number(body['peerPort'] ?? (51_413 + vpnConnections.length));
-      const profileIds: string[] = (Array.isArray(body['profileIds'])) ? body['profileIds'].map(String) : [];
-      const providerId: string = String(body['providerId'] ?? '');
-      const tunnel: 'openvpn' | 'wireguard' = (body['tunnel'] === 'wireguard') ? 'wireguard' : 'openvpn';
-      const credentials: Record<string, string> = submittedMockVPNCredentials(body['credentials']);
-      if (vpnConnections.some((connection: MockVPNConnection): boolean => connection['changeRunning'])) {
+      const body: MockApi_HandleRequest_Body = await readBody(request);
+      const name: MockApi_HandleRequest_Name = String(body['name'] ?? '').trim();
+      const peerPort: MockApi_HandleRequest_PeerPort = Number(body['peerPort'] ?? (51_413 + vpnConnections.length));
+      const profileIds: MockApi_HandleRequest_ProfileIds = (Array.isArray(body['profileIds']) === true) ? body['profileIds'].map(String) : [];
+      const providerId: MockApi_HandleRequest_ProviderId = String(body['providerId'] ?? '');
+      const tunnel: MockApi_HandleRequest_Tunnel = (body['tunnel'] === 'wireguard') ? 'wireguard' : 'openvpn';
+      const credentials: MockApi_HandleRequest_Credentials = submittedMockVPNCredentials(body['credentials']);
+      if (vpnConnections.some((connection) => connection['changeRunning']) === true) {
         sendError(response, 409, 'change_running', 'Another change for this VPN connection is still running.');
 
         return true;
@@ -8612,17 +9308,23 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
 
         return true;
       }
-      if (vpnConnections.some((connection: MockVPNConnection): boolean => connection['name'].toLowerCase() === name.toLowerCase())) {
+      if (vpnConnections.some((connection) => connection['name'].toLowerCase() === name.toLowerCase()) === true) {
         sendError(response, 409, 'name_taken', 'A VPN connection already uses that name.');
 
         return true;
       }
-      if (name === '' || profileIds.length === 0 || !Number.isInteger(peerPort) || peerPort < 1024 || peerPort > 65_535) {
+      if (
+        name === ''
+        || profileIds.length === 0
+        || Number.isInteger(peerPort) === false
+        || peerPort < 1024
+        || peerPort > 65_535
+      ) {
         sendError(response, 422, 'invalid_request', 'Enter a name, endpoint, and valid peer port.');
 
         return true;
       }
-      const missingCredential: MockVPNCredentialField | undefined = missingMockVPNCredential(
+      const missingCredential: MockApi_HandleRequest_MissingCredential = missingMockVPNCredential(
         providerId,
         tunnel,
         credentials,
@@ -8638,11 +9340,11 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
         return true;
       }
       vpnConnectionSequence += 1;
-      const now: string = new Date().toISOString();
-      const slot: number = Math.max(-1, ...vpnConnections.map((connection: MockVPNConnection): number => connection['slot'])) + 1;
-      const endpointStrategy: 'ordered' | 'randomized' | 'sticky' = (body['endpointStrategy'] === 'ordered' || body['endpointStrategy'] === 'randomized') ? body['endpointStrategy'] : 'sticky';
-      const connectionId: string = `vpc-${vpnConnectionSequence.toString(16).padStart(16, '0')}`;
-      const connection: MockVPNConnection = {
+      const now: MockApi_HandleRequest_Now = new Date().toISOString();
+      const slot: MockApi_HandleRequest_Slot = Math.max(-1, ...vpnConnections.map((connection) => connection['slot'])) + 1;
+      const endpointStrategy: MockApi_HandleRequest_EndpointStrategy = (body['endpointStrategy'] === 'ordered' || body['endpointStrategy'] === 'randomized') ? body['endpointStrategy'] : 'sticky';
+      const connectionId: MockApi_HandleRequest_ConnectionId = `vpc-${vpnConnectionSequence.toString(16).padStart(16, '0')}`;
+      const connection: MockApi_HandleRequest_NewConnection = {
         changeRunning: false,
         createdAt: now,
         daemon: {
@@ -8652,7 +9354,7 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
           state: 'ready',
         },
         default: false,
-        dnsServers: (Array.isArray(body['dnsServers'])) ? body['dnsServers'].map(String) : [],
+        dnsServers: (Array.isArray(body['dnsServers']) === true) ? body['dnsServers'].map(String) : [],
         enabled: true,
         endpointStrategy,
         id: connectionId,
@@ -8669,8 +9371,11 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
         tunnel,
         updatedAt: now,
       };
+
       vpnCredentialValues.set(connectionId, credentials);
+
       vpnConnections.push(connection);
+
       sendJSON(response, 201, { connection: vpnConnectionResponse(connection) });
 
       return true;
@@ -8682,37 +9387,40 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
   }
 
   if (path === '/api/v1/vpn/default' && method === 'PUT') {
-    const body: Record<string, unknown> = await readBody(request);
+    const body: MockApi_HandleRequest_Body = await readBody(request);
     if ('moveTorrents' in body && typeof body['moveTorrents'] !== 'boolean') {
       sendFieldError(response, 'invalid_request', 'moveTorrents', 'moveTorrents must be a boolean.');
 
       return true;
     }
-    if (vpnConnections.some((connection: MockVPNConnection): boolean => connection['changeRunning'])) {
+    if (vpnConnections.some((connection) => connection['changeRunning']) === true) {
       sendError(response, 409, 'change_running', 'Another change for this VPN connection is still running.');
 
       return true;
     }
-    const nextDefault: MockVPNConnection | undefined = vpnConnections.find(
-      (connection: MockVPNConnection): boolean => connection['id'] === body['connectionId'],
+    const nextDefault: MockApi_HandleRequest_NextDefault = vpnConnections.find(
+      (connection) => connection['id'] === body['connectionId'],
     );
     if (nextDefault === undefined) {
       sendError(response, 404, 'connection_not_found', 'That VPN connection no longer exists.');
 
       return true;
     }
-    const previousDefault: MockVPNConnection = defaultVPNConnection();
-    const followingProfileIDs: Set<string> = new Set(torrentProfiles.filter(
-      (profile: MockTorrentProfile): boolean => profile['connectionId'] === null,
-    ).map((profile: MockTorrentProfile): string => profile['id']));
-    const profileTorrents: MockTorrent[] = torrents.filter((torrent: MockTorrent): boolean => (
-      (torrent['profileId'] === null || followingProfileIDs.has(torrent['profileId']))
+    const previousDefault: MockApi_HandleRequest_PreviousDefault = defaultVPNConnection();
+    const followingProfileIDs: MockApi_HandleRequest_FollowingProfileIDs = new Set(torrentProfiles.filter(
+      (profile) => profile['connectionId'] === null,
+    ).map((profile) => profile['id']));
+    const profileTorrents: MockApi_HandleRequest_ProfileTorrents = torrents.filter((torrent) => (
+      (
+        torrent['profileId'] === null
+        || followingProfileIDs.has(torrent['profileId']) === true
+      )
       && torrent['connectionId'] !== nextDefault['id']
     ));
-    const defaultProfileTorrents: number = profileTorrents.filter(
-      (torrent: MockTorrent): boolean => torrent['profileId'] === null,
+    const defaultProfileTorrents: MockApi_HandleRequest_DefaultProfileTorrents = profileTorrents.filter(
+      (torrent) => torrent['profileId'] === null,
     ).length;
-    const followingProfileTorrents: number = profileTorrents.length - defaultProfileTorrents;
+    const followingProfileTorrents: MockApi_HandleRequest_FollowingProfileTorrents = profileTorrents.length - defaultProfileTorrents;
     if (profileTorrents.length > 0 && body['moveTorrents'] !== true) {
       sendError(
         response,
@@ -8736,28 +9444,30 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
 
       return true;
     }
+
     for (const connection of vpnConnections) {
       connection.default = connection === nextDefault;
       connection.updatedAt = new Date().toISOString();
     }
-    const moved: Record<string, unknown>[] = profileTorrents.map(
-      (torrent: MockTorrent, index: number): Record<string, unknown> => {
-        const failed: boolean = process.env['MOCK_VPN_MOVE_FAILURE'] === 'true' && index === 0;
-        if (!failed) {
-          Reflect.set(torrent, 'id', Math.max(0, ...torrents.map((candidate: MockTorrent): number => candidate['id'])) + 1);
+    const moved: MockApi_HandleRequest_Moved = profileTorrents.map(
+      (torrent, index) => {
+        const failed: MockApi_HandleRequest_Failed = process.env['MOCK_VPN_MOVE_FAILURE'] === 'true' && index === 0;
+        if (failed === false) {
+          Reflect.set(torrent, 'id', Math.max(0, ...torrents.map((candidate) => candidate['id'])) + 1);
           Reflect.set(torrent, 'connectionId', nextDefault['id']);
         }
 
         return {
-          ...((failed) ? { error: 'The mock torrent move failed before its source was changed.' } : {}),
+          ...((failed === true) ? { error: 'The mock torrent move failed before its source was changed.' } : {}),
           hash: torrent['hashString'],
-          ...((failed) ? {} : { id: torrent['id'] }),
+          ...((failed === true) ? {} : { id: torrent['id'] }),
           name: torrent['name'],
-          result: (failed) ? 'failed' : 'moved',
-          ...((failed || torrentMoveWarnings.length === 0) ? {} : { warnings: torrentMoveWarnings }),
+          result: (failed === true) ? 'failed' : 'moved',
+          ...((failed === true || torrentMoveWarnings.length === 0) ? {} : { warnings: torrentMoveWarnings }),
         };
       },
     );
+
     sendJSON(response, 200, {
       connections: vpnConnectionsResponse()['connections'],
       moved,
@@ -8766,23 +9476,34 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
     return true;
   }
 
-  const vpnConnectionMatch: RegExpMatchArray | null = path.match(/^\/api\/v1\/vpn\/connections\/([^/]+)(?:\/(reconnect|disconnect))?$/u);
+  const vpnConnectionMatch: MockApi_HandleRequest_VpnConnectionMatch = path.match(new RegExp(vpnConnectionPathPattern, 'u'));
   if (vpnConnectionMatch !== null) {
-    const connection: MockVPNConnection | undefined = vpnConnections.find(
-      (candidate: MockVPNConnection): boolean => candidate['id'] === decodeURIComponent(vpnConnectionMatch[1] ?? ''),
+    const connection: MockApi_HandleRequest_Connection = vpnConnections.find(
+      (candidate) => candidate['id'] === decodeURIComponent(vpnConnectionMatch[1] ?? ''),
     );
     if (connection === undefined) {
       sendError(response, 404, 'connection_not_found', 'That VPN connection no longer exists.');
 
       return true;
     }
-    const action: string | undefined = vpnConnectionMatch[2];
-    const mutatingConnectionRoute: boolean = (
-      (action !== undefined && method === 'POST')
-      || (action === undefined && (method === 'PUT' || method === 'DELETE'))
+    const action: MockApi_HandleRequest_Action = vpnConnectionMatch[2];
+    const mutatingConnectionRoute: MockApi_HandleRequest_MutatingConnectionRoute = (
+      (
+        action !== undefined
+        && method === 'POST'
+      )
+      || (
+        action === undefined
+        && (
+          method === 'PUT'
+          || method === 'DELETE'
+        )
+      )
     );
-    if (mutatingConnectionRoute
-      && vpnConnections.some((candidate: MockVPNConnection): boolean => candidate['changeRunning'])) {
+    if (
+      mutatingConnectionRoute === true
+      && vpnConnections.some((candidate) => candidate['changeRunning'] === true) === true
+    ) {
       sendError(response, 409, 'change_running', 'Another change for this VPN connection is still running.');
 
       return true;
@@ -8821,14 +9542,14 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
       return true;
     }
     if (method === 'PUT') {
-      const body: Record<string, unknown> = await readBody(request);
+      const body: MockApi_HandleRequest_Body = await readBody(request);
       if (Number(body['expectedRevision']) !== connection['revision']) {
         sendError(response, 409, 'revision_conflict', 'The VPN connection changed while it was being edited.');
 
         return true;
       }
-      const name: string = (body['name'] === undefined) ? connection['name'] : String(body['name']).trim();
-      if (vpnConnections.some((candidate: MockVPNConnection): boolean => candidate !== connection && candidate['name'].toLowerCase() === name.toLowerCase())) {
+      const name: MockApi_HandleRequest_Name = (body['name'] === undefined) ? connection['name'] : String(body['name']).trim();
+      if (vpnConnections.some((candidate) => candidate !== connection && candidate['name'].toLowerCase() === name.toLowerCase()) === true) {
         sendError(response, 409, 'name_taken', 'A VPN connection already uses that name.');
 
         return true;
@@ -8836,21 +9557,21 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
       connection.name = name;
       if (body['peerPort'] !== undefined) {
         connection.peerPort = Number(body['peerPort']);
-        connection.daemon.peerPort = connection.peerPort;
+        connection['daemon'].peerPort = connection['peerPort'];
       }
       if (typeof body['configuration'] === 'object' && body['configuration'] !== null) {
-        const configuration: Record<string, unknown> = body['configuration'] as Record<string, unknown>;
-        const profileIds: string[] = (Array.isArray(configuration['profileIds'])) ? configuration['profileIds'].map(String) : [];
-        const providerId: string = String(configuration['providerId'] ?? '');
-        const tunnel: 'openvpn' | 'wireguard' = (configuration['tunnel'] === 'wireguard') ? 'wireguard' : 'openvpn';
-        const submittedCredentials: Record<string, string> = submittedMockVPNCredentials(configuration['credentials']);
-        const credentials: Record<string, string> = mergedMockVPNCredentials(
+        const configuration: MockApi_HandleRequest_Configuration = body['configuration'] as MockApi_HandleRequest_Configuration;
+        const profileIds: MockApi_HandleRequest_ProfileIds = (Array.isArray(configuration['profileIds']) === true) ? configuration['profileIds'].map(String) : [];
+        const providerId: MockApi_HandleRequest_ProviderId = String(configuration['providerId'] ?? '');
+        const tunnel: MockApi_HandleRequest_Tunnel = (configuration['tunnel'] === 'wireguard') ? 'wireguard' : 'openvpn';
+        const submittedCredentials: MockApi_HandleRequest_SubmittedCredentials = submittedMockVPNCredentials(configuration['credentials']);
+        const credentials: MockApi_HandleRequest_Credentials = mergedMockVPNCredentials(
           connection,
           providerId,
           tunnel,
           submittedCredentials,
         );
-        const missingCredential: MockVPNCredentialField | undefined = missingMockVPNCredential(
+        const missingCredential: MockApi_HandleRequest_MissingCredential = missingMockVPNCredential(
           providerId,
           tunnel,
           credentials,
@@ -8865,12 +9586,12 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
 
           return true;
         }
-        const endpointStrategy: 'ordered' | 'randomized' | 'sticky' = (configuration['endpointStrategy'] === 'ordered' || configuration['endpointStrategy'] === 'randomized') ? configuration['endpointStrategy'] : 'sticky';
+        const endpointStrategy: MockApi_HandleRequest_EndpointStrategy = (configuration['endpointStrategy'] === 'ordered' || configuration['endpointStrategy'] === 'randomized') ? configuration['endpointStrategy'] : 'sticky';
         connection.providerId = providerId;
         connection.tunnel = tunnel;
         connection.profileIds = profileIds;
         connection.endpointStrategy = endpointStrategy;
-        connection.dnsServers = (Array.isArray(configuration['dnsServers'])) ? configuration['dnsServers'].map(String) : [];
+        connection.dnsServers = (Array.isArray(configuration['dnsServers']) === true) ? configuration['dnsServers'].map(String) : [];
         connection.retryIntervalSeconds = Number(configuration['retryIntervalSeconds'] ?? 10);
         connection.savedCredentials = savedMockVPNCredentialKeys(providerId, tunnel, credentials);
         connection.runtime = protectedVPNRuntime(connection['providerId'], tunnel, profileIds, endpointStrategy, connection['slot']);
@@ -8885,22 +9606,29 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
       return true;
     }
     if (method === 'DELETE') {
-      if (connection['default']) {
+      if (connection['default'] === true) {
         sendError(response, 409, 'default_connection', 'Change the default VPN connection before deleting this one.');
 
         return true;
       }
-      const body: Record<string, unknown> = await readBody(request);
-      const dependentTorrents: MockTorrent[] = torrents.filter((torrent: MockTorrent): boolean => torrent['connectionId'] === connection['id']);
-      const dependentProfiles: MockTorrentProfile[] = torrentProfiles.filter((profile: MockTorrentProfile): boolean => profile['connectionId'] === connection['id']);
-      const dependentLogins: MockWebProxyLogin[] = webProxyLogins.filter((login: MockWebProxyLogin): boolean => login['connectionId'] === connection['id']);
-      if (body['moveTo'] === undefined && (dependentTorrents.length > 0 || dependentProfiles.length > 0 || dependentLogins.length > 0)) {
+      const body: MockApi_HandleRequest_Body = await readBody(request);
+      const dependentTorrents: MockApi_HandleRequest_DependentTorrents = torrents.filter((torrent) => torrent['connectionId'] === connection['id']);
+      const dependentProfiles: MockApi_HandleRequest_DependentProfiles = torrentProfiles.filter((profile) => profile['connectionId'] === connection['id']);
+      const dependentLogins: MockApi_HandleRequest_DependentLogins = webProxyLogins.filter((login) => login['connectionId'] === connection['id']);
+      if (
+        body['moveTo'] === undefined
+        && (
+          dependentTorrents.length > 0
+          || dependentProfiles.length > 0
+          || dependentLogins.length > 0
+        )
+      ) {
         sendError(response, 409, 'connection_in_use', 'Move the items that use this connection before removing it.', {
-          logins: dependentLogins.map((login: MockWebProxyLogin): Record<string, unknown> => ({
+          logins: dependentLogins.map((login) => ({
             id: login['id'],
             username: login['username'],
           })),
-          profiles: dependentProfiles.map((profile: MockTorrentProfile): Record<string, unknown> => ({
+          profiles: dependentProfiles.map((profile) => ({
             id: profile['id'],
             name: profile['name'],
           })),
@@ -8909,45 +9637,48 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
 
         return true;
       }
-      const moveTo: string | undefined = (typeof body['moveTo'] === 'string') ? body['moveTo'] : undefined;
-      if (moveTo !== undefined && !vpnConnections.some((candidate: MockVPNConnection): boolean => candidate['id'] === moveTo && candidate !== connection)) {
+      const moveTo: MockApi_HandleRequest_MoveTo = (typeof body['moveTo'] === 'string') ? body['moveTo'] : undefined;
+      if (moveTo !== undefined && vpnConnections.some((candidate) => candidate['id'] === moveTo && candidate !== connection) === false) {
         sendError(response, 422, 'invalid_request', 'Choose another VPN connection.');
 
         return true;
       }
-      if (isConnectionBeingRemoved(moveTo)) {
+      if (isConnectionBeingRemoved(moveTo) === true) {
         sendConnectionBeingRemoved(response);
 
         return true;
       }
-      const targetConnectionName: string = vpnConnections.find(
-        (candidate: MockVPNConnection): boolean => candidate['id'] === moveTo,
-      )?.['name'] ?? 'the target connection';
-      const moved: Record<string, unknown>[] = dependentTorrents.map((torrent: MockTorrent, index: number): Record<string, unknown> => {
-        const failed: boolean = process.env['MOCK_VPN_MOVE_FAILURE'] === 'true' && index === 0;
-        if (!failed && moveTo !== undefined) {
-          Reflect.set(torrent, 'id', Math.max(0, ...torrents.map((candidate: MockTorrent): number => candidate['id'])) + 1);
+      const targetConnection: MockApi_HandleRequest_TargetConnection = vpnConnections.find(
+        (candidate) => candidate['id'] === moveTo,
+      );
+      const targetConnectionName: MockApi_HandleRequest_TargetConnectionName = (targetConnection !== undefined) ? targetConnection['name'] : 'the target connection';
+      const moved: MockApi_HandleRequest_Moved = dependentTorrents.map((torrent, index) => {
+        const failed: MockApi_HandleRequest_Failed = process.env['MOCK_VPN_MOVE_FAILURE'] === 'true' && index === 0;
+        if (failed === false && moveTo !== undefined) {
+          Reflect.set(torrent, 'id', Math.max(0, ...torrents.map((candidate) => candidate['id'])) + 1);
           Reflect.set(torrent, 'connectionId', moveTo);
         }
 
         return {
-          ...((failed) ? { error: `A paused copy is still on ${targetConnectionName}` } : {}),
+          ...((failed === true) ? { error: `A paused copy is still on ${targetConnectionName}` } : {}),
           hash: torrent['hashString'],
-          ...((failed) ? {} : { id: torrent['id'] }),
+          ...((failed === true) ? {} : { id: torrent['id'] }),
           name: torrent['name'],
-          result: (failed) ? 'failed' : 'moved',
-          ...((failed || torrentMoveWarnings.length === 0) ? {} : { warnings: torrentMoveWarnings }),
+          result: (failed === true) ? 'failed' : 'moved',
+          ...((failed === true || torrentMoveWarnings.length === 0) ? {} : { warnings: torrentMoveWarnings }),
         };
       });
-      if (moved.some((result: Record<string, unknown>): boolean => result['result'] === 'failed')) {
+      if (moved.some((result) => result['result'] === 'failed') === true) {
         sendError(response, 409, 'move_failed', 'Some torrents could not be moved.', { moved });
 
         return true;
       }
       if (moveTo !== undefined) {
-        const storedMoveTo: string | null = (vpnConnections.find(
-          (candidate: MockVPNConnection): boolean => candidate['id'] === moveTo,
-        )?.['default'] === true) ? null : moveTo;
+        const moveToConnection: MockApi_HandleRequest_TargetConnection = vpnConnections.find(
+          (candidate) => candidate['id'] === moveTo,
+        );
+        const storedMoveTo: MockApi_HandleRequest_StoredMoveTo = (moveToConnection !== undefined && moveToConnection['default'] === true) ? null : moveTo;
+
         for (const profile of dependentProfiles) {
           profile.connectionId = storedMoveTo;
         }
@@ -8956,7 +9687,9 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
         }
       }
       vpnCredentialValues.delete(connection['id']);
+
       vpnConnections.splice(vpnConnections.indexOf(connection), 1);
+
       sendJSON(response, 200, {
         logins: dependentLogins.length,
         moved,
@@ -8967,33 +9700,36 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
     }
   }
 
-  const refreshCatalogMatch: RegExpMatchArray | null = path.match(
-    /^\/api\/v1\/vpn\/providers\/([^/]+)\/tunnels\/(openvpn|wireguard)\/catalog\/refresh$/u,
+  const refreshCatalogMatch: MockApi_HandleRequest_RefreshCatalogMatch = path.match(
+    new RegExp(vpnCatalogRefreshPathPattern, 'u'),
   );
   if (refreshCatalogMatch !== null && method === 'POST') {
-    const providerId: string = decodeURIComponent(refreshCatalogMatch[1] ?? '');
-    const tunnel: string = refreshCatalogMatch[2] ?? '';
-    const tunnelDefinition = providers.find(
-      (provider: Record<string, unknown>): boolean => provider['id'] === providerId,
-    )?.['tunnels'];
-    const selectedTunnelDefinition: Record<string, unknown> | undefined = (Array.isArray(tunnelDefinition)) ? tunnelDefinition.find(
-      (candidate: Record<string, unknown>): boolean => candidate['id'] === tunnel,
+    const providerId: MockApi_HandleRequest_ProviderId = decodeURIComponent(refreshCatalogMatch[1] ?? '');
+    const tunnel: MockApi_HandleRequest_TunnelName = refreshCatalogMatch[2] ?? '';
+    const catalogProvider: MockApi_HandleRequest_Setting = providers.find(
+      (provider) => provider['id'] === providerId,
+    );
+    const tunnelDefinition: MockApi_HandleRequest_TunnelDefinition = (catalogProvider !== undefined) ? catalogProvider['tunnels'] : undefined;
+    const selectedTunnelDefinition: MockApi_HandleRequest_SelectedTunnelDefinition = (Array.isArray(tunnelDefinition) === true) ? tunnelDefinition.find(
+      (candidate: MockApi_HandleRequest_TunnelCandidate): MockApi_HandleRequest_TunnelCandidateMatches => candidate['id'] === tunnel,
     ) : undefined;
-    const catalog: unknown = selectedTunnelDefinition?.['catalog'];
+    const catalog: MockApi_HandleRequest_Catalog = (selectedTunnelDefinition !== undefined) ? selectedTunnelDefinition['catalog'] : undefined;
     if (typeof catalog !== 'object' || catalog === null) {
       sendError(response, 404, 'catalog_unavailable', 'This VPN provider does not expose a refreshable catalog for this tunnel.');
 
       return true;
     }
-    const refreshedCatalog: Record<string, unknown> = {
-      ...catalog as Record<string, unknown>,
+    const refreshedCatalog: MockApi_HandleRequest_RefreshedCatalog = {
+      ...catalog as MockApi_HandleRequest_RefreshedCatalog,
       refreshedAt: new Date().toISOString(),
     };
+
     Reflect.set(
       selectedTunnelDefinition ?? {},
       'catalog',
       refreshedCatalog,
     );
+
     sendJSON(response, 200, refreshedCatalog);
 
     return true;
@@ -9007,30 +9743,33 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
 
   if (path === '/api/v1/blocklists/update' && method === 'POST') {
     await readBody(request);
-    const enabled: boolean = settings.find(
-      (setting: Record<string, unknown>): boolean => setting['key'] === 'transmission.blocklistEnabled',
-    )?.['value'] === true;
-    const configuredSources: unknown = settings.find(
-      (setting: Record<string, unknown>): boolean => setting['key'] === 'transmission.blocklistSources',
-    )?.['value'];
-    if (!enabled) {
+
+    const enabledSetting: MockApi_HandleRequest_Setting = settings.find(
+      (setting) => setting['key'] === 'transmission.blocklistEnabled',
+    );
+    const enabled: MockApi_HandleRequest_Enabled = enabledSetting !== undefined && enabledSetting['value'] === true;
+    const sourcesSetting: MockApi_HandleRequest_Setting = settings.find(
+      (setting) => setting['key'] === 'transmission.blocklistSources',
+    );
+    const configuredSources: MockApi_HandleRequest_ConfiguredSources = (sourcesSetting !== undefined) ? sourcesSetting['value'] : undefined;
+    if (enabled === false) {
       sendError(response, 409, 'blocklists_disabled', 'Turn on blocklists before updating them.');
 
       return true;
     }
-    if (!Array.isArray(configuredSources) || configuredSources.length === 0) {
+    if (Array.isArray(configuredSources) === false || configuredSources.length === 0) {
       sendError(response, 409, 'blocklist_sources_empty', 'Add a blocklist source before updating.');
 
       return true;
     }
 
-    const updateRequestedAt: string = new Date().toISOString();
+    const updateRequestedAt: MockApi_HandleRequest_UpdateRequestedAt = new Date().toISOString();
     blocklistStatus = {
       ...blocklistStatus,
       state: 'updating',
     };
-    setTimeout((): void => {
-      const completedAt: string = new Date().toISOString();
+    setTimeout(() => {
+      const completedAt: MockApi_HandleRequest_CompletedAt = new Date().toISOString();
       blocklistStatus = {
         state: 'idle',
         lastAttemptAt: completedAt,
@@ -9058,6 +9797,8 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
           },
         ],
       };
+
+      return;
     }, 750);
     sendJSON(response, 202, { updateRequestedAt });
 
@@ -9065,11 +9806,11 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
   }
 
   if (path === '/api/v1/settings') {
-    let runtimeApply: Record<string, unknown> | undefined = undefined;
+    let runtimeApply: MockApi_HandleRequest_RuntimeApply = undefined;
     if (method === 'PUT') {
-      const body: Record<string, unknown> = await readBody(request);
-      const changes: Record<string, unknown> = (typeof body['changes'] === 'object' && body['changes'] !== null) ? body['changes'] as Record<string, unknown> : {};
-      if (changes['rpc.compatibilityEnabled'] === true && noVPNConnections) {
+      const body: MockApi_HandleRequest_Body = await readBody(request);
+      const changes: MockApi_HandleRequest_Changes = (typeof body['changes'] === 'object' && body['changes'] !== null) ? body['changes'] as MockApi_HandleRequest_Changes : {};
+      if (changes['rpc.compatibilityEnabled'] === true && noVPNConnections === true) {
         sendError(response, 409, 'vpn_connection_required', 'Add a VPN connection before turning on the RPC proxy.');
 
         return true;
@@ -9079,33 +9820,33 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
 
         return true;
       }
-      const rootDownloadSetting: string | undefined = [
+      const rootDownloadSetting: MockApi_HandleRequest_RootDownloadSetting = [
         'transmission.downloadDirectory',
         'transmission.incompleteDirectory',
-      ].find((key: string): boolean => isDownloadDataRoot(changes[key]));
+      ].find((key) => isDownloadDataRoot(changes[key]) === true);
       if (rootDownloadSetting !== undefined) {
         sendFieldError(response, 'invalid_request', `changes.${rootDownloadSetting}`, downloadDataPathRootMessage);
 
         return true;
       }
-      const nextDownloadDirectory: string = String(
+      const nextDownloadDirectory: MockApi_HandleRequest_NextDownloadDirectory = String(
         changes['transmission.downloadDirectory']
         ?? effectiveStringSetting('transmission.downloadDirectory'),
       );
-      const nextIncompleteDirectory: string = String(
+      const nextIncompleteDirectory: MockApi_HandleRequest_NextIncompleteDirectory = String(
         changes['transmission.incompleteDirectory']
         ?? effectiveStringSetting('transmission.incompleteDirectory'),
       );
       if (
         'transmission.downloadDirectory' in changes
-        && defaultTorrentProfile['downloadDirectoryLocked']
+        && defaultTorrentProfile['downloadDirectoryLocked'] === true
       ) {
         sendError(response, 409, 'setting_locked', 'A changed setting is locked by managed configuration.');
 
         return true;
       }
       if ('transmission.downloadDirectory' in changes) {
-        const folderOwner = profileFolderOwner(nextDownloadDirectory, 'default');
+        const folderOwner: MockApi_HandleRequest_FolderOwner = profileFolderOwner(nextDownloadDirectory, 'default');
         if (folderOwner !== undefined) {
           sendFieldError(
             response,
@@ -9119,28 +9860,23 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
         }
       }
       if ('transmission.incompleteDirectory' in changes) {
-        const clash: {
-          path: string
-          profileName: string
-        } | undefined = [
+        const clash: MockApi_HandleRequest_Clash = [
           {
             path: nextDownloadDirectory,
             profileName: defaultTorrentProfile['name'],
           },
-          ...torrentProfiles.map((profile: MockTorrentProfile): {
-            path: string
-            profileName: string
-          } => ({
+          ...torrentProfiles.map((profile): MockApi_HandleRequest_ClashDestination => ({
             path: profile['downloadDirectory'],
             profileName: `${profile['name']} profile`,
           })),
-        ].find((destination): boolean => dataPathContains(
+        ].find((destination) => dataPathContains(
           nextIncompleteDirectory,
           destination['path'],
         ));
         if (clash !== undefined) {
-          const exactFolder: boolean = dataPathsEqualIgnoringCase(nextIncompleteDirectory, clash['path']);
-          const message: string = (exactFolder) ? `“${clash['path'].slice(clash['path'].lastIndexOf('/') + 1)}” is the ${clash['profileName']}'s folder, so it can't be the incomplete folder.` : `Use a folder outside ${clash['path']}. Torrents in the ${clash['profileName']} finish there.`;
+          const exactFolder: MockApi_HandleRequest_ExactFolder = dataPathsEqualIgnoringCase(nextIncompleteDirectory, clash['path']);
+          const message: MockApi_HandleRequest_Message = (exactFolder === true) ? `“${clash['path'].slice(clash['path'].lastIndexOf('/') + 1)}” is the ${clash['profileName']}'s folder, so it can't be the incomplete folder.` : `Use a folder outside ${clash['path']}. Torrents in the ${clash['profileName']} finish there.`;
+
           sendFieldError(
             response,
             'invalid_request',
@@ -9151,7 +9887,7 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
           return true;
         }
       } else if ('transmission.downloadDirectory' in changes) {
-        const issue: string = downloadFolderIssue(nextDownloadDirectory);
+        const issue: MockApi_HandleRequest_Issue = downloadFolderIssue(nextDownloadDirectory);
         if (issue !== '') {
           sendFieldError(
             response,
@@ -9163,11 +9899,11 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
           return true;
         }
       }
-      const appliedKeys: string[] = [];
-      const pendingKeys: string[] = [];
+      const appliedKeys: MockApi_HandleRequest_AppliedKeys = [];
+      const pendingKeys: MockApi_HandleRequest_PendingKeys = [];
 
       for (const setting of settings) {
-        const settingKey: string = String(setting['key']);
+        const settingKey: MockApi_HandleRequest_SettingKey = String(setting['key']);
 
         if (settingKey in changes) {
           Reflect.set(setting, 'value', changes[settingKey]);
@@ -9188,11 +9924,11 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
         'transmission.downloadDirectory',
         'transmission.incompleteDirectory',
         'transmission.incompleteDirectoryEnabled',
-      ].some((key: string): boolean => key in changes)) {
+      ].some((key) => key in changes) === true) {
         ensureConfiguredDirectories();
       }
 
-      pendingRestartKeys = (noVPNConnections) ? [] : [...new Set([
+      pendingRestartKeys = (noVPNConnections === true) ? [] : [...new Set([
         ...pendingRestartKeys,
         ...pendingKeys,
       ])].sort();
@@ -9200,7 +9936,7 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
         status: (pendingKeys.length === 0) ? 'applied' : 'restart-required',
         appliedKeys: appliedKeys.sort(),
         pendingKeys: pendingKeys.sort(),
-        connections: ((noVPNConnections) ? [] : vpnConnections).map((connection: MockVPNConnection): Record<string, unknown> => ({
+        connections: ((noVPNConnections === true) ? [] : vpnConnections).map((connection) => ({
           appliedKeys,
           connectionId: connection['id'],
           pendingKeys,
@@ -9210,7 +9946,7 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
       settingsRevision += 1;
     }
 
-    if (noVPNConnections) {
+    if (noVPNConnections === true) {
       pendingRestartKeys = [];
     }
     sendJSON(response, 200, {
@@ -9224,7 +9960,7 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
   }
 
   if (path === '/api/v1/transmission/restart' && method === 'POST') {
-    const body: Record<string, unknown> = await readBody(request);
+    const body: MockApi_HandleRequest_Body = await readBody(request);
     if (body['confirm'] !== true) {
       sendError(response, 422, 'restart_confirmation_required', 'A controlled Transmission restart requires explicit confirmation.');
 
@@ -9232,7 +9968,7 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
     }
 
     pendingRestartKeys = [];
-    if (noVPNConnections) {
+    if (noVPNConnections === true) {
       sendError(response, 409, 'transmission_not_running', 'Transmission isn\'t running. Saved settings apply when it starts.');
 
       return true;
@@ -9240,7 +9976,7 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
     sendJSON(response, 202, {
       status: 'restarting',
       configurationRevision: settingsRevision,
-      connections: vpnConnections.map((connection: MockVPNConnection): Record<string, unknown> => ({
+      connections: vpnConnections.map((connection) => ({
         connectionId: connection['id'],
         status: 'restarting',
       })),
@@ -9250,19 +9986,23 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
   }
 
   if (path === '/api/v1/storage/directories') {
-    const purposeValue: string = url.searchParams.get('purpose') ?? 'download';
-    if (purposeValue !== 'download' && purposeValue !== 'incomplete' && purposeValue !== 'profile') {
+    const purposeValue: MockApi_HandleRequest_PurposeValue = url.searchParams.get('purpose') ?? 'download';
+    if (
+      purposeValue !== 'download'
+      && purposeValue !== 'incomplete'
+      && purposeValue !== 'profile'
+    ) {
       sendFieldError(response, 'invalid_request', 'purpose', 'purpose must be download, incomplete, or profile.');
 
       return true;
     }
-    const purpose: MockDirectoryPurpose = purposeValue;
-    const profileID: string = url.searchParams.get('profileId') ?? '';
+    const purpose: MockApi_HandleRequest_Purpose = purposeValue;
+    const profileID: MockApi_HandleRequest_ProfileID = url.searchParams.get('profileId') ?? '';
     if (
       purpose === 'profile'
       && profileID !== 'default'
       && profileID !== 'new'
-      && !torrentProfiles.some((profile: MockTorrentProfile): boolean => profile['id'] === profileID)
+      && torrentProfiles.some((profile) => profile['id'] === profileID) === false
     ) {
       sendFieldError(response, 'invalid_request', 'profileId', 'profileId must be default, new, or an existing torrent profile ID.');
 
@@ -9270,10 +10010,10 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
     }
 
     if (method === 'POST') {
-      const body: Record<string, unknown> = await readBody(request);
-      const created: string = `${String(body['parentPath'] ?? '/data')}/${String(body['name'] ?? 'New folder')}`;
+      const body: MockApi_HandleRequest_Body = await readBody(request);
+      const created: MockApi_HandleRequest_Created = `${String(body['parentPath'] ?? '/data')}/${String(body['name'] ?? 'New folder')}`;
 
-      if (directories.has(created)) {
+      if (directories.has(created) === true) {
         sendError(response, 409, 'directory_exists', 'A folder with that name already exists.');
 
         return true;
@@ -9285,41 +10025,54 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
       return true;
     }
 
-    const directoryPath: string = url.searchParams.get('path') ?? '/data';
-    const normalized: boolean = (
+    const directoryPath: MockApi_HandleRequest_DirectoryPath = url.searchParams.get('path') ?? '/data';
+    const normalized: MockApi_HandleRequest_Normalized = (
       directoryPath === '/data'
       || (
-        directoryPath.startsWith('/data/')
-        && !directoryPath.endsWith('/')
-        && directoryPath.split('/').every((component: string, index: number): boolean => (
-          index < 2 || (component !== '' && component !== '.' && component !== '..')
-        ))
+        directoryPath.startsWith('/data/') === true
+        && directoryPath.endsWith('/') === false
+        && directoryPath.split('/').every((component, index) => (
+          index < 2
+          || (
+            component !== ''
+            && component !== '.'
+            && component !== '..'
+          )
+        )) === true
       )
     );
-    if (!normalized || (method === 'DELETE' && directoryPath === '/data')) {
+    if (
+      normalized === false
+      || (
+        method === 'DELETE'
+        && directoryPath === '/data'
+      )
+    ) {
       sendError(response, 422, 'directory_path_invalid', 'Choose a normalized folder inside /data.');
 
       return true;
     }
-    if (directoryPath !== '/data' && !directories.has(directoryPath)) {
+    if (directoryPath !== '/data' && directories.has(directoryPath) === false) {
       sendError(response, 404, 'directory_not_found', 'That folder no longer exists.');
 
       return true;
     }
 
     if (method === 'DELETE') {
-      const deletionPolicy: MockDirectoryDeletionPolicy = directoryDeletionPolicy(directoryPath);
+      const deletionPolicy: MockApi_HandleRequest_DeletionPolicy = directoryDeletionPolicy(directoryPath);
       if (deletionPolicy['code'] !== '') {
-        const status: number = (
+        const status: MockApi_HandleRequest_Status = (
           deletionPolicy['code'] === 'directory_browser_unavailable'
           || deletionPolicy['code'] === 'torrent_locations_unavailable'
         ) ? 503 : 409;
+
         sendError(response, status, deletionPolicy['code'], deletionPolicy['message']);
 
         return true;
       }
 
       directories.delete(directoryPath);
+
       response.writeHead(204).end();
 
       return true;
@@ -9332,33 +10085,32 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
 
   if (path === '/api/v1/torrent-organization') {
     if (method === 'PUT') {
-      const body: Record<string, unknown> = await readBody(request);
+      const body: MockApi_HandleRequest_Body = await readBody(request);
       if (body['expectedRevision'] !== organizationRevision) {
         sendError(response, 409, 'revision_conflict', 'Torrent organization changed since this revision. Refresh and try again.');
 
         return true;
       }
-      if (!Array.isArray(body['labels']) || !Array.isArray(body['removedLabels']) || !Array.isArray(body['renamedLabels'])) {
+      if (
+        Array.isArray(body['labels']) === false
+        || Array.isArray(body['removedLabels']) === false
+        || Array.isArray(body['renamedLabels']) === false
+      ) {
         sendError(response, 422, 'invalid_request', 'labels, removedLabels, and renamedLabels are required.');
 
         return true;
       }
-      const removedLabels: string[] = body['removedLabels'].map(String);
-      const renamedLabels: {
-        from: string
-        to: string
-      }[] = body['renamedLabels'].flatMap((value: unknown): {
-        from: string
-        to: string
-      }[] => (
+      const removedLabels: MockApi_HandleRequest_RemovedLabels = body['removedLabels'].map(String);
+      const renamedLabels: MockApi_HandleRequest_RenamedLabels = body['renamedLabels'].flatMap((value: MockApi_HandleRequest_RenamedLabelValue): MockApi_HandleRequest_RenamedLabels => (
         (typeof value === 'object' && value !== null) ? [{
-          from: String((value as Record<string, unknown>)['from'] ?? ''),
-          to: String((value as Record<string, unknown>)['to'] ?? ''),
+          from: String((value as MockApi_HandleRequest_RenamedLabelRecord)['from'] ?? ''),
+          to: String((value as MockApi_HandleRequest_RenamedLabelRecord)['to'] ?? ''),
         }] : []
       ));
-      let changedTorrents: number = 0;
+      let changedTorrents: MockApi_HandleRequest_ChangedTorrents = 0;
+
       for (const torrent of torrents) {
-        const nextLabels: string[] = applySavedLabelEdits(
+        const nextLabels: MockApi_HandleRequest_NextLabels = applySavedLabelEdits(
           torrent['labels'],
           removedLabels,
           renamedLabels,
@@ -9381,7 +10133,7 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
         renamedLabels,
       );
       savedLabels.splice(0, savedLabels.length, ...body['labels'].map(String).sort(
-        (leftLabel: string, rightLabel: string): number => leftLabel.localeCompare(rightLabel, undefined, { sensitivity: 'base' }),
+        (leftLabel, rightLabel) => leftLabel.localeCompare(rightLabel, undefined, { sensitivity: 'base' }),
       ));
       organizationRevision += 1;
       sendJSON(response, 200, {
@@ -9408,20 +10160,20 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
 
   if (path === '/api/v1/torrent-profiles') {
     if (method === 'POST') {
-      const body: Record<string, unknown> = await readBody(request);
-      const profileName: string = String(body['name'] ?? '').trim();
-      if (torrentProfileNameTaken(profileName, 'new')) {
+      const body: MockApi_HandleRequest_Body = await readBody(request);
+      const profileName: MockApi_HandleRequest_ProfileName = String(body['name'] ?? '').trim();
+      if (torrentProfileNameTaken(profileName, 'new') === true) {
         sendFieldError(response, 'torrent_profile_exists', 'name', 'A torrent profile with this name already exists.', 409);
 
         return true;
       }
-      const issue: string = downloadFolderIssue(body['downloadDirectory']);
+      const issue: MockApi_HandleRequest_Issue = downloadFolderIssue(body['downloadDirectory']);
       if (issue !== '') {
         sendFieldError(response, 'invalid_request', 'downloadDirectory', issue);
 
         return true;
       }
-      const folderOwner = profileFolderOwner(String(body['downloadDirectory'] ?? ''), 'new');
+      const folderOwner: MockApi_HandleRequest_FolderOwner = profileFolderOwner(String(body['downloadDirectory'] ?? ''), 'new');
       if (folderOwner !== undefined) {
         sendFieldError(
           response,
@@ -9433,21 +10185,22 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
 
         return true;
       }
-      const nextProfileSequence: number = torrentProfileSequence + 1;
-      const profileId: string = `tpr-${nextProfileSequence.toString(16).padStart(16, '0')}`;
-      const createdAt: string = new Date().toISOString();
-      const profile: MockTorrentProfile = readTorrentProfile(
+      const nextProfileSequence: MockApi_HandleRequest_NextProfileSequence = torrentProfileSequence + 1;
+      const profileId: MockApi_HandleRequest_ProfileId = `tpr-${nextProfileSequence.toString(16).padStart(16, '0')}`;
+      const createdAt: MockApi_HandleRequest_CreatedAt = new Date().toISOString();
+      const profile: MockApi_HandleRequest_TorrentProfile = readTorrentProfile(
         body,
         profileId,
         createdAt,
       );
-      if (isConnectionBeingRemoved(profile['connectionId'])) {
+      if (isConnectionBeingRemoved(profile['connectionId']) === true) {
         sendConnectionBeingRemoved(response);
 
         return true;
       }
       torrentProfileSequence = nextProfileSequence;
       torrentProfiles.push(profile);
+
       saveUsedLabels(profile['labels']);
       refreshTorrentProfilePresentation();
       ensureDirectory(profile['downloadDirectory']);
@@ -9466,20 +10219,20 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
   }
 
   if (path === '/api/v1/torrent-profiles/default' && method === 'PUT') {
-    const body: Record<string, unknown> = await readBody(request);
-    const profileName: string = String(body['name'] ?? '').trim();
-    if (torrentProfileNameTaken(profileName, 'default')) {
+    const body: MockApi_HandleRequest_Body = await readBody(request);
+    const profileName: MockApi_HandleRequest_ProfileName = String(body['name'] ?? '').trim();
+    if (torrentProfileNameTaken(profileName, 'default') === true) {
       sendFieldError(response, 'torrent_profile_exists', 'name', 'A torrent profile with this name already exists.', 409);
 
       return true;
     }
-    const issue: string = downloadFolderIssue(body['downloadDirectory']);
+    const issue: MockApi_HandleRequest_Issue = downloadFolderIssue(body['downloadDirectory']);
     if (issue !== '') {
       sendFieldError(response, 'invalid_request', 'downloadDirectory', issue);
 
       return true;
     }
-    const folderOwner = profileFolderOwner(String(body['downloadDirectory'] ?? ''), 'default');
+    const folderOwner: MockApi_HandleRequest_FolderOwner = profileFolderOwner(String(body['downloadDirectory'] ?? ''), 'default');
     if (folderOwner !== undefined) {
       sendFieldError(
         response,
@@ -9492,12 +10245,12 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
       return true;
     }
 
-    const updatedProfile: MockDefaultTorrentProfile = readDefaultTorrentProfile(body);
-    const folderChanged: boolean = !dataPathsEqualIgnoringCase(
+    const updatedProfile: MockApi_HandleRequest_UpdatedDefaultProfile = readDefaultTorrentProfile(body);
+    const folderChanged: MockApi_HandleRequest_FolderChanged = dataPathsEqualIgnoringCase(
       updatedProfile['downloadDirectory'],
       defaultTorrentProfile['downloadDirectory'],
-    );
-    if (folderChanged && defaultTorrentProfile['downloadDirectoryLocked']) {
+    ) === false;
+    if (folderChanged === true && defaultTorrentProfile['downloadDirectoryLocked'] === true) {
       sendFieldError(
         response,
         'setting_locked',
@@ -9509,22 +10262,22 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
       return true;
     }
     if (
-      noVPNConnections
-      && folderChanged
-      && torrents.some((torrent: MockTorrent): boolean => torrent['profileId'] === null)
+      noVPNConnections === true
+      && folderChanged === true
+      && torrents.some((torrent) => torrent['profileId'] === null) === true
     ) {
       sendError(response, 503, 'transmission_unavailable', 'The default Transmission daemon is unavailable.');
 
       return true;
     }
 
-    const targetConnectionID: string = defaultVPNConnection()['id'];
-    const profileTorrents: MockTorrent[] = torrents.filter((torrent: MockTorrent): boolean => (
-      folderChanged
+    const targetConnectionID: MockApi_HandleRequest_ConnectionId = defaultVPNConnection()['id'];
+    const profileTorrents: MockApi_HandleRequest_ProfileTorrents = torrents.filter((torrent) => (
+      folderChanged === true
       && torrent['profileId'] === null
       && (
         torrent['connectionId'] !== targetConnectionID
-        || !dataPathsEqualIgnoringCase(torrent['downloadDir'], updatedProfile['downloadDirectory'])
+        || dataPathsEqualIgnoringCase(torrent['downloadDir'], updatedProfile['downloadDirectory']) === false
       )
     ));
     if (profileTorrents.length > 0 && body['moveTorrents'] !== true) {
@@ -9536,12 +10289,13 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
       return true;
     }
 
-    const moved: Record<string, unknown>[] = profileTorrents.map((torrent: MockTorrent): Record<string, unknown> => {
-      const connectionChanged: boolean = torrent['connectionId'] !== targetConnectionID;
+    const moved: MockApi_HandleRequest_Moved = profileTorrents.map((torrent) => {
+      const connectionChanged: MockApi_HandleRequest_ConnectionChanged = torrent['connectionId'] !== targetConnectionID;
+
       Reflect.set(torrent, 'connectionId', targetConnectionID);
       Reflect.set(torrent, 'downloadDir', updatedProfile['downloadDirectory']);
-      if (connectionChanged) {
-        Reflect.set(torrent, 'id', Math.max(0, ...torrents.map((candidate: MockTorrent): number => candidate['id'])) + 1);
+      if (connectionChanged === true) {
+        Reflect.set(torrent, 'id', Math.max(0, ...torrents.map((candidate) => candidate['id'])) + 1);
       }
 
       return {
@@ -9552,16 +10306,18 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
         ...((torrentMoveWarnings.length === 0) ? {} : { warnings: torrentMoveWarnings }),
       };
     });
+
     Object.assign(defaultTorrentProfile, updatedProfile);
+
     saveUsedLabels(updatedProfile['labels']);
-    const downloadSetting: Record<string, unknown> | undefined = settings.find(
-      (setting: Record<string, unknown>): boolean => setting['key'] === 'transmission.downloadDirectory',
+    const downloadSetting: MockApi_HandleRequest_Setting = settings.find(
+      (setting) => setting['key'] === 'transmission.downloadDirectory',
     );
     if (downloadSetting !== undefined) {
       Reflect.set(downloadSetting, 'value', updatedProfile['downloadDirectory']);
       Reflect.set(downloadSetting, 'source', 'user');
     }
-    if (folderChanged) {
+    if (folderChanged === true) {
       settingsRevision += 1;
     }
     ensureDirectory(updatedProfile['downloadDirectory']);
@@ -9573,13 +10329,13 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
     return true;
   }
 
-  const torrentProfileMatch: RegExpMatchArray | null = path.match(/^\/api\/v1\/torrent-profiles\/([^/]+)$/u);
+  const torrentProfileMatch: MockApi_HandleRequest_TorrentProfileMatch = path.match(new RegExp(torrentProfilePathPattern, 'u'));
   if (torrentProfileMatch !== null) {
-    const profileId: string = decodeURIComponent(torrentProfileMatch[1] ?? '');
-    const profileIndex: number = torrentProfiles.findIndex(
-      (profile: MockTorrentProfile): boolean => profile['id'] === profileId,
+    const profileId: MockApi_HandleRequest_ProfileId = decodeURIComponent(torrentProfileMatch[1] ?? '');
+    const profileIndex: MockApi_HandleRequest_ProfileIndex = torrentProfiles.findIndex(
+      (profile) => profile['id'] === profileId,
     );
-    const profile: MockTorrentProfile | undefined = torrentProfiles[profileIndex];
+    const profile: MockApi_HandleRequest_ExistingTorrentProfile = torrentProfiles[profileIndex];
     if (profile === undefined) {
       sendError(response, 404, 'torrent_profile_not_found', 'That torrent profile no longer exists.');
 
@@ -9587,22 +10343,22 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
     }
 
     if (method === 'DELETE') {
-      const body: Record<string, unknown> = await readBody(request);
+      const body: MockApi_HandleRequest_Body = await readBody(request);
       if ('moveTorrents' in body && typeof body['moveTorrents'] !== 'boolean') {
         sendFieldError(response, 'invalid_request', 'moveTorrents', 'moveTorrents must be a boolean.');
 
         return true;
       }
-      const profileTorrents: MockTorrent[] = torrents.filter(
-        (torrent: MockTorrent): boolean => torrent['profileId'] === profileId,
+      const profileTorrents: MockApi_HandleRequest_ProfileTorrents = torrents.filter(
+        (torrent) => torrent['profileId'] === profileId,
       );
-      if (profileTorrents.length > 0 && noVPNConnections) {
+      if (profileTorrents.length > 0 && noVPNConnections === true) {
         sendError(response, 503, 'transmission_unavailable', 'The default Transmission daemon is unavailable.');
 
         return true;
       }
-      const targetConnectionId: string = defaultVPNConnection()['id'];
-      const targetDirectory: string = defaultTorrentProfile['downloadDirectory'];
+      const targetConnectionId: MockApi_HandleRequest_ConnectionId = defaultVPNConnection()['id'];
+      const targetDirectory: MockApi_HandleRequest_TargetDirectory = defaultTorrentProfile['downloadDirectory'];
       if (profileTorrents.length > 0 && body['moveTorrents'] !== true) {
         sendError(
           response,
@@ -9619,12 +10375,12 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
         return true;
       }
 
-      const moved: Record<string, unknown>[] = profileTorrents.map(
-        (torrent: MockTorrent, index: number): Record<string, unknown> => {
-          const alreadyThere: boolean = torrent['connectionId'] === targetConnectionId
+      const moved: MockApi_HandleRequest_Moved = profileTorrents.map(
+        (torrent, index) => {
+          const alreadyThere: MockApi_HandleRequest_AlreadyThere = torrent['connectionId'] === targetConnectionId
             && dataPathsEqualIgnoringCase(torrent['downloadDir'], targetDirectory);
-          const failed: boolean = process.env['MOCK_VPN_MOVE_FAILURE'] === 'true' && index === 0;
-          let moveResult: string = 'moved';
+          const failed: MockApi_HandleRequest_Failed = process.env['MOCK_VPN_MOVE_FAILURE'] === 'true' && index === 0;
+          let moveResult: MockApi_HandleRequest_MoveResult = 'moved';
           if (failed === true) {
             moveResult = 'failed';
           } else if (alreadyThere === true) {
@@ -9633,7 +10389,7 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
           Reflect.set(torrent, 'profileId', null);
           if (failed === false) {
             if (torrent['connectionId'] !== targetConnectionId) {
-              Reflect.set(torrent, 'id', Math.max(0, ...torrents.map((candidate: MockTorrent): number => candidate['id'])) + 1);
+              Reflect.set(torrent, 'id', Math.max(0, ...torrents.map((candidate) => candidate['id'])) + 1);
             }
             Reflect.set(torrent, 'connectionId', targetConnectionId);
             Reflect.set(torrent, 'downloadDir', targetDirectory);
@@ -9641,19 +10397,25 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
 
           return {
             hash: torrent['hashString'],
-            ...((failed) ? {} : { id: torrent['id'] }),
+            ...((failed === true) ? {} : { id: torrent['id'] }),
             name: torrent['name'],
             result: moveResult,
-            ...((failed) ? { error: 'The mock torrent move failed before its source was changed.' } : {}),
-            ...((failed || alreadyThere || torrentMoveWarnings.length === 0) ? {} : { warnings: torrentMoveWarnings }),
+            ...((failed === true) ? { error: 'The mock torrent move failed before its source was changed.' } : {}),
+            ...((
+              failed === true
+              || alreadyThere === true
+              || torrentMoveWarnings.length === 0
+            ) ? {} : { warnings: torrentMoveWarnings }),
           };
         },
       );
+
       torrentProfiles.splice(profileIndex, 1);
+
       for (const torrent of torrents) {
         if (torrent['needsProfile'] !== null) {
-          torrent.needsProfile.profileIds = torrent['needsProfile']['profileIds'].filter(
-            (matchingProfileId: string): boolean => matchingProfileId !== profileId,
+          torrent['needsProfile'].profileIds = torrent['needsProfile']['profileIds'].filter(
+            (matchingProfileId) => matchingProfileId !== profileId,
           );
         }
       }
@@ -9668,20 +10430,20 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
       return true;
     }
     if (method === 'PUT') {
-      const body: Record<string, unknown> = await readBody(request);
-      const profileName: string = String(body['name'] ?? '').trim();
-      if (torrentProfileNameTaken(profileName, profile['id'])) {
+      const body: MockApi_HandleRequest_Body = await readBody(request);
+      const profileName: MockApi_HandleRequest_ProfileName = String(body['name'] ?? '').trim();
+      if (torrentProfileNameTaken(profileName, profile['id']) === true) {
         sendFieldError(response, 'torrent_profile_exists', 'name', 'A torrent profile with this name already exists.', 409);
 
         return true;
       }
-      const issue: string = downloadFolderIssue(body['downloadDirectory']);
+      const issue: MockApi_HandleRequest_Issue = downloadFolderIssue(body['downloadDirectory']);
       if (issue !== '') {
         sendFieldError(response, 'invalid_request', 'downloadDirectory', issue);
 
         return true;
       }
-      const folderOwner = profileFolderOwner(String(body['downloadDirectory'] ?? ''), profile['id']);
+      const folderOwner: MockApi_HandleRequest_FolderOwner = profileFolderOwner(String(body['downloadDirectory'] ?? ''), profile['id']);
       if (folderOwner !== undefined) {
         sendFieldError(
           response,
@@ -9693,26 +10455,35 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
 
         return true;
       }
-      const updatedProfile: MockTorrentProfile = readTorrentProfile(
+      const updatedProfile: MockApi_HandleRequest_TorrentProfile = readTorrentProfile(
         body,
         profile['id'],
         profile['createdAt'],
       );
-      const targetConnectionId: string = updatedProfile['connectionId'] ?? defaultVPNConnection()['id'];
-      if (isConnectionBeingRemoved(updatedProfile['connectionId'])) {
+      const targetConnectionId: MockApi_HandleRequest_ConnectionId = updatedProfile['connectionId'] ?? defaultVPNConnection()['id'];
+      if (isConnectionBeingRemoved(updatedProfile['connectionId']) === true) {
         sendConnectionBeingRemoved(response);
 
         return true;
       }
-      const connectionChanged: boolean = updatedProfile['connectionId'] !== profile['connectionId'];
-      const folderChanged: boolean = !dataPathsEqualIgnoringCase(
+      const connectionChanged: MockApi_HandleRequest_ConnectionChanged = updatedProfile['connectionId'] !== profile['connectionId'];
+      const folderChanged: MockApi_HandleRequest_FolderChanged = dataPathsEqualIgnoringCase(
         updatedProfile['downloadDirectory'],
         profile['downloadDirectory'],
-      );
-      const profileTorrents: MockTorrent[] = torrents.filter(
-        (torrent: MockTorrent): boolean => torrent['profileId'] === profile['id'] && (
-          (connectionChanged && torrent['connectionId'] !== targetConnectionId)
-          || (folderChanged && !dataPathsEqualIgnoringCase(torrent['downloadDir'], updatedProfile['downloadDirectory']))
+      ) === false;
+      const profileTorrents: MockApi_HandleRequest_ProfileTorrents = torrents.filter(
+        (torrent) => (
+          torrent['profileId'] === profile['id']
+          && (
+            (
+              connectionChanged === true
+              && torrent['connectionId'] !== targetConnectionId
+            )
+            || (
+              folderChanged === true
+              && dataPathsEqualIgnoringCase(torrent['downloadDir'], updatedProfile['downloadDirectory']) === false
+            )
+          )
         ),
       );
       if (profileTorrents.length > 0 && body['moveTorrents'] !== true) {
@@ -9724,12 +10495,13 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
 
         return true;
       }
-      const moved: Record<string, unknown>[] = profileTorrents.map((torrent: MockTorrent): Record<string, unknown> => {
-        const torrentConnectionChanged: boolean = torrent['connectionId'] !== targetConnectionId;
+      const moved: MockApi_HandleRequest_Moved = profileTorrents.map((torrent) => {
+        const torrentConnectionChanged: MockApi_HandleRequest_ConnectionChanged = torrent['connectionId'] !== targetConnectionId;
+
         Reflect.set(torrent, 'connectionId', targetConnectionId);
         Reflect.set(torrent, 'downloadDir', updatedProfile['downloadDirectory']);
-        if (torrentConnectionChanged) {
-          Reflect.set(torrent, 'id', Math.max(0, ...torrents.map((candidate: MockTorrent): number => candidate['id'])) + 1);
+        if (torrentConnectionChanged === true) {
+          Reflect.set(torrent, 'id', Math.max(0, ...torrents.map((candidate) => candidate['id'])) + 1);
         }
 
         return {
@@ -9740,7 +10512,9 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
           ...((torrentMoveWarnings.length === 0) ? {} : { warnings: torrentMoveWarnings }),
         };
       });
-      torrentProfiles[profileIndex] = updatedProfile;
+
+      Reflect.set(torrentProfiles, profileIndex, updatedProfile);
+
       saveUsedLabels(updatedProfile['labels']);
       refreshTorrentProfilePresentation();
       ensureDirectory(updatedProfile['downloadDirectory']);
@@ -9760,12 +10534,16 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
   }
 
   if (path === '/api/v1/vpn/profiles') {
-    const tunnel: string | null = url.searchParams.get('tunnel');
+    const tunnel: MockApi_HandleRequest_TunnelFilter = url.searchParams.get('tunnel');
 
     sendJSON(response, 200, {
-      items: profiles.filter((profile: Record<string, unknown>): boolean => (
+      items: profiles.filter((profile) => (
         profile['providerId'] === url.searchParams.get('provider')
-        && (tunnel === null || tunnel === '' || profile['tunnel'] === tunnel)
+        && (
+          tunnel === null
+          || tunnel === ''
+          || profile['tunnel'] === tunnel
+        )
       )),
     });
 
@@ -9773,56 +10551,70 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
   }
 
   if (path === '/api/v1/vpn/profiles/custom' && method === 'POST') {
-    const body: Record<string, unknown> = await readBody(request);
-    const tunnel: unknown = body['tunnel'] ?? 'openvpn';
-    const profileName: unknown = body['profileName'];
-    const profileContent: unknown = body['profile'];
+    const body: MockApi_HandleRequest_Body = await readBody(request);
+    const tunnel: MockApi_HandleRequest_CustomTunnel = body['tunnel'] ?? 'openvpn';
+    const profileName: MockApi_HandleRequest_CustomProfileName = body['profileName'];
+    const profileContent: MockApi_HandleRequest_CustomProfileContent = body['profile'];
 
-    if ((tunnel !== 'openvpn' && tunnel !== 'wireguard') || typeof profileName !== 'string' || typeof profileContent !== 'string' || profileName.trim() === '' || profileContent === '') {
+    if (
+      (
+        tunnel !== 'openvpn'
+        && tunnel !== 'wireguard'
+      )
+      || typeof profileName !== 'string'
+      || typeof profileContent !== 'string'
+      || profileName.trim() === ''
+      || profileContent === ''
+    ) {
       sendError(response, 422, 'invalid_request', 'Choose a profile file.');
 
       return true;
     }
 
-    const looksLikeWireGuard: boolean = /^\s*\[interface\]\s*$/im.test(profileContent);
+    const looksLikeWireGuard: MockApi_HandleRequest_LooksLikeWireGuard = new RegExp(wireGuardInterfacePattern, 'im').test(profileContent);
 
-    if (tunnel === 'openvpn' && looksLikeWireGuard) {
+    if (tunnel === 'openvpn' && looksLikeWireGuard === true) {
       sendError(response, 422, 'invalid_request', 'This is a WireGuard file. Choose the WireGuard tunnel to upload it.');
 
       return true;
     }
 
-    if (tunnel === 'wireguard' && !looksLikeWireGuard) {
+    if (tunnel === 'wireguard' && looksLikeWireGuard === false) {
       sendError(response, 422, 'invalid_request', 'This is not a WireGuard file because it has no [Interface] section. For an OpenVPN profile, choose the OpenVPN tunnel.');
 
       return true;
     }
 
-    let endpointMatches: RegExpMatchArray[] = [];
+    let endpointMatches: MockApi_HandleRequest_EndpointMatches = [];
     if (tunnel === 'wireguard') {
-      endpointMatches = [profileContent.match(/^\s*endpoint\s*=\s*([^\s:]+):(\d+)/imu)].filter((match): match is RegExpMatchArray => match !== null);
+      endpointMatches = [profileContent.match(new RegExp(wireGuardEndpointPattern, 'imu'))].filter((match): match is RegExpMatchArray => match !== null);
     } else {
-      endpointMatches = [...profileContent.matchAll(/^\s*remote\s+(\S+)(?:\s+(\d+))?(?:\s+(\S+))?\s*$/gimu)];
+      endpointMatches = [...profileContent.matchAll(new RegExp(openVpnRemotePattern, 'gimu'))];
     }
     if (endpointMatches.length === 0) {
-      sendError(response, 422, 'invalid_request', `The ${(tunnel === 'wireguard') ? 'WireGuard' : 'OpenVPN'} profile does not contain a remote endpoint.`);
+      const tunnelLabel: MockApi_HandleRequest_TunnelLabel = (tunnel === 'wireguard') ? 'WireGuard' : 'OpenVPN';
+
+      sendError(response, 422, 'invalid_request', `The ${tunnelLabel} profile does not contain a remote endpoint.`);
 
       return true;
     }
-    const displayName: string = profileName.trim().replace(/\.(conf|ovpn)$/i, '');
-    const slug: string = displayName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'endpoint';
-    const uploadedProfiles: Record<string, unknown>[] = endpointMatches.map((endpointMatch: RegExpMatchArray, index: number): Record<string, unknown> => {
-      const remoteProtocol: string | undefined = endpointMatch[3];
-      let tcp: boolean = false;
+    const displayName: MockApi_HandleRequest_DisplayName = profileName.trim().replace(new RegExp(profileExtensionPattern, 'i'), '');
+    const slug: MockApi_HandleRequest_Slug = displayName.toLowerCase().replace(new RegExp(nonSlugCharactersPattern, 'g'), '-').replace(new RegExp(edgeHyphensPattern, 'g'), '') || 'endpoint';
+    const uploadedProfiles: MockApi_HandleRequest_UploadedProfiles = endpointMatches.map((endpointMatch, index) => {
+      const remoteProtocol: MockApi_HandleRequest_RemoteProtocol = endpointMatch[3];
+      let tcp: MockApi_HandleRequest_Tcp = false;
       if (tunnel === 'openvpn') {
-        tcp = /^\s*proto\s+tcp/imu.test(profileContent);
+        tcp = new RegExp(openVpnTcpPattern, 'imu').test(profileContent);
         if (remoteProtocol !== undefined) {
           tcp = remoteProtocol.toLowerCase().startsWith('tcp');
         }
       }
 
+      const idPrefix: MockApi_HandleRequest_IdPrefix = (tunnel === 'wireguard') ? 'wg-' : '';
+      const idSuffix: MockApi_HandleRequest_IdSuffix = (endpointMatches.length > 1) ? `-${String(index + 1)}` : '';
+
       return {
-        'id': `custom:${(tunnel === 'wireguard') ? 'wg-' : ''}${slug}${(endpointMatches.length > 1) ? `-${String(index + 1)}` : ''}:${randomBytes(6).toString('hex')}`,
+        'id': `custom:${idPrefix}${slug}${idSuffix}:${randomBytes(6).toString('hex')}`,
         'providerId': 'custom',
         tunnel,
         'displayName': (endpointMatches.length > 1) ? `${displayName} (${String(index + 1)})` : displayName,
@@ -9830,7 +10622,7 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
         'country': '',
         'city': '',
         'continent': '',
-        'protocol': (tcp) ? 'tcp' : 'udp',
+        'protocol': (tcp === true) ? 'tcp' : 'udp',
         'remoteHost': endpointMatch[1] ?? 'vpn.example.com',
         'remotePort': Number(endpointMatch[2] ?? ((tunnel === 'wireguard') ? 51820 : 1194)),
         'fingerprint': `sha256:${randomBytes(16).toString('hex')}`,
@@ -9840,6 +10632,7 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
     });
 
     profiles.push(...uploadedProfiles);
+
     sendJSON(response, 201, {
       ...uploadedProfiles[0],
       profiles: uploadedProfiles,
@@ -9855,7 +10648,7 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
   }
 
   if (method === 'GET' && path === '/api/v1/notifications') {
-    sendJSON(response, 200, { items: [...notifications].sort((left: MockNotification, right: MockNotification): number => right.createdAt.localeCompare(left.createdAt)) });
+    sendJSON(response, 200, { items: [...notifications].sort((left, right) => right['createdAt'].localeCompare(left['createdAt'])) });
 
     return true;
   }
@@ -9863,18 +10656,20 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
   // notificationInput checks a create or edit body like the control API, sending the first problem.
 
   /**
-   * Mock API - Notification input.
+   * Mock API - Notification Input.
    *
    * Centralizes this operation for the surrounding workflow.
    * Callers reuse one implementation instead of repeating the behavior.
    *
+   * @returns {MockApi_HandleRequest_NotificationInput_Returns}
+   *
    * @since 2.0.0
    */
-  const notificationInput = (body: Record<string, unknown>, existing: MockNotification | null): MockNotificationInput | null => {
-    const service: MockNotificationService = existing?.service ?? body['service'] as MockNotificationService;
-    const name: string = (typeof body['name'] === 'string') ? body['name'].trim() : '';
-    const events: string[] = (Array.isArray(body['events'])) ? body['events'] as string[] : [];
-    const values: Record<string, unknown> = (typeof body['settings'] === 'object' && body['settings'] !== null) ? body['settings'] as Record<string, unknown> : {};
+  const notificationInput: MockApi_HandleRequest_NotificationInput = (body: MockApi_HandleRequest_NotificationInput_Body, existing: MockApi_HandleRequest_NotificationInput_Existing): MockApi_HandleRequest_NotificationInput_Returns => {
+    const service: MockApi_HandleRequest_NotificationInput_Service = (existing !== null) ? existing['service'] : body['service'] as MockApi_HandleRequest_NotificationInput_Service;
+    const name: MockApi_HandleRequest_NotificationInput_Name = (typeof body['name'] === 'string') ? body['name'].trim() : '';
+    const events: MockApi_HandleRequest_NotificationInput_Events = (Array.isArray(body['events']) === true) ? body['events'] as MockApi_HandleRequest_NotificationInput_Events : [];
+    const values: MockApi_HandleRequest_NotificationInput_Values = (typeof body['settings'] === 'object' && body['settings'] !== null) ? body['settings'] as MockApi_HandleRequest_NotificationInput_Values : {};
 
     if (notificationFields[service] === undefined) {
       sendFieldError(response, 'invalid_request', 'service', 'Choose a service.');
@@ -9894,39 +10689,54 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
       return null;
     }
 
-    const plainSettings: Record<string, string> = {};
-    const secrets: Record<string, true> = { ...(existing?.secrets ?? {}) };
+    const plainSettings: MockApi_HandleRequest_NotificationInput_PlainSettings = {};
+    const secrets: MockApi_HandleRequest_NotificationInput_Secrets = { ...((existing !== null) ? existing['secrets'] : {}) };
 
-    for (const [
-      key,
-      missing,
-      secret,
-      required,
-    ] of notificationFields[service]) {
-      const value: string = (typeof values[key] === 'string') ? (values[key]).trim() : '';
-      const saved: boolean = secret && existing !== null && existing.secrets[key] === true;
+    for (const field of notificationFields[service]) {
+      const key: MockApi_HandleRequest_NotificationInput_Key = field[0];
+      const missing: MockApi_HandleRequest_NotificationInput_Missing = field[1];
+      const secret: MockApi_HandleRequest_NotificationInput_Secret = field[2];
+      const required: MockApi_HandleRequest_NotificationInput_Required = field[3];
+      const value: MockApi_HandleRequest_NotificationInput_Value = (typeof values[key] === 'string') ? (values[key]).trim() : '';
+      const saved: MockApi_HandleRequest_NotificationInput_Saved = (
+        secret === true
+        && existing !== null
+        && existing['secrets'][key] === true
+      );
 
-      if (value === '' && required && !saved) {
+      if (
+        value === ''
+        && required === true
+        && saved === false
+      ) {
         sendFieldError(response, 'invalid_request', `settings.${key}`, missing);
 
         return null;
       }
 
-      if (value !== '' && secret) {
-        secrets[key] = true;
+      if (value !== '' && secret === true) {
+        Reflect.set(secrets, key, true);
       } else if (value !== '') {
-        plainSettings[key] = value;
+        Reflect.set(plainSettings, key, value);
       }
     }
 
     // Optional secrets that are saved, or missing after a lost key, can be cleared once each, never alongside a new value.
-    const clearable: string[] = notificationFields[service]
-      .filter((field: MockNotificationField): boolean => field[2] && !field[3] && existing !== null && (existing.secrets[field[0]] === true || existing.secretsMissing.includes(field[0])))
-      .map((field: MockNotificationField): string => field[0]);
-    const clearSecrets: unknown[] = (Array.isArray(body['clearSecrets'])) ? body['clearSecrets'] : [];
-    const invalidIndex: number = clearSecrets.findIndex((key: unknown): boolean => typeof key !== 'string' || !clearable.includes(key));
+    const clearable: MockApi_HandleRequest_NotificationInput_Clearable = notificationFields[service]
+      .filter((field) => (
+        field[2] === true
+        && field[3] === false
+        && existing !== null
+        && (
+          existing['secrets'][field[0]] === true
+          || existing['secretsMissing'].includes(field[0]) === true
+        )
+      ))
+      .map((field) => field[0]);
+    const clearSecrets: MockApi_HandleRequest_NotificationInput_ClearSecrets = (Array.isArray(body['clearSecrets']) === true) ? body['clearSecrets'] : [];
+    const invalidIndex: MockApi_HandleRequest_NotificationInput_InvalidIndex = clearSecrets.findIndex((key) => typeof key !== 'string' || clearable.includes(key) === false);
 
-    if (body['clearSecrets'] !== undefined && !Array.isArray(body['clearSecrets'])) {
+    if (body['clearSecrets'] !== undefined && Array.isArray(body['clearSecrets']) === false) {
       sendFieldError(response, 'invalid_request', 'clearSecrets', 'Choose an optional saved secret.');
 
       return null;
@@ -9944,7 +10754,7 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
       return null;
     }
 
-    const replaced: string | undefined = (clearSecrets as string[]).find((key: string): boolean => typeof values[key] === 'string' && (values[key]).trim() !== '');
+    const replaced: MockApi_HandleRequest_NotificationInput_Replaced = (clearSecrets as MockApi_HandleRequest_NotificationInput_ClearSecretKeys).find((key) => typeof values[key] === 'string' && (values[key]).trim() !== '');
 
     if (replaced !== undefined) {
       sendFieldError(response, 'invalid_request', `settings.${replaced}`, 'Enter a new value or clear this field, not both.');
@@ -9952,18 +10762,18 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
       return null;
     }
 
-    for (const key of clearSecrets as string[]) {
+    for (const key of clearSecrets as MockApi_HandleRequest_NotificationInput_ClearSecretKeys) {
       Reflect.deleteProperty(secrets, key);
     }
 
-    if (notifications.some((notification: MockNotification): boolean => notification.id !== existing?.id && notification.name.toLowerCase() === name.toLowerCase())) {
+    if (notifications.some((notification) => notification['id'] !== ((existing !== null) ? existing['id'] : undefined) && notification['name'].toLowerCase() === name.toLowerCase()) === true) {
       sendFieldError(response, 'notification_exists', 'name', 'A notification with this name already exists.', 409);
 
       return null;
     }
 
     return {
-      clearSecrets: clearSecrets as string[],
+      clearSecrets: clearSecrets as MockApi_HandleRequest_NotificationInput_ClearSecretKeys,
       events,
       name,
       secrets,
@@ -9973,18 +10783,18 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
   };
 
   if (method === 'POST' && path === '/api/v1/notifications') {
-    const input: MockNotificationInput | null = notificationInput(await readBody(request), null);
+    const input: MockApi_HandleRequest_Input = notificationInput(await readBody(request), null);
 
     if (input === null) {
       return true;
     }
 
-    const notification: MockNotification = {
-      events: input.events,
-      name: input.name,
-      secrets: input.secrets,
-      service: input.service,
-      settings: input.settings,
+    const notification: MockApi_HandleRequest_Notification = {
+      events: input['events'],
+      name: input['name'],
+      secrets: input['secrets'],
+      service: input['service'],
+      settings: input['settings'],
       createdAt: new Date().toISOString(),
       id: `ntf-${randomBytes(8).toString('hex')}`,
       lastAttemptAt: null,
@@ -9995,16 +10805,17 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
     };
 
     notifications.push(notification);
+
     sendJSON(response, 201, notification);
 
     return true;
   }
 
-  const notificationMatch: RegExpMatchArray | null = path.match(/^\/api\/v1\/notifications\/(ntf-[0-9a-f]{16})(\/test)?$/u);
+  const notificationMatch: MockApi_HandleRequest_NotificationMatch = path.match(new RegExp(notificationPathPattern, 'u'));
 
   if (notificationMatch !== null) {
-    const index: number = notifications.findIndex((notification: MockNotification): boolean => notification.id === notificationMatch[1]);
-    const notification: MockNotification | undefined = notifications[index];
+    const index: MockApi_HandleRequest_Index = notifications.findIndex((notification) => notification['id'] === notificationMatch[1]);
+    const notification: MockApi_HandleRequest_FoundNotification = notifications[index];
 
     if (notification === undefined) {
       sendError(response, 404, 'notification_not_found', 'That notification no longer exists.');
@@ -10013,7 +10824,7 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
     }
 
     if (method === 'POST' && notificationMatch[2] === '/test') {
-      if (notification.secretsMissing.length > 0) {
+      if (notification['secretsMissing'].length > 0) {
         sendJSON(response, 200, {
           delivered: false,
           message: 'Enter the removed secrets again first.',
@@ -10022,14 +10833,14 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
         return true;
       }
 
-      if (notificationTransportError) {
+      if (notificationTransportError === true) {
         notification.lastAttemptAt = new Date().toISOString();
         notification.lastError = mockNotificationTransportFailure(rawNotificationTransportError);
         notification.lastErrorDetails = rawNotificationTransportError;
         sendJSON(response, 200, {
           delivered: false,
           details: rawNotificationTransportError,
-          message: notification.lastError,
+          message: notification['lastError'],
         });
 
         return true;
@@ -10045,29 +10856,30 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
 
     if (method === 'DELETE') {
       notifications.splice(index, 1);
-      removedSecrets = removedSecrets.filter((removedSecret): boolean => removedSecret.notificationId !== notification.id);
+      removedSecrets = removedSecrets.filter((removedSecret) => removedSecret['notificationId'] !== notification['id']);
       response.writeHead(204).end();
 
       return true;
     }
 
     if (method === 'PUT') {
-      const input: MockNotificationInput | null = notificationInput(await readBody(request), notification);
+      const input: MockApi_HandleRequest_Input = notificationInput(await readBody(request), notification);
 
       if (input === null) {
         return true;
       }
 
-      notification.events = input.events;
-      notification.name = input.name;
-      notification.secrets = input.secrets;
+      notification.events = input['events'];
+      notification.name = input['name'];
+      notification.secrets = input['secrets'];
+
       // A missing secret is settled by entering it again or, when optional, by clearing it.
-      notification.secretsMissing = notification.secretsMissing.filter((key: string): boolean => input.secrets[key] !== true && !input.clearSecrets.includes(key));
-      notification.settings = input.settings;
+      notification.secretsMissing = notification['secretsMissing'].filter((key) => input['secrets'][key] !== true && input['clearSecrets'].includes(key) === false);
+      notification.settings = input['settings'];
       notification.updatedAt = new Date().toISOString();
 
-      if (notification.secretsMissing.length === 0) {
-        removedSecrets = removedSecrets.filter((removedSecret): boolean => removedSecret.notificationId !== notification.id);
+      if (notification['secretsMissing'].length === 0) {
+        removedSecrets = removedSecrets.filter((removedSecret) => removedSecret['notificationId'] !== notification['id']);
       }
 
       sendJSON(response, 200, notification);
@@ -10078,7 +10890,7 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
 
   if (path === '/api/v1/auth/tokens') {
     if (method === 'POST') {
-      const fields: Record<string, unknown> | undefined = await readTokenFields(request, response, '');
+      const fields: MockApi_HandleRequest_Fields = await readTokenFields(request, response, '');
 
       if (fields === undefined) {
         return true;
@@ -10086,7 +10898,7 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
 
       tokenSequence += 1;
 
-      const token: Record<string, unknown> = {
+      const token: MockApi_HandleRequest_NewToken = {
         id: `tok-${tokenSequence}`,
         name: fields['name'],
         scopes: fields['scopes'],
@@ -10094,11 +10906,14 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
         createdAt: new Date().toISOString(),
         lastUsedAt: null,
       };
-      const plaintext: string = `tvpn_${randomBytes(32).toString('base64url')}`;
+      const plaintext: MockApi_HandleRequest_Plaintext = `tvpn_${randomBytes(32).toString('base64url')}`;
 
       tokens.unshift(token);
+
       tokenValues.set(plaintext, String(token['id']));
+
       tokenDigests.set(String(token['id']), createHash('sha256').update(plaintext).digest('base64'));
+
       sendJSON(response, 201, {
         token,
         plaintext,
@@ -10112,9 +10927,15 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
     return true;
   }
 
-  if (path.startsWith('/api/v1/auth/tokens/') && (method === 'PUT' || method === 'DELETE')) {
-    const tokenId: string = decodeURIComponent(path.slice('/api/v1/auth/tokens/'.length));
-    const token: Record<string, unknown> | undefined = tokens.find((candidate: Record<string, unknown>): boolean => candidate['id'] === tokenId);
+  if (
+    path.startsWith('/api/v1/auth/tokens/') === true
+    && (
+      method === 'PUT'
+      || method === 'DELETE'
+    )
+  ) {
+    const tokenId: MockApi_HandleRequest_TokenId = decodeURIComponent(path.slice('/api/v1/auth/tokens/'.length));
+    const token: MockApi_HandleRequest_Token = tokens.find((candidate) => candidate['id'] === tokenId);
 
     if (token === undefined) {
       sendError(response, 404, 'token_not_found', 'That token no longer exists.');
@@ -10124,13 +10945,15 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
 
     if (method === 'DELETE') {
       tokens.splice(tokens.indexOf(token), 1);
+
       tokenDigests.delete(String(token['id']));
+
       response.writeHead(204).end();
 
       return true;
     }
 
-    const fields: Record<string, unknown> | undefined = await readTokenFields(request, response, tokenId);
+    const fields: MockApi_HandleRequest_Fields = await readTokenFields(request, response, tokenId);
 
     if (fields === undefined) {
       return true;
@@ -10149,9 +10972,14 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
   }
 
   if (path === '/api/v1/torrents' && method === 'GET') {
-    const selection: string | null = url.searchParams.get('ids');
-    const identifiers: number[] | null = (selection === null || selection === '' || selection === 'recently-active') ? null : selection.split(',').map((identifier: string): number => Number(identifier.trim()));
-    const items: MockTorrent[] = (identifiers === null) ? torrents : torrents.filter((torrent: MockTorrent): boolean => identifiers.includes(torrent['id']));
+    const selection: MockApi_HandleRequest_SelectionParam = url.searchParams.get('ids');
+    const identifiers: MockApi_HandleRequest_Identifiers = (
+      selection === null
+      || selection === ''
+      || selection === 'recently-active'
+    ) ? null : selection.split(',').map((identifier) => Number(identifier.trim()));
+    const items: MockApi_HandleRequest_TorrentItems = (identifiers === null) ? torrents : torrents.filter((torrent) => identifiers.includes(torrent['id']));
+
     sendJSON(response, 200, {
       errors: torrentErrors(),
       items: items.map(torrentSummary),
@@ -10161,8 +10989,8 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
   }
 
   if (path === '/api/v1/torrents/preview' && method === 'POST') {
-    const body: Record<string, unknown> = await readBody(request);
-    if (!Array.isArray(body['links']) || body['links'].length > 20) {
+    const body: MockApi_HandleRequest_Body = await readBody(request);
+    if (Array.isArray(body['links']) === false || body['links'].length > 20) {
       sendError(
         response,
         422,
@@ -10173,29 +11001,33 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
       return true;
     }
 
-    const items: MockTorrentLinkPreview[] = [];
-    body['links'].forEach((link: unknown, index: number): void => {
+    const items: MockApi_HandleRequest_PreviewItems = [];
+
+    body['links'].forEach((link, index) => {
       if (typeof link !== 'string') {
         return;
       }
-      const preview: MockTorrentLinkPreview | null = previewTorrentLink(link.trim(), index);
+      const preview: MockApi_HandleRequest_Preview = previewTorrentLink(link.trim(), index);
       if (preview !== null) {
         items.push(preview);
       }
+
+      return;
     });
+
     sendJSON(response, 200, { items });
 
     return true;
   }
 
   if (path === '/api/v1/torrents' && method === 'POST') {
-    const body: Record<string, unknown> = await readBody(request);
+    const body: MockApi_HandleRequest_Body = await readBody(request);
     if (
       body['profileId'] !== undefined
       && body['profileId'] !== null
       && (
         typeof body['profileId'] !== 'string'
-        || !/^tpr-[0-9a-f]{16}$/u.test(body['profileId'])
+        || new RegExp(torrentProfileIdPattern, 'u').test(body['profileId']) === false
       )
     ) {
       sendFieldError(
@@ -10207,89 +11039,101 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
 
       return true;
     }
-    const profile: MockTorrentProfile | undefined = torrentProfiles.find(
-      (candidate: MockTorrentProfile): boolean => candidate['id'] === body['profileId'],
+    const profile: MockApi_HandleRequest_SelectedProfile = torrentProfiles.find(
+      (candidate) => candidate['id'] === body['profileId'],
     );
     if (typeof body['profileId'] === 'string' && profile === undefined) {
       sendError(response, 404, 'torrent_profile_not_found', 'That torrent profile no longer exists.');
 
       return true;
     }
-    const profileData: MockDefaultTorrentProfile | MockTorrentProfile = profile ?? defaultTorrentProfile;
-    const overlap = profileFolderOverlaps().find((candidate): boolean => candidate['profileId'] === ((profile === undefined) ? 'default' : profile['id']));
+    const profileData: MockApi_HandleRequest_ProfileData = profile ?? defaultTorrentProfile;
+    const overlap: MockApi_HandleRequest_Overlap = profileFolderOverlaps().find((candidate) => candidate['profileId'] === ((profile === undefined) ? 'default' : profile['id']));
     if (overlap !== undefined) {
-      const profileLabel: string = (profile === undefined) ? defaultTorrentProfile['name'] : `${profileData['name']} profile`;
+      const profileLabel: MockApi_HandleRequest_ProfileLabel = (profile === undefined) ? defaultTorrentProfile['name'] : `${profileData['name']} profile`;
+
       sendError(response, 409, 'profile_folder_overlap', `Change the ${profileLabel}'s folder before adding torrents to it. ${overlap['message']}`);
 
       return true;
     }
-    const downloadDirectory: string = profileData['downloadDirectory'];
+    const downloadDirectory: MockApi_HandleRequest_DownloadDirectory = profileData['downloadDirectory'];
     if (
       typeof body['downloadDirectory'] === 'string'
-      && !dataPathsEqualIgnoringCase(body['downloadDirectory'], downloadDirectory)
+      && dataPathsEqualIgnoringCase(body['downloadDirectory'], downloadDirectory) === false
     ) {
       sendFieldError(response, 'invalid_request', 'downloadDirectory', 'The download folder comes from the profile.');
 
       return true;
     }
-    const downloadIssue: string = downloadFolderIssue(downloadDirectory);
+    const downloadIssue: MockApi_HandleRequest_DownloadIssue = downloadFolderIssue(downloadDirectory);
     if (downloadIssue !== '') {
       sendFieldError(response, 'download_directory_invalid', 'downloadDirectory', downloadIssue);
 
       return true;
     }
     torrentAddAttempt += 1;
-    if (noVPNConnections) {
+    if (noVPNConnections === true) {
       sendError(response, 503, 'vpn_connection_required', 'Add a VPN connection before adding torrents.');
 
       return true;
     }
-    if (torrentAddOutcome === 'failed' || (torrentAddOutcome === 'mixed' && torrentAddAttempt % 2 === 0)) {
+    if (
+      torrentAddOutcome === 'failed'
+      || (
+        torrentAddOutcome === 'mixed'
+        && torrentAddAttempt % 2 === 0
+      )
+    ) {
       sendError(response, 422, 'transmission_rejected', 'Transmission rejected the requested operation.');
 
       return true;
     }
-    const nextId: number = Math.max(0, ...torrents.map((torrent: MockTorrent): number => torrent['id'])) + 1;
-    const sourceValue: string = String(body['filename'] ?? body['metainfo'] ?? nextId);
-    const hash: string = createHash('sha1').update(sourceValue).digest('hex');
-    const targetConnectionId: string = (
+    const nextId: MockApi_HandleRequest_NextId = Math.max(0, ...torrents.map((torrent) => torrent['id'])) + 1;
+    const sourceValue: MockApi_HandleRequest_SourceValue = String((
+      body['filename']
+      ?? body['metainfo']
+      ?? nextId
+    ));
+    const hash: MockApi_HandleRequest_Hash = createHash('sha1').update(sourceValue).digest('hex');
+    const targetConnectionId: MockApi_HandleRequest_TargetConnectionId = (
       'connectionId' in profileData && profileData['connectionId'] !== null
     ) ? profileData['connectionId'] : defaultVPNConnection()['id'];
-    if (isConnectionBeingRemoved(targetConnectionId)) {
+    if (isConnectionBeingRemoved(targetConnectionId) === true) {
       sendConnectionBeingRemoved(response);
 
       return true;
     }
-    const duplicateTorrent: MockTorrent | undefined = torrents.find(
-      (torrent: MockTorrent): boolean => torrent['hashString'] === hash,
+    const duplicateTorrent: MockApi_HandleRequest_DuplicateTorrent = torrents.find(
+      (torrent) => torrent['hashString'] === hash,
     );
     if (duplicateTorrent !== undefined) {
-      const duplicateProfile: MockTorrentProfile | undefined = torrentProfiles.find(
-        (candidate: MockTorrentProfile): boolean => candidate['id'] === duplicateTorrent['profileId'],
+      const duplicateProfile: MockApi_HandleRequest_SelectedProfile = torrentProfiles.find(
+        (candidate) => candidate['id'] === duplicateTorrent['profileId'],
       );
-      const duplicateConnection: MockVPNConnection | undefined = vpnConnections.find(
-        (connection: MockVPNConnection): boolean => connection['id'] === duplicateTorrent['connectionId'],
+      const duplicateConnection: MockApi_HandleRequest_Connection = vpnConnections.find(
+        (connection) => connection['id'] === duplicateTorrent['connectionId'],
       );
+
       sendJSON(response, 201, {
-        connectionName: duplicateConnection?.['name'] ?? duplicateTorrent['connectionId'],
+        connectionName: ((duplicateConnection !== undefined) ? duplicateConnection['name'] : undefined) ?? duplicateTorrent['connectionId'],
         duplicate: true,
         hash: duplicateTorrent['hashString'],
         id: duplicateTorrent['id'],
         name: duplicateTorrent['name'],
-        profileName: duplicateProfile?.['name'] ?? defaultTorrentProfile['name'],
+        profileName: ((duplicateProfile !== undefined) ? duplicateProfile['name'] : undefined) ?? defaultTorrentProfile['name'],
       });
 
       return true;
     }
-    const now: number = Math.floor(Date.now() / 1000);
-    const paused: boolean = (body['paused'] === undefined) ? profileData['startPaused'] : body['paused'] === true;
-    const totalSize: number = Math.round(1.4 * gibibyte);
+    const now: MockApi_HandleRequest_NowSeconds = Math.floor(Date.now() / 1000);
+    const paused: MockApi_HandleRequest_Paused = (body['paused'] === undefined) ? profileData['startPaused'] : body['paused'] === true;
+    const totalSize: MockApi_HandleRequest_TotalSize = Math.round(1.4 * gibibyte);
     if (profileData['options']['queue'] === 'top') {
       for (const torrent of torrents) {
         torrent.queuePosition += 1;
       }
     }
-    const torrent: MockTorrent = {
+    const torrent: MockApi_HandleRequest_NewTorrent = {
       'activityDate': now,
       'addedDate': now,
       'bandwidthPriority': 0,
@@ -10310,7 +11154,7 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
       'isPrivate': false,
       'isStalled': false,
       'labels': mergeTorrentLabels(
-        (Array.isArray(body['labels'])) ? body['labels'].map(String) : [],
+        (Array.isArray(body['labels']) === true) ? body['labels'].map(String) : [],
         profileData['labels'],
       ),
       'leftUntilDone': totalSize,
@@ -10322,7 +11166,7 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
       'peersGettingFromUs': 0,
       'peersSendingToUs': 0,
       'percentDone': 0,
-      'profileId': profile?.['id'] ?? null,
+      'profileId': ((profile !== undefined) ? profile['id'] : undefined) ?? null,
       'queuePosition': (profileData['options']['queue'] === 'top') ? 0 : torrents.length,
       'rateDownload': 0,
       'rateUpload': 0,
@@ -10334,24 +11178,29 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
       'seedRatioLimit': 2,
       'seedRatioMode': 0,
       'sizeWhenDone': totalSize,
-      'status': (paused) ? 0 : 4,
+      'status': (paused === true) ? 0 : 4,
       totalSize,
       'uploadedEver': 0,
       'uploadLimit': 0,
       'uploadLimited': false,
       'uploadRatio': -1,
     };
+
     applyTorrentProfileOptions(torrent, profileData);
     torrent.labels = mergeTorrentLabels(
-      (Array.isArray(body['labels'])) ? body['labels'].map(String) : [],
+      (Array.isArray(body['labels']) === true) ? body['labels'].map(String) : [],
       profileData['labels'],
     );
     saveUsedLabels(torrent['labels']);
+
     torrents.push(torrent);
+
+    const torrentConnection: MockApi_HandleRequest_Connection = vpnConnections.find(
+      (connection) => connection['id'] === torrent['connectionId'],
+    );
+
     sendJSON(response, 201, {
-      connectionName: vpnConnections.find(
-        (connection: MockVPNConnection): boolean => connection['id'] === torrent['connectionId'],
-      )?.['name'] ?? torrent['connectionId'],
+      connectionName: ((torrentConnection !== undefined) ? torrentConnection['name'] : undefined) ?? torrent['connectionId'],
       duplicate: false,
       hash,
       id: torrent['id'],
@@ -10363,15 +11212,16 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
   }
 
   if (path === '/api/v1/torrents' && method === 'PATCH') {
-    const body: Record<string, unknown> = await readBody(request);
-    const selection: MockTorrentSelection | undefined = readTorrentSelection(body, response);
+    const body: MockApi_HandleRequest_Body = await readBody(request);
+    const selection: MockApi_HandleRequest_TorrentSelection = readTorrentSelection(body, response);
     if (selection === undefined) {
       return true;
     }
-    const changes: Record<string, unknown> = (typeof body['changes'] === 'object' && body['changes'] !== null) ? body['changes'] as Record<string, unknown> : {};
+    const changes: MockApi_HandleRequest_Changes = (typeof body['changes'] === 'object' && body['changes'] !== null) ? body['changes'] as MockApi_HandleRequest_Changes : {};
+
     for (const torrent of selection['items']) {
       if (changes['bandwidthPriority'] !== undefined) {
-        torrent.bandwidthPriority = Number(changes['bandwidthPriority']) as -1 | 0 | 1;
+        torrent.bandwidthPriority = Number(changes['bandwidthPriority']) as MockApi_HandleRequest_BandwidthPriority;
       }
       if (changes['downloadLimit'] !== undefined) {
         torrent.downloadLimit = Number(changes['downloadLimit']);
@@ -10382,23 +11232,23 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
       if (changes['honorsSessionLimits'] !== undefined) {
         torrent.honorsSessionLimits = changes['honorsSessionLimits'] === true;
       }
-      if (Array.isArray(changes['labels'])) {
+      if (Array.isArray(changes['labels']) === true) {
         torrent.labels = changes['labels'].map(String);
       }
       if (changes['peerLimit'] !== undefined) {
-        torrent['peer-limit'] = Number(changes['peerLimit']);
+        Reflect.set(torrent, 'peer-limit', Number(changes['peerLimit']));
       }
       if (changes['seedIdleLimit'] !== undefined) {
         torrent.seedIdleLimit = Number(changes['seedIdleLimit']);
       }
       if (changes['seedIdleMode'] !== undefined) {
-        torrent.seedIdleMode = Number(changes['seedIdleMode']) as 0 | 1 | 2;
+        torrent.seedIdleMode = Number(changes['seedIdleMode']) as MockApi_HandleRequest_SeedIdleMode;
       }
       if (changes['seedRatioLimit'] !== undefined) {
         torrent.seedRatioLimit = Number(changes['seedRatioLimit']);
       }
       if (changes['seedRatioMode'] !== undefined) {
-        torrent.seedRatioMode = Number(changes['seedRatioMode']) as 0 | 1 | 2;
+        torrent.seedRatioMode = Number(changes['seedRatioMode']) as MockApi_HandleRequest_SeedRatioMode;
       }
       if (changes['uploadLimit'] !== undefined) {
         torrent.uploadLimit = Number(changes['uploadLimit']);
@@ -10407,7 +11257,7 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
         torrent.uploadLimited = changes['uploadLimited'] === true;
       }
     }
-    if (Array.isArray(changes['labels'])) {
+    if (Array.isArray(changes['labels']) === true) {
       saveUsedLabels(changes['labels'].map(String));
     }
     sendJSON(response, 200, torrentMutationResponse(selection));
@@ -10416,18 +11266,18 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
   }
 
   if (path === '/api/v1/torrents/profile' && method === 'PUT') {
-    const body: Record<string, unknown> = await readBody(request);
-    const selection: MockTorrentSelection | undefined = readTorrentSelection(body, response);
+    const body: MockApi_HandleRequest_Body = await readBody(request);
+    const selection: MockApi_HandleRequest_TorrentSelection = readTorrentSelection(body, response);
     if (selection === undefined) {
       return true;
     }
     if (
-      !('profileId' in body)
+      ('profileId' in body) === false
       || (
         body['profileId'] !== null
         && (
           typeof body['profileId'] !== 'string'
-          || !/^tpr-[0-9a-f]{16}$/u.test(body['profileId'])
+          || new RegExp(torrentProfileIdPattern, 'u').test(body['profileId']) === false
         )
       )
     ) {
@@ -10440,61 +11290,62 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
 
       return true;
     }
-    const profile: MockTorrentProfile | undefined = torrentProfiles.find(
-      (candidate: MockTorrentProfile): boolean => candidate['id'] === body['profileId'],
+    const profile: MockApi_HandleRequest_SelectedProfile = torrentProfiles.find(
+      (candidate) => candidate['id'] === body['profileId'],
     );
     if (typeof body['profileId'] === 'string' && profile === undefined) {
       sendError(response, 404, 'torrent_profile_not_found', 'That torrent profile no longer exists.');
 
       return true;
     }
-    const profileData: MockDefaultTorrentProfile | MockTorrentProfile = profile ?? defaultTorrentProfile;
-    const moved: Record<string, unknown>[] = [];
-    if (noVPNConnections) {
+    const profileData: MockApi_HandleRequest_ProfileData = profile ?? defaultTorrentProfile;
+    const moved: MockApi_HandleRequest_MovedTorrents = [];
+    if (noVPNConnections === true) {
       sendError(response, 503, 'transmission_unavailable', 'Transmission is unavailable for the selected connection.');
 
       return true;
     }
-    const targetConnectionId: string = (
+    const targetConnectionId: MockApi_HandleRequest_TargetConnectionId = (
       'connectionId' in profileData && profileData['connectionId'] !== null
     ) ? profileData['connectionId'] : defaultVPNConnection()['id'];
-    const targetDirectory: string = profileData['downloadDirectory'];
-    if (isConnectionBeingRemoved(targetConnectionId)) {
+    const targetDirectory: MockApi_HandleRequest_TargetDirectory = profileData['downloadDirectory'];
+    if (isConnectionBeingRemoved(targetConnectionId) === true) {
       sendConnectionBeingRemoved(response);
 
       return true;
     }
-    const resolvingSelection: boolean = selection['items'].some(
-      (torrent: MockTorrent): boolean => torrent['needsProfile'] !== null,
+    const resolvingSelection: MockApi_HandleRequest_ResolvingSelection = selection['items'].some(
+      (torrent) => torrent['needsProfile'] !== null,
     );
+
     for (const torrent of selection['items']) {
-      const resolvingProfile: boolean = torrent['needsProfile'] !== null;
-      const existingLabels: string[] = [...torrent['labels']];
-      const alreadyThere: boolean = torrent['connectionId'] === targetConnectionId
+      const resolvingProfile: MockApi_HandleRequest_ResolvingProfile = torrent['needsProfile'] !== null;
+      const existingLabels: MockApi_HandleRequest_ExistingLabels = [...torrent['labels']];
+      const alreadyThere: MockApi_HandleRequest_AlreadyThere = torrent['connectionId'] === targetConnectionId
         && dataPathsEqualIgnoringCase(torrent['downloadDir'], targetDirectory);
-      const connectionChanged: boolean = torrent['connectionId'] !== targetConnectionId;
-      torrent.profileId = profile?.['id'] ?? null;
+      const connectionChanged: MockApi_HandleRequest_ConnectionChanged = torrent['connectionId'] !== targetConnectionId;
+      torrent.profileId = ((profile !== undefined) ? profile['id'] : undefined) ?? null;
       torrent.needsProfile = null;
       torrent.connectionId = targetConnectionId;
       torrent.downloadDir = targetDirectory;
-      if (connectionChanged) {
-        torrent.id = Math.max(0, ...torrents.map((candidate: MockTorrent): number => candidate['id'])) + 1;
+      if (connectionChanged === true) {
+        torrent.id = Math.max(0, ...torrents.map((candidate) => candidate['id'])) + 1;
       }
       moved.push({
         hash: torrent['hashString'],
         id: torrent['id'],
         name: torrent['name'],
-        result: (alreadyThere) ? 'already-there' : 'moved',
-        ...((alreadyThere || torrentMoveWarnings.length === 0) ? {} : { warnings: torrentMoveWarnings }),
+        result: (alreadyThere === true) ? 'already-there' : 'moved',
+        ...((alreadyThere === true || torrentMoveWarnings.length === 0) ? {} : { warnings: torrentMoveWarnings }),
       });
-      if (body['applyOptions'] === true || resolvingProfile) {
+      if (body['applyOptions'] === true || resolvingProfile === true) {
         applyTorrentProfileOptions(torrent, profileData);
-        if (resolvingProfile) {
+        if (resolvingProfile === true) {
           torrent.labels = mergeTorrentLabels(existingLabels, profileData['labels']);
         }
       }
-      if (resolvingProfile) {
-        if (profileData['startPaused']) {
+      if (resolvingProfile === true) {
+        if (profileData['startPaused'] === true) {
           torrent.status = 0;
         } else if (torrent['percentDone'] >= 1) {
           torrent.status = 6;
@@ -10504,27 +11355,30 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
       }
     }
     if (
-      (body['applyOptions'] === true || resolvingSelection)
+      (
+        body['applyOptions'] === true
+        || resolvingSelection === true
+      )
       && profileData['options']['queue'] === 'top'
     ) {
       moveTorrentsToQueueTop(selection['items']);
     }
-    if (body['applyOptions'] === true || resolvingSelection) {
-      saveUsedLabels(selection['items'].flatMap((torrent: MockTorrent): string[] => torrent['labels']));
+    if (body['applyOptions'] === true || resolvingSelection === true) {
+      saveUsedLabels(selection['items'].flatMap((torrent) => torrent['labels']));
     }
     sendJSON(response, 200, {
       ...torrentMutationResponse(selection),
-      applyOptions: body['applyOptions'] === true || resolvingSelection,
+      applyOptions: body['applyOptions'] === true || resolvingSelection === true,
       moved,
-      profileId: profile?.['id'] ?? null,
+      profileId: ((profile !== undefined) ? profile['id'] : undefined) ?? null,
     });
 
     return true;
   }
 
   if (path === '/api/v1/torrents/actions' && method === 'POST') {
-    const body: Record<string, unknown> = await readBody(request);
-    const selection: MockTorrentSelection | undefined = readTorrentSelection(body, response);
+    const body: MockApi_HandleRequest_Body = await readBody(request);
+    const selection: MockApi_HandleRequest_TorrentSelection = readTorrentSelection(body, response);
     if (selection === undefined) {
       return true;
     }
@@ -10539,14 +11393,14 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
   }
 
   if (path === '/api/v1/torrents/remove' && method === 'POST') {
-    const body: Record<string, unknown> = await readBody(request);
-    const selection: MockTorrentSelection | undefined = readTorrentSelection(body, response);
+    const body: MockApi_HandleRequest_Body = await readBody(request);
+    const selection: MockApi_HandleRequest_TorrentSelection = readTorrentSelection(body, response);
     if (selection === undefined) {
       return true;
     }
 
     for (const selectedTorrent of selection['items']) {
-      const index: number = torrents.indexOf(selectedTorrent);
+      const index: MockApi_HandleRequest_Index = torrents.indexOf(selectedTorrent);
 
       if (index >= 0) {
         torrents.splice(index, 1);
@@ -10559,22 +11413,22 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
   }
 
   if (path === '/api/v1/torrents/torrent-files' && method === 'POST') {
-    const body: Record<string, unknown> = await readBody(request);
-    const selection: MockTorrentSelection | undefined = readTorrentSelection(body, response);
+    const body: MockApi_HandleRequest_Body = await readBody(request);
+    const selection: MockApi_HandleRequest_TorrentSelection = readTorrentSelection(body, response);
     if (selection === undefined) {
       return true;
     }
-    const downloadable: MockTorrent[] = selection['items'].filter(
-      (torrent: MockTorrent): boolean => torrent['metadataPercentComplete'] >= 1,
+    const downloadable: MockApi_HandleRequest_TorrentItems = selection['items'].filter(
+      (torrent) => torrent['metadataPercentComplete'] >= 1,
     );
-    const requestedCount: number = (selection['field'] === 'hashes') ? selection['hashes'].length : selection['ids'].length;
-    const [firstTorrent] = downloadable;
+    const requestedCount: MockApi_HandleRequest_RequestedCount = (selection['field'] === 'hashes') ? selection['hashes'].length : selection['ids'].length;
+    const firstTorrent: MockApi_HandleRequest_FirstTorrent = downloadable[0];
     if (firstTorrent === undefined) {
       sendError(response, 409, 'torrent_file_unavailable', 'There\'s no .torrent file yet. Transmission saves one once a torrent has its metadata.');
 
       return true;
     }
-    const downloadHeaders: Record<string, string> = {
+    const downloadHeaders: MockApi_HandleRequest_DownloadHeaders = {
       'Cache-Control': 'no-store',
       'X-Torrent-Files-Skipped': String(requestedCount - downloadable.length),
     };
@@ -10591,7 +11445,7 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
       ...downloadHeaders,
       'Content-Disposition': attachmentDisposition(`transmission-vpn-torrents-${new Date().toISOString().slice(0, 10)}.zip`),
       'Content-Type': 'application/zip',
-    }).end(storedZip(downloadable.map((torrent: MockTorrent): MockZipFile => ({
+    }).end(storedZip(downloadable.map((torrent): MockApi_HandleRequest_ZipFile => ({
       content: mockTorrentFile(torrent),
       name: torrentDownloadName(torrent),
     }))));
@@ -10600,31 +11454,37 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
   }
 
   if (path === '/api/v1/torrents/contents' && method === 'POST') {
-    const body: Record<string, unknown> = await readBody(request);
-    const selection: MockTorrentSelection | undefined = readTorrentSelection(body, response);
+    const body: MockApi_HandleRequest_Body = await readBody(request);
+    const selection: MockApi_HandleRequest_TorrentSelection = readTorrentSelection(body, response);
     if (selection === undefined) {
       return true;
     }
-    const finished: MockTorrent[] = selection['items'].filter(
-      (torrent: MockTorrent): boolean => torrent['metadataPercentComplete'] >= 1 && torrent['leftUntilDone'] === 0 && torrent['sizeWhenDone'] > 0,
+    const finished: MockApi_HandleRequest_TorrentItems = selection['items'].filter(
+      (torrent) => (
+        torrent['metadataPercentComplete'] >= 1
+        && torrent['leftUntilDone'] === 0
+        && torrent['sizeWhenDone'] > 0
+      ),
     );
-    const [firstTorrent] = finished;
+    const firstTorrent: MockApi_HandleRequest_FirstTorrent = finished[0];
     if (firstTorrent === undefined) {
       sendError(response, 409, 'torrent_contents_unfinished', 'These torrents haven\'t finished downloading yet.');
 
       return true;
     }
-    const requestedCount: number = (selection['field'] === 'hashes') ? selection['hashes'].length : selection['ids'].length;
-    let fileName: string = `transmission-vpn-downloads-${new Date().toISOString().slice(0, 10)}.zip`;
+    const requestedCount: MockApi_HandleRequest_RequestedCount = (selection['field'] === 'hashes') ? selection['hashes'].length : selection['ids'].length;
+    let fileName: MockApi_HandleRequest_FileName = `transmission-vpn-downloads-${new Date().toISOString().slice(0, 10)}.zip`;
     if (requestedCount === 1) {
-      fileName = torrentDownloadName(firstTorrent).replace(/\.torrent$/u, '.zip');
+      fileName = torrentDownloadName(firstTorrent).replace(new RegExp(torrentExtensionPattern, 'u'), '.zip');
     }
-    const content: Buffer = storedZip(finished.flatMap(mockFinishedFiles));
-    const token: string = `tvdl_mock${String(mockContentDownloads.size + 1)}`;
+    const content: MockApi_HandleRequest_Content = storedZip(finished.flatMap(mockFinishedFiles));
+    const token: MockApi_HandleRequest_DownloadToken = `tvdl_mock${String(mockContentDownloads.size + 1)}`;
+
     mockContentDownloads.set(token, {
       content,
       fileName,
     });
+
     sendJSON(response, 201, {
       fileName,
       path: `/api/v1/torrents/contents/${token}`,
@@ -10636,9 +11496,9 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
     return true;
   }
 
-  const contentDownloadMatch: RegExpExecArray | null = /^\/api\/v1\/torrents\/contents\/(tvdl_[\w-]+)$/u.exec(path);
+  const contentDownloadMatch: MockApi_HandleRequest_ContentDownloadMatch = new RegExp(contentDownloadPathPattern, 'u').exec(path);
   if (contentDownloadMatch !== null && method === 'GET') {
-    const download: MockContentDownload | undefined = mockContentDownloads.get(contentDownloadMatch[1] ?? '');
+    const download: MockApi_HandleRequest_Download = mockContentDownloads.get(contentDownloadMatch[1] ?? '');
     if (download === undefined) {
       sendError(response, 404, 'download_expired', 'This download has expired. Start it again from the torrent\'s menu.');
 
@@ -10655,8 +11515,8 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
   }
 
   if (path === '/api/v1/torrents/rename' && method === 'POST') {
-    const body: Record<string, unknown> = await readBody(request);
-    const selection: MockTorrentSelection | undefined = readTorrentSelection(body, response);
+    const body: MockApi_HandleRequest_Body = await readBody(request);
+    const selection: MockApi_HandleRequest_TorrentSelection = readTorrentSelection(body, response);
     if (selection === undefined) {
       return true;
     }
@@ -10665,7 +11525,7 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
 
       return true;
     }
-    const torrent: MockTorrent = selection['items'][0] as MockTorrent;
+    const torrent: MockApi_HandleRequest_RenamedTorrent = selection['items'][0] as MockApi_HandleRequest_RenamedTorrent;
     if (String(body['path'] ?? '') === torrent['name']) {
       torrent.name = String(body['name'] ?? torrent['name']);
     }
@@ -10677,10 +11537,10 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
     return true;
   }
 
-  const detailMatch: RegExpMatchArray | null = path.match(/^\/api\/v1\/torrents\/(\d+)$/);
+  const detailMatch: MockApi_HandleRequest_DetailMatch = path.match(new RegExp(torrentDetailPathPattern));
 
   if (detailMatch !== null) {
-    const torrent: MockTorrent | undefined = torrents.find((candidate: MockTorrent): boolean => candidate['id'] === Number(detailMatch[1]));
+    const torrent: MockApi_HandleRequest_DetailTorrent = torrents.find((candidate) => candidate['id'] === Number(detailMatch[1]));
 
     if (torrent === undefined) {
       sendError(response, 404, 'torrent_not_found', 'That torrent no longer exists.');
@@ -10697,7 +11557,7 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
         0,
         1,
         2,
-      ].map((fileIndex: number): Record<string, unknown> => ({
+      ].map((fileIndex) => ({
         bytesCompleted: Math.round(torrent['downloadedEver'] * ([
           0.8,
           0.15,
@@ -10722,7 +11582,7 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
         0,
         1,
         2,
-      ].map((fileIndex: number): Record<string, unknown> => ({
+      ].map((fileIndex) => ({
         bytesCompleted: Math.round(torrent['downloadedEver'] * ([
           0.8,
           0.15,
@@ -10734,7 +11594,7 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
       magnetLink: `magnet:?xt=urn:btih:${torrent['hashString']}&dn=${encodeURIComponent(torrent['name'])}`,
       manualAnnounceTime: Math.floor(Date.now() / 1000) - 60,
       maxConnectedPeers: torrent['peer-limit'],
-      peers: Array.from({ length: Math.min(torrent['peersConnected'], 6) }, (_unused: unknown, peerIndex: number): Record<string, unknown> => ({
+      peers: Array.from({ length: Math.min(torrent['peersConnected'], 6) }, (_unused, peerIndex) => ({
         address: `203.0.113.${20 + (peerIndex * 7)}`,
         clientName: [
           'qBittorrent 5.0.1',
@@ -10770,7 +11630,11 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
         0,
       ],
       startDate: torrent['addedDate'],
-      trackerList: 'udp://tracker.opentrackr.org:1337/announce\n\nhttps://tracker.example.org/announce',
+      trackerList: [
+        'udp://tracker.opentrackr.org:1337/announce',
+        '',
+        'https://tracker.example.org/announce',
+      ].join('\n'),
       trackerStats: [
         {
           announce: 'udp://tracker.opentrackr.org:1337/announce',
@@ -10836,19 +11700,25 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
  * reviewed with `vite --mode mock`, without a VPN or a running appliance. Sign in as
  * `admin` with the password `transmission`; the authenticator code is always 123456.
  *
- * @returns {Plugin}
+ * @returns {MockApi_MockApi_Returns}
  *
  * @since 2.0.0
  */
-export const mockApi = (): Plugin => ({
+export const mockApi = (): MockApi_MockApi_Returns => ({
   name: 'transmission-vpn-mock-api',
-  configureServer: (server): void => {
-    server.middlewares.use((request: IncomingMessage, response: ServerResponse, next: () => void): void => {
-      void handleRequest(request, response).then((handled: boolean): void => {
-        if (!handled) {
+  configureServer: (server) => {
+    server.middlewares.use((request: MockApi_MockApi_Request, response: MockApi_MockApi_Response, next: MockApi_MockApi_Next) => {
+      void handleRequest(request, response).then((handled) => {
+        if (handled === false) {
           next();
         }
+
+        return;
       });
+
+      return;
     });
+
+    return;
   },
 });

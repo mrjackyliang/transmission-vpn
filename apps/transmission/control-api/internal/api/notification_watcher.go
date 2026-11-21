@@ -10,6 +10,7 @@ import (
 
 	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/controller"
 	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/notifications"
+	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/transmissionrpc"
 )
 
 // notificationWatchInterval is how often the watcher looks at the VPN and the torrents
@@ -26,14 +27,37 @@ const maximumListedTorrents = 5
 
 // watchedTorrent is the part of a torrent the watcher needs from Transmission.
 type watchedTorrent struct {
-	HashString   string `json:"hashString"`
-	Name         string `json:"name"`
-	DoneDate     int64  `json:"doneDate"`
-	Error        int    `json:"error"`
-	ErrorString  string `json:"errorString"`
-	DownloadDir  string `json:"downloadDir"`
-	TotalSize    int64  `json:"totalSize"`
-	ConnectionID string `json:"connectionId"`
+	HashString   string
+	Name         string
+	DoneDate     int64
+	Error        int
+	ErrorString  string
+	DownloadDir  string
+	TotalSize    int64
+	ConnectionID string
+}
+
+func decodeWatchedTorrent(torrent transmissionrpc.Torrent) (watchedTorrent, error) {
+	var decoded watchedTorrent
+	fields := []struct {
+		field  transmissionrpc.TorrentField
+		target any
+	}{
+		{field: transmissionrpc.TorrentFieldHashString, target: &decoded.HashString},
+		{field: transmissionrpc.TorrentFieldName, target: &decoded.Name},
+		{field: transmissionrpc.TorrentFieldDoneDate, target: &decoded.DoneDate},
+		{field: transmissionrpc.TorrentFieldError, target: &decoded.Error},
+		{field: transmissionrpc.TorrentFieldErrorString, target: &decoded.ErrorString},
+		{field: transmissionrpc.TorrentFieldDownloadDirectory, target: &decoded.DownloadDir},
+		{field: transmissionrpc.TorrentFieldTotalSize, target: &decoded.TotalSize},
+	}
+	for _, field := range fields {
+		if err := torrent.DecodeValue(field.field, field.target); err != nil {
+			return watchedTorrent{}, err
+		}
+	}
+
+	return decoded, nil
 }
 
 // watchedTorrentResult keeps one daemon's answer independent from its siblings.
@@ -123,26 +147,34 @@ func newNotificationWatcher(server *Server) *notificationWatcher {
 				waitGroup.Add(1)
 				go func() {
 					defer waitGroup.Done()
-					var response struct {
-						Torrents []watchedTorrent `json:"torrents"`
-					}
-					err := daemon.Client.Call(ctx, "torrent-get", map[string]any{
-						"fields": []string{
-							"doneDate",
-							"downloadDir",
-							"error",
-							"errorString",
-							"hashString",
-							"name",
-							"totalSize",
-						},
-					}, &response)
-					for torrentIndex := range response.Torrents {
-						response.Torrents[torrentIndex].ConnectionID = daemon.ConnectionID
+					response, err := daemon.Client.ListTorrents(
+						ctx,
+						transmissionrpc.ListTorrentsRequest{Fields: []transmissionrpc.TorrentField{
+							transmissionrpc.TorrentFieldDoneDate,
+							transmissionrpc.TorrentFieldDownloadDirectory,
+							transmissionrpc.TorrentFieldError,
+							transmissionrpc.TorrentFieldErrorString,
+							transmissionrpc.TorrentFieldHashString,
+							transmissionrpc.TorrentFieldName,
+							transmissionrpc.TorrentFieldTotalSize,
+						}},
+					)
+					watched := make([]watchedTorrent, 0, len(response.Torrents))
+					if err == nil {
+						for _, torrent := range response.Torrents {
+							decoded, decodeError := decodeWatchedTorrent(torrent)
+							if decodeError != nil {
+								err = decodeError
+
+								break
+							}
+							decoded.ConnectionID = daemon.ConnectionID
+							watched = append(watched, decoded)
+						}
 					}
 					results[index] = watchedTorrentResult{
 						ConnectionID: daemon.ConnectionID,
-						Torrents:     response.Torrents,
+						Torrents:     watched,
 						Error:        err,
 					}
 				}()

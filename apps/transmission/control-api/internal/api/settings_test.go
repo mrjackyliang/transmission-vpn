@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/transmissionrpc"
 )
 
 // TestSettingsOmitConnectionOwnedKeys keeps retired values out of the public schema.
@@ -211,7 +213,7 @@ func TestPendingRestartKeysFollowSavesAndRestart(t *testing.T) {
 	_, client := newFakeTransmissionDaemon(t, func(recordedTransmissionCall) any {
 		return map[string]any{}
 	})
-	server.transmission = client
+	server.transmission = transmissionrpc.NewAdapter(client)
 
 	readKeys := func() []string {
 		t.Helper()
@@ -298,7 +300,7 @@ func TestSettingsSaveWaitsForRestartSnapshot(testingObject *testing.T) {
 
 		return map[string]any{}
 	})
-	server.transmission = client
+	server.transmission = transmissionrpc.NewAdapter(client)
 
 	firstSave := performRequest(
 		testingObject,

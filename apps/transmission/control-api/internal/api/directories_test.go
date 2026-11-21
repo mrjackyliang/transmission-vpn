@@ -13,6 +13,7 @@ import (
 	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/directorybrowser"
 	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/settings"
 	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/storage"
+	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/transmissionrpc"
 )
 
 // folderPickerTestBrowser provides mutable directory snapshots to API tests.
@@ -665,7 +666,7 @@ func TestDeleteStorageDirectoryReportsUnavailableTorrentLocations(testingObject 
 	_, client := newFakeTransmissionDaemon(testingObject, func(recordedTransmissionCall) any {
 		return fakeTransmissionResponse{Status: http.StatusServiceUnavailable}
 	})
-	server.transmission = client
+	server.transmission = transmissionrpc.NewAdapter(client)
 	server.transmissionClients = nil
 	browser := newFolderPickerTestBrowser(
 		directorybrowser.DirectoryEntry{
@@ -949,7 +950,7 @@ func TestStorageDirectoryTorrentReadFailureDisablesEveryDelete(testingObject *te
 	fake, client := newFakeTransmissionDaemon(testingObject, func(call recordedTransmissionCall) any {
 		return fakeTransmissionResponse{Status: http.StatusServiceUnavailable}
 	})
-	server.transmission = client
+	server.transmission = transmissionrpc.NewAdapter(client)
 	server.transmissionClients = nil
 	server.directoryBrowser = newFolderPickerTestBrowser(
 		directorybrowser.DirectoryEntry{
@@ -1039,7 +1040,7 @@ func TestStorageDirectoryNormalizesLiveTorrentDirectories(testingObject *testing
 			{"id": 2, "downloadDir": "/outside"},
 		}}
 	})
-	server.transmission = client
+	server.transmission = transmissionrpc.NewAdapter(client)
 	server.transmissionClients = nil
 	server.directoryBrowser = newFolderPickerTestBrowser(
 		directorybrowser.DirectoryEntry{Name: "iso", Path: "/data/iso", Empty: true, Readable: true},

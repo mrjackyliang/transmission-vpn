@@ -35,60 +35,127 @@ import {
 } from '@/web/theme.ts';
 import { useEscapeKey } from '@/web/use-escape-key.ts';
 
-import type {
-  ReactElement,
-  ReactNode,
-} from 'react';
+import type { ReactElement } from 'react';
 
 import type {
-  Web_Components_AccountMenu_Props,
-  Web_Components_AppShell_Props,
-  Web_Components_View,
-} from '@/types/web/components.d.ts';
+  Web_AppShell_AccountMenu_AppearanceId,
+  Web_AppShell_AccountMenu_Detail,
+  Web_AppShell_AccountMenu_OnLogout,
+  Web_AppShell_AccountMenu_OnViewChange,
+  Web_AppShell_AccountMenu_Open,
+  Web_AppShell_AccountMenu_OpenState,
+  Web_AppShell_AccountMenu_Props,
+  Web_AppShell_AccountMenu_Returns,
+  Web_AppShell_AccountMenu_SetOpen,
+  Web_AppShell_AccountMenu_SetThemePreference,
+  Web_AppShell_AccountMenu_ThemePreference,
+  Web_AppShell_AccountMenu_ThemePreferenceState,
+  Web_AppShell_AccountMenu_Username,
+  Web_AppShell_AppShell_AccountDetail,
+  Web_AppShell_AppShell_ActiveView,
+  Web_AppShell_AppShell_CanOpen,
+  Web_AppShell_AppShell_ChangeView,
+  Web_AppShell_AppShell_ChangeView_Returns,
+  Web_AppShell_AppShell_ChangeView_View,
+  Web_AppShell_AppShell_Children,
+  Web_AppShell_AppShell_ClosePhoneNavigation,
+  Web_AppShell_AppShell_ClosePhoneNavigation_Returns,
+  Web_AppShell_AppShell_Current,
+  Web_AppShell_AppShell_CurrentNavSheetLevel,
+  Web_AppShell_AppShell_CustomSheet,
+  Web_AppShell_AppShell_Expanded,
+  Web_AppShell_AppShell_FrameId,
+  Web_AppShell_AppShell_HandleMoreTab,
+  Web_AppShell_AppShell_HandleMoreTab_Returns,
+  Web_AppShell_AppShell_HandlePhoneTab,
+  Web_AppShell_AppShell_HandlePhoneTab_Action,
+  Web_AppShell_AppShell_HandlePhoneTab_Item,
+  Web_AppShell_AppShell_HandlePhoneTab_NavSheetRootId,
+  Web_AppShell_AppShell_HandlePhoneTab_OpenSheetId,
+  Web_AppShell_AppShell_HandlePhoneTab_PhoneSheetId,
+  Web_AppShell_AppShell_HandlePhoneTab_Returns,
+  Web_AppShell_AppShell_HasSheet,
+  Web_AppShell_AppShell_MoreCurrent,
+  Web_AppShell_AppShell_Navigation,
+  Web_AppShell_AppShell_NavigationItems,
+  Web_AppShell_AppShell_NavSheetRoot,
+  Web_AppShell_AppShell_NavSheetStack,
+  Web_AppShell_AppShell_NavSheetStackState,
+  Web_AppShell_AppShell_Notice,
+  Web_AppShell_AppShell_OnLogout,
+  Web_AppShell_AppShell_OnViewChange,
+  Web_AppShell_AppShell_PhoneNavigation,
+  Web_AppShell_AppShell_PhonePageTop,
+  Web_AppShell_AppShell_PhoneSheet,
+  Web_AppShell_AppShell_PhoneSheetLevel,
+  Web_AppShell_AppShell_PopPhoneNavigation,
+  Web_AppShell_AppShell_PopPhoneNavigation_Returns,
+  Web_AppShell_AppShell_Props,
+  Web_AppShell_AppShell_PushPhoneNavigation,
+  Web_AppShell_AppShell_PushPhoneNavigation_Level,
+  Web_AppShell_AppShell_PushPhoneNavigation_Returns,
+  Web_AppShell_AppShell_RenderDesktopItem,
+  Web_AppShell_AppShell_RenderDesktopItem_Item,
+  Web_AppShell_AppShell_RenderDesktopItem_Returns,
+  Web_AppShell_AppShell_RenderDesktopPage,
+  Web_AppShell_AppShell_RenderDesktopPage_Item,
+  Web_AppShell_AppShell_RenderDesktopPage_Page,
+  Web_AppShell_AppShell_RenderDesktopPage_Returns,
+  Web_AppShell_AppShell_ResizeObserver,
+  Web_AppShell_AppShell_Returns,
+  Web_AppShell_AppShell_SetNavSheetStack,
+  Web_AppShell_AppShell_SetSidebarNavigationAtEnd,
+  Web_AppShell_AppShell_SetSidebarNavigationCanScroll,
+  Web_AppShell_AppShell_SidebarNavigationAtEnd,
+  Web_AppShell_AppShell_SidebarNavigationAtEndClassName,
+  Web_AppShell_AppShell_SidebarNavigationAtEndState,
+  Web_AppShell_AppShell_SidebarNavigationCanScroll,
+  Web_AppShell_AppShell_SidebarNavigationCanScrollState,
+  Web_AppShell_AppShell_SidebarNavigationRef,
+  Web_AppShell_AppShell_SidebarNavigationRefValue,
+  Web_AppShell_AppShell_SidebarNavigationScrollableClassName,
+  Web_AppShell_AppShell_SidebarNavigationSlot,
+  Web_AppShell_AppShell_SidebarTop,
+  Web_AppShell_AppShell_StackedNavSheetLevel,
+  Web_AppShell_AppShell_Status,
+  Web_AppShell_AppShell_UpdateSidebarOverflow,
+  Web_AppShell_AppShell_UpdateSidebarOverflow_CanScroll,
+  Web_AppShell_AppShell_UpdateSidebarOverflow_Returns,
+  Web_AppShell_AppShell_Username,
+} from '@/types/web/app-shell.d.ts';
 import type {
   Web_Navigation_Item,
-  Web_Navigation_Items,
   Web_Navigation_Page,
-  Web_Navigation_PhoneTabAction,
-  Web_Navigation_SheetLevel,
-  Web_Navigation_SheetStack,
-  Web_Navigation_Tabs,
 } from '@/types/web/navigation.d.ts';
-import type {
-  Web_Theme_Option,
-  Web_Theme_Preference,
-} from '@/types/web/theme.d.ts';
+import type { Web_Theme_Option } from '@/types/web/theme.d.ts';
 
 /**
- * App Shell - Account menu.
+ * App Shell - Account Menu.
  *
  * Keeps appearance, account security, and sign-out actions identical at every
  * screen size while allowing an app to add a short account detail.
  *
- * @param {Web_Components_AccountMenu_Props} props - Props.
+ * @param {Web_AppShell_AccountMenu_Props} props - Props.
  *
- * @returns {ReactElement}
+ * @returns {Web_AppShell_AccountMenu_Returns}
  *
  * @since 2.0.0
  */
-const AccountMenu = ({
-  detail,
-  onLogout,
-  onViewChange,
-  username,
-}: Web_Components_AccountMenu_Props): ReactElement => {
-  const [
-    open,
-    setOpen,
-  ] = useState<boolean>(false);
-  const [
-    themePreference,
-    setThemePreference,
-  ] = useState<Web_Theme_Preference>(readThemePreference);
-  const appearanceId: string = useId();
+const AccountMenu = (props: Web_AppShell_AccountMenu_Props): Web_AppShell_AccountMenu_Returns => {
+  const detail: Web_AppShell_AccountMenu_Detail = props['detail'];
+  const onLogout: Web_AppShell_AccountMenu_OnLogout = props['onLogout'];
+  const onViewChange: Web_AppShell_AccountMenu_OnViewChange = props['onViewChange'];
+  const username: Web_AppShell_AccountMenu_Username = props['username'];
+  const openState: Web_AppShell_AccountMenu_OpenState = useState<Web_AppShell_AccountMenu_Open>(false);
+  const open: Web_AppShell_AccountMenu_Open = openState[0];
+  const setOpen: Web_AppShell_AccountMenu_SetOpen = openState[1];
+  const themePreferenceState: Web_AppShell_AccountMenu_ThemePreferenceState = useState<Web_AppShell_AccountMenu_ThemePreference>(readThemePreference);
+  const themePreference: Web_AppShell_AccountMenu_ThemePreference = themePreferenceState[0];
+  const setThemePreference: Web_AppShell_AccountMenu_SetThemePreference = themePreferenceState[1];
+  const appearanceId: Web_AppShell_AccountMenu_AppearanceId = useId();
 
-  useEffect((): void => applyThemePreference(themePreference), [themePreference]);
-  useEscapeKey((): void => setOpen(false), open);
+  useEffect(() => applyThemePreference(themePreference), [themePreference]);
+  useEscapeKey(() => setOpen(false), open);
 
   return (
     <div className="account">
@@ -96,7 +163,7 @@ const AccountMenu = ({
         aria-expanded={open}
         aria-haspopup="menu"
         className="account-button"
-        onClick={(): void => setOpen(!open)}
+        onClick={() => setOpen(open === false)}
         type="button"
       >
         <span aria-hidden="true" className="avatar">{username.slice(0, 1).toUpperCase()}</span>
@@ -107,12 +174,12 @@ const AccountMenu = ({
         <Icon name="more" size={18} />
       </button>
 
-      {(open) ? (
+      {(open === true) ? (
         <>
           <button
             aria-label="Close menu"
             className="menu-scrim"
-            onClick={(): void => setOpen(false)}
+            onClick={() => setOpen(false)}
             type="button"
           />
           <div className="menu account-menu" role="menu">
@@ -123,7 +190,7 @@ const AccountMenu = ({
                   <button
                     aria-pressed={themePreference === option['id']}
                     key={option['id']}
-                    onClick={(): void => setThemePreference(option['id'])}
+                    onClick={() => setThemePreference(option['id'])}
                     type="button"
                   >
                     {option['label']}
@@ -133,9 +200,11 @@ const AccountMenu = ({
             </div>
             <hr />
             <button
-              onClick={(): void => {
+              onClick={() => {
                 setOpen(false);
                 onViewChange('security');
+
+                return;
               }}
               role="menuitem"
               type="button"
@@ -144,9 +213,11 @@ const AccountMenu = ({
               {appConfig['securityLabel']}
             </button>
             <button
-              onClick={(): void => {
+              onClick={() => {
                 setOpen(false);
                 onLogout();
+
+                return;
               }}
               role="menuitem"
               type="button"
@@ -162,61 +233,58 @@ const AccountMenu = ({
 };
 
 /**
- * App Shell.
+ * App Shell - App Shell.
  *
  * Renders the byte-for-byte shared desktop and phone frame around per-app
  * navigation data, status, server controls, and custom sheet content.
  *
- * @param {Web_Components_AppShell_Props} props - Props.
+ * @param {Web_AppShell_AppShell_Props} props - Props.
  *
- * @returns {ReactElement}
+ * @returns {Web_AppShell_AppShell_Returns}
  *
  * @since 2.0.0
  */
-export const AppShell = ({
-  accountDetail,
-  activeView,
-  canOpen = (): boolean => true,
-  children,
-  notice,
-  onLogout,
-  onViewChange,
-  phonePageTop,
-  phoneSheet,
-  sidebarNavigationSlot,
-  sidebarTop,
-  status,
-  username,
-}: Web_Components_AppShell_Props): ReactElement => {
-  const [
-    navSheetStack,
-    setNavSheetStack,
-  ] = useState<Web_Navigation_SheetStack>([]);
-  const [
-    sidebarNavigationCanScroll,
-    setSidebarNavigationCanScroll,
-  ] = useState<boolean>(false);
-  const [
-    sidebarNavigationAtEnd,
-    setSidebarNavigationAtEnd,
-  ] = useState<boolean>(true);
-  const sidebarNavigationRef = useRef<HTMLDivElement>(null);
-  const navigationItems: Web_Navigation_Items = visibleNavigationItems(appNavigationItems, canOpen);
-  const phoneNavigation: Web_Navigation_Tabs = phoneTabs(navigationItems);
-  const navSheetRoot: Web_Navigation_SheetLevel | undefined = navSheetStack.at(0);
-  const stackedNavSheetLevel: Web_Navigation_SheetLevel | undefined = navSheetStack.at(-1);
-  const phoneSheetLevel: Web_Navigation_SheetLevel | undefined = (phoneSheet === undefined) ? undefined : {
+export const AppShell = (props: Web_AppShell_AppShell_Props): Web_AppShell_AppShell_Returns => {
+  const accountDetail: Web_AppShell_AppShell_AccountDetail = props['accountDetail'];
+  const activeView: Web_AppShell_AppShell_ActiveView = props['activeView'];
+  const canOpen: Web_AppShell_AppShell_CanOpen = props['canOpen'] ?? (() => true);
+  const children: Web_AppShell_AppShell_Children = props['children'];
+  const notice: Web_AppShell_AppShell_Notice = props['notice'];
+  const onLogout: Web_AppShell_AppShell_OnLogout = props['onLogout'];
+  const onViewChange: Web_AppShell_AppShell_OnViewChange = props['onViewChange'];
+  const phonePageTop: Web_AppShell_AppShell_PhonePageTop = props['phonePageTop'];
+  const phoneSheet: Web_AppShell_AppShell_PhoneSheet = props['phoneSheet'];
+  const sidebarNavigationSlot: Web_AppShell_AppShell_SidebarNavigationSlot = props['sidebarNavigationSlot'];
+  const sidebarTop: Web_AppShell_AppShell_SidebarTop = props['sidebarTop'];
+  const status: Web_AppShell_AppShell_Status = props['status'];
+  const username: Web_AppShell_AppShell_Username = props['username'];
+  const navSheetStackState: Web_AppShell_AppShell_NavSheetStackState = useState<Web_AppShell_AppShell_NavSheetStack>([]);
+  const navSheetStack: Web_AppShell_AppShell_NavSheetStack = navSheetStackState[0];
+  const setNavSheetStack: Web_AppShell_AppShell_SetNavSheetStack = navSheetStackState[1];
+  const sidebarNavigationCanScrollState: Web_AppShell_AppShell_SidebarNavigationCanScrollState = useState<Web_AppShell_AppShell_SidebarNavigationCanScroll>(false);
+  const sidebarNavigationCanScroll: Web_AppShell_AppShell_SidebarNavigationCanScroll = sidebarNavigationCanScrollState[0];
+  const setSidebarNavigationCanScroll: Web_AppShell_AppShell_SetSidebarNavigationCanScroll = sidebarNavigationCanScrollState[1];
+  const sidebarNavigationAtEndState: Web_AppShell_AppShell_SidebarNavigationAtEndState = useState<Web_AppShell_AppShell_SidebarNavigationAtEnd>(true);
+  const sidebarNavigationAtEnd: Web_AppShell_AppShell_SidebarNavigationAtEnd = sidebarNavigationAtEndState[0];
+  const setSidebarNavigationAtEnd: Web_AppShell_AppShell_SetSidebarNavigationAtEnd = sidebarNavigationAtEndState[1];
+  const sidebarNavigationRef: Web_AppShell_AppShell_SidebarNavigationRef = useRef<Web_AppShell_AppShell_SidebarNavigationRefValue>(null);
+  const navigationItems: Web_AppShell_AppShell_NavigationItems = visibleNavigationItems(appNavigationItems, canOpen);
+  const phoneNavigation: Web_AppShell_AppShell_PhoneNavigation = phoneTabs(navigationItems);
+  const navSheetRoot: Web_AppShell_AppShell_NavSheetRoot = navSheetStack.at(0);
+  const stackedNavSheetLevel: Web_AppShell_AppShell_StackedNavSheetLevel = navSheetStack.at(-1);
+  const phoneSheetLevel: Web_AppShell_AppShell_PhoneSheetLevel = (phoneSheet === undefined) ? undefined : {
     groups: [],
     id: phoneSheet['id'],
     title: phoneSheet['title'],
   };
-  const currentNavSheetLevel: Web_Navigation_SheetLevel | undefined = phoneSheetLevel ?? stackedNavSheetLevel;
-  const moreCurrent: boolean = phoneNavigation['more'].some(
-    (item: Web_Navigation_Item): boolean => navigationItemHoldsView(item, activeView),
+  const currentNavSheetLevel: Web_AppShell_AppShell_CurrentNavSheetLevel = phoneSheetLevel ?? stackedNavSheetLevel;
+  const moreCurrent: Web_AppShell_AppShell_MoreCurrent = phoneNavigation['more'].some(
+    (item) => navigationItemHoldsView(item, activeView),
   );
 
-  useEffect((): (() => void) | undefined => {
-    const navigation: HTMLDivElement | null = sidebarNavigationRef.current;
+  useEffect(() => {
+    const navigation: Web_AppShell_AppShell_Navigation = sidebarNavigationRef.current;
+
     if (sidebarNavigationSlot === undefined || navigation === null) {
       setSidebarNavigationCanScroll(false);
       setSidebarNavigationAtEnd(true);
@@ -225,125 +293,159 @@ export const AppShell = ({
     }
 
     /**
-     * App Shell - Update sidebar overflow cue.
+     * App Shell - Update Sidebar Overflow.
      *
      * Shows the bottom fade only while more navigation content remains below
      * the viewport. A one-pixel tolerance avoids subpixel rounding flicker.
      *
+     * @returns {Web_AppShell_AppShell_UpdateSidebarOverflow_Returns}
+     *
      * @since 2.0.0
      */
-    const updateSidebarOverflow = (): void => {
-      const canScroll: boolean = navigation.scrollHeight > navigation.clientHeight + 1;
+    const updateSidebarOverflow: Web_AppShell_AppShell_UpdateSidebarOverflow = (): Web_AppShell_AppShell_UpdateSidebarOverflow_Returns => {
+      const canScroll: Web_AppShell_AppShell_UpdateSidebarOverflow_CanScroll = navigation.scrollHeight > navigation.clientHeight + 1;
+
       setSidebarNavigationCanScroll(canScroll);
       setSidebarNavigationAtEnd(
-        !canScroll
+        canScroll === false
         || navigation.scrollTop + navigation.clientHeight >= navigation.scrollHeight - 1,
       );
+
+      return;
     };
 
-    const resizeObserver: ResizeObserver = new ResizeObserver(updateSidebarOverflow);
+    const resizeObserver: Web_AppShell_AppShell_ResizeObserver = new ResizeObserver(updateSidebarOverflow);
+
     resizeObserver.observe(navigation);
+
     for (const child of navigation.children) {
       resizeObserver.observe(child);
     }
-    navigation.addEventListener('scroll', updateSidebarOverflow, { passive: true });
-    const frameID: number = window.requestAnimationFrame(updateSidebarOverflow);
 
-    return (): void => {
+    navigation.addEventListener('scroll', updateSidebarOverflow, { passive: true });
+
+    const frameID: Web_AppShell_AppShell_FrameId = window.requestAnimationFrame(updateSidebarOverflow);
+
+    return () => {
       window.cancelAnimationFrame(frameID);
+
       resizeObserver.disconnect();
+
       navigation.removeEventListener('scroll', updateSidebarOverflow);
+
+      return;
     };
   }, [sidebarNavigationSlot]);
 
   /**
-   * App Shell - Close phone navigation.
+   * App Shell - Close Phone Navigation.
    *
    * Clears the complete stack for tabs, rows, chips, Escape, and the scrim.
    * A later open starts from the selected tab's root level.
    *
+   * @returns {Web_AppShell_AppShell_ClosePhoneNavigation_Returns}
+   *
    * @since 2.0.0
    */
-  const closePhoneNavigation = (): void => {
+  const closePhoneNavigation: Web_AppShell_AppShell_ClosePhoneNavigation = (): Web_AppShell_AppShell_ClosePhoneNavigation_Returns => {
     setNavSheetStack(closeNavSheetStack());
 
     if (phoneSheet !== undefined) {
       phoneSheet.onClose();
     }
+
+    return;
   };
 
   /**
-   * App Shell - Change view.
+   * App Shell - Change View.
    *
    * Closes any phone sheet before handing a page change back to the app.
    * Desktop links and phone controls therefore share one transition.
    *
-   * @param {Web_Components_View} view - View.
+   * @param {Web_AppShell_AppShell_ChangeView_View} view - View.
+   *
+   * @returns {Web_AppShell_AppShell_ChangeView_Returns}
    *
    * @since 2.0.0
    */
-  const changeView = (view: Web_Components_View): void => {
+  const changeView: Web_AppShell_AppShell_ChangeView = (view: Web_AppShell_AppShell_ChangeView_View): Web_AppShell_AppShell_ChangeView_Returns => {
     closePhoneNavigation();
     onViewChange(view);
+
+    return;
   };
 
   /**
-   * App Shell - Handle phone tab.
+   * App Shell - Handle Phone Tab.
    *
    * Opens groups as sheets, navigates plain tabs, and scrolls current pages.
    * A second tap on an open group closes its sheet without changing pages.
    *
-   * @param {Web_Navigation_Item} item - Item.
+   * @param {Web_AppShell_AppShell_HandlePhoneTab_Item} item - Item.
+   *
+   * @returns {Web_AppShell_AppShell_HandlePhoneTab_Returns}
    *
    * @since 2.0.0
    */
-  const handlePhoneTab = (item: Web_Navigation_Item): void => {
-    const openSheetId: string | undefined = phoneSheet?.['id'] ?? navSheetRoot?.['id'];
-    const action: Web_Navigation_PhoneTabAction = phoneTabAction(item, activeView, openSheetId);
+  const handlePhoneTab: Web_AppShell_AppShell_HandlePhoneTab = (item: Web_AppShell_AppShell_HandlePhoneTab_Item): Web_AppShell_AppShell_HandlePhoneTab_Returns => {
+    const phoneSheetId: Web_AppShell_AppShell_HandlePhoneTab_PhoneSheetId = (phoneSheet === undefined) ? undefined : phoneSheet['id'];
+    const navSheetRootId: Web_AppShell_AppShell_HandlePhoneTab_NavSheetRootId = (navSheetRoot === undefined) ? undefined : navSheetRoot['id'];
+    const openSheetId: Web_AppShell_AppShell_HandlePhoneTab_OpenSheetId = phoneSheetId ?? navSheetRootId;
+    const action: Web_AppShell_AppShell_HandlePhoneTab_Action = phoneTabAction(item, activeView, openSheetId);
 
     switch (action['kind']) {
       case 'close-sheet': {
         closePhoneNavigation();
 
-        return;
+        break;
       }
 
       case 'navigate': {
         changeView(action['view']);
 
-        return;
+        break;
       }
 
       case 'open-sheet': {
         closePhoneNavigation();
         setNavSheetStack(openNavSheetStack(action['level']));
 
-        return;
+        break;
       }
 
       case 'scroll-top': {
         closePhoneNavigation();
+
         window.scrollTo(0, 0);
 
-        return;
+        break;
       }
 
       default: {
-        return;
+        break;
       }
     }
+
+    return;
   };
 
   /**
-   * App Shell - Handle More tab.
+   * App Shell - Handle More Tab.
    *
    * Opens More directly because it has no page of its own.
    * A second tap closes the same root sheet and its nested levels.
    *
+   * @returns {Web_AppShell_AppShell_HandleMoreTab_Returns}
+   *
    * @since 2.0.0
    */
-  const handleMoreTab = (): void => {
-    if (phoneSheet === undefined && navSheetRoot?.['id'] === 'more') {
+  const handleMoreTab: Web_AppShell_AppShell_HandleMoreTab = (): Web_AppShell_AppShell_HandleMoreTab_Returns => {
+    if (
+      phoneSheet === undefined
+      && navSheetRoot !== undefined
+      && navSheetRoot['id'] === 'more'
+    ) {
       closePhoneNavigation();
 
       return;
@@ -351,49 +453,57 @@ export const AppShell = ({
 
     closePhoneNavigation();
     setNavSheetStack(openNavSheetStack(createMoreNavSheetLevel(phoneNavigation['more'])));
+
+    return;
   };
 
   /**
-   * App Shell - Pop phone navigation.
+   * App Shell - Pop Phone Navigation.
    *
    * Returns a nested More destination to its parent without closing the dialog.
    * The sheet component moves focus to the newly visible heading.
    *
+   * @returns {Web_AppShell_AppShell_PopPhoneNavigation_Returns}
+   *
    * @since 2.0.0
    */
-  const popPhoneNavigation = (): void => setNavSheetStack(popNavSheetStack(navSheetStack));
+  const popPhoneNavigation: Web_AppShell_AppShell_PopPhoneNavigation = (): Web_AppShell_AppShell_PopPhoneNavigation_Returns => setNavSheetStack(popNavSheetStack(navSheetStack));
 
   /**
-   * App Shell - Push phone navigation.
+   * App Shell - Push Phone Navigation.
    *
    * Adds a grouped overflow destination inside the current sheet.
    * Its parent stays available for the shared Back action.
    *
-   * @param {Web_Navigation_SheetLevel} level - Level.
+   * @param {Web_AppShell_AppShell_PushPhoneNavigation_Level} level - Level.
+   *
+   * @returns {Web_AppShell_AppShell_PushPhoneNavigation_Returns}
    *
    * @since 2.0.0
    */
-  const pushPhoneNavigation = (level: Web_Navigation_SheetLevel): void => {
+  const pushPhoneNavigation: Web_AppShell_AppShell_PushPhoneNavigation = (level: Web_AppShell_AppShell_PushPhoneNavigation_Level): Web_AppShell_AppShell_PushPhoneNavigation_Returns => {
     setNavSheetStack(pushNavSheetStack(navSheetStack, level));
+
+    return;
   };
 
   /**
-   * App Shell - Render desktop page.
+   * App Shell - Render Desktop Page.
    *
    * Renders a grouped page with its own icon and complete current-view set.
    * Role-filtered groups use the same pages on desktop and phones.
    *
-   * @param {Web_Navigation_Item} item - Item.
-   * @param {Web_Navigation_Page} page - Page.
+   * @param {Web_AppShell_AppShell_RenderDesktopPage_Item} item - Item.
+   * @param {Web_AppShell_AppShell_RenderDesktopPage_Page} page - Page.
    *
-   * @returns {ReactElement}
+   * @returns {Web_AppShell_AppShell_RenderDesktopPage_Returns}
    *
    * @since 2.0.0
    */
-  const renderDesktopPage = (
-    item: Web_Navigation_Item,
-    page: Web_Navigation_Page,
-  ): ReactElement => (
+  const renderDesktopPage: Web_AppShell_AppShell_RenderDesktopPage = (
+    item: Web_AppShell_AppShell_RenderDesktopPage_Item,
+    page: Web_AppShell_AppShell_RenderDesktopPage_Page,
+  ): Web_AppShell_AppShell_RenderDesktopPage_Returns => (
     <button
       aria-current={(navigationItemHoldsView({
         ...item,
@@ -402,10 +512,10 @@ export const AppShell = ({
           label: page['label'],
           pages: [page],
         }],
-      }, activeView)) ? 'page' : undefined}
+      }, activeView) === true) ? 'page' : undefined}
       className="nav-item"
       key={page['id']}
-      onClick={(): void => changeView(page['id'])}
+      onClick={() => changeView(page['id'])}
       type="button"
     >
       <Icon name={page['icon'] ?? item['icon']} size={18} />
@@ -414,18 +524,18 @@ export const AppShell = ({
   );
 
   /**
-   * App Shell - Render desktop item.
+   * App Shell - Render Desktop Item.
    *
    * Renders ordinary items directly and grouped items under a sidebar heading.
    * Both paths use the same app navigation data as the phone bar.
    *
-   * @param {Web_Navigation_Item} item - Item.
+   * @param {Web_AppShell_AppShell_RenderDesktopItem_Item} item - Item.
    *
-   * @returns {ReactElement}
+   * @returns {Web_AppShell_AppShell_RenderDesktopItem_Returns}
    *
    * @since 2.0.0
    */
-  const renderDesktopItem = (item: Web_Navigation_Item): ReactElement => {
+  const renderDesktopItem: Web_AppShell_AppShell_RenderDesktopItem = (item: Web_AppShell_AppShell_RenderDesktopItem_Item): Web_AppShell_AppShell_RenderDesktopItem_Returns => {
     if (item['isGroup'] === true) {
       return (
         <div className="nav-group" key={item['id']}>
@@ -437,10 +547,10 @@ export const AppShell = ({
 
     return (
       <button
-        aria-current={(navigationItemHoldsView(item, activeView)) ? 'page' : undefined}
+        aria-current={(navigationItemHoldsView(item, activeView) === true) ? 'page' : undefined}
         className="nav-item"
         key={item['id']}
-        onClick={(): void => changeView(firstNavigationView(item))}
+        onClick={() => changeView(firstNavigationView(item))}
         type="button"
       >
         <Icon name={item['icon']} size={18} />
@@ -449,7 +559,9 @@ export const AppShell = ({
     );
   };
 
-  const customSheet: ReactNode = phoneSheet?.['content'];
+  const customSheet: Web_AppShell_AppShell_CustomSheet = (phoneSheet === undefined) ? undefined : phoneSheet['content'];
+  const sidebarNavigationScrollableClassName: Web_AppShell_AppShell_SidebarNavigationScrollableClassName = (sidebarNavigationCanScroll === true) ? ' is-scrollable' : '';
+  const sidebarNavigationAtEndClassName: Web_AppShell_AppShell_SidebarNavigationAtEndClassName = (sidebarNavigationAtEnd === true) ? ' is-at-end' : '';
 
   return (
     <div className="app">
@@ -467,7 +579,7 @@ export const AppShell = ({
 
         {(sidebarNavigationSlot === undefined) ? null : (
           <div
-            className={`sidebar-navigation-slot${(sidebarNavigationCanScroll) ? ' is-scrollable' : ''}${(sidebarNavigationAtEnd) ? ' is-at-end' : ''}`}
+            className={`sidebar-navigation-slot${sidebarNavigationScrollableClassName}${sidebarNavigationAtEndClassName}`}
             ref={sidebarNavigationRef}
           >
             {sidebarNavigationSlot}
@@ -542,18 +654,18 @@ export const AppShell = ({
 
       <nav aria-label="Main" className="tab-bar">
         {phoneNavigation['tabs'].map((item: Web_Navigation_Item): ReactElement => {
-          const current: boolean = navigationItemHoldsView(item, activeView);
-          const hasSheet: boolean = navigationItemHasSheet(item);
-          const expanded: boolean = navSheetRoot?.['id'] === item['id'];
+          const current: Web_AppShell_AppShell_Current = navigationItemHoldsView(item, activeView);
+          const hasSheet: Web_AppShell_AppShell_HasSheet = navigationItemHasSheet(item);
+          const expanded: Web_AppShell_AppShell_Expanded = navSheetRoot !== undefined && navSheetRoot['id'] === item['id'];
 
           return (
             <button
-              aria-controls={(hasSheet) ? PHONE_NAV_SHEET_ID : undefined}
-              aria-current={(current) ? 'page' : undefined}
-              aria-expanded={(hasSheet) ? expanded : undefined}
+              aria-controls={(hasSheet === true) ? PHONE_NAV_SHEET_ID : undefined}
+              aria-current={(current === true) ? 'page' : undefined}
+              aria-expanded={(hasSheet === true) ? expanded : undefined}
               className="tab-bar-item"
               key={item['id']}
-              onClick={(): void => handlePhoneTab(item)}
+              onClick={() => handlePhoneTab(item)}
               type="button"
             >
               <Icon name={item['icon']} size={20} />
@@ -564,8 +676,8 @@ export const AppShell = ({
         {(phoneNavigation['more'].length === 0) ? null : (
           <button
             aria-controls={PHONE_NAV_SHEET_ID}
-            aria-current={(moreCurrent) ? 'page' : undefined}
-            aria-expanded={navSheetRoot?.['id'] === 'more'}
+            aria-current={(moreCurrent === true) ? 'page' : undefined}
+            aria-expanded={navSheetRoot !== undefined && navSheetRoot['id'] === 'more'}
             className="tab-bar-item"
             onClick={handleMoreTab}
             type="button"

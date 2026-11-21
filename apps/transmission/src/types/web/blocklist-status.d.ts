@@ -16,6 +16,7 @@ export type Web_BlocklistStatus_FormatBlocklistCopyDate_Returns = string;
 export type Web_BlocklistStatus_FormatBlocklistLastUpdated_Status = Web_Api_BlocklistStatus;
 export type Web_BlocklistStatus_FormatBlocklistLastUpdated_Now = number;
 export type Web_BlocklistStatus_FormatBlocklistLastUpdated_Returns = string | null;
+export type Web_BlocklistStatus_FormatBlocklistLastUpdated_RelativeTime = string;
 
 /**
  * Blocklist Status - Format blocklist next update.
@@ -25,6 +26,7 @@ export type Web_BlocklistStatus_FormatBlocklistLastUpdated_Returns = string | nu
 export type Web_BlocklistStatus_FormatBlocklistNextUpdate_Status = Web_Api_BlocklistStatus;
 export type Web_BlocklistStatus_FormatBlocklistNextUpdate_Now = number;
 export type Web_BlocklistStatus_FormatBlocklistNextUpdate_Returns = string | null;
+export type Web_BlocklistStatus_FormatBlocklistNextUpdate_RelativeTime = string;
 
 /**
  * Blocklist Status - Format blocklist source line.

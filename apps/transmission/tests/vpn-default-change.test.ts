@@ -6,7 +6,7 @@ import {
 
 import { defaultVPNMoveConfirmation } from '../src/web/vpn-default-change.ts';
 
-describe('VPN default change', (): void => {
+describe('VPN default change', () => {
   it.each([
     [
       'one Default-profile torrent',
@@ -44,17 +44,21 @@ describe('VPN default change', (): void => {
       'Make PureVPN 2 the default? 3 torrents move to it: from the Default profile and profiles that follow the default connection.',
     ],
   ])('describes %s', (
-    _name: string,
-    torrents: number,
-    defaultProfileTorrents: number,
-    followingProfileTorrents: number,
-    expected: string,
-  ): void => {
+    _name,
+    torrents,
+    defaultProfileTorrents,
+    followingProfileTorrents,
+    expected,
+  ) => {
     expect(defaultVPNMoveConfirmation(
       'PureVPN 2',
       torrents,
       defaultProfileTorrents,
       followingProfileTorrents,
     )).toBe(expected);
+
+    return;
   });
+
+  return;
 });

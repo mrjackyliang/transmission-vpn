@@ -97,14 +97,29 @@ func (server *Server) handle(connection *net.UnixConn) {
 	}
 	defer file.Close()
 
-	server.answer(connection, response{}, file)
+	if server.answer(connection, response{}, file) {
+		waitForPickUp(connection)
+	}
 }
 
-// answer sends one answer line, with the connection's descriptor when there is one.
-func (server *Server) answer(connection *net.UnixConn, answer response, file *os.File) {
+// waitForPickUp holds the dialed socket open until the console has its descriptor.
+//
+// The console closes its end once it has read the answer. Until then the descriptor is
+// only in flight, and on macOS, closing the controller's last copies and its end of the
+// Unix socket lets the kernel's in-flight descriptor collector race the console's read
+// and shut the dialed socket's receive side, so the console reads EOF from a live
+// connection. Waiting keeps a reference the collector can see. The exchange deadline
+// bounds the wait.
+func waitForPickUp(connection *net.UnixConn) {
+	_, _ = io.Copy(io.Discard, io.LimitReader(connection, maximumMessageBytes))
+}
+
+// answer sends one answer line, with the connection's descriptor when there is one, and
+// reports whether it was sent.
+func (server *Server) answer(connection *net.UnixConn, answer response, file *os.File) bool {
 	payload, err := json.Marshal(answer)
 	if err != nil {
-		return
+		return false
 	}
 	payload = append(payload, '\n')
 
@@ -113,9 +128,15 @@ func (server *Server) answer(connection *net.UnixConn, answer response, file *os
 		rights = syscall.UnixRights(int(file.Fd()))
 	}
 
-	if _, _, err := connection.WriteMsgUnix(payload, rights, nil); err != nil && server.Logger != nil {
-		server.Logger.Warn("answer a direct connection request", "error", err)
+	if _, _, err := connection.WriteMsgUnix(payload, rights, nil); err != nil {
+		if server.Logger != nil {
+			server.Logger.Warn("answer a direct connection request", "error", err)
+		}
+
+		return false
 	}
+
+	return true
 }
 
 // validateRequest accepts one TCP host and port.

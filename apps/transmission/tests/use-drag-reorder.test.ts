@@ -6,14 +6,19 @@ import {
 
 import { placeListedID } from '../src/web/use-drag-reorder.ts';
 
-describe('drag reorder', (): void => {
-  it('moves a row by its listed place and keeps unlisted IDs last', (): void => {
-    const listed: Set<string> = new Set([
+import type {
+  Tests_Web_UseDragReorder_Listed,
+  Tests_Web_UseDragReorder_Order,
+} from '../src/types/tests/web/use-drag-reorder.test.d.ts';
+
+describe('drag reorder', () => {
+  it('moves a row by its listed place and keeps unlisted IDs last', () => {
+    const listed: Tests_Web_UseDragReorder_Listed = new Set([
       'a',
       'b',
       'c',
     ]);
-    const order: string[] = [
+    const order: Tests_Web_UseDragReorder_Order = [
       'a',
       'b',
       'c',
@@ -24,11 +29,13 @@ describe('drag reorder', (): void => {
       'c',
       'a',
     ]);
+
     expect(placeListedID(order, listed, 'c', 0)).toEqual([
       'c',
       'a',
       'b',
     ]);
+
     expect(placeListedID([
       'a',
       'gone',
@@ -40,8 +47,15 @@ describe('drag reorder', (): void => {
       'b',
       'gone',
     ]);
+
     expect(placeListedID(order, listed, 'a', -1)).toBe(order);
+
     expect(placeListedID(order, listed, 'c', 3)).toBe(order);
+
     expect(placeListedID(order, listed, 'gone', 0)).toBe(order);
+
+    return;
   });
+
+  return;
 });

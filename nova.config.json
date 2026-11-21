@@ -5,8 +5,8 @@
       "slug": "transmission-vpn"
     },
     "description": {
-      "short": "A secure Transmission container routed through a VPN with a modern, familiar web interface",
-      "long": "A ground-up Transmission and VPN container focused on dependable networking, straightforward operation, and a modern web experience that preserves the familiar workflows of Transmission Web Control without its accumulated feature weight."
+      "short": "Transmission with multi-VPN routing over OpenVPN and WireGuard, run from a modern web console",
+      "long": "A Transmission container built around VPN isolation, where torrent profiles choose the connection and folder for each download and nothing reaches the network if a tunnel drops. A private web proxy, alerts, and settings managed from the console make it easy to run day to day."
     },
     "keywords": [
       "transmission",
@@ -155,8 +155,242 @@
     "issueTemplate": {
       "bugReportFields": [
         "docker",
-        "web"
-      ]
+        "web",
+        "screenshots",
+        "notifications"
+      ],
+      "customQuestions": {
+        "bug": [
+          {
+            "type": "dropdown",
+            "id": "vpn-provider",
+            "attributes": {
+              "label": "VPN Provider",
+              "description": "Select the provider of the affected VPN connection.",
+              "options": [
+                "PureVPN",
+                "Private Internet Access",
+                "IPVanish",
+                "NordVPN",
+                "Surfshark",
+                "IVPN",
+                "Mullvad",
+                "Custom",
+                "Not Applicable"
+              ]
+            },
+            "validations": {
+              "required": true
+            }
+          },
+          {
+            "type": "dropdown",
+            "id": "vpn-protocol",
+            "attributes": {
+              "label": "VPN Protocol",
+              "description": "Select the protocol of the affected VPN connection.",
+              "options": [
+                "OpenVPN",
+                "WireGuard",
+                "Not Applicable"
+              ]
+            },
+            "validations": {
+              "required": true
+            }
+          },
+          {
+            "type": "dropdown",
+            "id": "affected-area",
+            "attributes": {
+              "label": "Affected Area",
+              "description": "Select the Transmission VPN area involved.",
+              "options": [
+                "Torrent Management",
+                "Torrent Profile",
+                "VPN Connection",
+                "VPN Provider or Endpoint",
+                "Fail-Closed Protection",
+                "Web Proxy",
+                "Remote App Access",
+                "Settings",
+                "Notifications",
+                "Container Startup or Health",
+                "Other"
+              ]
+            },
+            "validations": {
+              "required": true
+            }
+          },
+          {
+            "type": "dropdown",
+            "id": "protection-state",
+            "attributes": {
+              "label": "Protection State",
+              "description": "Select the protection state displayed when the problem occurred.",
+              "options": [
+                "Protected",
+                "Partially Protected",
+                "Connecting",
+                "Blocked",
+                "Setup Required",
+                "Not Sure"
+              ]
+            },
+            "validations": {
+              "required": false
+            }
+          }
+        ],
+        "feature": [
+          {
+            "type": "dropdown",
+            "id": "vpn-provider",
+            "attributes": {
+              "label": "VPN Provider",
+              "description": "Select the provider of the affected VPN connection.",
+              "options": [
+                "PureVPN",
+                "Private Internet Access",
+                "IPVanish",
+                "NordVPN",
+                "Surfshark",
+                "IVPN",
+                "Mullvad",
+                "Custom",
+                "Not Applicable"
+              ]
+            },
+            "validations": {
+              "required": true
+            }
+          },
+          {
+            "type": "dropdown",
+            "id": "vpn-protocol",
+            "attributes": {
+              "label": "VPN Protocol",
+              "description": "Select the protocol of the affected VPN connection.",
+              "options": [
+                "OpenVPN",
+                "WireGuard",
+                "Not Applicable"
+              ]
+            },
+            "validations": {
+              "required": true
+            }
+          },
+          {
+            "type": "dropdown",
+            "id": "affected-area",
+            "attributes": {
+              "label": "Affected Area",
+              "description": "Select the Transmission VPN area involved.",
+              "options": [
+                "Torrent Management",
+                "Torrent Profile",
+                "VPN Connection",
+                "VPN Provider or Endpoint",
+                "Fail-Closed Protection",
+                "Web Proxy",
+                "Remote App Access",
+                "Settings",
+                "Notifications",
+                "Container Startup or Health",
+                "Other"
+              ]
+            },
+            "validations": {
+              "required": true
+            }
+          }
+        ],
+        "support": [
+          {
+            "type": "dropdown",
+            "id": "vpn-provider",
+            "attributes": {
+              "label": "VPN Provider",
+              "description": "Select the provider of the affected VPN connection.",
+              "options": [
+                "PureVPN",
+                "Private Internet Access",
+                "IPVanish",
+                "NordVPN",
+                "Surfshark",
+                "IVPN",
+                "Mullvad",
+                "Custom",
+                "Not Applicable"
+              ]
+            },
+            "validations": {
+              "required": true
+            }
+          },
+          {
+            "type": "dropdown",
+            "id": "vpn-protocol",
+            "attributes": {
+              "label": "VPN Protocol",
+              "description": "Select the protocol of the affected VPN connection.",
+              "options": [
+                "OpenVPN",
+                "WireGuard",
+                "Not Applicable"
+              ]
+            },
+            "validations": {
+              "required": true
+            }
+          },
+          {
+            "type": "dropdown",
+            "id": "affected-area",
+            "attributes": {
+              "label": "Affected Area",
+              "description": "Select the Transmission VPN area involved.",
+              "options": [
+                "Torrent Management",
+                "Torrent Profile",
+                "VPN Connection",
+                "VPN Provider or Endpoint",
+                "Fail-Closed Protection",
+                "Web Proxy",
+                "Remote App Access",
+                "Settings",
+                "Notifications",
+                "Container Startup or Health",
+                "Other"
+              ]
+            },
+            "validations": {
+              "required": true
+            }
+          },
+          {
+            "type": "dropdown",
+            "id": "protection-state",
+            "attributes": {
+              "label": "Protection State",
+              "description": "Select the protection state displayed when the problem occurred.",
+              "options": [
+                "Protected",
+                "Partially Protected",
+                "Connecting",
+                "Blocked",
+                "Setup Required",
+                "Not Sure"
+              ]
+            },
+            "validations": {
+              "required": false
+            }
+          }
+        ]
+      }
     }
   },
   "dockerHub": {
@@ -225,16 +459,22 @@
     "license": "https://github.com/mrjackyliang/transmission-vpn/blob/HEAD/LICENSE",
     "logo": "https://mrjackyliang.github.io/transmission-vpn/images/logo.svg",
     "documentation": "https://mrjackyliang.github.io/transmission-vpn/",
+    "docker": "https://hub.docker.com/r/mrjackyliang/transmission-vpn",
     "fundSources": [
       "https://github.com/sponsors/mrjackyliang",
       "https://liang.nyc/paypal"
-    ]
+    ],
+    "privacyPolicy": "https://github.com/mrjackyliang/mrjackyliang/blob/HEAD/PRIVACY.md",
+    "termsOfUse": "https://github.com/mrjackyliang/mrjackyliang/blob/HEAD/TERMS.md"
   },
   "readme": {
     "badges": [
+      "docker-pulls",
+      "docker-image-size",
       "github-release",
       "github-top-language",
       "github-license",
+      "coverage",
       "funding"
     ]
   },
@@ -300,11 +540,24 @@
       ]
     }
   },
+  "attributeFiles": {
+    "./packages/docker/.gitattributes": {
+      "bundles": [
+        "docker-scripts"
+      ],
+      "patterns": []
+    }
+  },
   "agents": [
     "claude-code",
     "codex"
   ],
   "recipes": {
+    "docker": {
+      "sync-image": {
+        "enabled": true
+      }
+    },
     "docker-hub": {
       "sync-identity": {
         "enabled": true
@@ -380,6 +633,11 @@
         "enabled": true
       },
       "update-introduction": {
+        "enabled": true
+      }
+    },
+    "tsconfig": {
+      "sync-references": {
         "enabled": true
       }
     },
@@ -571,6 +829,9 @@
     }
   },
   "settings": {
+    "coverage": {
+      "minimum": 50
+    },
     "lockStepVersioning": true,
     "runWorkspaces": {
       "cache": {

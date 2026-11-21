@@ -3,39 +3,58 @@ import {
   useRef,
 } from 'react';
 
-import type { MutableRefObject } from 'react';
+import type {
+  Web_UseEscapeKey_HandleKeyDown_Event,
+  Web_UseEscapeKey_HandleKeyDown_Returns,
+  Web_UseEscapeKey_HandleKeyDown_TopLayer,
+  Web_UseEscapeKey_LayerStack,
+  Web_UseEscapeKey_UseEscapeKey_Active,
+  Web_UseEscapeKey_UseEscapeKey_Index,
+  Web_UseEscapeKey_UseEscapeKey_LatestOnClose,
+  Web_UseEscapeKey_UseEscapeKey_Layer,
+  Web_UseEscapeKey_UseEscapeKey_Layer_Returns,
+  Web_UseEscapeKey_UseEscapeKey_OnClose,
+  Web_UseEscapeKey_UseEscapeKey_Returns,
+} from '@/types/web/use-escape-key.d.ts';
 
 // Open layers in the order they appeared; only the topmost one reacts to Escape.
 
 /**
- * Use Escape Key - Layer stack.
+ * Use Escape Key - Layer Stack.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
  * @since 2.0.0
  */
-const layerStack: Array<() => void> = [];
+const layerStack: Web_UseEscapeKey_LayerStack = [];
 
 /**
- * Use Escape Key - Handles key down.
+ * Use Escape Key - Handle Key Down.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @param {Web_UseEscapeKey_HandleKeyDown_Event} event - Event.
+ *
+ * @returns {Web_UseEscapeKey_HandleKeyDown_Returns}
+ *
  * @since 2.0.0
  */
-const handleKeyDown = (event: KeyboardEvent): void => {
+const handleKeyDown = (event: Web_UseEscapeKey_HandleKeyDown_Event): Web_UseEscapeKey_HandleKeyDown_Returns => {
   if (event.key !== 'Escape') {
     return;
   }
 
-  const topLayer: (() => void) | undefined = layerStack.at(-1);
+  const topLayer: Web_UseEscapeKey_HandleKeyDown_TopLayer = layerStack.at(-1);
 
   if (topLayer !== undefined) {
     event.preventDefault();
+
     topLayer();
   }
+
+  return;
 };
 
 /**
@@ -44,18 +63,20 @@ const handleKeyDown = (event: KeyboardEvent): void => {
  * Closes a dialog or panel when Escape is pressed, but only while it is the
  * topmost open layer, so a picker opened on top of a dialog closes first.
  *
- * @param {() => void} onClose - On close.
- * @param {boolean}    active  - Active.
+ * @param {Web_UseEscapeKey_UseEscapeKey_OnClose} onClose - On close.
+ * @param {Web_UseEscapeKey_UseEscapeKey_Active}  active  - Active.
+ *
+ * @returns {Web_UseEscapeKey_UseEscapeKey_Returns}
  *
  * @since 2.0.0
  */
-export const useEscapeKey = (onClose: () => void, active: boolean): void => {
-  const latestOnClose: MutableRefObject<() => void> = useRef(onClose);
+export const useEscapeKey = (onClose: Web_UseEscapeKey_UseEscapeKey_OnClose, active: Web_UseEscapeKey_UseEscapeKey_Active): Web_UseEscapeKey_UseEscapeKey_Returns => {
+  const latestOnClose: Web_UseEscapeKey_UseEscapeKey_LatestOnClose = useRef(onClose);
 
   latestOnClose.current = onClose;
 
-  useEffect((): (() => void) | undefined => {
-    if (!active) {
+  useEffect(() => {
+    if (active === false) {
       return undefined;
     }
 
@@ -65,9 +86,11 @@ export const useEscapeKey = (onClose: () => void, active: boolean): void => {
      * Centralizes this operation for the surrounding workflow.
      * Callers reuse one implementation instead of repeating the behavior.
      *
+     * @returns {Web_UseEscapeKey_UseEscapeKey_Layer_Returns}
+     *
      * @since 2.0.0
      */
-    const layer = (): void => latestOnClose.current();
+    const layer: Web_UseEscapeKey_UseEscapeKey_Layer = (): Web_UseEscapeKey_UseEscapeKey_Layer_Returns => latestOnClose.current();
 
     if (layerStack.length === 0) {
       window.addEventListener('keydown', handleKeyDown);
@@ -75,8 +98,8 @@ export const useEscapeKey = (onClose: () => void, active: boolean): void => {
 
     layerStack.push(layer);
 
-    return (): void => {
-      const index: number = layerStack.lastIndexOf(layer);
+    return () => {
+      const index: Web_UseEscapeKey_UseEscapeKey_Index = layerStack.lastIndexOf(layer);
 
       if (index >= 0) {
         layerStack.splice(index, 1);
@@ -85,6 +108,10 @@ export const useEscapeKey = (onClose: () => void, active: boolean): void => {
       if (layerStack.length === 0) {
         window.removeEventListener('keydown', handleKeyDown);
       }
+
+      return;
     };
   }, [active]);
+
+  return;
 };

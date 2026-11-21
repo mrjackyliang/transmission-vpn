@@ -8,6 +8,7 @@ import (
 
 	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/settings"
 	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/storage"
+	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/transmissionrpc"
 )
 
 const dataRootDownloadSelectionMessage = "Open or create a folder inside /data. Torrents can't be saved in /data itself."
@@ -188,7 +189,9 @@ func (server *Server) validateRPCFacadeDownloadPaths(
 	method string,
 	arguments map[string]any,
 ) string {
-	if method != "session-set" && method != "torrent-set" && method != "torrent-set-location" {
+	if method != transmissionrpc.MethodSessionSet.String() &&
+		method != transmissionrpc.MethodTorrentSet.String() &&
+		method != transmissionrpc.MethodTorrentSetLocation.String() {
 		return "success"
 	}
 
@@ -200,12 +203,12 @@ func (server *Server) validateRPCFacadeDownloadPaths(
 	}
 
 	switch method {
-	case "session-set":
+	case transmissionrpc.MethodSessionSet.String():
 		downloadDirectory := policy.downloadDirectory
-		if requestedDownloadDirectory, found := arguments["download-dir"]; found {
+		if requestedDownloadDirectory, found := arguments[transmissionrpc.ArgumentDownloadDirectory]; found {
 			downloadDirectory = requestedDownloadDirectory.(string)
 		}
-		if requestedIncompleteDirectory, found := arguments["incomplete-dir"]; found {
+		if requestedIncompleteDirectory, found := arguments[transmissionrpc.ArgumentIncompleteDirectory]; found {
 			_, validationError := server.normalizeIncompleteDirectory(
 				ctx,
 				requestedIncompleteDirectory.(string),
@@ -217,14 +220,15 @@ func (server *Server) validateRPCFacadeDownloadPaths(
 
 			return "success"
 		}
-		if _, found := arguments["download-dir"]; found {
+		if _, found := arguments[transmissionrpc.ArgumentDownloadDirectory]; found {
 			_, validationError := policy.normalizeDownloadDirectory(downloadDirectory)
 			if validationError != nil {
 				return validationError.Error()
 			}
 		}
-	case "torrent-set", "torrent-set-location":
-		requestedLocation, found := arguments["location"]
+	case transmissionrpc.MethodTorrentSet.String(),
+		transmissionrpc.MethodTorrentSetLocation.String():
+		requestedLocation, found := arguments[transmissionrpc.ArgumentLocation]
 		if found {
 			_, validationError := policy.normalizeDownloadDirectory(
 				requestedLocation.(string),

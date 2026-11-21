@@ -75,6 +75,60 @@ jobs:
           npm run build -- --workspace transmission-vpn-docs --artifact documentation
         working-directory: "${{ env.ROOT_DIR }}"
 
+      - name: "Write coverage badge"
+        timeout-minutes: 90
+        env:
+          BADGE_PATH: "build/documentation/badges/coverage.json"
+        run: |
+          node --input-type=module <<'NODE'
+          import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+          import { dirname, join } from 'node:path';
+
+          const summaryPaths = [];
+          const visit = (directory) => {
+            for (const entry of readdirSync(directory, { withFileTypes: true })) {
+              if (entry.name === 'node_modules' || entry.name === '.git') {
+                continue;
+              }
+
+              const entryPath = join(directory, entry.name);
+
+              if (entry.isDirectory() === true) {
+                visit(entryPath);
+              } else if (entry.name === 'coverage-summary.json' && directory.endsWith('coverage') === true) {
+                summaryPaths.push(entryPath);
+              }
+            }
+          };
+
+          visit('.');
+
+          let covered = 0;
+          let total = 0;
+
+          for (const summaryPath of summaryPaths) {
+            const lines = JSON.parse(readFileSync(summaryPath, 'utf-8'))['total']['lines'];
+
+            covered += lines['covered'];
+            total += lines['total'];
+          }
+
+          if (total === 0) {
+            console.log('No coverage summaries were found, so no coverage badge was written.');
+            process.exit(0);
+          }
+
+          const percent = Math.floor((covered / total) * 1000) / 10;
+          const colors = [[90, 'brightgreen'], [80, 'green'], [70, 'yellowgreen'], [60, 'yellow'], [50, 'orange']];
+          const match = colors.find((entry) => percent >= entry[0]);
+          const color = (match === undefined) ? 'red' : match[1];
+
+          mkdirSync(dirname(process.env.BADGE_PATH), { recursive: true });
+          writeFileSync(process.env.BADGE_PATH, JSON.stringify({ schemaVersion: 1, label: 'coverage', message: percent + '%', color }) + String.fromCharCode(10));
+          console.log('Wrote a ' + percent + '% coverage badge to ' + process.env.BADGE_PATH + '.');
+          NODE
+        working-directory: "${{ env.ROOT_DIR }}"
+
       - name: "Validate manual container tag"
         if: "${{ github.event_name == 'workflow_dispatch' && !inputs.dry-run }}"
         timeout-minutes: 90

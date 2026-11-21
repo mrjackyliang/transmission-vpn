@@ -17,5 +17,7 @@ export default defineConfig({
       'packages/**',
       '**/node_modules/**',
     ],
+    globals: false,
+    testTimeout: 30000, // 30 seconds.
   },
 });

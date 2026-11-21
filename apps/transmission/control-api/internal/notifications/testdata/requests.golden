@@ -1,0 +1,168 @@
+=== apprise vpn-dropped delivered=true
+POST http://apprise:8000/notify/alerts
+Content-Type=application/json
+{"body":"The VPN went down & <stayed> down.","title":"Transmission VPN: VPN dropped","type":"warning","urls":"tgram://x"}
+=== apprise vpn-dropped delivered=true
+POST https://apprise.example.com/notify
+Content-Type=application/json
+{"body":"The VPN went down & <stayed> down.","title":"Transmission VPN: VPN dropped","type":"warning"}
+=== discord vpn-dropped delivered=true
+POST https://discord.com/api/webhooks/1/x
+Content-Type=application/json
+{"embeds":[{"color":13648951,"description":"The VPN went down & <stayed> down.","timestamp":"2026-10-26T12:00:00.500Z","title":"Transmission VPN: VPN dropped"}]}
+=== gotify vpn-dropped delivered=true
+POST https://push.example.com/message
+Content-Type=application/json|X-Gotify-Key=gk
+{"message":"The VPN went down & <stayed> down.","priority":8,"title":"Transmission VPN: VPN dropped"}
+=== matrix vpn-dropped delivered=true
+PUT https://matrix.example.com/_matrix/client/v3/rooms/!room%3Aexample.com/send/m.room.message/<txn>
+Authorization=Bearer mx|Content-Type=application/json
+{"body":"Transmission VPN: VPN dropped\nThe VPN went down & <stayed> down.","msgtype":"m.text"}
+=== ntfy vpn-dropped delivered=true
+POST https://ntfy.example.com/sub
+Authorization=Bearer tk_1|Content-Type=application/json
+{"message":"The VPN went down & <stayed> down.","priority":4,"tags":["warning"],"title":"Transmission VPN: VPN dropped","topic":"my alerts"}
+=== ntfy vpn-dropped delivered=true
+POST https://ntfy.sh/
+Content-Type=application/json
+{"message":"The VPN went down & <stayed> down.","priority":4,"tags":["warning"],"title":"Transmission VPN: VPN dropped","topic":"alerts"}
+=== ntfy-reverse-proxy vpn-dropped delivered=true
+POST https://alerts.example.com
+Content-Type=application/json
+{"app":"transmission-vpn","details":{"items":[],"lastError":"timeout"},"event":"vpn-dropped","message":"The VPN went down & <stayed> down.","occurredAt":"2026-10-26T12:00:00.500Z","priority":4,"tags":["warning"],"title":"VPN dropped","version":1}
+=== ntfy-reverse-proxy vpn-dropped delivered=true
+POST https://alerts.example.com/ctx
+Authorization=Bearer rp|Content-Type=application/json
+{"app":"transmission-vpn","details":{"items":[],"lastError":"timeout"},"event":"vpn-dropped","message":"The VPN went down & <stayed> down.","occurredAt":"2026-10-26T12:00:00.500Z","priority":4,"tags":["warning"],"title":"VPN dropped","version":1}
+=== pushover vpn-dropped delivered=true
+POST https://api.pushover.net/1/messages.json
+Content-Type=application/json
+{"message":"The VPN went down & <stayed> down.","priority":1,"title":"Transmission VPN: VPN dropped","token":"a1","user":"u1"}
+=== slack vpn-dropped delivered=true
+POST https://hooks.slack.com/services/x
+Content-Type=application/json
+{"text":"*Transmission VPN: VPN dropped*\nThe VPN went down &amp; &lt;stayed&gt; down."}
+=== telegram vpn-dropped delivered=true
+POST https://api.telegram.org/bot123:abc/sendMessage
+Content-Type=application/json
+{"chat_id":"-100","disable_web_page_preview":true,"text":"Transmission VPN: VPN dropped\n\nThe VPN went down & <stayed> down."}
+=== webhook vpn-dropped delivered=true
+POST https://hooks.example.com/in
+Authorization=Bearer abc|Content-Type=application/json
+{"app":"transmission-vpn","details":{"items":[],"lastError":"timeout"},"event":"vpn-dropped","message":"The VPN went down & <stayed> down.","occurredAt":"2026-10-26T12:00:00.500Z","priority":4,"tags":["warning"],"title":"VPN dropped","version":1}
+=== webhook vpn-dropped delivered=true
+POST https://hooks.example.com/plain
+Content-Type=application/json
+{"app":"transmission-vpn","details":{"items":[],"lastError":"timeout"},"event":"vpn-dropped","message":"The VPN went down & <stayed> down.","occurredAt":"2026-10-26T12:00:00.500Z","priority":4,"tags":["warning"],"title":"VPN dropped","version":1}
+=== apprise torrent-finished delivered=true
+POST http://apprise:8000/notify/alerts
+Content-Type=application/json
+{"body":"Ubuntu 26.04 finished downloading.","title":"Transmission VPN: Torrent finished","type":"info","urls":"tgram://x"}
+=== apprise torrent-finished delivered=true
+POST https://apprise.example.com/notify
+Content-Type=application/json
+{"body":"Ubuntu 26.04 finished downloading.","title":"Transmission VPN: Torrent finished","type":"info"}
+=== discord torrent-finished delivered=true
+POST https://discord.com/api/webhooks/1/x
+Content-Type=application/json
+{"embeds":[{"color":3113463,"description":"Ubuntu 26.04 finished downloading.","timestamp":"2026-11-01T00:30:15.000Z","title":"Transmission VPN: Torrent finished"}]}
+=== gotify torrent-finished delivered=true
+POST https://push.example.com/message
+Content-Type=application/json|X-Gotify-Key=gk
+{"message":"Ubuntu 26.04 finished downloading.","priority":5,"title":"Transmission VPN: Torrent finished"}
+=== matrix torrent-finished delivered=true
+PUT https://matrix.example.com/_matrix/client/v3/rooms/!room%3Aexample.com/send/m.room.message/<txn>
+Authorization=Bearer mx|Content-Type=application/json
+{"body":"Transmission VPN: Torrent finished\nUbuntu 26.04 finished downloading.","msgtype":"m.text"}
+=== ntfy torrent-finished delivered=true
+POST https://ntfy.example.com/sub
+Authorization=Bearer tk_1|Content-Type=application/json
+{"message":"Ubuntu 26.04 finished downloading.","priority":3,"tags":[],"title":"Transmission VPN: Torrent finished","topic":"my alerts"}
+=== ntfy torrent-finished delivered=true
+POST https://ntfy.sh/
+Content-Type=application/json
+{"message":"Ubuntu 26.04 finished downloading.","priority":3,"tags":[],"title":"Transmission VPN: Torrent finished","topic":"alerts"}
+=== ntfy-reverse-proxy torrent-finished delivered=true
+POST https://alerts.example.com
+Content-Type=application/json
+{"app":"transmission-vpn","details":{},"event":"torrent-finished","message":"Ubuntu 26.04 finished downloading.","occurredAt":"2026-11-01T00:30:15.000Z","priority":3,"tags":[],"title":"Torrent finished","version":1}
+=== ntfy-reverse-proxy torrent-finished delivered=true
+POST https://alerts.example.com/ctx
+Authorization=Bearer rp|Content-Type=application/json
+{"app":"transmission-vpn","details":{},"event":"torrent-finished","message":"Ubuntu 26.04 finished downloading.","occurredAt":"2026-11-01T00:30:15.000Z","priority":3,"tags":[],"title":"Torrent finished","version":1}
+=== pushover torrent-finished delivered=true
+POST https://api.pushover.net/1/messages.json
+Content-Type=application/json
+{"message":"Ubuntu 26.04 finished downloading.","priority":0,"title":"Transmission VPN: Torrent finished","token":"a1","user":"u1"}
+=== slack torrent-finished delivered=true
+POST https://hooks.slack.com/services/x
+Content-Type=application/json
+{"text":"*Transmission VPN: Torrent finished*\nUbuntu 26.04 finished downloading."}
+=== telegram torrent-finished delivered=true
+POST https://api.telegram.org/bot123:abc/sendMessage
+Content-Type=application/json
+{"chat_id":"-100","disable_web_page_preview":true,"text":"Transmission VPN: Torrent finished\n\nUbuntu 26.04 finished downloading."}
+=== webhook torrent-finished delivered=true
+POST https://hooks.example.com/in
+Authorization=Bearer abc|Content-Type=application/json
+{"app":"transmission-vpn","details":{},"event":"torrent-finished","message":"Ubuntu 26.04 finished downloading.","occurredAt":"2026-11-01T00:30:15.000Z","priority":3,"tags":[],"title":"Torrent finished","version":1}
+=== webhook torrent-finished delivered=true
+POST https://hooks.example.com/plain
+Content-Type=application/json
+{"app":"transmission-vpn","details":{},"event":"torrent-finished","message":"Ubuntu 26.04 finished downloading.","occurredAt":"2026-11-01T00:30:15.000Z","priority":3,"tags":[],"title":"Torrent finished","version":1}
+=== apprise test delivered=true
+POST http://apprise:8000/notify/alerts
+Content-Type=application/json
+{"body":"Línea uno\nline two\ttabbed\r end","title":"Transmission VPN: Tést \"quoted\"","type":"info","urls":"tgram://x"}
+=== apprise test delivered=true
+POST https://apprise.example.com/notify
+Content-Type=application/json
+{"body":"Línea uno\nline two\ttabbed\r end","title":"Transmission VPN: Tést \"quoted\"","type":"info"}
+=== discord test delivered=true
+POST https://discord.com/api/webhooks/1/x
+Content-Type=application/json
+{"embeds":[{"color":3113463,"description":"Línea uno\nline two\ttabbed\r end","timestamp":"2026-01-02T03:04:05.006Z","title":"Transmission VPN: Tést \"quoted\""}]}
+=== gotify test delivered=true
+POST https://push.example.com/message
+Content-Type=application/json|X-Gotify-Key=gk
+{"message":"Línea uno\nline two\ttabbed\r end","priority":2,"title":"Transmission VPN: Tést \"quoted\""}
+=== matrix test delivered=true
+PUT https://matrix.example.com/_matrix/client/v3/rooms/!room%3Aexample.com/send/m.room.message/<txn>
+Authorization=Bearer mx|Content-Type=application/json
+{"body":"Transmission VPN: Tést \"quoted\"\nLínea uno\nline two\ttabbed\r end","msgtype":"m.text"}
+=== ntfy test delivered=true
+POST https://ntfy.example.com/sub
+Authorization=Bearer tk_1|Content-Type=application/json
+{"message":"Línea uno\nline two\ttabbed\r end","priority":2,"tags":[],"title":"Transmission VPN: Tést \"quoted\"","topic":"my alerts"}
+=== ntfy test delivered=true
+POST https://ntfy.sh/
+Content-Type=application/json
+{"message":"Línea uno\nline two\ttabbed\r end","priority":2,"tags":[],"title":"Transmission VPN: Tést \"quoted\"","topic":"alerts"}
+=== ntfy-reverse-proxy test delivered=true
+POST https://alerts.example.com
+Content-Type=application/json
+{"app":"transmission-vpn","details":{},"event":"test","message":"Línea uno\nline two\ttabbed\r end","occurredAt":"2026-01-02T03:04:05.006Z","priority":2,"tags":[],"title":"Tést \"quoted\"","version":1}
+=== ntfy-reverse-proxy test delivered=true
+POST https://alerts.example.com/ctx
+Authorization=Bearer rp|Content-Type=application/json
+{"app":"transmission-vpn","details":{},"event":"test","message":"Línea uno\nline two\ttabbed\r end","occurredAt":"2026-01-02T03:04:05.006Z","priority":2,"tags":[],"title":"Tést \"quoted\"","version":1}
+=== pushover test delivered=true
+POST https://api.pushover.net/1/messages.json
+Content-Type=application/json
+{"message":"Línea uno\nline two\ttabbed\r end","priority":-1,"title":"Transmission VPN: Tést \"quoted\"","token":"a1","user":"u1"}
+=== slack test delivered=true
+POST https://hooks.slack.com/services/x
+Content-Type=application/json
+{"text":"*Transmission VPN: Tést \"quoted\"*\nLínea uno\nline two\ttabbed\r end"}
+=== telegram test delivered=true
+POST https://api.telegram.org/bot123:abc/sendMessage
+Content-Type=application/json
+{"chat_id":"-100","disable_web_page_preview":true,"text":"Transmission VPN: Tést \"quoted\"\n\nLínea uno\nline two\ttabbed\r end"}
+=== webhook test delivered=true
+POST https://hooks.example.com/in
+Authorization=Bearer abc|Content-Type=application/json
+{"app":"transmission-vpn","details":{},"event":"test","message":"Línea uno\nline two\ttabbed\r end","occurredAt":"2026-01-02T03:04:05.006Z","priority":2,"tags":[],"title":"Tést \"quoted\"","version":1}
+=== webhook test delivered=true
+POST https://hooks.example.com/plain
+Content-Type=application/json
+{"app":"transmission-vpn","details":{},"event":"test","message":"Línea uno\nline two\ttabbed\r end","occurredAt":"2026-01-02T03:04:05.006Z","priority":2,"tags":[],"title":"Tést \"quoted\"","version":1}

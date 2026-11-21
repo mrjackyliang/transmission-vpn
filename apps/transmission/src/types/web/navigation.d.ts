@@ -195,3 +195,121 @@ export type Web_Navigation_PhoneTabAction =
   | {
     kind: 'scroll-top';
   };
+
+/**
+ * Navigation.
+ *
+ * @since 2.4.1
+ */
+export type Web_Navigation_CloseNavSheetStack_Returns = Web_Navigation_SheetLevel[];
+
+/**
+ * Navigation.
+ *
+ * @since 2.4.1
+ */
+export type Web_Navigation_CreateMoreNavSheetLevel_Rows = Web_Navigation_SheetRow[];
+export type Web_Navigation_CreateMoreNavSheetLevel_Pages = Web_Navigation_Page[];
+export type Web_Navigation_CreateMoreNavSheetLevel_Views = Web_Components_View[];
+export type Web_Navigation_CreateMoreNavSheetLevel_FirstPage = Web_Navigation_Page | undefined;
+export type Web_Navigation_CreateMoreNavSheetLevel_Description = string | undefined;
+
+/**
+ * Navigation.
+ *
+ * @since 2.4.1
+ */
+export type Web_Navigation_CreateNavSheetLevel_ParentTitle = string;
+export type Web_Navigation_CreateNavSheetLevel_Groups = Web_Navigation_SheetGroup[];
+export type Web_Navigation_CreateNavSheetLevel_Rows = Web_Navigation_SheetRow[];
+export type Web_Navigation_CreateNavSheetLevel_ShowGroupLabel = boolean;
+
+/**
+ * Navigation.
+ *
+ * @since 2.4.1
+ */
+export type Web_Navigation_FindNavigationGroup_Returns = Web_Navigation_Group | undefined;
+export type Web_Navigation_FindNavigationGroup_Group = Web_Navigation_Group | undefined;
+
+/**
+ * Navigation.
+ *
+ * @since 2.4.1
+ */
+export type Web_Navigation_FirstNavigationView_FirstPage = Web_Navigation_Page | undefined;
+
+/**
+ * Navigation.
+ *
+ * @since 2.4.1
+ */
+export type Web_Navigation_NavigationItemHasSheet_Returns = boolean;
+
+/**
+ * Navigation.
+ *
+ * @since 2.4.1
+ */
+export type Web_Navigation_NavigationItemHoldsView_Returns = boolean;
+
+/**
+ * Navigation.
+ *
+ * @since 2.4.1
+ */
+export type Web_Navigation_NavigationItemPages_Returns = Web_Navigation_Page[];
+
+/**
+ * Navigation.
+ *
+ * @since 2.4.1
+ */
+export type Web_Navigation_NavigationPageViews_Returns = Web_Components_View[];
+
+/**
+ * Navigation.
+ *
+ * @since 2.4.1
+ */
+export type Web_Navigation_PhoneNavigationLabel_Returns = string;
+
+/**
+ * Navigation.
+ *
+ * @since 2.4.1
+ */
+export type Web_Navigation_PhoneTabAction_OpenSheetId = string;
+
+/**
+ * Navigation.
+ *
+ * @since 2.4.1
+ */
+export type Web_Navigation_PushNavigationPath_Path = string;
+export type Web_Navigation_PushNavigationPath_Returns = void;
+
+/**
+ * Navigation.
+ *
+ * @since 2.4.1
+ */
+export type Web_Navigation_ReplaceNavigationPath_Path = string;
+export type Web_Navigation_ReplaceNavigationPath_Returns = void;
+
+/**
+ * Navigation.
+ *
+ * @since 2.4.1
+ */
+export type Web_Navigation_StartNavigationHistory_Returns = () => void;
+export type Web_Navigation_StartNavigationHistory_HandlePopState_Returns = void;
+export type Web_Navigation_StartNavigationHistory_HandlePopState = () => Web_Navigation_StartNavigationHistory_HandlePopState_Returns;
+
+/**
+ * Navigation.
+ *
+ * @since 2.4.1
+ */
+export type Web_Navigation_VisibleNavigationItems_Groups = Web_Navigation_Group[];
+export type Web_Navigation_VisibleNavigationItems_Pages = Web_Navigation_Page[];

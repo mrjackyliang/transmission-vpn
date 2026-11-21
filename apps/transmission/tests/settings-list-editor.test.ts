@@ -9,22 +9,26 @@ import {
   normalizeSettingListValues,
 } from '../src/web/settings-list-editor.ts';
 
-describe('settings list editor', (): void => {
-  it('uses blocklist-specific empty-state copy', (): void => {
+describe('settings list editor', () => {
+  it('uses blocklist-specific empty-state copy', () => {
     expect(getSettingListEmptyState('transmission.blocklistSources')).toEqual({
       hint: 'Add an HTTPS address for each blocklist.',
       title: 'No sources yet',
     });
+
+    return;
   });
 
-  it('uses generic empty-state copy for other settings', (): void => {
+  it('uses generic empty-state copy for other settings', () => {
     expect(getSettingListEmptyState('transmission.futureValues')).toEqual({
       hint: null,
       title: 'No values yet',
     });
+
+    return;
   });
 
-  it('trims values and drops empty editor rows', (): void => {
+  it('trims values and drops empty editor rows', () => {
     expect(normalizeSettingListValues([
       ' https://example.com/one.gz ',
       '',
@@ -34,5 +38,9 @@ describe('settings list editor', (): void => {
       'https://example.com/one.gz',
       'https://example.com/two.gz',
     ]);
+
+    return;
   });
+
+  return;
 });

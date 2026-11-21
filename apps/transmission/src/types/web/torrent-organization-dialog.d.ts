@@ -1,0 +1,56 @@
+import type {
+  Dispatch,
+  FormEvent,
+  ReactElement,
+  RefObject,
+  SetStateAction,
+} from 'react';
+
+import type {
+  Web_Components_TorrentOrganizationDialog_Props,
+  Web_Components_TorrentOrganizationLabelDraft,
+} from '@/types/web/components.d.ts';
+
+/**
+ * Torrent Organization Dialog.
+ *
+ * @since 2.4.1
+ */
+export type Web_TorrentOrganizationDialog_TorrentOrganizationDialog_Props = Web_Components_TorrentOrganizationDialog_Props;
+export type Web_TorrentOrganizationDialog_TorrentOrganizationDialog_Returns = ReactElement | null;
+export type Web_TorrentOrganizationDialog_TorrentOrganizationDialog_Labels = Web_Components_TorrentOrganizationDialog_Props['labels'];
+export type Web_TorrentOrganizationDialog_TorrentOrganizationDialog_OnClose = Web_Components_TorrentOrganizationDialog_Props['onClose'];
+export type Web_TorrentOrganizationDialog_TorrentOrganizationDialog_OnSave = Web_Components_TorrentOrganizationDialog_Props['onSave'];
+export type Web_TorrentOrganizationDialog_TorrentOrganizationDialog_Open = Web_Components_TorrentOrganizationDialog_Props['open'];
+export type Web_TorrentOrganizationDialog_TorrentOrganizationDialog_Organization = Web_Components_TorrentOrganizationDialog_Props['organization'];
+export type Web_TorrentOrganizationDialog_TorrentOrganizationDialog_LabelDraftsState = [Web_Components_TorrentOrganizationLabelDraft[], Dispatch<SetStateAction<Web_Components_TorrentOrganizationLabelDraft[]>>];
+export type Web_TorrentOrganizationDialog_TorrentOrganizationDialog_LabelDrafts = Web_Components_TorrentOrganizationLabelDraft[];
+export type Web_TorrentOrganizationDialog_TorrentOrganizationDialog_SetLabelDrafts = Dispatch<SetStateAction<Web_Components_TorrentOrganizationLabelDraft[]>>;
+export type Web_TorrentOrganizationDialog_TorrentOrganizationDialog_OpenedLabelsState = [string[], Dispatch<SetStateAction<string[]>>];
+export type Web_TorrentOrganizationDialog_TorrentOrganizationDialog_OpenedLabels = string[];
+export type Web_TorrentOrganizationDialog_TorrentOrganizationDialog_SetOpenedLabels = Dispatch<SetStateAction<string[]>>;
+export type Web_TorrentOrganizationDialog_TorrentOrganizationDialog_NewLabelState = [string, Dispatch<SetStateAction<string>>];
+export type Web_TorrentOrganizationDialog_TorrentOrganizationDialog_NewLabel = string;
+export type Web_TorrentOrganizationDialog_TorrentOrganizationDialog_SetNewLabel = Dispatch<SetStateAction<string>>;
+export type Web_TorrentOrganizationDialog_TorrentOrganizationDialog_BusyState = [boolean, Dispatch<SetStateAction<boolean>>];
+export type Web_TorrentOrganizationDialog_TorrentOrganizationDialog_Busy = boolean;
+export type Web_TorrentOrganizationDialog_TorrentOrganizationDialog_SetBusy = Dispatch<SetStateAction<boolean>>;
+export type Web_TorrentOrganizationDialog_TorrentOrganizationDialog_ErrorState = [string, Dispatch<SetStateAction<string>>];
+export type Web_TorrentOrganizationDialog_TorrentOrganizationDialog_Error = string;
+export type Web_TorrentOrganizationDialog_TorrentOrganizationDialog_SetError = Dispatch<SetStateAction<string>>;
+export type Web_TorrentOrganizationDialog_TorrentOrganizationDialog_InitializedState = [boolean, Dispatch<SetStateAction<boolean>>];
+export type Web_TorrentOrganizationDialog_TorrentOrganizationDialog_Initialized = boolean;
+export type Web_TorrentOrganizationDialog_TorrentOrganizationDialog_SetInitialized = Dispatch<SetStateAction<boolean>>;
+export type Web_TorrentOrganizationDialog_TorrentOrganizationDialog_NextLabelId = RefObject<number>;
+export type Web_TorrentOrganizationDialog_TorrentOrganizationDialog_SortedLabels = string[];
+export type Web_TorrentOrganizationDialog_TorrentOrganizationDialog_AddLabel_Returns = void;
+export type Web_TorrentOrganizationDialog_TorrentOrganizationDialog_AddLabel = () => Web_TorrentOrganizationDialog_TorrentOrganizationDialog_AddLabel_Returns;
+export type Web_TorrentOrganizationDialog_TorrentOrganizationDialog_AddLabel_NormalizedLabel = string;
+export type Web_TorrentOrganizationDialog_TorrentOrganizationDialog_UpdateLabel_Id = string;
+export type Web_TorrentOrganizationDialog_TorrentOrganizationDialog_UpdateLabel_Value = string;
+export type Web_TorrentOrganizationDialog_TorrentOrganizationDialog_UpdateLabel_Returns = void;
+export type Web_TorrentOrganizationDialog_TorrentOrganizationDialog_UpdateLabel = (id: Web_TorrentOrganizationDialog_TorrentOrganizationDialog_UpdateLabel_Id, value: Web_TorrentOrganizationDialog_TorrentOrganizationDialog_UpdateLabel_Value) => Web_TorrentOrganizationDialog_TorrentOrganizationDialog_UpdateLabel_Returns;
+export type Web_TorrentOrganizationDialog_TorrentOrganizationDialog_Save_Event = FormEvent<HTMLFormElement>;
+export type Web_TorrentOrganizationDialog_TorrentOrganizationDialog_Save_Returns = Promise<void>;
+export type Web_TorrentOrganizationDialog_TorrentOrganizationDialog_Save = (event: Web_TorrentOrganizationDialog_TorrentOrganizationDialog_Save_Event) => Web_TorrentOrganizationDialog_TorrentOrganizationDialog_Save_Returns;
+export type Web_TorrentOrganizationDialog_TorrentOrganizationDialog_Save_NormalizedLabels = string[];

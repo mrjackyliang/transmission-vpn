@@ -1,0 +1,46 @@
+import type {
+  Dispatch,
+  ReactElement,
+  RefObject,
+  SetStateAction,
+} from 'react';
+
+import type { Web_Backup_SourceDirectory } from '@/types/web/backup.d.ts';
+
+/**
+ * Backup Source Directory Dialog.
+ *
+ * @since 2.4.1
+ */
+export type Web_BackupSourceDirectoryDialog_BackupSourceDirectoryDialog_Props = {
+  initialPath: string;
+  onClose: () => void;
+  onSelect: (path: string) => void;
+  open: boolean;
+};
+export type Web_BackupSourceDirectoryDialog_BackupSourceDirectoryDialog_Returns = ReactElement | null;
+export type Web_BackupSourceDirectoryDialog_BackupSourceDirectoryDialog_InitialPath = string;
+export type Web_BackupSourceDirectoryDialog_BackupSourceDirectoryDialog_OnClose = () => void;
+export type Web_BackupSourceDirectoryDialog_BackupSourceDirectoryDialog_OnSelect = (path: string) => void;
+export type Web_BackupSourceDirectoryDialog_BackupSourceDirectoryDialog_Open = boolean;
+export type Web_BackupSourceDirectoryDialog_BackupSourceDirectoryDialog_TitleId = string;
+export type Web_BackupSourceDirectoryDialog_BackupSourceDirectoryDialog_DialogRef = RefObject<HTMLElement | null>;
+export type Web_BackupSourceDirectoryDialog_BackupSourceDirectoryDialog_Directory = Web_Backup_SourceDirectory | null;
+export type Web_BackupSourceDirectoryDialog_BackupSourceDirectoryDialog_SetDirectory = Dispatch<SetStateAction<Web_BackupSourceDirectoryDialog_BackupSourceDirectoryDialog_Directory>>;
+export type Web_BackupSourceDirectoryDialog_BackupSourceDirectoryDialog_DirectoryState = [Web_BackupSourceDirectoryDialog_BackupSourceDirectoryDialog_Directory, Web_BackupSourceDirectoryDialog_BackupSourceDirectoryDialog_SetDirectory];
+export type Web_BackupSourceDirectoryDialog_BackupSourceDirectoryDialog_SelectedPath = string;
+export type Web_BackupSourceDirectoryDialog_BackupSourceDirectoryDialog_SetSelectedPath = Dispatch<SetStateAction<Web_BackupSourceDirectoryDialog_BackupSourceDirectoryDialog_SelectedPath>>;
+export type Web_BackupSourceDirectoryDialog_BackupSourceDirectoryDialog_SelectedPathState = [Web_BackupSourceDirectoryDialog_BackupSourceDirectoryDialog_SelectedPath, Web_BackupSourceDirectoryDialog_BackupSourceDirectoryDialog_SetSelectedPath];
+export type Web_BackupSourceDirectoryDialog_BackupSourceDirectoryDialog_Busy = boolean;
+export type Web_BackupSourceDirectoryDialog_BackupSourceDirectoryDialog_SetBusy = Dispatch<SetStateAction<Web_BackupSourceDirectoryDialog_BackupSourceDirectoryDialog_Busy>>;
+export type Web_BackupSourceDirectoryDialog_BackupSourceDirectoryDialog_BusyState = [Web_BackupSourceDirectoryDialog_BackupSourceDirectoryDialog_Busy, Web_BackupSourceDirectoryDialog_BackupSourceDirectoryDialog_SetBusy];
+export type Web_BackupSourceDirectoryDialog_BackupSourceDirectoryDialog_Error = string;
+export type Web_BackupSourceDirectoryDialog_BackupSourceDirectoryDialog_SetError = Dispatch<SetStateAction<Web_BackupSourceDirectoryDialog_BackupSourceDirectoryDialog_Error>>;
+export type Web_BackupSourceDirectoryDialog_BackupSourceDirectoryDialog_ErrorState = [Web_BackupSourceDirectoryDialog_BackupSourceDirectoryDialog_Error, Web_BackupSourceDirectoryDialog_BackupSourceDirectoryDialog_SetError];
+export type Web_BackupSourceDirectoryDialog_BackupSourceDirectoryDialog_OpenDirectory_Path = string;
+export type Web_BackupSourceDirectoryDialog_BackupSourceDirectoryDialog_OpenDirectory_Returns = Promise<void>;
+export type Web_BackupSourceDirectoryDialog_BackupSourceDirectoryDialog_OpenDirectory = (path: Web_BackupSourceDirectoryDialog_BackupSourceDirectoryDialog_OpenDirectory_Path) => Web_BackupSourceDirectoryDialog_BackupSourceDirectoryDialog_OpenDirectory_Returns;
+export type Web_BackupSourceDirectoryDialog_BackupSourceDirectoryDialog_OpenDirectory_NextDirectory = Web_Backup_SourceDirectory;
+export type Web_BackupSourceDirectoryDialog_BackupSourceDirectoryDialog_DirectoryPath = string | undefined;
+export type Web_BackupSourceDirectoryDialog_BackupSourceDirectoryDialog_ParentPath = string | undefined;
+export type Web_BackupSourceDirectoryDialog_BackupSourceDirectoryDialog_SelectedDisplayPath = string;

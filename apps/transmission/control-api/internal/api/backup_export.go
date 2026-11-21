@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/security"
+	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/transmissionrpc"
 )
 
 type backupExportSelection struct {
@@ -205,12 +206,8 @@ func (server *Server) exportTorrents(ctx context.Context) ([]backupTorrent, erro
 	}
 	torrents := make([]backupTorrent, 0, len(result.Torrents))
 	for _, item := range result.Torrents {
-		encodedSnapshot, err := json.Marshal(item)
+		snapshot, err := decodeTorrentMoveSnapshot(transmissionrpc.Torrent(item))
 		if err != nil {
-			return nil, fmt.Errorf("encode torrent snapshot: %w", err)
-		}
-		var snapshot torrentMoveSnapshot
-		if err := json.Unmarshal(encodedSnapshot, &snapshot); err != nil {
 			return nil, fmt.Errorf("decode torrent snapshot: %w", err)
 		}
 		hash := strings.ToLower(snapshot.HashString)

@@ -1,4 +1,19 @@
-import type { ZodType } from 'zod';
+import type {
+  ZodSafeParseResult,
+  ZodType,
+} from 'zod';
+
+import type {
+  Web_Backup_Grant,
+  Web_Backup_ImportJob,
+  Web_Backup_ImportPreview,
+  Web_Backup_SourceDirectory,
+} from '@/types/web/backup.d.ts';
+import type {
+  Web_Notifications_Event,
+  Web_Notifications_Target,
+  Web_Notifications_TestResult,
+} from '@/types/web/notifications.d.ts';
 
 /**
  * API.
@@ -1111,3 +1126,1236 @@ export type Web_Api_UpdateTokenInput = {
   scopes: Web_Api_Scope[];
   expiresAt?: string | null | undefined;
 };
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_AccountSecuritySchema = Web_Api_Schema<Web_Api_AccountSecurity>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_AddPasskey_Name = string;
+export type Web_Api_AddPasskey_Password = string;
+export type Web_Api_AddPasskey_Returns = Promise<Web_Api_Passkey>;
+export type Web_Api_AddPasskey_Credential = Record<string, unknown>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_AddTorrent_Returns = Promise<Web_Api_TorrentAddResult>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_AdministratorSchema = Web_Api_Schema<Web_Api_Administrator>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_ApiError_Code = string;
+export type Web_Api_ApiError_Status = number;
+export type Web_Api_ApiError_Issues = Web_Api_ErrorIssue[];
+export type Web_Api_ApiError_Details = Record<string, unknown>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_ApiError_Constructor_Message = string;
+export type Web_Api_ApiError_Constructor_Code = string;
+export type Web_Api_ApiError_Constructor_Status = number;
+export type Web_Api_ApiError_Constructor_Issues = Web_Api_ErrorIssue[];
+export type Web_Api_ApiError_Constructor_Details = Record<string, unknown>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_AuthenticationResponseSchema = Web_Api_Schema<Web_Api_AuthenticationResponse>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_BackupGrantSchema = Web_Api_Schema<Web_Backup_Grant>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_BackupImportJobSchema = Web_Api_Schema<Web_Backup_ImportJob>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_BackupImportPreviewSchema = Web_Api_Schema<Web_Backup_ImportPreview>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_BackupSourceDirectorySchema = Web_Api_Schema<Web_Backup_SourceDirectory>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_BlocklistSourceStatusSchema = Web_Api_Schema<Web_Api_BlocklistSourceStatus>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_BlocklistStatusSchema = Web_Api_Schema<Web_Api_BlocklistStatus>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_ChangePassword_CurrentPassword = string;
+export type Web_Api_ChangePassword_NewPassword = string;
+export type Web_Api_ChangePassword_Returns = Promise<void>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_ChangeUsername_Username = string;
+export type Web_Api_ChangeUsername_Password = string;
+export type Web_Api_ChangeUsername_Returns = Promise<void>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_ClaimInstallation_Returns = Promise<Web_Api_AuthenticationResponse>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_ConfirmBackupOperation_Password = string;
+export type Web_Api_ConfirmBackupOperation_Code = string;
+export type Web_Api_ConfirmBackupOperation_Returns = Promise<string>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_ConfirmBackupOperationWithPasskey_Returns = Promise<string>;
+export type Web_Api_ConfirmBackupOperationWithPasskey_Credential = Record<string, unknown>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_ConnectionBeingRemovedMessage_CaughtError = unknown;
+export type Web_Api_ConnectionBeingRemovedMessage_ConnectionName = string;
+export type Web_Api_ConnectionBeingRemovedMessage_Returns = string | null;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_ConnectLiveEvents_Value = unknown;
+export type Web_Api_ConnectLiveEvents_ParsedSnapshot = ZodSafeParseResult<Web_Api_LiveSnapshot>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_CreateBackupImport_Grant = string;
+export type Web_Api_CreateBackupImport_Returns = Promise<Web_Backup_ImportJob>;
+export type Web_Api_CreateBackupImport_Response = {
+  job: Web_Backup_ImportJob;
+};
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_CreateDirectory_ProfileId = string;
+export type Web_Api_CreateDirectory_Returns = Promise<Web_Api_Directory>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_CreatedTokenSchema = Web_Api_Schema<Web_Api_CreatedToken>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_CreateNotification_Returns = Promise<Web_Notifications_Target>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_CreateRpcLogin_Returns = Promise<Web_Api_RPCCredential>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_CreateToken_Returns = Promise<Web_Api_CreatedToken>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_CreateTorrentProfile_IncompleteDirectory = string;
+export type Web_Api_CreateTorrentProfile_Returns = Promise<Web_Api_TorrentProfile>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_CreateVpnConnection_Returns = Promise<Web_Api_VpnConnection>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_CreateWebProxyLogin_Returns = Promise<Web_Api_WebProxyCredential>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_CustomProfileResponseSchema = Web_Api_Schema<Web_Api_CustomProfileResponse>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_DefaultTorrentProfileSchema = Web_Api_Schema<Web_Api_DefaultTorrentProfile>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_DefaultTorrentProfileUpdateResponseSchema = Web_Api_Schema<Web_Api_UpdateDefaultTorrentProfileResponse>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_DeleteDirectory_Path = string;
+export type Web_Api_DeleteDirectory_ProfileId = string;
+export type Web_Api_DeleteDirectory_Returns = Promise<void>;
+export type Web_Api_DeleteDirectory_ValidatedPath = string;
+export type Web_Api_DeleteDirectory_Query = string;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_DeleteRpcLogin_LoginId = string;
+export type Web_Api_DeleteRpcLogin_Returns = Promise<void>;
+export type Web_Api_DeleteRpcLogin_ValidatedLoginId = string;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_DeleteTorrentProfile_ProfileId = string;
+export type Web_Api_DeleteTorrentProfile_MoveTorrents = boolean;
+export type Web_Api_DeleteTorrentProfile_Returns = Promise<Web_Api_DeleteTorrentProfileResponse>;
+export type Web_Api_DeleteTorrentProfile_Path = string;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_DeleteTorrentProfileResponseSchema = Web_Api_Schema<Web_Api_DeleteTorrentProfileResponse>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_DeleteVpnConnection_ConnectionId = string;
+export type Web_Api_DeleteVpnConnection_Returns = Promise<Web_Api_DeleteVpnConnectionResponse>;
+export type Web_Api_DeleteVpnConnection_ValidatedConnectionId = string;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_DeleteVpnConnectionResponseSchema = Web_Api_Schema<Web_Api_DeleteVpnConnectionResponse>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_DeleteWebProxyLogin_LoginId = string;
+export type Web_Api_DeleteWebProxyLogin_Returns = Promise<void>;
+export type Web_Api_DeleteWebProxyLogin_ValidatedLoginId = string;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_DirectorySchema = Web_Api_Schema<Web_Api_Directory>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_DisableTotp_Password = string;
+export type Web_Api_DisableTotp_Returns = Promise<void>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_DisconnectVpnConnection_ConnectionId = string;
+export type Web_Api_DisconnectVpnConnection_Returns = Promise<Web_Api_VpnConnection>;
+export type Web_Api_DisconnectVpnConnection_ValidatedConnectionId = string;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_DismissRemovedSecrets_Returns = Promise<void>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_DispositionFileName_Disposition = string;
+export type Web_Api_DispositionFileName_Fallback = string;
+export type Web_Api_DispositionFileName_Returns = string;
+export type Web_Api_DispositionFileName_EncodedMatch = RegExpExecArray | null;
+export type Web_Api_DispositionFileName_EncodedName = string | undefined;
+export type Web_Api_DispositionFileName_QuotedMatch = RegExpExecArray | null;
+export type Web_Api_DispositionFileName_QuotedName = string | undefined;
+export type Web_Api_DispositionFileName_BareMatch = RegExpExecArray | null;
+export type Web_Api_DispositionFileName_BareName = string | undefined;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_DownloadBackupExport_Grant = string;
+export type Web_Api_DownloadBackupExport_Returns = Promise<void>;
+export type Web_Api_DownloadBackupExport_CsrfToken = string | undefined;
+export type Web_Api_DownloadBackupExport_Disposition = string;
+export type Web_Api_DownloadBackupExport_FilenameMatch = RegExpExecArray | null;
+export type Web_Api_DownloadBackupExport_MatchedFilename = string | undefined;
+export type Web_Api_DownloadBackupExport_Filename = string;
+export type Web_Api_DownloadBackupExport_Url = string;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_DownloadFinishedFiles_Hashes = string[];
+export type Web_Api_DownloadFinishedFiles_Returns = Promise<Web_Api_TorrentContentsDownload>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_DownloadTorrentFiles_Hashes = string[];
+export type Web_Api_DownloadTorrentFiles_Returns = Promise<number>;
+export type Web_Api_DownloadTorrentFiles_CsrfToken = string | undefined;
+export type Web_Api_DownloadTorrentFiles_FallbackName = string;
+export type Web_Api_DownloadTorrentFiles_Filename = string;
+export type Web_Api_DownloadTorrentFiles_Url = string;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_EnableTotp_Code = string;
+export type Web_Api_EnableTotp_Returns = Promise<Web_Api_RecoveryCodes>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_ErrorEnvelopeSchema = Web_Api_Schema<Web_Api_ErrorEnvelope>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_GetAccountSecurity_Returns = Promise<Web_Api_AccountSecurity>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_GetBackupImport_ImportId = string;
+export type Web_Api_GetBackupImport_Returns = Promise<Web_Backup_ImportJob>;
+export type Web_Api_GetBackupImport_Response = {
+  job: Web_Backup_ImportJob;
+};
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_GetBackupSourceDirectory_Path = string;
+export type Web_Api_GetBackupSourceDirectory_Returns = Promise<Web_Backup_SourceDirectory>;
+export type Web_Api_GetBackupSourceDirectory_Response = {
+  directory: Web_Backup_SourceDirectory;
+};
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_GetBlocklistStatus_Returns = Promise<Web_Api_BlocklistStatus>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_GetCurrentAdministrator_Returns = Promise<Web_Api_Administrator | null>;
+export type Web_Api_GetCurrentAdministrator_ResponseValue = unknown;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_GetCurrentBackupImport_Returns = Promise<Web_Backup_ImportJob | null>;
+export type Web_Api_GetCurrentBackupImport_Response = {
+  job: Web_Backup_ImportJob | null;
+};
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_GetDirectory_Path = string;
+export type Web_Api_GetDirectory_ProfileId = string;
+export type Web_Api_GetDirectory_Returns = Promise<Web_Api_Directory>;
+export type Web_Api_GetDirectory_ValidatedPath = string;
+export type Web_Api_GetDirectory_Query = string;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_GetNotificationEvents_Returns = Promise<Web_Notifications_Event[]>;
+export type Web_Api_GetNotificationEvents_Response = {
+  items: Web_Notifications_Event[];
+};
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_GetNotifications_Returns = Promise<Web_Notifications_Target[]>;
+export type Web_Api_GetNotifications_Response = {
+  items: Web_Notifications_Target[];
+};
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_GetProfiles_ProviderId = string;
+export type Web_Api_GetProfiles_Returns = Promise<Web_Api_VpnProfile[]>;
+export type Web_Api_GetProfiles_ValidatedProviderId = string;
+export type Web_Api_GetProfiles_Query = string;
+export type Web_Api_GetProfiles_Response = {
+  items: Web_Api_VpnProfile[];
+};
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_GetProviders_Returns = Promise<Web_Api_Provider[]>;
+export type Web_Api_GetProviders_Response = {
+  items: Web_Api_Provider[];
+};
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_GetRpcLogins_Returns = Promise<Web_Api_RPCLogin[]>;
+export type Web_Api_GetRpcLogins_Response = {
+  logins: Web_Api_RPCLogin[];
+};
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_GetSettings_Returns = Promise<Web_Api_SettingsSnapshot>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_GetSetupStatus_Returns = Promise<Web_Api_SetupStatus>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_GetTokens_Returns = Promise<Web_Api_Token[]>;
+export type Web_Api_GetTokens_Response = {
+  items: Web_Api_Token[];
+};
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_GetTorrentDetail_TorrentId = number;
+export type Web_Api_GetTorrentDetail_Returns = Promise<Web_Api_TorrentDetail>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_GetTorrentOrganization_Returns = Promise<Web_Api_TorrentOrganization>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_GetTorrentProfiles_Returns = Promise<Web_Api_TorrentProfilesResponse>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_GetTorrents_Returns = Promise<Web_Api_TorrentListResponse>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_GetTransmissionFreeSpace_Path = string;
+export type Web_Api_GetTransmissionFreeSpace_Returns = Promise<number>;
+export type Web_Api_GetTransmissionFreeSpace_ValidatedPath = string;
+export type Web_Api_GetTransmissionFreeSpace_Query = string;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_GetVpnConnection_ConnectionId = string;
+export type Web_Api_GetVpnConnection_Returns = Promise<Web_Api_VpnConnection>;
+export type Web_Api_GetVpnConnection_ValidatedConnectionId = string;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_GetVpnConnections_Returns = Promise<Web_Api_VpnConnectionsResponse>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_GetWebProxy_Returns = Promise<Web_Api_WebProxy>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_IssueFor_CaughtError = unknown;
+export type Web_Api_IssueFor_Field = string;
+export type Web_Api_IssueFor_Returns = string;
+export type Web_Api_IssueFor_Issue = Web_Api_ErrorIssue | undefined;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_IsVpnConnectionRequiredError_CaughtError = unknown;
+export type Web_Api_IsVpnConnectionRequiredError_Returns = boolean;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_JsonValueSchema = Web_Api_Schema<Web_Api_JsonValue>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_LiveSnapshotSchema = Web_Api_Schema<Web_Api_LiveSnapshot>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_Login_Returns = Promise<Web_Api_LoginResult>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_LoginResultSchema = Web_Api_Schema<Web_Api_LoginResult>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_Logout_Returns = Promise<void>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_MessageForApiError_Code = string;
+export type Web_Api_MessageForApiError_Status = number;
+export type Web_Api_MessageForApiError_Message = string;
+export type Web_Api_MessageForApiError_Details = Record<string, unknown>;
+export type Web_Api_MessageForApiError_Returns = string;
+export type Web_Api_MessageForApiError_NormalizedMessage = string;
+export type Web_Api_MessageForApiError_Limit = unknown;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_MovedTorrentSchema = Web_Api_Schema<Web_Api_MovedTorrent>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_NotificationTargetSchema = Web_Api_Schema<Web_Notifications_Target>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_NotificationTestSchema = Web_Api_Schema<Web_Notifications_TestResult>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_PasskeyCeremonySchema = Web_Api_Schema<Web_Api_PasskeyCeremony>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_PasskeySchema = Web_Api_Schema<Web_Api_Passkey>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_PreviewAnotherTransmissionImport_ConfigPath = string;
+export type Web_Api_PreviewAnotherTransmissionImport_FolderMappings = Record<string, string>;
+export type Web_Api_PreviewAnotherTransmissionImport_Returns = Promise<Web_Backup_ImportPreview>;
+export type Web_Api_PreviewAnotherTransmissionImport_Response = {
+  preview: Web_Backup_ImportPreview;
+};
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_PreviewBackupImport_FolderMappings = Record<string, string>;
+export type Web_Api_PreviewBackupImport_ProfileActions = Record<string, string>;
+export type Web_Api_PreviewBackupImport_Returns = Promise<Web_Backup_ImportPreview>;
+export type Web_Api_PreviewBackupImport_Response = {
+  preview: Web_Backup_ImportPreview;
+};
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_PreviewTorrentLinks_Links = string[];
+export type Web_Api_PreviewTorrentLinks_Returns = Promise<Web_Api_TorrentLinkPreviewResponse>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_ReadCookie_Name = string;
+export type Web_Api_ReadCookie_Returns = string | undefined;
+export type Web_Api_ReadCookie_Prefix = string;
+export type Web_Api_ReadCookie_Parts = string[];
+export type Web_Api_ReadCookie_MatchingPart = string | undefined;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_ReconnectVpnConnection_ConnectionId = string;
+export type Web_Api_ReconnectVpnConnection_Returns = Promise<Web_Api_VpnConnection>;
+export type Web_Api_ReconnectVpnConnection_ValidatedConnectionId = string;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_RecoveryCodesSchema = Web_Api_Schema<Web_Api_RecoveryCodes>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_RefreshVpnCatalog_ProviderId = string;
+export type Web_Api_RefreshVpnCatalog_Returns = Promise<void>;
+export type Web_Api_RefreshVpnCatalog_ValidatedProviderId = string;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_RegenerateRecoveryCodes_Password = string;
+export type Web_Api_RegenerateRecoveryCodes_Returns = Promise<Web_Api_RecoveryCodes>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_RemovedSecretSchema = Web_Api_Schema<Web_Api_RemovedSecret>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_RemoveNotification_NotificationId = string;
+export type Web_Api_RemoveNotification_Returns = Promise<void>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_RemovePasskey_PasskeyId = string;
+export type Web_Api_RemovePasskey_Password = string;
+export type Web_Api_RemovePasskey_Returns = Promise<void>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_RemoveTorrents_Hashes = string[];
+export type Web_Api_RemoveTorrents_DeleteLocalData = boolean;
+export type Web_Api_RemoveTorrents_Returns = Promise<void>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_RenameTorrentPath_Returns = Promise<void>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_RequestBlocklistUpdate_Returns = Promise<void>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_RequestJson_Path = string;
+export type Web_Api_RequestJson_RequestBody = unknown;
+export type Web_Api_RequestJson_BaseOptions = Omit<Web_Api_Request_Options, 'body'>;
+export type Web_Api_RequestJson_CsrfToken = string | undefined;
+export type Web_Api_RequestJson_ResponseValue = unknown;
+export type Web_Api_RequestJson_ParsedResponse<ResponseValue> = ZodSafeParseResult<ResponseValue>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_RequestVoid_Path = string;
+export type Web_Api_RequestVoid_Returns = Promise<void>;
+export type Web_Api_RequestVoid_RequestBody = unknown;
+export type Web_Api_RequestVoid_BaseOptions = Omit<Web_Api_Request_Options, 'body'>;
+export type Web_Api_RequestVoid_CsrfToken = string | undefined;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_ResponseArraySchema_Returns<Value> = Web_Api_Schema<Value[]>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_ResponseError_Returns = Promise<Web_Api_ResponseError_ApiError>;
+export type Web_Api_ResponseError_ApiError = Error & {
+  code: string;
+  status: number;
+  issues: Web_Api_ErrorIssue[];
+  details: Record<string, unknown>;
+};
+export type Web_Api_ResponseError_ResponseValue = unknown;
+export type Web_Api_ResponseError_ParsedError = ZodSafeParseResult<Web_Api_ErrorEnvelope>;
+export type Web_Api_ResponseError_Details = Record<string, unknown>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_RestartTransmission_Returns = Promise<void>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_RevokeToken_TokenId = string;
+export type Web_Api_RevokeToken_Returns = Promise<void>;
+export type Web_Api_RevokeToken_ValidatedTokenId = string;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_RpcCredentialSchema = Web_Api_Schema<Web_Api_RPCCredential>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_RpcLoginSchema = Web_Api_Schema<Web_Api_RPCLogin>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_RunTorrentAction_Hashes = string[];
+export type Web_Api_RunTorrentAction_Returns = Promise<void>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_ScopeSchema = Web_Api_Schema<Web_Api_Scope>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_SetDefaultVpnConnection_Returns = Promise<Web_Api_VpnDefaultResponse>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_SetTorrentProfile_Returns = Promise<Web_Api_SetTorrentProfileResponse>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_SetupStatusSchema = Web_Api_Schema<Web_Api_SetupStatus>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_SignInWithPasskey_Returns = Promise<Web_Api_AuthenticationResponse>;
+export type Web_Api_SignInWithPasskey_Credential = Record<string, unknown>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_StartTotpSetup_Password = string;
+export type Web_Api_StartTotpSetup_Returns = Promise<Web_Api_TotpSetup>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_SubmitSecondFactor_Challenge = string;
+export type Web_Api_SubmitSecondFactor_Code = string;
+export type Web_Api_SubmitSecondFactor_Returns = Promise<Web_Api_AuthenticationResponse>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_SummaryFor_CaughtError = unknown;
+export type Web_Api_SummaryFor_ShownFields = string[];
+export type Web_Api_SummaryFor_Fallback = string;
+export type Web_Api_SummaryFor_Returns = string;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_TestNotification_NotificationId = string;
+export type Web_Api_TestNotification_Returns = Promise<Web_Notifications_TestResult>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_TokenSchema = Web_Api_Schema<Web_Api_Token>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_TorrentAddResultSchema = Web_Api_Schema<Web_Api_TorrentAddResult>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_TorrentContentsDownloadSchema = Web_Api_Schema<Web_Api_TorrentContentsDownload>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_TorrentLinkPreviewResponseSchema = Web_Api_Schema<Web_Api_TorrentLinkPreviewResponse>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_TorrentLinkPreviewSchema = Web_Api_Schema<Web_Api_TorrentLinkPreview>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_TorrentListResponseSchema = Web_Api_Schema<Web_Api_TorrentListResponse>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_TorrentProfileAssignmentResponseSchema = Web_Api_Schema<Web_Api_SetTorrentProfileResponse>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_TorrentProfileSchema = Web_Api_Schema<Web_Api_TorrentProfile>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_TorrentProfileUpdateResponseSchema = Web_Api_Schema<Web_Api_UpdateTorrentProfileResponse>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_TotpSetupSchema = Web_Api_Schema<Web_Api_TotpSetup>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_TransmissionFreeSpaceSchema = Web_Api_Schema<Web_Api_TransmissionFreeSpace>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_TransmissionRestartResponseSchema = Web_Api_Schema<Web_Api_TransmissionRestartResponse>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_UpdateDefaultTorrentProfile_MoveTorrents = boolean;
+export type Web_Api_UpdateDefaultTorrentProfile_IncompleteDirectory = string;
+export type Web_Api_UpdateDefaultTorrentProfile_Returns = Promise<Web_Api_UpdateDefaultTorrentProfileResponse>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_UpdateNotification_NotificationId = string;
+export type Web_Api_UpdateNotification_Returns = Promise<Web_Notifications_Target>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_UpdateRpcLogin_LoginId = string;
+export type Web_Api_UpdateRpcLogin_Returns = Promise<Web_Api_RPCCredential>;
+export type Web_Api_UpdateRpcLogin_ValidatedLoginId = string;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_UpdateSettings_IncompleteDirectory = string;
+export type Web_Api_UpdateSettings_Returns = Promise<Web_Api_SettingsSnapshot>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_UpdateToken_TokenId = string;
+export type Web_Api_UpdateToken_Returns = Promise<Web_Api_Token>;
+export type Web_Api_UpdateToken_ValidatedTokenId = string;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_UpdateTorrentOrganization_Returns = Promise<Web_Api_UpdateTorrentOrganizationResponse>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_UpdateTorrentOrganizationResponseSchema = Web_Api_Schema<Web_Api_UpdateTorrentOrganizationResponse>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_UpdateTorrentProfile_ProfileId = string;
+export type Web_Api_UpdateTorrentProfile_MoveTorrents = boolean;
+export type Web_Api_UpdateTorrentProfile_IncompleteDirectory = string;
+export type Web_Api_UpdateTorrentProfile_Returns = Promise<Web_Api_UpdateTorrentProfileResponse>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_UpdateTorrents_Hashes = string[];
+export type Web_Api_UpdateTorrents_Returns = Promise<void>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_UpdateVpnConnection_ConnectionId = string;
+export type Web_Api_UpdateVpnConnection_Returns = Promise<Web_Api_VpnConnection>;
+export type Web_Api_UpdateVpnConnection_ValidatedConnectionId = string;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_UpdateWebProxy_Enabled = boolean;
+export type Web_Api_UpdateWebProxy_Returns = Promise<Web_Api_WebProxy>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_UpdateWebProxyLogin_LoginId = string;
+export type Web_Api_UpdateWebProxyLogin_Returns = Promise<Web_Api_WebProxyCredential>;
+export type Web_Api_UpdateWebProxyLogin_ValidatedLoginId = string;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_UploadCustomProfile_ProfileName = string;
+export type Web_Api_UploadCustomProfile_Profile = string;
+export type Web_Api_UploadCustomProfile_Returns = Promise<Web_Api_VpnProfile[]>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_VpnConnectionResponseSchema = Web_Api_Schema<Web_Api_VpnConnectionResponse>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_VpnConnectionSchema = Web_Api_Schema<Web_Api_VpnConnection>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_VpnConnectionsResponseSchema = Web_Api_Schema<Web_Api_VpnConnectionsResponse>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_VpnDefaultResponseSchema = Web_Api_Schema<Web_Api_VpnDefaultResponse>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_WebProxyCredentialSchema = Web_Api_Schema<Web_Api_WebProxyCredential>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_WebProxyLoginSchema = Web_Api_Schema<Web_Api_WebProxyLogin>;
+
+/**
+ * API.
+ *
+ * @since 2.4.1
+ */
+export type Web_Api_WebProxySchema = Web_Api_Schema<Web_Api_WebProxy>;

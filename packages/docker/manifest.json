@@ -1,8 +1,155 @@
 {
+  "build": {
+    "enabled": false
+  },
+  "compose": {
+    "capAdd": [
+      "NET_ADMIN"
+    ],
+    "devices": [
+      "/dev/net/tun:/dev/net/tun"
+    ],
+    "name": "transmission-vpn",
+    "networks": {
+      "default": {
+        "enable_ipv6": true
+      }
+    },
+    "ports": [
+      "22602:22602",
+      "22605:22605",
+      "9091:9091"
+    ],
+    "restart": "unless-stopped",
+    "volumes": [
+      {
+        "source": "config",
+        "target": "/config"
+      },
+      {
+        "source": "data",
+        "target": "/data"
+      }
+    ]
+  },
+  "dockerfile": {
+    "layout": "spaced",
+    "stages": [
+      {
+        "before": "s6-overlay",
+        "file": "stages/debian-base.Dockerfile",
+        "name": "debian-base"
+      },
+      {
+        "file": "stages/transmission-release.Dockerfile",
+        "name": "transmission-release"
+      },
+      {
+        "file": "stages/transmission-build.Dockerfile",
+        "name": "transmission-build"
+      },
+      {
+        "file": "stages/web-interface-build.Dockerfile",
+        "name": "web-interface-build"
+      },
+      {
+        "file": "stages/control-api-dependencies.Dockerfile",
+        "name": "control-api-dependencies"
+      },
+      {
+        "file": "stages/control-api-test.Dockerfile",
+        "name": "control-api-test"
+      },
+      {
+        "file": "stages/control-api-build.Dockerfile",
+        "name": "control-api-build"
+      }
+    ]
+  },
   "healthPath": "/api/v1/health/live",
+  "healthService": "control-api",
   "legacyStatePaths": [],
   "networkMode": "bridge",
-  "schemaVersion": 1,
+  "project": {
+    "executables": [
+      {
+        "name": "*.sh",
+        "path": "/usr/local/libexec/transmission-vpn"
+      }
+    ]
+  },
+  "runtime": {
+    "copies": [
+      {
+        "beforeRootfs": true,
+        "destination": "/usr/local/bin/transmission-daemon",
+        "from": "transmission-build",
+        "source": "/build/install/usr/local/bin/transmission-daemon"
+      },
+      {
+        "beforeRootfs": true,
+        "destination": "/usr/local/bin/transmission-vpn-api",
+        "from": "control-api-build",
+        "source": "/out/transmission-vpn-api"
+      },
+      {
+        "beforeRootfs": true,
+        "destination": "/usr/local/bin/transmission-vpn-directory-controller",
+        "from": "control-api-build",
+        "source": "/out/transmission-vpn-directory-controller"
+      },
+      {
+        "beforeRootfs": true,
+        "destination": "/usr/local/bin/transmission-vpn-transmission-runner",
+        "from": "control-api-build",
+        "source": "/out/transmission-vpn-transmission-runner"
+      },
+      {
+        "beforeRootfs": true,
+        "destination": "/usr/local/bin/transmission-vpn-vpn-controller",
+        "from": "control-api-build",
+        "source": "/out/transmission-vpn-vpn-controller"
+      },
+      {
+        "beforeRootfs": true,
+        "destination": "/usr/local/bin/transmission-vpn-web-proxy",
+        "from": "control-api-build",
+        "source": "/out/transmission-vpn-web-proxy"
+      },
+      {
+        "beforeRootfs": true,
+        "destination": "/usr/local/share/transmission-vpn/web",
+        "from": "web-interface-build",
+        "source": "/workspace/apps/transmission/build"
+      }
+    ],
+    "expose": [
+      9091
+    ],
+    "from": "debian-base",
+    "packages": [
+      "bash",
+      "iproute2",
+      "iptables",
+      "libb64-0d",
+      "libcurl4t64",
+      "libdeflate0",
+      "libevent-2.1-7t64",
+      "libminiupnpc18",
+      "libnatpmp1t64",
+      "libstdc++6",
+      "netcat-openbsd",
+      "openvpn",
+      "sysvinit-utils",
+      "wget",
+      "wireguard-go",
+      "wireguard-tools"
+    ]
+  },
+  "s6Overlay": {
+    "from": "debian-base"
+  },
+  "schemaVersion": 2,
   "services": [
     {
       "command": "/usr/local/libexec/transmission-vpn/config-init.sh",
@@ -56,6 +203,7 @@
       "dependencies": [
         "config-init"
       ],
+      "down": "/usr/local/libexec/transmission-vpn/firewall-down.sh",
       "environment": {},
       "kind": "oneshot",
       "name": "firewall-init",

@@ -25,6 +25,7 @@ import (
 
 	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/blocklist"
 	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/transmissionconfig"
+	"github.com/mrjackyliang/transmission-vpn/apps/transmission/control-api/internal/transmissionrpc"
 )
 
 // blocklistTestRPC returns one configurable live session snapshot.
@@ -34,9 +35,10 @@ import (
 //
 // Since: 2.0.0
 type blocklistTestRPC struct {
-	LiveSettings map[string]json.RawMessage
-	Error        error
-	Calls        atomic.Int32
+	LiveSettings  map[string]json.RawMessage
+	Error         error
+	Calls         atomic.Int32
+	LastArguments atomic.Value
 }
 
 // Call implements the runner's narrow Transmission RPC consumer contract.
@@ -48,12 +50,17 @@ type blocklistTestRPC struct {
 func (client *blocklistTestRPC) Call(
 	_ context.Context,
 	method string,
-	_ any,
+	arguments any,
 	result any,
 ) error {
 	if method != "session-get" {
 		return fmt.Errorf("unexpected RPC method %s", method)
 	}
+	encodedArguments, err := json.Marshal(arguments)
+	if err != nil {
+		return err
+	}
+	client.LastArguments.Store(string(encodedArguments))
 	client.Calls.Add(1)
 	if client.Error != nil {
 		return client.Error
@@ -778,7 +785,8 @@ func TestBlocklistMergerBacksOffAfterReloadFailure(testingObject *testing.T) {
 		Error:        errors.New("session-get timed out"),
 	}
 	merger.runner.processes[entry.ConnectionID] = &daemonProcess{
-		Entry: entry, ProcessID: 101, PeerPort: entry.PeerPort, Client: client, Ready: true,
+		Entry: entry, ProcessID: 101, PeerPort: entry.PeerPort,
+		Client: transmissionrpc.NewAdapter(client), Ready: true,
 	}
 	var signals atomic.Int32
 	merger.runner.signalProcess = func(int) error {
@@ -1080,11 +1088,11 @@ func TestBlocklistMergerCleansOwnedFoldersAndSignalsEveryDaemon(testingObject *t
 	merger.runner.processes = map[string]*daemonProcess{
 		entry.ConnectionID: {
 			Entry: entry, ProcessID: 101, PeerPort: entry.PeerPort,
-			Client: firstClient, Ready: true,
+			Client: transmissionrpc.NewAdapter(firstClient), Ready: true,
 		},
 		secondEntry.ConnectionID: {
 			Entry: secondEntry, ProcessID: 202, PeerPort: secondEntry.PeerPort,
-			Client: secondClient, Ready: true,
+			Client: transmissionrpc.NewAdapter(secondClient), Ready: true,
 		},
 	}
 	var signalMutex sync.Mutex
@@ -1132,7 +1140,8 @@ func TestBlocklistMergerPreservesLiveSettingsBeforeSIGHUP(testingObject *testing
 		"blocklist-url":     json.RawMessage(`"https://example.test/?token=secret"`),
 	}}
 	merger.runner.processes[entry.ConnectionID] = &daemonProcess{
-		Entry: entry, ProcessID: 303, PeerPort: entry.PeerPort, Client: client, Ready: true,
+		Entry: entry, ProcessID: 303, PeerPort: entry.PeerPort,
+		Client: transmissionrpc.NewAdapter(client), Ready: true,
 	}
 	var signals atomic.Int32
 	merger.runner.signalProcess = func(processID int) error {
@@ -1175,6 +1184,18 @@ func TestBlocklistMergerPreservesLiveSettingsBeforeSIGHUP(testingObject *testing
 			client.Calls.Load(),
 			signals.Load(),
 		)
+	}
+	wantedArguments := `{"fields":["alt-speed-down","alt-speed-enabled","alt-speed-time-begin",` +
+		`"alt-speed-time-day","alt-speed-time-enabled","alt-speed-time-end","alt-speed-up",` +
+		`"blocklist-enabled","cache-size-mb","dht-enabled","download-dir",` +
+		`"download-queue-enabled","download-queue-size","encryption","idle-seeding-limit",` +
+		`"idle-seeding-limit-enabled","incomplete-dir","incomplete-dir-enabled","lpd-enabled",` +
+		`"peer-limit-global","pex-enabled","queue-stalled-enabled","queue-stalled-minutes",` +
+		`"rename-partial-files","seed-queue-enabled","seed-queue-size","speed-limit-down",` +
+		`"speed-limit-down-enabled","speed-limit-up","speed-limit-up-enabled",` +
+		`"start-added-torrents","trash-original-torrent-files","utp-enabled"]}`
+	if arguments, _ := client.LastArguments.Load().(string); arguments != wantedArguments {
+		testingObject.Fatalf("session-get arguments = %s, want %s", arguments, wantedArguments)
 	}
 }
 
@@ -1240,7 +1261,8 @@ func TestBlocklistMergerMapsRenamedAndConvertedLiveSettings(testingObject *testi
 				test.rpcKey: test.live,
 			}}
 			merger.runner.processes[entry.ConnectionID] = &daemonProcess{
-				Entry: entry, ProcessID: 303, PeerPort: entry.PeerPort, Client: client, Ready: true,
+				Entry: entry, ProcessID: 303, PeerPort: entry.PeerPort,
+				Client: transmissionrpc.NewAdapter(client), Ready: true,
 			}
 			merger.runner.signalProcess = func(int) error {
 				return nil
@@ -1299,7 +1321,8 @@ func TestBlocklistMergerDoesNotPersistUnmappedLiveSettings(testingObject *testin
 		"speed-limit-down": json.RawMessage("300"),
 	}}
 	merger.runner.processes[entry.ConnectionID] = &daemonProcess{
-		Entry: entry, ProcessID: 303, PeerPort: entry.PeerPort, Client: client, Ready: true,
+		Entry: entry, ProcessID: 303, PeerPort: entry.PeerPort,
+		Client: transmissionrpc.NewAdapter(client), Ready: true,
 	}
 	merger.runner.signalProcess = func(int) error {
 		return nil
@@ -1347,7 +1370,8 @@ func TestBlocklistMergerDefersSignalsUntilRPCReadiness(testingObject *testing.T)
 		"speed-limit-down": json.RawMessage("275"),
 	}}
 	merger.runner.processes[entry.ConnectionID] = &daemonProcess{
-		Entry: entry, ProcessID: 404, PeerPort: entry.PeerPort, Client: client,
+		Entry: entry, ProcessID: 404, PeerPort: entry.PeerPort,
+		Client: transmissionrpc.NewAdapter(client),
 	}
 	var signals atomic.Int32
 	merger.runner.signalProcess = func(int) error {

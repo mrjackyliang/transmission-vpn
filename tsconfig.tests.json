@@ -5,6 +5,6 @@
     "@cbnventures/nova/presets/tsconfig/role-tests.json",
     "@cbnventures/nova/presets/tsconfig/runtime-node.json"
   ],
-  "compilerOptions": { "types": ["@types/node", "vitest/globals"] },
+  "compilerOptions": { "types": ["@types/node"] },
   "include": ["./tests/**/*.ts"]
 }

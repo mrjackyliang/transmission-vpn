@@ -1,0 +1,322 @@
+import type {
+  Dispatch,
+  FormEvent,
+  KeyboardEvent,
+  MouseEvent,
+  ReactElement,
+  RefObject,
+  SetStateAction,
+} from 'react';
+
+import type {
+  Web_Api_DefaultTorrentProfile,
+  Web_Api_MovedTorrent,
+  Web_Api_SetTorrentProfileResponse,
+  Web_Api_Statistics,
+  Web_Api_StatisticsPeriod,
+  Web_Api_Torrent,
+  Web_Api_TorrentAction,
+  Web_Api_TorrentContentsDownload,
+  Web_Api_TorrentProfile,
+  Web_Api_VpnConnection,
+} from '@/types/web/api.d.ts';
+import type {
+  Web_Components_TorrentContextMenu,
+  Web_Components_TorrentFilter,
+  Web_Components_TorrentFilterItem,
+  Web_Components_TorrentPageSize,
+  Web_Components_TorrentProfileChangeDialog_Props,
+  Web_Components_TorrentSort,
+  Web_Components_TorrentSortDirection,
+  Web_Components_TorrentSortHeader_Props,
+  Web_Components_TorrentSortKey,
+  Web_Components_TorrentState,
+  Web_Components_TorrentWorkspace_Props,
+  Web_Components_TrackerIssue,
+} from '@/types/web/components.d.ts';
+
+/**
+ * Torrent Workspace.
+ *
+ * @since 2.4.1
+ */
+export type Web_TorrentWorkspace_CompareTorrents_LeftTorrent = Web_Api_Torrent;
+export type Web_TorrentWorkspace_CompareTorrents_RightTorrent = Web_Api_Torrent;
+export type Web_TorrentWorkspace_CompareTorrents_Sort = Web_Components_TorrentSort;
+export type Web_TorrentWorkspace_CompareTorrents_Returns = number;
+export type Web_TorrentWorkspace_CompareTorrents_LeftValue = number | string;
+export type Web_TorrentWorkspace_CompareTorrents_RightValue = number | string;
+export type Web_TorrentWorkspace_CompareTorrents_Direction = number;
+
+/**
+ * Torrent Workspace.
+ *
+ * @since 2.4.1
+ */
+export type Web_TorrentWorkspace_HashesForTorrentIdentifiers_Torrents = Web_Api_Torrent[];
+export type Web_TorrentWorkspace_HashesForTorrentIdentifiers_Identifiers = number[];
+export type Web_TorrentWorkspace_HashesForTorrentIdentifiers_Returns = string[];
+export type Web_TorrentWorkspace_HashesForTorrentIdentifiers_Hashes = (string | undefined)[];
+export type Web_TorrentWorkspace_HashesForTorrentIdentifiers_MatchedTorrent = Web_Api_Torrent | undefined;
+export type Web_TorrentWorkspace_HashesForTorrentIdentifiers_IsHash_Hash = string | undefined;
+export type Web_TorrentWorkspace_HashesForTorrentIdentifiers_IsHash_TypeGuard = string;
+export type Web_TorrentWorkspace_HashesForTorrentIdentifiers_IsHash = (hash: Web_TorrentWorkspace_HashesForTorrentIdentifiers_IsHash_Hash) => hash is Web_TorrentWorkspace_HashesForTorrentIdentifiers_IsHash_TypeGuard;
+
+/**
+ * Torrent Workspace.
+ *
+ * @since 2.4.1
+ */
+export type Web_TorrentWorkspace_SortHeader_Props = Web_Components_TorrentSortHeader_Props;
+export type Web_TorrentWorkspace_SortHeader_Returns = ReactElement;
+export type Web_TorrentWorkspace_SortHeader_ActiveSort = Web_Components_TorrentSortHeader_Props['activeSort'];
+export type Web_TorrentWorkspace_SortHeader_Label = Web_Components_TorrentSortHeader_Props['label'];
+export type Web_TorrentWorkspace_SortHeader_OnSort = Web_Components_TorrentSortHeader_Props['onSort'];
+export type Web_TorrentWorkspace_SortHeader_SortKey = Web_Components_TorrentSortHeader_Props['sortKey'];
+export type Web_TorrentWorkspace_SortHeader_Active = boolean;
+export type Web_TorrentWorkspace_SortHeader_Ascending = boolean;
+export type Web_TorrentWorkspace_SortHeader_ClassNames = string[];
+
+/**
+ * Torrent Workspace.
+ *
+ * @since 2.4.1
+ */
+export type Web_TorrentWorkspace_StatisticPeriod_Statistics = Web_Api_Statistics | undefined;
+export type Web_TorrentWorkspace_StatisticPeriod_Key = 'current-stats' | 'cumulative-stats';
+export type Web_TorrentWorkspace_StatisticPeriod_Returns = Web_Api_StatisticsPeriod | undefined;
+
+/**
+ * Torrent Workspace.
+ *
+ * @since 2.4.1
+ */
+export type Web_TorrentWorkspace_TorrentProfileChangeDialog_Props = Web_Components_TorrentProfileChangeDialog_Props;
+export type Web_TorrentWorkspace_TorrentProfileChangeDialog_Returns = ReactElement;
+export type Web_TorrentWorkspace_TorrentProfileChangeDialog_Connections = Web_Components_TorrentProfileChangeDialog_Props['connections'];
+export type Web_TorrentWorkspace_TorrentProfileChangeDialog_DefaultProfile = Web_Components_TorrentProfileChangeDialog_Props['defaultProfile'];
+export type Web_TorrentWorkspace_TorrentProfileChangeDialog_Hashes = Web_Components_TorrentProfileChangeDialog_Props['hashes'];
+export type Web_TorrentWorkspace_TorrentProfileChangeDialog_OnClose = Web_Components_TorrentProfileChangeDialog_Props['onClose'];
+export type Web_TorrentWorkspace_TorrentProfileChangeDialog_OnSetProfile = Web_Components_TorrentProfileChangeDialog_Props['onSetProfile'];
+export type Web_TorrentWorkspace_TorrentProfileChangeDialog_Profiles = Web_Components_TorrentProfileChangeDialog_Props['profiles'];
+export type Web_TorrentWorkspace_TorrentProfileChangeDialog_Torrents = Web_Components_TorrentProfileChangeDialog_Props['torrents'];
+export type Web_TorrentWorkspace_TorrentProfileChangeDialog_ProfileID = string;
+export type Web_TorrentWorkspace_TorrentProfileChangeDialog_SetProfileID = Dispatch<SetStateAction<Web_TorrentWorkspace_TorrentProfileChangeDialog_ProfileID>>;
+export type Web_TorrentWorkspace_TorrentProfileChangeDialog_ProfileIDState = [Web_TorrentWorkspace_TorrentProfileChangeDialog_ProfileID, Web_TorrentWorkspace_TorrentProfileChangeDialog_SetProfileID];
+export type Web_TorrentWorkspace_TorrentProfileChangeDialog_ApplyOptions = boolean;
+export type Web_TorrentWorkspace_TorrentProfileChangeDialog_SetApplyOptions = Dispatch<SetStateAction<Web_TorrentWorkspace_TorrentProfileChangeDialog_ApplyOptions>>;
+export type Web_TorrentWorkspace_TorrentProfileChangeDialog_ApplyOptionsState = [Web_TorrentWorkspace_TorrentProfileChangeDialog_ApplyOptions, Web_TorrentWorkspace_TorrentProfileChangeDialog_SetApplyOptions];
+export type Web_TorrentWorkspace_TorrentProfileChangeDialog_Results = Web_Api_MovedTorrent[] | null;
+export type Web_TorrentWorkspace_TorrentProfileChangeDialog_SetResults = Dispatch<SetStateAction<Web_TorrentWorkspace_TorrentProfileChangeDialog_Results>>;
+export type Web_TorrentWorkspace_TorrentProfileChangeDialog_ResultsState = [Web_TorrentWorkspace_TorrentProfileChangeDialog_Results, Web_TorrentWorkspace_TorrentProfileChangeDialog_SetResults];
+export type Web_TorrentWorkspace_TorrentProfileChangeDialog_Busy = boolean;
+export type Web_TorrentWorkspace_TorrentProfileChangeDialog_SetBusy = Dispatch<SetStateAction<Web_TorrentWorkspace_TorrentProfileChangeDialog_Busy>>;
+export type Web_TorrentWorkspace_TorrentProfileChangeDialog_BusyState = [Web_TorrentWorkspace_TorrentProfileChangeDialog_Busy, Web_TorrentWorkspace_TorrentProfileChangeDialog_SetBusy];
+export type Web_TorrentWorkspace_TorrentProfileChangeDialog_Error = string;
+export type Web_TorrentWorkspace_TorrentProfileChangeDialog_SetError = Dispatch<SetStateAction<Web_TorrentWorkspace_TorrentProfileChangeDialog_Error>>;
+export type Web_TorrentWorkspace_TorrentProfileChangeDialog_ErrorState = [Web_TorrentWorkspace_TorrentProfileChangeDialog_Error, Web_TorrentWorkspace_TorrentProfileChangeDialog_SetError];
+export type Web_TorrentWorkspace_TorrentProfileChangeDialog_Submit_Event = FormEvent<HTMLFormElement>;
+export type Web_TorrentWorkspace_TorrentProfileChangeDialog_Submit_Returns = Promise<void>;
+export type Web_TorrentWorkspace_TorrentProfileChangeDialog_Submit = (event: Web_TorrentWorkspace_TorrentProfileChangeDialog_Submit_Event) => Web_TorrentWorkspace_TorrentProfileChangeDialog_Submit_Returns;
+export type Web_TorrentWorkspace_TorrentProfileChangeDialog_Submit_Response = Web_Api_SetTorrentProfileResponse;
+export type Web_TorrentWorkspace_TorrentProfileChangeDialog_SelectedProfile = Web_Api_TorrentProfile | undefined;
+export type Web_TorrentWorkspace_TorrentProfileChangeDialog_SelectedProfileData = Web_Api_DefaultTorrentProfile | Web_Api_TorrentProfile;
+export type Web_TorrentWorkspace_TorrentProfileChangeDialog_DefaultConnection = Web_Api_VpnConnection | undefined;
+export type Web_TorrentWorkspace_TorrentProfileChangeDialog_TargetConnectionID = string | undefined;
+export type Web_TorrentWorkspace_TorrentProfileChangeDialog_SelectedHashes = Set<string>;
+export type Web_TorrentWorkspace_TorrentProfileChangeDialog_SelectedTorrents = Web_Api_Torrent[];
+export type Web_TorrentWorkspace_TorrentProfileChangeDialog_MoveCount = number;
+export type Web_TorrentWorkspace_TorrentProfileChangeDialog_TorrentNoun = string;
+export type Web_TorrentWorkspace_TorrentProfileChangeDialog_SelectedTorrentNoun = string;
+
+/**
+ * Torrent Workspace.
+ *
+ * @since 2.4.1
+ */
+export type Web_TorrentWorkspace_TorrentWorkspace_Props = Web_Components_TorrentWorkspace_Props;
+export type Web_TorrentWorkspace_TorrentWorkspace_Returns = ReactElement;
+export type Web_TorrentWorkspace_TorrentWorkspace_Connections = Web_Components_TorrentWorkspace_Props['connections'];
+export type Web_TorrentWorkspace_TorrentWorkspace_DefaultProfile = Web_Components_TorrentWorkspace_Props['defaultProfile'];
+export type Web_TorrentWorkspace_TorrentWorkspace_Errors = Web_Components_TorrentWorkspace_Props['errors'];
+export type Web_TorrentWorkspace_TorrentWorkspace_Filters = Web_Components_TorrentWorkspace_Props['filters'];
+export type Web_TorrentWorkspace_TorrentWorkspace_FiltersOpen = Web_Components_TorrentWorkspace_Props['filtersOpen'];
+export type Web_TorrentWorkspace_TorrentWorkspace_OnAction = Web_Components_TorrentWorkspace_Props['onAction'];
+export type Web_TorrentWorkspace_TorrentWorkspace_OnFixProfileFolder = Web_Components_TorrentWorkspace_Props['onFixProfileFolder'];
+export type Web_TorrentWorkspace_TorrentWorkspace_ProfileFolderOverlaps = Web_Components_TorrentWorkspace_Props['profileFolderOverlaps'];
+export type Web_TorrentWorkspace_TorrentWorkspace_OnAddTorrent = Web_Components_TorrentWorkspace_Props['onAddTorrent'];
+export type Web_TorrentWorkspace_TorrentWorkspace_OnFiltersChange = Web_Components_TorrentWorkspace_Props['onFiltersChange'];
+export type Web_TorrentWorkspace_TorrentWorkspace_OnOpenFilters = Web_Components_TorrentWorkspace_Props['onOpenFilters'];
+export type Web_TorrentWorkspace_TorrentWorkspace_OnRemove = Web_Components_TorrentWorkspace_Props['onRemove'];
+export type Web_TorrentWorkspace_TorrentWorkspace_OnSelectTorrent = Web_Components_TorrentWorkspace_Props['onSelectTorrent'];
+export type Web_TorrentWorkspace_TorrentWorkspace_OnSetProfile = Web_Components_TorrentWorkspace_Props['onSetProfile'];
+export type Web_TorrentWorkspace_TorrentWorkspace_Profiles = Web_Components_TorrentWorkspace_Props['profiles'];
+export type Web_TorrentWorkspace_TorrentWorkspace_SelectedTorrentId = Web_Components_TorrentWorkspace_Props['selectedTorrentId'];
+export type Web_TorrentWorkspace_TorrentWorkspace_Statistics = Web_Components_TorrentWorkspace_Props['statistics'];
+export type Web_TorrentWorkspace_TorrentWorkspace_Torrents = Web_Components_TorrentWorkspace_Props['torrents'];
+export type Web_TorrentWorkspace_TorrentWorkspace_ConnectionFilter = string;
+export type Web_TorrentWorkspace_TorrentWorkspace_StatusFilter = Web_Components_TorrentFilter;
+export type Web_TorrentWorkspace_TorrentWorkspace_LabelFilter = string;
+export type Web_TorrentWorkspace_TorrentWorkspace_ProfileFilter = string;
+export type Web_TorrentWorkspace_TorrentWorkspace_SetStatusFilter_Status = Web_Components_TorrentFilter;
+export type Web_TorrentWorkspace_TorrentWorkspace_SetStatusFilter_Returns = void;
+export type Web_TorrentWorkspace_TorrentWorkspace_SetStatusFilter = (status: Web_TorrentWorkspace_TorrentWorkspace_SetStatusFilter_Status) => Web_TorrentWorkspace_TorrentWorkspace_SetStatusFilter_Returns;
+export type Web_TorrentWorkspace_TorrentWorkspace_SetLabelFilter_Label = string;
+export type Web_TorrentWorkspace_TorrentWorkspace_SetLabelFilter_Returns = void;
+export type Web_TorrentWorkspace_TorrentWorkspace_SetLabelFilter = (label: Web_TorrentWorkspace_TorrentWorkspace_SetLabelFilter_Label) => Web_TorrentWorkspace_TorrentWorkspace_SetLabelFilter_Returns;
+export type Web_TorrentWorkspace_TorrentWorkspace_SetProfileFilter_Profile = string;
+export type Web_TorrentWorkspace_TorrentWorkspace_SetProfileFilter_Returns = void;
+export type Web_TorrentWorkspace_TorrentWorkspace_SetProfileFilter = (profile: Web_TorrentWorkspace_TorrentWorkspace_SetProfileFilter_Profile) => Web_TorrentWorkspace_TorrentWorkspace_SetProfileFilter_Returns;
+export type Web_TorrentWorkspace_TorrentWorkspace_SetConnectionFilter_Connection = string;
+export type Web_TorrentWorkspace_TorrentWorkspace_SetConnectionFilter_Returns = void;
+export type Web_TorrentWorkspace_TorrentWorkspace_SetConnectionFilter = (connection: Web_TorrentWorkspace_TorrentWorkspace_SetConnectionFilter_Connection) => Web_TorrentWorkspace_TorrentWorkspace_SetConnectionFilter_Returns;
+export type Web_TorrentWorkspace_TorrentWorkspace_Query = string;
+export type Web_TorrentWorkspace_TorrentWorkspace_SetQuery = Dispatch<SetStateAction<Web_TorrentWorkspace_TorrentWorkspace_Query>>;
+export type Web_TorrentWorkspace_TorrentWorkspace_QueryState = [Web_TorrentWorkspace_TorrentWorkspace_Query, Web_TorrentWorkspace_TorrentWorkspace_SetQuery];
+export type Web_TorrentWorkspace_TorrentWorkspace_SelectedIDs = number[];
+export type Web_TorrentWorkspace_TorrentWorkspace_SetSelectedIDs = Dispatch<SetStateAction<Web_TorrentWorkspace_TorrentWorkspace_SelectedIDs>>;
+export type Web_TorrentWorkspace_TorrentWorkspace_SelectedIDsState = [Web_TorrentWorkspace_TorrentWorkspace_SelectedIDs, Web_TorrentWorkspace_TorrentWorkspace_SetSelectedIDs];
+export type Web_TorrentWorkspace_TorrentWorkspace_LastSelectedID = number | null;
+export type Web_TorrentWorkspace_TorrentWorkspace_SetLastSelectedID = Dispatch<SetStateAction<Web_TorrentWorkspace_TorrentWorkspace_LastSelectedID>>;
+export type Web_TorrentWorkspace_TorrentWorkspace_LastSelectedIDState = [Web_TorrentWorkspace_TorrentWorkspace_LastSelectedID, Web_TorrentWorkspace_TorrentWorkspace_SetLastSelectedID];
+export type Web_TorrentWorkspace_TorrentWorkspace_Sort = Web_Components_TorrentSort;
+export type Web_TorrentWorkspace_TorrentWorkspace_SetSort = Dispatch<SetStateAction<Web_TorrentWorkspace_TorrentWorkspace_Sort>>;
+export type Web_TorrentWorkspace_TorrentWorkspace_SortState = [Web_TorrentWorkspace_TorrentWorkspace_Sort, Web_TorrentWorkspace_TorrentWorkspace_SetSort];
+export type Web_TorrentWorkspace_TorrentWorkspace_Page = number;
+export type Web_TorrentWorkspace_TorrentWorkspace_SetPage = Dispatch<SetStateAction<Web_TorrentWorkspace_TorrentWorkspace_Page>>;
+export type Web_TorrentWorkspace_TorrentWorkspace_PageState = [Web_TorrentWorkspace_TorrentWorkspace_Page, Web_TorrentWorkspace_TorrentWorkspace_SetPage];
+export type Web_TorrentWorkspace_TorrentWorkspace_PageSize = Web_Components_TorrentPageSize;
+export type Web_TorrentWorkspace_TorrentWorkspace_SetPageSize = Dispatch<SetStateAction<Web_TorrentWorkspace_TorrentWorkspace_PageSize>>;
+export type Web_TorrentWorkspace_TorrentWorkspace_PageSizeState = [Web_TorrentWorkspace_TorrentWorkspace_PageSize, Web_TorrentWorkspace_TorrentWorkspace_SetPageSize];
+export type Web_TorrentWorkspace_TorrentWorkspace_Busy = boolean;
+export type Web_TorrentWorkspace_TorrentWorkspace_SetBusy = Dispatch<SetStateAction<Web_TorrentWorkspace_TorrentWorkspace_Busy>>;
+export type Web_TorrentWorkspace_TorrentWorkspace_BusyState = [Web_TorrentWorkspace_TorrentWorkspace_Busy, Web_TorrentWorkspace_TorrentWorkspace_SetBusy];
+export type Web_TorrentWorkspace_TorrentWorkspace_RemoveOpen = boolean;
+export type Web_TorrentWorkspace_TorrentWorkspace_SetRemoveOpen = Dispatch<SetStateAction<Web_TorrentWorkspace_TorrentWorkspace_RemoveOpen>>;
+export type Web_TorrentWorkspace_TorrentWorkspace_RemoveOpenState = [Web_TorrentWorkspace_TorrentWorkspace_RemoveOpen, Web_TorrentWorkspace_TorrentWorkspace_SetRemoveOpen];
+export type Web_TorrentWorkspace_TorrentWorkspace_ProfileChangeOpen = boolean;
+export type Web_TorrentWorkspace_TorrentWorkspace_SetProfileChangeOpen = Dispatch<SetStateAction<Web_TorrentWorkspace_TorrentWorkspace_ProfileChangeOpen>>;
+export type Web_TorrentWorkspace_TorrentWorkspace_ProfileChangeOpenState = [Web_TorrentWorkspace_TorrentWorkspace_ProfileChangeOpen, Web_TorrentWorkspace_TorrentWorkspace_SetProfileChangeOpen];
+export type Web_TorrentWorkspace_TorrentWorkspace_DeleteLocalData = boolean;
+export type Web_TorrentWorkspace_TorrentWorkspace_SetDeleteLocalData = Dispatch<SetStateAction<Web_TorrentWorkspace_TorrentWorkspace_DeleteLocalData>>;
+export type Web_TorrentWorkspace_TorrentWorkspace_DeleteLocalDataState = [Web_TorrentWorkspace_TorrentWorkspace_DeleteLocalData, Web_TorrentWorkspace_TorrentWorkspace_SetDeleteLocalData];
+export type Web_TorrentWorkspace_TorrentWorkspace_ContextMenu = Web_Components_TorrentContextMenu | null;
+export type Web_TorrentWorkspace_TorrentWorkspace_SetContextMenu = Dispatch<SetStateAction<Web_TorrentWorkspace_TorrentWorkspace_ContextMenu>>;
+export type Web_TorrentWorkspace_TorrentWorkspace_ContextMenuState = [Web_TorrentWorkspace_TorrentWorkspace_ContextMenu, Web_TorrentWorkspace_TorrentWorkspace_SetContextMenu];
+export type Web_TorrentWorkspace_TorrentWorkspace_ContextMenuRefValue = HTMLDivElement | null;
+export type Web_TorrentWorkspace_TorrentWorkspace_ContextMenuRef = RefObject<Web_TorrentWorkspace_TorrentWorkspace_ContextMenuRefValue>;
+export type Web_TorrentWorkspace_TorrentWorkspace_TorrentHashesByIDRefValue = ReadonlyMap<number, string>;
+export type Web_TorrentWorkspace_TorrentWorkspace_TorrentHashesByIDRef = RefObject<Web_TorrentWorkspace_TorrentWorkspace_TorrentHashesByIDRefValue>;
+export type Web_TorrentWorkspace_TorrentWorkspace_NextIDs = number[];
+export type Web_TorrentWorkspace_TorrentWorkspace_NextID = number | undefined;
+export type Web_TorrentWorkspace_TorrentWorkspace_CloseMenu_Returns = void;
+export type Web_TorrentWorkspace_TorrentWorkspace_CloseMenu = () => Web_TorrentWorkspace_TorrentWorkspace_CloseMenu_Returns;
+export type Web_TorrentWorkspace_TorrentWorkspace_CloseOnOutsideClick_Event = globalThis.MouseEvent;
+export type Web_TorrentWorkspace_TorrentWorkspace_CloseOnOutsideClick_Returns = void;
+export type Web_TorrentWorkspace_TorrentWorkspace_CloseOnOutsideClick = (event: Web_TorrentWorkspace_TorrentWorkspace_CloseOnOutsideClick_Event) => Web_TorrentWorkspace_TorrentWorkspace_CloseOnOutsideClick_Returns;
+export type Web_TorrentWorkspace_TorrentWorkspace_CloseOnEscape_Event = globalThis.KeyboardEvent;
+export type Web_TorrentWorkspace_TorrentWorkspace_CloseOnEscape_Returns = void;
+export type Web_TorrentWorkspace_TorrentWorkspace_CloseOnEscape = (event: Web_TorrentWorkspace_TorrentWorkspace_CloseOnEscape_Event) => Web_TorrentWorkspace_TorrentWorkspace_CloseOnEscape_Returns;
+export type Web_TorrentWorkspace_TorrentWorkspace_FilteredTorrents = Web_Api_Torrent[];
+export type Web_TorrentWorkspace_TorrentWorkspace_NormalizedQuery = string;
+export type Web_TorrentWorkspace_TorrentWorkspace_ShowQueuePosition = boolean;
+export type Web_TorrentWorkspace_TorrentWorkspace_EffectiveSort = Web_Components_TorrentSort;
+export type Web_TorrentWorkspace_TorrentWorkspace_SortedTorrents = Web_Api_Torrent[];
+export type Web_TorrentWorkspace_TorrentWorkspace_PageCount = number;
+export type Web_TorrentWorkspace_TorrentWorkspace_CurrentPage = number;
+export type Web_TorrentWorkspace_TorrentWorkspace_FirstVisibleIndex = number;
+export type Web_TorrentWorkspace_TorrentWorkspace_VisibleTorrents = Web_Api_Torrent[];
+export type Web_TorrentWorkspace_TorrentWorkspace_EveryVisibleSelected = boolean;
+export type Web_TorrentWorkspace_TorrentWorkspace_VisibleIDs = Set<number>;
+export type Web_TorrentWorkspace_TorrentWorkspace_KeptIDs = number[];
+export type Web_TorrentWorkspace_TorrentWorkspace_ConnectionTorrents = Web_Api_Torrent[];
+export type Web_TorrentWorkspace_TorrentWorkspace_DownloadingCount = number;
+export type Web_TorrentWorkspace_TorrentWorkspace_SeedingCount = number;
+export type Web_TorrentWorkspace_TorrentWorkspace_CurrentStatistics = Web_Api_StatisticsPeriod | undefined;
+export type Web_TorrentWorkspace_TorrentWorkspace_CumulativeStatistics = Web_Api_StatisticsPeriod | undefined;
+export type Web_TorrentWorkspace_TorrentWorkspace_StatusFilterItem = Web_Components_TorrentFilterItem | undefined;
+export type Web_TorrentWorkspace_TorrentWorkspace_StatusFilterLabel = string;
+export type Web_TorrentWorkspace_TorrentWorkspace_SelectedProfile = Web_Api_TorrentProfile | undefined;
+export type Web_TorrentWorkspace_TorrentWorkspace_SelectedProfileName = string;
+export type Web_TorrentWorkspace_TorrentWorkspace_ProfileFilterLabel = string;
+export type Web_TorrentWorkspace_TorrentWorkspace_SelectedConnection = Web_Api_VpnConnection | undefined;
+export type Web_TorrentWorkspace_TorrentWorkspace_ConnectionFilterLabel = string;
+export type Web_TorrentWorkspace_TorrentWorkspace_ActiveFilterCount = number;
+export type Web_TorrentWorkspace_TorrentWorkspace_ActiveFilterLabel = string;
+export type Web_TorrentWorkspace_TorrentWorkspace_FiltersActive = boolean;
+export type Web_TorrentWorkspace_TorrentWorkspace_DuplicateNotices = string[];
+export type Web_TorrentWorkspace_TorrentWorkspace_NeedsProfileCount = number;
+export type Web_TorrentWorkspace_TorrentWorkspace_ContextMenuTorrentFileCount = number;
+export type Web_TorrentWorkspace_TorrentWorkspace_ContextMenuFinishedCount = number;
+export type Web_TorrentWorkspace_TorrentWorkspace_ToggleSort_Key = Web_Components_TorrentSortKey;
+export type Web_TorrentWorkspace_TorrentWorkspace_ToggleSort_Returns = void;
+export type Web_TorrentWorkspace_TorrentWorkspace_ToggleSort = (key: Web_TorrentWorkspace_TorrentWorkspace_ToggleSort_Key) => Web_TorrentWorkspace_TorrentWorkspace_ToggleSort_Returns;
+export type Web_TorrentWorkspace_TorrentWorkspace_ToggleSort_SameKey = boolean;
+export type Web_TorrentWorkspace_TorrentWorkspace_ToggleSort_NextDirection = Web_Components_TorrentSortDirection;
+export type Web_TorrentWorkspace_TorrentWorkspace_ToggleVisible_Returns = void;
+export type Web_TorrentWorkspace_TorrentWorkspace_ToggleVisible = () => Web_TorrentWorkspace_TorrentWorkspace_ToggleVisible_Returns;
+export type Web_TorrentWorkspace_TorrentWorkspace_ToggleVisible_VisibleIDs = Set<number>;
+export type Web_TorrentWorkspace_TorrentWorkspace_ToggleVisible_NextIDs = Set<number>;
+export type Web_TorrentWorkspace_TorrentWorkspace_ToggleTorrent_Identifier = number;
+export type Web_TorrentWorkspace_TorrentWorkspace_ToggleTorrent_Range = boolean;
+export type Web_TorrentWorkspace_TorrentWorkspace_ToggleTorrent_Returns = void;
+export type Web_TorrentWorkspace_TorrentWorkspace_ToggleTorrent = (identifier: Web_TorrentWorkspace_TorrentWorkspace_ToggleTorrent_Identifier, range: Web_TorrentWorkspace_TorrentWorkspace_ToggleTorrent_Range) => Web_TorrentWorkspace_TorrentWorkspace_ToggleTorrent_Returns;
+export type Web_TorrentWorkspace_TorrentWorkspace_ToggleTorrent_AnchorIndex = number;
+export type Web_TorrentWorkspace_TorrentWorkspace_ToggleTorrent_TargetIndex = number;
+export type Web_TorrentWorkspace_TorrentWorkspace_ToggleTorrent_StartIndex = number;
+export type Web_TorrentWorkspace_TorrentWorkspace_ToggleTorrent_EndIndex = number;
+export type Web_TorrentWorkspace_TorrentWorkspace_ToggleTorrent_NextIDs = Set<number>;
+export type Web_TorrentWorkspace_TorrentWorkspace_PerformAction_Action = Web_Api_TorrentAction;
+export type Web_TorrentWorkspace_TorrentWorkspace_PerformAction_Identifiers = number[];
+export type Web_TorrentWorkspace_TorrentWorkspace_PerformAction_Returns = Promise<void>;
+export type Web_TorrentWorkspace_TorrentWorkspace_PerformAction = (action: Web_TorrentWorkspace_TorrentWorkspace_PerformAction_Action, identifiers: Web_TorrentWorkspace_TorrentWorkspace_PerformAction_Identifiers) => Web_TorrentWorkspace_TorrentWorkspace_PerformAction_Returns;
+export type Web_TorrentWorkspace_TorrentWorkspace_PerformAction_Hashes = string[];
+export type Web_TorrentWorkspace_TorrentWorkspace_DownloadTorrentFilesFor_Identifiers = number[];
+export type Web_TorrentWorkspace_TorrentWorkspace_DownloadTorrentFilesFor_Returns = Promise<void>;
+export type Web_TorrentWorkspace_TorrentWorkspace_DownloadTorrentFilesFor = (identifiers: Web_TorrentWorkspace_TorrentWorkspace_DownloadTorrentFilesFor_Identifiers) => Web_TorrentWorkspace_TorrentWorkspace_DownloadTorrentFilesFor_Returns;
+export type Web_TorrentWorkspace_TorrentWorkspace_DownloadTorrentFilesFor_Hashes = string[];
+export type Web_TorrentWorkspace_TorrentWorkspace_DownloadTorrentFilesFor_Skipped = number;
+export type Web_TorrentWorkspace_TorrentWorkspace_DownloadTorrentFilesFor_TorrentPhrase = string;
+export type Web_TorrentWorkspace_TorrentWorkspace_DownloadTorrentFilesFor_PronounPhrase = string;
+export type Web_TorrentWorkspace_TorrentWorkspace_DownloadFinishedFilesFor_Identifiers = number[];
+export type Web_TorrentWorkspace_TorrentWorkspace_DownloadFinishedFilesFor_Returns = Promise<void>;
+export type Web_TorrentWorkspace_TorrentWorkspace_DownloadFinishedFilesFor = (identifiers: Web_TorrentWorkspace_TorrentWorkspace_DownloadFinishedFilesFor_Identifiers) => Web_TorrentWorkspace_TorrentWorkspace_DownloadFinishedFilesFor_Returns;
+export type Web_TorrentWorkspace_TorrentWorkspace_DownloadFinishedFilesFor_Hashes = string[];
+export type Web_TorrentWorkspace_TorrentWorkspace_DownloadFinishedFilesFor_Prepared = Web_Api_TorrentContentsDownload;
+export type Web_TorrentWorkspace_TorrentWorkspace_DownloadFinishedFilesFor_LeftOut = string;
+export type Web_TorrentWorkspace_TorrentWorkspace_RemoveSelected_Returns = Promise<void>;
+export type Web_TorrentWorkspace_TorrentWorkspace_RemoveSelected = () => Web_TorrentWorkspace_TorrentWorkspace_RemoveSelected_Returns;
+export type Web_TorrentWorkspace_TorrentWorkspace_OpenMenuAt_X = number;
+export type Web_TorrentWorkspace_TorrentWorkspace_OpenMenuAt_Y = number;
+export type Web_TorrentWorkspace_TorrentWorkspace_OpenMenuAt_TorrentIds = number[];
+export type Web_TorrentWorkspace_TorrentWorkspace_OpenMenuAt_Returns = void;
+export type Web_TorrentWorkspace_TorrentWorkspace_OpenMenuAt = (x: Web_TorrentWorkspace_TorrentWorkspace_OpenMenuAt_X, y: Web_TorrentWorkspace_TorrentWorkspace_OpenMenuAt_Y, torrentIds: Web_TorrentWorkspace_TorrentWorkspace_OpenMenuAt_TorrentIds) => Web_TorrentWorkspace_TorrentWorkspace_OpenMenuAt_Returns;
+export type Web_TorrentWorkspace_TorrentWorkspace_OpenMenuAt_MenuHeight = number;
+export type Web_TorrentWorkspace_TorrentWorkspace_OpenMenuAt_MenuWidth = number;
+export type Web_TorrentWorkspace_TorrentWorkspace_OpenRowMenu_Event = MouseEvent<HTMLElement>;
+export type Web_TorrentWorkspace_TorrentWorkspace_OpenRowMenu_Torrent = Web_Api_Torrent;
+export type Web_TorrentWorkspace_TorrentWorkspace_OpenRowMenu_Returns = void;
+export type Web_TorrentWorkspace_TorrentWorkspace_OpenRowMenu = (event: Web_TorrentWorkspace_TorrentWorkspace_OpenRowMenu_Event, torrent: Web_TorrentWorkspace_TorrentWorkspace_OpenRowMenu_Torrent) => Web_TorrentWorkspace_TorrentWorkspace_OpenRowMenu_Returns;
+export type Web_TorrentWorkspace_TorrentWorkspace_OpenRowMenu_TorrentIds = number[];
+export type Web_TorrentWorkspace_TorrentWorkspace_OpenButtonMenu_Event = MouseEvent<HTMLButtonElement>;
+export type Web_TorrentWorkspace_TorrentWorkspace_OpenButtonMenu_TorrentIds = number[];
+export type Web_TorrentWorkspace_TorrentWorkspace_OpenButtonMenu_Returns = void;
+export type Web_TorrentWorkspace_TorrentWorkspace_OpenButtonMenu = (event: Web_TorrentWorkspace_TorrentWorkspace_OpenButtonMenu_Event, torrentIds: Web_TorrentWorkspace_TorrentWorkspace_OpenButtonMenu_TorrentIds) => Web_TorrentWorkspace_TorrentWorkspace_OpenButtonMenu_Returns;
+export type Web_TorrentWorkspace_TorrentWorkspace_OpenButtonMenu_Bounds = DOMRect;
+export type Web_TorrentWorkspace_TorrentWorkspace_ClearFilters_Returns = void;
+export type Web_TorrentWorkspace_TorrentWorkspace_ClearFilters = () => Web_TorrentWorkspace_TorrentWorkspace_ClearFilters_Returns;
+export type Web_TorrentWorkspace_TorrentWorkspace_ConnectionTorrentNoun = string;
+export type Web_TorrentWorkspace_TorrentWorkspace_NeedsProfileNoun = string;
+export type Web_TorrentWorkspace_TorrentWorkspace_RemoveTorrentNoun = string;
+export type Web_TorrentWorkspace_TorrentWorkspace_Selected = boolean;
+export type Web_TorrentWorkspace_TorrentWorkspace_State = Web_Components_TorrentState;
+export type Web_TorrentWorkspace_TorrentWorkspace_TrackerIssue = Web_Components_TrackerIssue | null;
+export type Web_TorrentWorkspace_TorrentWorkspace_Connection = Web_Api_VpnConnection | undefined;
+export type Web_TorrentWorkspace_TorrentWorkspace_Downloading = boolean;
+export type Web_TorrentWorkspace_TorrentWorkspace_PeerCount = number;
+export type Web_TorrentWorkspace_TorrentWorkspace_PeerNoun = string;
+export type Web_TorrentWorkspace_TorrentWorkspace_OpenDetails_Returns = void;
+export type Web_TorrentWorkspace_TorrentWorkspace_OpenDetails = () => Web_TorrentWorkspace_TorrentWorkspace_OpenDetails_Returns;
+export type Web_TorrentWorkspace_TorrentWorkspace_HandleKeyDown_Event = KeyboardEvent<HTMLTableRowElement>;
+export type Web_TorrentWorkspace_TorrentWorkspace_HandleKeyDown_Returns = void;
+export type Web_TorrentWorkspace_TorrentWorkspace_HandleKeyDown = (event: Web_TorrentWorkspace_TorrentWorkspace_HandleKeyDown_Event) => Web_TorrentWorkspace_TorrentWorkspace_HandleKeyDown_Returns;

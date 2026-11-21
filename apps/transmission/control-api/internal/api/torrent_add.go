@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 
@@ -47,7 +46,7 @@ func torrentMetainfoTooLarge(metainfo []byte) bool {
 //
 // Since: 2.0.0
 func prepareTorrentAddDownloadDirectory(
-	arguments map[string]any,
+	request *transmissionrpc.AddTorrentRequest,
 	profile storage.TorrentProfile,
 	policy downloadPathPolicy,
 ) error {
@@ -57,7 +56,7 @@ func prepareTorrentAddDownloadDirectory(
 	if err != nil {
 		return err
 	}
-	arguments["download-dir"] = normalizedDownloadDirectory
+	request.DownloadDirectory = &normalizedDownloadDirectory
 
 	return nil
 }
@@ -94,8 +93,8 @@ func torrentAddDownloadDirectoryMatches(
 // Since: 2.0.0
 func prepareTorrentAddStart(
 	ctx context.Context,
-	client transmissionrpc.Caller,
-	arguments map[string]any,
+	client *transmissionrpc.Adapter,
+	request *transmissionrpc.AddTorrentRequest,
 	hashKnown bool,
 ) (bool, error) {
 	if hashKnown {
@@ -103,29 +102,28 @@ func prepareTorrentAddStart(
 	}
 
 	startAfterDuplicateCheck := false
-	pausedValue, pausedSet := arguments["paused"]
-	if pausedSet {
-		paused, valid := pausedValue.(bool)
-		if !valid {
-			return false, errors.New("paused must be a boolean")
-		}
-		startAfterDuplicateCheck = !paused
+	if request.Paused != nil {
+		startAfterDuplicateCheck = !*request.Paused
 	} else {
-		var session struct {
-			StartAddedTorrents bool `json:"start-added-torrents"`
-		}
-		if err := client.Call(
+		session, err := client.GetSession(
 			ctx,
-			"session-get",
-			map[string]any{"fields": []string{"start-added-torrents"}},
-			&session,
-		); err != nil {
+			transmissionrpc.GetSessionRequest{Fields: []transmissionrpc.SessionField{
+				transmissionrpc.SessionFieldStartAddedTorrents,
+			}},
+		)
+		if err != nil {
 			return false, fmt.Errorf("read Transmission start-added-torrents: %w", err)
 		}
-		startAfterDuplicateCheck = session.StartAddedTorrents
+		if err := session.DecodeValue(
+			transmissionrpc.SessionFieldStartAddedTorrents,
+			&startAfterDuplicateCheck,
+		); err != nil {
+			return false, fmt.Errorf("decode Transmission start-added-torrents: %w", err)
+		}
 	}
 
-	arguments["paused"] = true
+	paused := true
+	request.Paused = &paused
 
 	return startAfterDuplicateCheck, nil
 }

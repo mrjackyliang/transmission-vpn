@@ -16,6 +16,12 @@
   <h1>Transmission VPN</h1>
 <!-- nova-region-end: header -->
 <!-- nova-region: badges -->
+  <a href="https://hub.docker.com/r/mrjackyliang/transmission-vpn">
+    <img alt="Docker Pulls" src="https://img.shields.io/docker/pulls/mrjackyliang/transmission-vpn?style=for-the-badge&logo=docker&logoColor=%23ffffff&color=%23b25da6">
+  </a>
+  <a href="https://hub.docker.com/r/mrjackyliang/transmission-vpn">
+    <img alt="Docker Image Size" src="https://img.shields.io/docker/image-size/mrjackyliang/transmission-vpn?style=for-the-badge&logo=docker&logoColor=%23ffffff&color=%236688c3">
+  </a>
   <a href="https://github.com/mrjackyliang/transmission-vpn/releases">
     <img alt="GitHub Releases" src="https://img.shields.io/github/v/release/mrjackyliang/transmission-vpn?style=for-the-badge&logo=github&logoColor=%23ffffff&color=%23b25da6">
   </a>
@@ -24,6 +30,9 @@
   </a>
   <a href="https://github.com/mrjackyliang/transmission-vpn/blob/HEAD/LICENSE">
     <img alt="GitHub License" src="https://img.shields.io/github/license/mrjackyliang/transmission-vpn?style=for-the-badge&logo=googledocs&logoColor=%23ffffff&color=%2348a56a">
+  </a>
+  <a href="https://github.com/mrjackyliang/transmission-vpn/actions">
+    <img alt="Test Coverage" src="https://img.shields.io/endpoint?url=https%3A%2F%2Fmrjackyliang.github.io%2Ftransmission-vpn%2Fbadges%2Fcoverage.json&style=for-the-badge&logo=vitest&logoColor=%23ffffff">
   </a>
   <a href="https://github.com/sponsors/mrjackyliang">
     <img alt="Become a GitHub Sponsor" src="https://img.shields.io/badge/github-sponsor-gray?style=for-the-badge&logo=githubsponsors&logoColor=%23ffffff&color=%23eaaf41">
@@ -37,7 +46,7 @@
 <!-- nova-region: introduction -->
 ## Introduction
 
-A ground-up Transmission and VPN container focused on dependable networking, straightforward operation, and a modern web experience that preserves the familiar workflows of Transmission Web Control without its accumulated feature weight.
+A Transmission container built around VPN isolation, where torrent profiles choose the connection and folder for each download and nothing reaches the network if a tunnel drops. A private web proxy, alerts, and settings managed from the console make it easy to run day to day.
 <!-- nova-region-end: introduction -->
 
 <!-- nova-region: documentation -->

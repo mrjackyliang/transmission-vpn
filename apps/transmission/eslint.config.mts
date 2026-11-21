@@ -56,6 +56,13 @@ export default [
       '**/*.tsx',
     ],
     rules: {
+      '@cbnventures/nova/no-regex-literals': [
+        'error',
+        {
+          ignoreFiles: [],
+          regexFile: './src/web/regex.ts',
+        },
+      ],
       '@cbnventures/nova/require-kebab-case-filename': [
         'error',
         {
@@ -67,39 +74,6 @@ export default [
           ],
         },
       ],
-    },
-  },
-  {
-    // The console shares its React files with the other appliances, written in that interface's style.
-    // Its tests exercise those same modules, so they follow the same style.
-    name: 'console-interface',
-    files: [
-      'mock-api.mts',
-      'src/types/web/**/*.d.ts',
-      'src/web/**/*.ts',
-      'src/web/**/*.tsx',
-      'tests/**/*.test.ts',
-    ],
-    rules: {
-      '@cbnventures/nova/no-bracket-assignment': 'off',
-      '@cbnventures/nova/no-complex-arrow-concise': 'off',
-      '@cbnventures/nova/no-destructuring': 'off',
-      '@cbnventures/nova/no-implicit-boolean': 'off',
-      '@cbnventures/nova/no-inline-type-annotation': 'off',
-      '@cbnventures/nova/no-multiline-strings': 'off',
-      '@cbnventures/nova/no-optional-chaining': 'off',
-      '@cbnventures/nova/no-regex-literal-flags': 'off',
-      '@cbnventures/nova/no-regex-literals': 'off',
-      '@cbnventures/nova/no-ternary-in-template-literal': 'off',
-      '@cbnventures/nova/no-use-before-define': 'off',
-      '@cbnventures/nova/require-bracket-property-access': 'off',
-      '@cbnventures/nova/require-explicit-return': 'off',
-      '@cbnventures/nova/require-jsdoc-hierarchy': 'off',
-      '@cbnventures/nova/require-jsdoc-returns': 'off',
-      '@cbnventures/nova/require-multiline-condition-groups': 'off',
-      '@cbnventures/nova/require-multiline-conditions': 'off',
-      '@cbnventures/nova/require-padding-lines': 'off',
-      'n/no-unsupported-features/node-builtins': 'off',
     },
   },
 ];

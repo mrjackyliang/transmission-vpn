@@ -1,79 +1,113 @@
 /**
- * Format.
+ * Torrent Format.
+ *
+ * @since 2.4.1
+ */
+export type Web_TorrentFormat_ByteUnits = string[];
+
+/**
+ * Torrent Format.
  *
  * @since 2.0.0
  */
-export type Web_TorrentFormat_Bytes_Value = number;
-export type Web_TorrentFormat_Bytes_Returns = string;
+export type Web_TorrentFormat_FormatBytes_Value = number;
+export type Web_TorrentFormat_FormatBytes_Returns = string;
+export type Web_TorrentFormat_FormatBytes_UnitIndex = number;
+export type Web_TorrentFormat_FormatBytes_ScaledValue = number;
+export type Web_TorrentFormat_FormatBytes_Precision = number;
 
 /**
- * Format.
+ * Torrent Format.
  *
  * @since 2.0.0
  */
-export type Web_TorrentFormat_Rate_Value = number;
-export type Web_TorrentFormat_Rate_Returns = string;
+export type Web_TorrentFormat_FormatDate_Value = number | string | null | undefined;
+export type Web_TorrentFormat_FormatDate_Returns = string;
+export type Web_TorrentFormat_FormatDate_Date = Date;
 
 /**
- * Format.
+ * Torrent Format.
  *
  * @since 2.0.0
  */
-export type Web_TorrentFormat_Duration_Seconds = number;
-export type Web_TorrentFormat_Duration_Returns = string;
+export type Web_TorrentFormat_FormatDuration_Seconds = number;
+export type Web_TorrentFormat_FormatDuration_Returns = string;
+export type Web_TorrentFormat_FormatDuration_Minutes = number;
+export type Web_TorrentFormat_FormatDuration_Hours = number;
+export type Web_TorrentFormat_FormatDuration_RemainingMinutes = number;
+export type Web_TorrentFormat_FormatDuration_Days = number;
+export type Web_TorrentFormat_FormatDuration_RemainingHours = number;
 
 /**
- * Format.
+ * Torrent Format.
  *
  * @since 2.0.0
  */
-export type Web_TorrentFormat_Ratio_Value = number;
-export type Web_TorrentFormat_Ratio_Returns = string;
+export type Web_TorrentFormat_FormatElapsed_Value = string | null | undefined;
+export type Web_TorrentFormat_FormatElapsed_Now = number;
+export type Web_TorrentFormat_FormatElapsed_Returns = string;
+export type Web_TorrentFormat_FormatElapsed_Timestamp = number;
+export type Web_TorrentFormat_FormatElapsed_Seconds = number;
 
 /**
- * Format.
+ * Torrent Format.
  *
  * @since 2.0.0
  */
-export type Web_TorrentFormat_Percent_Value = number;
-export type Web_TorrentFormat_Percent_Returns = string;
+export type Web_TorrentFormat_FormatPercent_Value = number;
+export type Web_TorrentFormat_FormatPercent_Returns = string;
 
 /**
- * Format.
+ * Torrent Format.
  *
  * @since 2.0.0
  */
-export type Web_TorrentFormat_TorrentStatus_Status = number;
-export type Web_TorrentFormat_TorrentStatus_Returns = string;
+export type Web_TorrentFormat_FormatRate_Value = number;
+export type Web_TorrentFormat_FormatRate_Returns = string;
 
 /**
- * Format.
+ * Torrent Format.
  *
  * @since 2.0.0
  */
-export type Web_TorrentFormat_Date_Value = number | string | null | undefined;
-export type Web_TorrentFormat_Date_Returns = string;
+export type Web_TorrentFormat_FormatRatio_Value = number;
+export type Web_TorrentFormat_FormatRatio_Returns = string;
 
 /**
- * Format.
+ * Torrent Format.
  *
  * @since 2.0.0
  */
-export type Web_TorrentFormat_Relative_Value = string | null | undefined;
-export type Web_TorrentFormat_Relative_Now = number;
-export type Web_TorrentFormat_Relative_Returns = string;
+export type Web_TorrentFormat_FormatRelative_Value = string | null | undefined;
+export type Web_TorrentFormat_FormatRelative_Now = number;
+export type Web_TorrentFormat_FormatRelative_Returns = string;
+export type Web_TorrentFormat_FormatRelative_Timestamp = number;
+export type Web_TorrentFormat_FormatRelative_Seconds = number;
+export type Web_TorrentFormat_FormatRelative_Formatter = Intl.RelativeTimeFormat;
+export type Web_TorrentFormat_FormatRelative_Minutes = number;
+export type Web_TorrentFormat_FormatRelative_Hours = number;
+export type Web_TorrentFormat_FormatRelative_Days = number;
 
 /**
- * Format.
+ * Torrent Format.
+ *
+ * @since 2.4.1
+ */
+export type Web_TorrentFormat_FormatShortDate_Value = number | string | null | undefined;
+export type Web_TorrentFormat_FormatShortDate_Returns = string;
+export type Web_TorrentFormat_FormatShortDate_Date = Date;
+
+/**
+ * Torrent Format.
  *
  * @since 2.0.0
  */
-export type Web_TorrentFormat_Elapsed_Value = string | null | undefined;
-export type Web_TorrentFormat_Elapsed_Now = number;
-export type Web_TorrentFormat_Elapsed_Returns = string;
+export type Web_TorrentFormat_FormatTorrentStatus_Status = number;
+export type Web_TorrentFormat_FormatTorrentStatus_Returns = string;
+export type Web_TorrentFormat_FormatTorrentStatus_Labels = Record<number, string>;
 
 /**
- * Format.
+ * Torrent Format.
  *
  * @since 2.0.0
  */

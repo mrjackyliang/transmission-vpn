@@ -1,10 +1,15 @@
 import { z } from 'zod';
 
-import type { Web_Api_Schema } from '@/types/web/api.d.ts';
-import type { Web_Backup_Document } from '@/types/web/backup.d.ts';
+import { backupInfoHashPattern } from '@/web/regex.js';
+
+import type {
+  Web_BackupFormat_BackupDocumentSchema,
+  Web_BackupFormat_ParseBackupDocument_Returns,
+  Web_BackupFormat_ParseBackupDocument_Value,
+} from '@/types/web/backup-format.d.ts';
 
 /**
- * Backup Format - String map schema.
+ * Backup Format - String Map Schema.
  *
  * Restricts portable settings and secrets to their string-keyed API representation.
  * Rejecting nested values keeps the browser contract aligned with the Go decoder.
@@ -14,7 +19,7 @@ import type { Web_Backup_Document } from '@/types/web/backup.d.ts';
 const stringMapSchema = z.record(z.string(), z.string());
 
 /**
- * Backup Format - Profile options schema.
+ * Backup Format - Profile Options Schema.
  *
  * Describes every behavior that travels with a torrent profile.
  * Strict nested objects prevent unsupported settings from being silently accepted.
@@ -35,7 +40,7 @@ const profileOptionsSchema = z.object({
 }).strict();
 
 /**
- * Backup Format - Profile schema.
+ * Backup Format - Profile Schema.
  *
  * Validates portable custom profiles before conflict choices are shown.
  * Folder paths are constrained to the data volume expected by the importer.
@@ -56,7 +61,7 @@ const profileSchema = z.object({
 }).strict();
 
 /**
- * Backup Format - Torrent limits schema.
+ * Backup Format - Torrent Limits Schema.
  *
  * Preserves Transmission's complete per-torrent limit representation.
  * Integer and boolean constraints prevent coercion during restore.
@@ -78,7 +83,7 @@ const torrentLimitsSchema = z.object({
 }).strict();
 
 /**
- * Backup Format - VPN profile schema.
+ * Backup Format - Vpn Profile Schema.
  *
  * Carries provider endpoint configuration needed to recreate saved connections.
  * Bounds and enums reject configurations the control API cannot own.
@@ -106,7 +111,7 @@ const vpnProfileSchema = z.object({
 }).strict();
 
 /**
- * Backup Format - VPN connection schema.
+ * Backup Format - Vpn Connection Schema.
  *
  * Captures connection slots, credentials and routing choices as one strict unit.
  * Slot and port limits mirror the server-side import validator.
@@ -137,14 +142,14 @@ const vpnConnectionSchema = z.object({
 }).strict();
 
 /**
- * Backup Format - Document schema.
+ * Backup Format - Backup Document Schema.
  *
  * Mirrors the API's version-one schema and rejects unknown keys at every object level
  * before an uploaded file enters the wizard.
  *
  * @since 2.0.0
  */
-export const backupDocumentSchema: Web_Api_Schema<Web_Backup_Document> = z.object({
+export const backupDocumentSchema: Web_BackupFormat_BackupDocumentSchema = z.object({
   format: z.literal('transmission-vpn-export'),
   version: z.literal(1),
   exportedAt: z.string().datetime({ offset: true }),
@@ -174,7 +179,7 @@ export const backupDocumentSchema: Web_Api_Schema<Web_Backup_Document> = z.objec
   }).strict()).optional(),
   torrents: z.array(z.object({
     addedDate: z.number().int().optional(),
-    hash: z.string().regex(/^(?:[a-f\d]{40}|[a-f\d]{64})$/iu),
+    hash: z.string().regex(new RegExp(backupInfoHashPattern, 'iu')),
     name: z.string().min(1),
     metainfo: z.string().min(1),
     profileId: z.string().nullable(),
@@ -209,7 +214,7 @@ export const backupDocumentSchema: Web_Api_Schema<Web_Backup_Document> = z.objec
       lastUsedAt: z.string().datetime({ offset: true }).nullable(),
     }).strict()),
   }).strict().optional(),
-}).strict().refine((document: Web_Backup_Document): boolean => (
+}).strict().refine((document) => (
   document['settingsAndProfiles'] !== undefined
   || document['labels'] !== undefined
   || document['notifications'] !== undefined
@@ -219,15 +224,15 @@ export const backupDocumentSchema: Web_Api_Schema<Web_Backup_Document> = z.objec
 ), { message: 'The export does not contain any sections.' });
 
 /**
- * Backup Format - Parses document.
+ * Backup Format - Parse Backup Document.
  *
  * Provides the single browser entry point for uploaded backup files.
  * Callers receive only documents that satisfy the complete version-one contract.
  *
- * @param {unknown} value - Value.
+ * @param {Web_BackupFormat_ParseBackupDocument_Value} value - Value.
  *
- * @returns {Web_Backup_Document}
+ * @returns {Web_BackupFormat_ParseBackupDocument_Returns}
  *
  * @since 2.0.0
  */
-export const parseBackupDocument = (value: unknown): Web_Backup_Document => backupDocumentSchema.parse(value);
+export const parseBackupDocument = (value: Web_BackupFormat_ParseBackupDocument_Value): Web_BackupFormat_ParseBackupDocument_Returns => backupDocumentSchema.parse(value);

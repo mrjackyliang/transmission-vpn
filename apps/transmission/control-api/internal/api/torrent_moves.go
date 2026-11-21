@@ -46,66 +46,66 @@ type torrentMoveRunState struct {
 
 // torrentMoveFileState is one file's wanted and priority state from Transmission.
 type torrentMoveFileState struct {
-	Wanted   bool  `json:"wanted"`
-	Priority int64 `json:"priority"`
+	Wanted   bool
+	Priority int64
 }
 
 // torrentMoveFile is one current path reported from the source resume state.
 type torrentMoveFile struct {
-	Name string `json:"name"`
+	Name string
 }
 
 // torrentMoveSnapshot contains every daemon-owned value restored by a move.
 type torrentMoveSnapshot struct {
-	ID                      int64                  `json:"id"`
-	Name                    string                 `json:"name"`
-	HashString              string                 `json:"hashString"`
-	DownloadDirectory       string                 `json:"downloadDir"`
-	Labels                  []string               `json:"labels"`
-	Files                   []torrentMoveFile      `json:"files"`
-	FileStats               []torrentMoveFileState `json:"fileStats"`
-	Group                   string                 `json:"group"`
-	DownloadLimit           int64                  `json:"downloadLimit"`
-	DownloadLimited         bool                   `json:"downloadLimited"`
-	UploadLimit             int64                  `json:"uploadLimit"`
-	UploadLimited           bool                   `json:"uploadLimited"`
-	HonorsSessionLimits     bool                   `json:"honorsSessionLimits"`
-	BandwidthPriority       int64                  `json:"bandwidthPriority"`
-	SeedRatioLimit          float64                `json:"seedRatioLimit"`
-	SeedRatioMode           int64                  `json:"seedRatioMode"`
-	SeedIdleLimit           int64                  `json:"seedIdleLimit"`
-	SeedIdleMode            int64                  `json:"seedIdleMode"`
-	PeerLimit               int64                  `json:"peer-limit"`
-	Status                  int64                  `json:"status"`
-	PercentDone             float64                `json:"percentDone"`
-	MagnetLink              string                 `json:"magnetLink"`
-	MetadataPercentComplete float64                `json:"metadataPercentComplete"`
+	ID                      int64
+	Name                    string
+	HashString              string
+	DownloadDirectory       string
+	Labels                  []string
+	Files                   []torrentMoveFile
+	FileStats               []torrentMoveFileState
+	Group                   string
+	DownloadLimit           int64
+	DownloadLimited         bool
+	UploadLimit             int64
+	UploadLimited           bool
+	HonorsSessionLimits     bool
+	BandwidthPriority       int64
+	SeedRatioLimit          float64
+	SeedRatioMode           int64
+	SeedIdleLimit           int64
+	SeedIdleMode            int64
+	PeerLimit               int64
+	Status                  int64
+	PercentDone             float64
+	MagnetLink              string
+	MetadataPercentComplete float64
 }
 
-var torrentMoveFields = []string{
-	"bandwidthPriority",
-	"downloadDir",
-	"downloadLimit",
-	"downloadLimited",
-	"files",
-	"fileStats",
-	"group",
-	"hashString",
-	"honorsSessionLimits",
-	"id",
-	"labels",
-	"magnetLink",
-	"metadataPercentComplete",
-	"name",
-	"peer-limit",
-	"percentDone",
-	"seedIdleLimit",
-	"seedIdleMode",
-	"seedRatioLimit",
-	"seedRatioMode",
-	"status",
-	"uploadLimit",
-	"uploadLimited",
+var torrentMoveFields = []transmissionrpc.TorrentField{
+	transmissionrpc.TorrentFieldBandwidthPriority,
+	transmissionrpc.TorrentFieldDownloadDirectory,
+	transmissionrpc.TorrentFieldDownloadLimit,
+	transmissionrpc.TorrentFieldDownloadLimited,
+	transmissionrpc.TorrentFieldFiles,
+	transmissionrpc.TorrentFieldFileStats,
+	transmissionrpc.TorrentFieldGroup,
+	transmissionrpc.TorrentFieldHashString,
+	transmissionrpc.TorrentFieldHonorsSessionLimits,
+	transmissionrpc.TorrentFieldID,
+	transmissionrpc.TorrentFieldLabels,
+	transmissionrpc.TorrentFieldMagnetLink,
+	transmissionrpc.TorrentFieldMetadataPercentComplete,
+	transmissionrpc.TorrentFieldName,
+	transmissionrpc.TorrentFieldPeerLimit,
+	transmissionrpc.TorrentFieldPercentDone,
+	transmissionrpc.TorrentFieldSeedIdleLimit,
+	transmissionrpc.TorrentFieldSeedIdleMode,
+	transmissionrpc.TorrentFieldSeedRatioLimit,
+	transmissionrpc.TorrentFieldSeedRatioMode,
+	transmissionrpc.TorrentFieldStatus,
+	transmissionrpc.TorrentFieldUploadLimit,
+	transmissionrpc.TorrentFieldUploadLimited,
 }
 
 // moveTorrent transfers one torrent between two daemon connections.
@@ -234,10 +234,12 @@ func (server *Server) moveTorrentBetweenConnectionsLocked(
 		return server.logFailedTorrentMove(hash, name, sourceConnectionID, targetConnectionID, validationError)
 	}
 
-	addArguments := map[string]any{
-		"download-dir": normalizedDownloadDirectory,
-		"labels":       nonNilStrings(snapshot.Labels),
-		"paused":       true,
+	labels := nonNilStrings(snapshot.Labels)
+	paused := true
+	addRequest := transmissionrpc.AddTorrentRequest{
+		DownloadDirectory: &normalizedDownloadDirectory,
+		Labels:            &labels,
+		Paused:            &paused,
 	}
 	var metainfo []byte
 	if snapshot.MetadataPercentComplete < 1 {
@@ -246,7 +248,7 @@ func (server *Server) moveTorrentBetweenConnectionsLocked(
 
 			return server.logFailedTorrentMove(hash, name, sourceConnectionID, targetConnectionID, err)
 		}
-		addArguments["filename"] = snapshot.MagnetLink
+		addRequest.Filename = &snapshot.MagnetLink
 	} else {
 		if server.directoryBrowser == nil {
 			err = errors.New("directory controller is unavailable")
@@ -266,11 +268,11 @@ func (server *Server) moveTorrentBetweenConnectionsLocked(
 
 			return server.logFailedTorrentMove(hash, name, sourceConnectionID, targetConnectionID, err)
 		}
-		addArguments["metainfo"] = base64.StdEncoding.EncodeToString(metainfo)
+		encodedMetainfo := base64.StdEncoding.EncodeToString(metainfo)
+		addRequest.Metainfo = &encodedMetainfo
 	}
 
-	var addResult torrentAddRPCResult
-	err = target.Client.Call(ctx, "torrent-add", addArguments, &addResult)
+	addResult, err := target.Client.AddTorrent(ctx, addRequest)
 	if err != nil {
 		err = fmt.Errorf("add torrent to target connection: %w", err)
 
@@ -301,11 +303,9 @@ func (server *Server) moveTorrentBetweenConnectionsLocked(
 		name = addResult.Added.Name
 	}
 
-	if err = target.Client.Call(
+	if err = target.Client.SetTorrents(
 		ctx,
-		"torrent-set",
 		torrentMoveSetArguments(snapshot, hash),
-		nil,
 	); err != nil {
 		rollbackError := removeMovedTorrent(ctx, target, hash)
 		err = torrentMoveRollbackError(
@@ -331,11 +331,14 @@ func (server *Server) moveTorrentBetweenConnectionsLocked(
 			return server.logFailedTorrentMove(hash, name, sourceConnectionID, targetConnectionID, err)
 		}
 		for _, rename := range renames {
-			if err := target.Client.Call(ctx, "torrent-rename-path", map[string]any{
-				"ids":  []string{hash},
-				"name": rename.Name,
-				"path": rename.Path,
-			}, nil); err != nil {
+			if _, err := target.Client.RenameTorrentPath(
+				ctx,
+				transmissionrpc.RenameTorrentPathRequest{
+					IDs:  []string{hash},
+					Name: rename.Name,
+					Path: rename.Path,
+				},
+			); err != nil {
 				rollbackError := removeMovedTorrent(ctx, target, hash)
 				err = torrentMoveRollbackError(
 					"restore renamed torrent paths on target connection",
@@ -349,10 +352,10 @@ func (server *Server) moveTorrentBetweenConnectionsLocked(
 		}
 	}
 
-	err = source.Client.Call(ctx, "torrent-remove", map[string]any{
-		"delete-local-data": false,
-		"ids":               []string{hash},
-	}, nil)
+	err = source.Client.RemoveTorrents(ctx, transmissionrpc.RemoveTorrentsRequest{
+		IDs:             []string{hash},
+		DeleteLocalData: false,
+	})
 	warnings := []string{}
 	if err != nil {
 		var resultError *transmissionrpc.ResultError
@@ -514,11 +517,11 @@ func (server *Server) moveTorrentToProfile(
 		return failedTorrentMove(candidate.Hash, candidate.Name, err), err
 	}
 	moveFiles := !downloadPolicy.incompleteEnabled || runState.PercentDone >= 1
-	if err := target.Client.Call(ctx, "torrent-set-location", map[string]any{
-		"ids":      []string{candidate.Hash},
-		"location": targetDownloadDirectory,
-		"move":     moveFiles,
-	}, nil); err != nil {
+	if err := target.Client.SetLocation(ctx, transmissionrpc.SetLocationRequest{
+		IDs:      []string{candidate.Hash},
+		Location: targetDownloadDirectory,
+		Move:     moveFiles,
+	}); err != nil {
 		err = fmt.Errorf("move torrent files to the profile folder: %w", err)
 		if connectionMoved {
 			result.Warnings = append(
@@ -567,23 +570,22 @@ func (server *Server) restoreMovedTorrentState(
 		return []string{"The moved torrent's run state could not be restored because its Transmission daemon is unavailable."}
 	}
 	warnings := []string{}
-	if err := target.Client.Call(ctx, "torrent-verify", map[string]any{
-		"ids": []string{hash},
-	}, nil); err != nil {
+	request := transmissionrpc.TorrentSelectionRequest{IDs: []string{hash}}
+	if err := target.Client.VerifyTorrents(ctx, request); err != nil {
 		warnings = append(warnings, "The moved torrent could not be started for verification: "+err.Error())
 	}
 	if deferRunState {
 		return warnings
 	}
-	method := "torrent-start"
 	warning := "The moved torrent could not be restarted: "
+	var err error
 	if runState.Status == 0 {
-		method = "torrent-stop"
 		warning = "The moved torrent could not be paused again: "
+		err = target.Client.StopTorrents(ctx, request)
+	} else {
+		err = target.Client.StartTorrents(ctx, request)
 	}
-	if err := target.Client.Call(ctx, method, map[string]any{
-		"ids": []string{hash},
-	}, nil); err != nil {
+	if err != nil {
 		warnings = append(warnings, warning+err.Error())
 	}
 
@@ -607,25 +609,74 @@ func readTorrentMoveSnapshot(
 	source transmissionrpc.Daemon,
 	hash string,
 ) (torrentMoveSnapshot, error) {
-	var response struct {
-		Torrents []torrentMoveSnapshot `json:"torrents"`
-	}
-	if err := source.Client.Call(ctx, "torrent-get", map[string]any{
-		"fields": torrentMoveFields,
-		"ids":    []string{hash},
-	}, &response); err != nil {
+	response, err := source.Client.ListTorrents(
+		ctx,
+		transmissionrpc.ListTorrentsRequest{
+			Fields: torrentMoveFields,
+			IDs:    []string{hash},
+		},
+	)
+	if err != nil {
 		return torrentMoveSnapshot{}, fmt.Errorf("read source torrent: %w", err)
 	}
-	if len(response.Torrents) != 1 ||
-		!strings.EqualFold(response.Torrents[0].HashString, hash) {
+	if len(response.Torrents) != 1 {
+		return torrentMoveSnapshot{}, errors.New("source torrent is no longer available")
+	}
+	snapshot, err := decodeTorrentMoveSnapshot(response.Torrents[0])
+	if err != nil {
+		return torrentMoveSnapshot{}, fmt.Errorf("decode source torrent: %w", err)
+	}
+	if !strings.EqualFold(snapshot.HashString, hash) {
 		return torrentMoveSnapshot{}, errors.New("source torrent is no longer available")
 	}
 
-	return response.Torrents[0], nil
+	return snapshot, nil
+}
+
+func decodeTorrentMoveSnapshot(torrent transmissionrpc.Torrent) (torrentMoveSnapshot, error) {
+	var snapshot torrentMoveSnapshot
+	fields := []struct {
+		field  transmissionrpc.TorrentField
+		target any
+	}{
+		{field: transmissionrpc.TorrentFieldID, target: &snapshot.ID},
+		{field: transmissionrpc.TorrentFieldName, target: &snapshot.Name},
+		{field: transmissionrpc.TorrentFieldHashString, target: &snapshot.HashString},
+		{field: transmissionrpc.TorrentFieldDownloadDirectory, target: &snapshot.DownloadDirectory},
+		{field: transmissionrpc.TorrentFieldLabels, target: &snapshot.Labels},
+		{field: transmissionrpc.TorrentFieldFiles, target: &snapshot.Files},
+		{field: transmissionrpc.TorrentFieldFileStats, target: &snapshot.FileStats},
+		{field: transmissionrpc.TorrentFieldGroup, target: &snapshot.Group},
+		{field: transmissionrpc.TorrentFieldDownloadLimit, target: &snapshot.DownloadLimit},
+		{field: transmissionrpc.TorrentFieldDownloadLimited, target: &snapshot.DownloadLimited},
+		{field: transmissionrpc.TorrentFieldUploadLimit, target: &snapshot.UploadLimit},
+		{field: transmissionrpc.TorrentFieldUploadLimited, target: &snapshot.UploadLimited},
+		{field: transmissionrpc.TorrentFieldHonorsSessionLimits, target: &snapshot.HonorsSessionLimits},
+		{field: transmissionrpc.TorrentFieldBandwidthPriority, target: &snapshot.BandwidthPriority},
+		{field: transmissionrpc.TorrentFieldSeedRatioLimit, target: &snapshot.SeedRatioLimit},
+		{field: transmissionrpc.TorrentFieldSeedRatioMode, target: &snapshot.SeedRatioMode},
+		{field: transmissionrpc.TorrentFieldSeedIdleLimit, target: &snapshot.SeedIdleLimit},
+		{field: transmissionrpc.TorrentFieldSeedIdleMode, target: &snapshot.SeedIdleMode},
+		{field: transmissionrpc.TorrentFieldPeerLimit, target: &snapshot.PeerLimit},
+		{field: transmissionrpc.TorrentFieldStatus, target: &snapshot.Status},
+		{field: transmissionrpc.TorrentFieldPercentDone, target: &snapshot.PercentDone},
+		{field: transmissionrpc.TorrentFieldMagnetLink, target: &snapshot.MagnetLink},
+		{field: transmissionrpc.TorrentFieldMetadataPercentComplete, target: &snapshot.MetadataPercentComplete},
+	}
+	for _, field := range fields {
+		if err := torrent.DecodeValue(field.field, field.target); err != nil {
+			return torrentMoveSnapshot{}, err
+		}
+	}
+
+	return snapshot, nil
 }
 
 // torrentMoveSetArguments restores file choices and every requested per-torrent option.
-func torrentMoveSetArguments(snapshot torrentMoveSnapshot, hash string) map[string]any {
+func torrentMoveSetArguments(
+	snapshot torrentMoveSnapshot,
+	hash string,
+) transmissionrpc.SetTorrentsRequest {
 	filesWanted := []int{}
 	filesUnwanted := []int{}
 	priorityHigh := []int{}
@@ -647,46 +698,48 @@ func torrentMoveSetArguments(snapshot torrentMoveSnapshot, hash string) map[stri
 		}
 	}
 
-	arguments := map[string]any{
-		"bandwidthPriority":   snapshot.BandwidthPriority,
-		"downloadLimit":       snapshot.DownloadLimit,
-		"downloadLimited":     snapshot.DownloadLimited,
-		"group":               snapshot.Group,
-		"honorsSessionLimits": snapshot.HonorsSessionLimits,
-		"ids":                 []string{hash},
-		"peer-limit":          snapshot.PeerLimit,
-		"seedIdleLimit":       snapshot.SeedIdleLimit,
-		"seedIdleMode":        snapshot.SeedIdleMode,
-		"seedRatioLimit":      snapshot.SeedRatioLimit,
-		"seedRatioMode":       snapshot.SeedRatioMode,
-		"uploadLimit":         snapshot.UploadLimit,
-		"uploadLimited":       snapshot.UploadLimited,
+	changes := map[transmissionrpc.TorrentArgument]any{
+		transmissionrpc.TorrentArgumentBandwidthPriority:   snapshot.BandwidthPriority,
+		transmissionrpc.TorrentArgumentDownloadLimit:       snapshot.DownloadLimit,
+		transmissionrpc.TorrentArgumentDownloadLimited:     snapshot.DownloadLimited,
+		transmissionrpc.TorrentArgumentGroup:               snapshot.Group,
+		transmissionrpc.TorrentArgumentHonorsSessionLimits: snapshot.HonorsSessionLimits,
+		transmissionrpc.TorrentArgumentPeerLimit:           snapshot.PeerLimit,
+		transmissionrpc.TorrentArgumentSeedIdleLimit:       snapshot.SeedIdleLimit,
+		transmissionrpc.TorrentArgumentSeedIdleMode:        snapshot.SeedIdleMode,
+		transmissionrpc.TorrentArgumentSeedRatioLimit:      snapshot.SeedRatioLimit,
+		transmissionrpc.TorrentArgumentSeedRatioMode:       snapshot.SeedRatioMode,
+		transmissionrpc.TorrentArgumentUploadLimit:         snapshot.UploadLimit,
+		transmissionrpc.TorrentArgumentUploadLimited:       snapshot.UploadLimited,
 	}
 	if len(filesUnwanted) > 0 {
-		arguments["files-unwanted"] = filesUnwanted
+		changes[transmissionrpc.TorrentArgumentFilesUnwanted] = filesUnwanted
 	}
 	if len(filesWanted) > 0 {
-		arguments["files-wanted"] = filesWanted
+		changes[transmissionrpc.TorrentArgumentFilesWanted] = filesWanted
 	}
 	if len(priorityHigh) > 0 {
-		arguments["priority-high"] = priorityHigh
+		changes[transmissionrpc.TorrentArgumentPriorityHigh] = priorityHigh
 	}
 	if len(priorityLow) > 0 {
-		arguments["priority-low"] = priorityLow
+		changes[transmissionrpc.TorrentArgumentPriorityLow] = priorityLow
 	}
 	if len(priorityNormal) > 0 {
-		arguments["priority-normal"] = priorityNormal
+		changes[transmissionrpc.TorrentArgumentPriorityNormal] = priorityNormal
 	}
 
-	return arguments
+	return transmissionrpc.SetTorrentsRequest{
+		IDs:     []string{hash},
+		Changes: changes,
+	}
 }
 
 // removeMovedTorrent rolls back one paused target copy without deleting shared data.
 func removeMovedTorrent(ctx context.Context, target transmissionrpc.Daemon, hash string) error {
-	return target.Client.Call(ctx, "torrent-remove", map[string]any{
-		"delete-local-data": false,
-		"ids":               []string{hash},
-	}, nil)
+	return target.Client.RemoveTorrents(ctx, transmissionrpc.RemoveTorrentsRequest{
+		IDs:             []string{hash},
+		DeleteLocalData: false,
+	})
 }
 
 // torrentMoveRollbackError keeps the primary failure and reports failed cleanup.
@@ -734,22 +787,27 @@ func torrentExistsByHash(
 	daemon transmissionrpc.Daemon,
 	hash string,
 ) (bool, error) {
-	var response struct {
-		Torrents []struct {
-			HashString string `json:"hashString"`
-		} `json:"torrents"`
-	}
-	if err := daemon.Client.Call(ctx, "torrent-get", map[string]any{
-		"fields": []string{"hashString", "id"},
-		"ids":    []string{hash},
-	}, &response); err != nil {
+	response, err := daemon.Client.ListTorrents(
+		ctx,
+		transmissionrpc.ListTorrentsRequest{
+			Fields: []transmissionrpc.TorrentField{
+				transmissionrpc.TorrentFieldHashString,
+				transmissionrpc.TorrentFieldID,
+			},
+			IDs: []string{hash},
+		},
+	)
+	if err != nil {
 		return false, fmt.Errorf("query source torrent after remove: %w", err)
 	}
 	if len(response.Torrents) == 0 {
 		return false, nil
 	}
+	responseHash, _ := response.Torrents[0].Value(
+		transmissionrpc.TorrentFieldHashString,
+	).(string)
 	if len(response.Torrents) != 1 ||
-		!strings.EqualFold(response.Torrents[0].HashString, hash) {
+		!strings.EqualFold(responseHash, hash) {
 		return false, errors.New("source returned an invalid torrent selection")
 	}
 
@@ -764,20 +822,24 @@ func (server *Server) torrentLocationForMove(
 	ctx context.Context,
 	hash string,
 ) (torrentMoveCandidate, error) {
-	result := server.mergedTorrents(ctx, []string{"hashString", "id", "name"}, []string{hash})
+	result := server.mergedTorrents(ctx, []transmissionrpc.TorrentField{
+		transmissionrpc.TorrentFieldHashString,
+		transmissionrpc.TorrentFieldID,
+		transmissionrpc.TorrentFieldName,
+	}, []string{hash})
 	if !result.Complete {
 		return torrentMoveCandidate{}, errTorrentSelectionUnavailable
 	}
 
 	matches := []torrentMoveCandidate{}
 	for _, torrent := range result.Torrents {
-		torrentHash, _ := torrent["hashString"].(string)
+		torrentHash, _ := torrent[string(transmissionrpc.TorrentFieldHashString)].(string)
 		if !strings.EqualFold(torrentHash, hash) {
 			continue
 		}
 		connectionID, _ := torrent["connectionId"].(string)
-		name, _ := torrent["name"].(string)
-		facadeID, validID := integerValue(torrent["id"])
+		name, _ := torrent[string(transmissionrpc.TorrentFieldName)].(string)
+		facadeID, validID := integerValue(torrent[string(transmissionrpc.TorrentFieldID)])
 		if connectionID == "" || !validID {
 			return torrentMoveCandidate{}, errors.New("Transmission omitted the torrent connection")
 		}
@@ -855,20 +917,23 @@ func (server *Server) torrentsOnConnection(
 	if !found {
 		return nil, errTransmissionDaemonUnavailable
 	}
-	var response struct {
-		Torrents []map[string]any `json:"torrents"`
-	}
-	if err := daemon.Client.Call(ctx, "torrent-get", map[string]any{
-		"fields": []string{"hashString", "id", "name"},
-	}, &response); err != nil {
+	response, err := daemon.Client.ListTorrents(
+		ctx,
+		transmissionrpc.ListTorrentsRequest{Fields: []transmissionrpc.TorrentField{
+			transmissionrpc.TorrentFieldHashString,
+			transmissionrpc.TorrentFieldID,
+			transmissionrpc.TorrentFieldName,
+		}},
+	)
+	if err != nil {
 		return nil, errors.Join(errTransmissionDaemonUnavailable, err)
 	}
 
 	candidates := []torrentMoveCandidate{}
 	for _, torrent := range response.Torrents {
-		hash, _ := torrent["hashString"].(string)
-		name, _ := torrent["name"].(string)
-		daemonID, validID := integerValue(torrent["id"])
+		hash, _ := torrent.Value(transmissionrpc.TorrentFieldHashString).(string)
+		name, _ := torrent.Value(transmissionrpc.TorrentFieldName).(string)
+		daemonID, validID := integerValue(torrent.Value(transmissionrpc.TorrentFieldID))
 		facadeID, facadeError := transmissionrpc.FacadeID(daemon.Slot, daemonID)
 		if hash == "" || !validID || facadeError != nil {
 			return nil, errors.New("Transmission omitted a torrent hash")
@@ -928,7 +993,15 @@ func (server *Server) torrentsForProfileSelection(
 ) ([]torrentMoveCandidate, error) {
 	result := server.mergedTorrents(
 		ctx,
-		[]string{"downloadDir", "hashString", "id", "labels", "name", "percentDone", "status"},
+		[]transmissionrpc.TorrentField{
+			transmissionrpc.TorrentFieldDownloadDirectory,
+			transmissionrpc.TorrentFieldHashString,
+			transmissionrpc.TorrentFieldID,
+			transmissionrpc.TorrentFieldLabels,
+			transmissionrpc.TorrentFieldName,
+			transmissionrpc.TorrentFieldPercentDone,
+			transmissionrpc.TorrentFieldStatus,
+		},
 		nil,
 	)
 	if !result.Complete {
@@ -937,7 +1010,7 @@ func (server *Server) torrentsForProfileSelection(
 
 	candidates := []torrentMoveCandidate{}
 	for _, torrent := range result.Torrents {
-		hash, _ := torrent["hashString"].(string)
+		hash, _ := torrent[string(transmissionrpc.TorrentFieldHashString)].(string)
 		assignedProfileID, assigned := server.torrentProfileAssignments.profileID(hash)
 		connectionID, _ := torrent["connectionId"].(string)
 		_, namedProfileMatches := profileIDs[assignedProfileID]
@@ -945,12 +1018,12 @@ func (server *Server) torrentsForProfileSelection(
 		if !matches {
 			continue
 		}
-		name, _ := torrent["name"].(string)
-		downloadDirectory, _ := torrent["downloadDir"].(string)
-		labels, _ := rpcStringList(torrent["labels"])
-		statusNumber, _ := numericValue(torrent["status"])
-		percentDone, _ := numericValue(torrent["percentDone"])
-		facadeID, validID := integerValue(torrent["id"])
+		name, _ := torrent[string(transmissionrpc.TorrentFieldName)].(string)
+		downloadDirectory, _ := torrent[string(transmissionrpc.TorrentFieldDownloadDirectory)].(string)
+		labels, _ := rpcStringList(torrent[string(transmissionrpc.TorrentFieldLabels)])
+		statusNumber, _ := numericValue(torrent[string(transmissionrpc.TorrentFieldStatus)])
+		percentDone, _ := numericValue(torrent[string(transmissionrpc.TorrentFieldPercentDone)])
+		facadeID, validID := integerValue(torrent[string(transmissionrpc.TorrentFieldID)])
 		if hash == "" || connectionID == "" || downloadDirectory == "" || !validID {
 			return nil, errors.New("Transmission omitted a torrent profile location")
 		}
@@ -977,7 +1050,15 @@ func (server *Server) torrentLocations(
 ) (map[string]torrentMoveCandidate, error) {
 	result := server.mergedTorrents(
 		ctx,
-		[]string{"downloadDir", "hashString", "id", "labels", "name", "percentDone", "status"},
+		[]transmissionrpc.TorrentField{
+			transmissionrpc.TorrentFieldDownloadDirectory,
+			transmissionrpc.TorrentFieldHashString,
+			transmissionrpc.TorrentFieldID,
+			transmissionrpc.TorrentFieldLabels,
+			transmissionrpc.TorrentFieldName,
+			transmissionrpc.TorrentFieldPercentDone,
+			transmissionrpc.TorrentFieldStatus,
+		},
 		hashes,
 	)
 	if !result.Complete {
@@ -986,14 +1067,14 @@ func (server *Server) torrentLocations(
 
 	locations := make(map[string]torrentMoveCandidate, len(result.Torrents))
 	for _, torrent := range result.Torrents {
-		hash, _ := torrent["hashString"].(string)
+		hash, _ := torrent[string(transmissionrpc.TorrentFieldHashString)].(string)
 		connectionID, _ := torrent["connectionId"].(string)
-		name, _ := torrent["name"].(string)
-		downloadDirectory, _ := torrent["downloadDir"].(string)
-		labels, _ := rpcStringList(torrent["labels"])
-		statusNumber, _ := numericValue(torrent["status"])
-		percentDone, _ := numericValue(torrent["percentDone"])
-		facadeID, validID := integerValue(torrent["id"])
+		name, _ := torrent[string(transmissionrpc.TorrentFieldName)].(string)
+		downloadDirectory, _ := torrent[string(transmissionrpc.TorrentFieldDownloadDirectory)].(string)
+		labels, _ := rpcStringList(torrent[string(transmissionrpc.TorrentFieldLabels)])
+		statusNumber, _ := numericValue(torrent[string(transmissionrpc.TorrentFieldStatus)])
+		percentDone, _ := numericValue(torrent[string(transmissionrpc.TorrentFieldPercentDone)])
+		facadeID, validID := integerValue(torrent[string(transmissionrpc.TorrentFieldID)])
 		if hash != "" && connectionID != "" && downloadDirectory != "" && validID {
 			locations[strings.ToLower(hash)] = torrentMoveCandidate{
 				Hash:              strings.ToLower(hash),

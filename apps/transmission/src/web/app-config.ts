@@ -3,7 +3,7 @@ import brandMarkUrl from '@/web/assets/brand-mark.svg';
 import type { Web_AppConfig } from '@/types/web/app-config.d.ts';
 
 /**
- * App Config - Application config.
+ * App Config - App Config.
  *
  * Keeps product copy, storage keys, and token capabilities outside the shared
  * console foundation so another app can adopt it without editing shared files.

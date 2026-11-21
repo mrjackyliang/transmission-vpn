@@ -1,24 +1,78 @@
+import {
+  base64PaddingPattern,
+  dottedHostnamePattern,
+} from '@/web/regex.js';
+
 import type {
-  Web_Passkeys_JsonObject,
-  Web_Passkeys_PublicKeyCredentialStatic,
+  Web_Passkeys_Base64UrlToBuffer_Base64,
+  Web_Passkeys_Base64UrlToBuffer_Binary,
+  Web_Passkeys_Base64UrlToBuffer_Buffer,
+  Web_Passkeys_Base64UrlToBuffer_Bytes,
+  Web_Passkeys_Base64UrlToBuffer_Padded,
+  Web_Passkeys_Base64UrlToBuffer_Returns,
+  Web_Passkeys_Base64UrlToBuffer_Value,
+  Web_Passkeys_BufferToBase64Url_Binary,
+  Web_Passkeys_BufferToBase64Url_Buffer,
+  Web_Passkeys_BufferToBase64Url_Bytes,
+  Web_Passkeys_BufferToBase64Url_Returns,
+  Web_Passkeys_ConvertDescriptors_Descriptor,
+  Web_Passkeys_ConvertDescriptors_Descriptors,
+  Web_Passkeys_ConvertDescriptors_Entry,
+  Web_Passkeys_ConvertDescriptors_Returns,
+  Web_Passkeys_CreatePasskey_Credential,
+  Web_Passkeys_CreatePasskey_Options,
+  Web_Passkeys_CreatePasskey_OptionsValue,
+  Web_Passkeys_CreatePasskey_PublicKey,
+  Web_Passkeys_CreatePasskey_PublicKeyCredential,
+  Web_Passkeys_CreatePasskey_Returns,
+  Web_Passkeys_CreatePasskey_StaticCredential,
+  Web_Passkeys_CreatePasskey_User,
+  Web_Passkeys_CreatePasskey_UserEntity,
+  Web_Passkeys_CreatePasskey_UserValue,
+  Web_Passkeys_CredentialStatic_PublicKeyCredential,
+  Web_Passkeys_CredentialStatic_Returns,
+  Web_Passkeys_CredentialToJson_Assertion,
+  Web_Passkeys_CredentialToJson_Attestation,
+  Web_Passkeys_CredentialToJson_Base,
+  Web_Passkeys_CredentialToJson_Credential,
+  Web_Passkeys_CredentialToJson_Json,
+  Web_Passkeys_CredentialToJson_PartialCredential,
+  Web_Passkeys_CredentialToJson_Response,
+  Web_Passkeys_CredentialToJson_Returns,
+  Web_Passkeys_GetPasskey_AllowCredentials,
+  Web_Passkeys_GetPasskey_Credential,
+  Web_Passkeys_GetPasskey_Options,
+  Web_Passkeys_GetPasskey_OptionsValue,
+  Web_Passkeys_GetPasskey_PublicKey,
+  Web_Passkeys_GetPasskey_PublicKeyCredential,
+  Web_Passkeys_GetPasskey_Returns,
+  Web_Passkeys_GetPasskey_StaticCredential,
+  Web_Passkeys_PasskeysSupported_DottedHostname,
+  Web_Passkeys_PasskeysSupported_Hostname,
+  Web_Passkeys_PasskeysSupported_IsIPAddress,
+  Web_Passkeys_PasskeysSupported_Returns,
 } from '@/types/web/passkeys.d.ts';
 
 /**
- * Passkeys - Base64 URL to buffer.
+ * Passkeys - Base64 URL To Buffer.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @param {Web_Passkeys_Base64UrlToBuffer_Value} value - Value.
+ *
+ * @returns {Web_Passkeys_Base64UrlToBuffer_Returns}
+ *
  * @since 2.0.0
  */
-const base64UrlToBuffer = (value: string): ArrayBuffer => {
-  const base64: string = value.replaceAll('-', '+').replaceAll('_', '/');
-  const padded: string = base64.padEnd(Math.ceil(base64.length / 4) * 4, '=');
-  const binary: string = atob(padded);
-  const buffer: ArrayBuffer = new ArrayBuffer(binary.length);
-  const bytes: Uint8Array = new Uint8Array(buffer);
+const base64UrlToBuffer = (value: Web_Passkeys_Base64UrlToBuffer_Value): Web_Passkeys_Base64UrlToBuffer_Returns => {
+  const base64: Web_Passkeys_Base64UrlToBuffer_Base64 = value.replaceAll('-', '+').replaceAll('_', '/');
+  const padded: Web_Passkeys_Base64UrlToBuffer_Padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, '=');
+  const binary: Web_Passkeys_Base64UrlToBuffer_Binary = atob(padded);
+  const buffer: Web_Passkeys_Base64UrlToBuffer_Buffer = new ArrayBuffer(binary.length);
+  const bytes: Web_Passkeys_Base64UrlToBuffer_Bytes = new Uint8Array(buffer);
 
-  for (let index: number = 0; index < binary.length; index += 1) {
+  for (let index = 0; index < binary.length; index += 1) {
     Reflect.set(bytes, index, binary.charCodeAt(index));
   }
 
@@ -26,171 +80,108 @@ const base64UrlToBuffer = (value: string): ArrayBuffer => {
 };
 
 /**
- * Passkeys - Buffer to base64 URL.
+ * Passkeys - Buffer To Base64 URL.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @param {Web_Passkeys_BufferToBase64Url_Buffer} buffer - Buffer.
+ *
+ * @returns {Web_Passkeys_BufferToBase64Url_Returns}
+ *
  * @since 2.0.0
  */
-const bufferToBase64Url = (buffer: ArrayBuffer): string => {
-  const bytes: Uint8Array = new Uint8Array(buffer);
-  let binary: string = '';
+const bufferToBase64Url = (buffer: Web_Passkeys_BufferToBase64Url_Buffer): Web_Passkeys_BufferToBase64Url_Returns => {
+  const bytes: Web_Passkeys_BufferToBase64Url_Bytes = new Uint8Array(buffer);
+  let binary: Web_Passkeys_BufferToBase64Url_Binary = '';
 
   for (const byte of bytes) {
     binary += String.fromCharCode(byte);
   }
 
-  return btoa(binary).replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/u, '');
+  return btoa(binary).replaceAll('+', '-').replaceAll('/', '_').replace(new RegExp(base64PaddingPattern, 'u'), '');
 };
 
 /**
- * Passkeys - Credential static.
+ * Passkeys - Credential Static.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @returns {Web_Passkeys_CredentialStatic_Returns}
+ *
  * @since 2.0.0
  */
-const credentialStatic = (): Web_Passkeys_PublicKeyCredentialStatic => (
-  window.PublicKeyCredential as unknown as Web_Passkeys_PublicKeyCredentialStatic
-);
+const credentialStatic = (): Web_Passkeys_CredentialStatic_Returns => {
+  const publicKeyCredential: Web_Passkeys_CredentialStatic_PublicKeyCredential = window.PublicKeyCredential;
+
+  return publicKeyCredential as Web_Passkeys_CredentialStatic_Returns;
+};
 
 // Converts descriptor ids in an allow/exclude list from base64url to bytes.
 
 /**
- * Passkeys - Convert descriptors.
+ * Passkeys - Convert Descriptors.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @param {Web_Passkeys_ConvertDescriptors_Descriptors} descriptors - Descriptors.
+ *
+ * @returns {Web_Passkeys_ConvertDescriptors_Returns}
+ *
  * @since 2.0.0
  */
-const convertDescriptors = (descriptors: unknown): PublicKeyCredentialDescriptor[] | undefined => {
-  if (!Array.isArray(descriptors)) {
+const convertDescriptors = (descriptors: Web_Passkeys_ConvertDescriptors_Descriptors): Web_Passkeys_ConvertDescriptors_Returns => {
+  if (Array.isArray(descriptors) === false) {
     return undefined;
   }
 
-  return descriptors.map((descriptor): PublicKeyCredentialDescriptor => {
-    const entry: Web_Passkeys_JsonObject = descriptor as Web_Passkeys_JsonObject;
+  return descriptors.map((descriptor) => {
+    const entry: Web_Passkeys_ConvertDescriptors_Entry = descriptor as Web_Passkeys_ConvertDescriptors_Entry;
 
     return {
       ...entry,
       id: base64UrlToBuffer(String(entry['id'])),
       type: 'public-key',
-    } as PublicKeyCredentialDescriptor;
+    } as Web_Passkeys_ConvertDescriptors_Descriptor;
   });
-};
-
-/**
- * Passkeys - Supported.
- *
- * Browsers only offer passkeys in a secure context (https or localhost) and on a
- * domain name, never a bare IP address.
- *
- * @returns {boolean}
- *
- * @since 2.0.0
- */
-export const passkeysSupported = (): boolean => {
-  const hostname: string = window.location.hostname;
-  const isIPAddress: boolean = /^[\d.]+$/u.test(hostname) || hostname.includes(':') || hostname.startsWith('[');
-
-  return window.isSecureContext && typeof window.PublicKeyCredential === 'function' && !isIPAddress;
-};
-
-/**
- * Passkeys - Create Passkey.
- *
- * Runs the browser's passkey creation for server options and returns the credential
- * as JSON for the API.
- *
- * @param {Web_Passkeys_JsonObject} options - Options.
- *
- * @returns {Promise<Web_Passkeys_JsonObject>}
- *
- * @since 2.0.0
- */
-export const createPasskey = async (options: Web_Passkeys_JsonObject): Promise<Web_Passkeys_JsonObject> => {
-  const staticCredential: Web_Passkeys_PublicKeyCredentialStatic = credentialStatic();
-  const user: Web_Passkeys_JsonObject = options['user'] as Web_Passkeys_JsonObject;
-  const publicKey: PublicKeyCredentialCreationOptions = (typeof staticCredential['parseCreationOptionsFromJSON'] === 'function') ? staticCredential.parseCreationOptionsFromJSON(options) : {
-    ...(options as unknown as PublicKeyCredentialCreationOptions),
-    challenge: base64UrlToBuffer(String(options['challenge'])),
-    excludeCredentials: convertDescriptors(options['excludeCredentials']) ?? [],
-    user: {
-      ...(user as unknown as PublicKeyCredentialUserEntity),
-      id: base64UrlToBuffer(String(user['id'])),
-    },
-  };
-
-  const credential: Credential | null = await navigator.credentials.create({ publicKey });
-
-  if (credential === null) {
-    throw new Error('No passkey was created.');
-  }
-
-  return credentialToJson(credential as PublicKeyCredential);
-};
-
-/**
- * Passkeys - Get Passkey.
- *
- * Runs the browser's passkey sign-in for server options and returns the assertion as
- * JSON for the API.
- *
- * @param {Web_Passkeys_JsonObject} options - Options.
- *
- * @returns {Promise<Web_Passkeys_JsonObject>}
- *
- * @since 2.0.0
- */
-export const getPasskey = async (options: Web_Passkeys_JsonObject): Promise<Web_Passkeys_JsonObject> => {
-  const staticCredential: Web_Passkeys_PublicKeyCredentialStatic = credentialStatic();
-  const allowCredentials: PublicKeyCredentialDescriptor[] | undefined = convertDescriptors(options['allowCredentials']);
-  const publicKey: PublicKeyCredentialRequestOptions = (typeof staticCredential['parseRequestOptionsFromJSON'] === 'function') ? staticCredential.parseRequestOptionsFromJSON(options) : {
-    ...(options as unknown as PublicKeyCredentialRequestOptions),
-    challenge: base64UrlToBuffer(String(options['challenge'])),
-    ...((allowCredentials === undefined) ? {} : { allowCredentials }),
-  };
-
-  const credential: Credential | null = await navigator.credentials.get({ publicKey });
-
-  if (credential === null) {
-    throw new Error('No passkey was chosen.');
-  }
-
-  return credentialToJson(credential as PublicKeyCredential);
 };
 
 // Serializes a credential the way PublicKeyCredential.toJSON() does, for browsers
 // that don't have it yet.
 
 /**
- * Passkeys - Credential to JSON.
+ * Passkeys - Credential To JSON.
  *
  * Centralizes this operation for the surrounding workflow.
  * Callers reuse one implementation instead of repeating the behavior.
  *
+ * @param {Web_Passkeys_CredentialToJson_Credential} credential - Credential.
+ *
+ * @returns {Web_Passkeys_CredentialToJson_Returns}
+ *
  * @since 2.0.0
  */
-const credentialToJson = (credential: PublicKeyCredential): Web_Passkeys_JsonObject => {
+const credentialToJson = (credential: Web_Passkeys_CredentialToJson_Credential): Web_Passkeys_CredentialToJson_Returns => {
   // Older browsers ship PublicKeyCredential without toJSON() even though the types declare it.
-  if (typeof (credential as Partial<PublicKeyCredential>).toJSON === 'function') {
-    return credential.toJSON() as unknown as Web_Passkeys_JsonObject;
+  if (typeof (credential as Web_Passkeys_CredentialToJson_PartialCredential).toJSON === 'function') {
+    const json: Web_Passkeys_CredentialToJson_Json = credential.toJSON();
+
+    return json as Web_Passkeys_CredentialToJson_Returns;
   }
 
-  const response: AuthenticatorResponse = credential.response;
-  const base: Web_Passkeys_JsonObject = {
+  const response: Web_Passkeys_CredentialToJson_Response = credential.response;
+  const base: Web_Passkeys_CredentialToJson_Base = {
     authenticatorAttachment: credential.authenticatorAttachment,
-    clientExtensionResults: credential.getClientExtensionResults() as unknown as Web_Passkeys_JsonObject,
+    clientExtensionResults: credential.getClientExtensionResults(),
     id: credential.id,
     rawId: bufferToBase64Url(credential.rawId),
     type: credential.type,
   };
 
   if ('attestationObject' in response) {
-    const attestation: AuthenticatorAttestationResponse = response as AuthenticatorAttestationResponse;
+    const attestation: Web_Passkeys_CredentialToJson_Attestation = response as Web_Passkeys_CredentialToJson_Attestation;
 
     return {
       ...base,
@@ -202,7 +193,7 @@ const credentialToJson = (credential: PublicKeyCredential): Web_Passkeys_JsonObj
     };
   }
 
-  const assertion: AuthenticatorAssertionResponse = response as AuthenticatorAssertionResponse;
+  const assertion: Web_Passkeys_CredentialToJson_Assertion = response as Web_Passkeys_CredentialToJson_Assertion;
 
   return {
     ...base,
@@ -213,4 +204,97 @@ const credentialToJson = (credential: PublicKeyCredential): Web_Passkeys_JsonObj
       ...((assertion.userHandle === null) ? {} : { userHandle: bufferToBase64Url(assertion.userHandle) }),
     },
   };
+};
+
+/**
+ * Passkeys - Supported.
+ *
+ * Browsers only offer passkeys in a secure context (https or localhost) and on a
+ * domain name, never a bare IP address.
+ *
+ * @returns {Web_Passkeys_PasskeysSupported_Returns}
+ *
+ * @since 2.0.0
+ */
+export const passkeysSupported = (): Web_Passkeys_PasskeysSupported_Returns => {
+  const hostname: Web_Passkeys_PasskeysSupported_Hostname = window.location.hostname;
+  const dottedHostname: Web_Passkeys_PasskeysSupported_DottedHostname = new RegExp(dottedHostnamePattern, 'u').test(hostname);
+  const isIPAddress: Web_Passkeys_PasskeysSupported_IsIPAddress = (
+    dottedHostname === true
+    || hostname.includes(':')
+    || hostname.startsWith('[')
+  );
+
+  return (
+    window.isSecureContext === true
+    && typeof window.PublicKeyCredential === 'function'
+    && isIPAddress === false
+  );
+};
+
+/**
+ * Passkeys - Create Passkey.
+ *
+ * Runs the browser's passkey creation for server options and returns the credential
+ * as JSON for the API.
+ *
+ * @param {Web_Passkeys_CreatePasskey_Options} options - Options.
+ *
+ * @returns {Web_Passkeys_CreatePasskey_Returns}
+ *
+ * @since 2.0.0
+ */
+export const createPasskey = async (options: Web_Passkeys_CreatePasskey_Options): Web_Passkeys_CreatePasskey_Returns => {
+  const staticCredential: Web_Passkeys_CreatePasskey_StaticCredential = credentialStatic();
+  const user: Web_Passkeys_CreatePasskey_User = options['user'] as Web_Passkeys_CreatePasskey_User;
+  const optionsValue: Web_Passkeys_CreatePasskey_OptionsValue = options;
+  const userValue: Web_Passkeys_CreatePasskey_UserValue = user;
+  const publicKey: Web_Passkeys_CreatePasskey_PublicKey = (typeof staticCredential['parseCreationOptionsFromJSON'] === 'function') ? staticCredential.parseCreationOptionsFromJSON(options) : {
+    ...(optionsValue as Web_Passkeys_CreatePasskey_PublicKey),
+    challenge: base64UrlToBuffer(String(options['challenge'])),
+    excludeCredentials: convertDescriptors(options['excludeCredentials']) ?? [],
+    user: {
+      ...(userValue as Web_Passkeys_CreatePasskey_UserEntity),
+      id: base64UrlToBuffer(String(user['id'])),
+    },
+  };
+
+  const credential: Web_Passkeys_CreatePasskey_Credential = await navigator.credentials.create({ publicKey });
+
+  if (credential === null) {
+    throw new Error('No passkey was created.');
+  }
+
+  return credentialToJson(credential as Web_Passkeys_CreatePasskey_PublicKeyCredential);
+};
+
+/**
+ * Passkeys - Get Passkey.
+ *
+ * Runs the browser's passkey sign-in for server options and returns the assertion as
+ * JSON for the API.
+ *
+ * @param {Web_Passkeys_GetPasskey_Options} options - Options.
+ *
+ * @returns {Web_Passkeys_GetPasskey_Returns}
+ *
+ * @since 2.0.0
+ */
+export const getPasskey = async (options: Web_Passkeys_GetPasskey_Options): Web_Passkeys_GetPasskey_Returns => {
+  const staticCredential: Web_Passkeys_GetPasskey_StaticCredential = credentialStatic();
+  const allowCredentials: Web_Passkeys_GetPasskey_AllowCredentials = convertDescriptors(options['allowCredentials']);
+  const optionsValue: Web_Passkeys_GetPasskey_OptionsValue = options;
+  const publicKey: Web_Passkeys_GetPasskey_PublicKey = (typeof staticCredential['parseRequestOptionsFromJSON'] === 'function') ? staticCredential.parseRequestOptionsFromJSON(options) : {
+    ...(optionsValue as Web_Passkeys_GetPasskey_PublicKey),
+    challenge: base64UrlToBuffer(String(options['challenge'])),
+    ...((allowCredentials === undefined) ? {} : { allowCredentials }),
+  };
+
+  const credential: Web_Passkeys_GetPasskey_Credential = await navigator.credentials.get({ publicKey });
+
+  if (credential === null) {
+    throw new Error('No passkey was chosen.');
+  }
+
+  return credentialToJson(credential as Web_Passkeys_GetPasskey_PublicKeyCredential);
 };

@@ -11,6 +11,13 @@ import type {
 /**
  * App Navigation.
  *
+ * @since 2.4.1
+ */
+export type Web_AppNavigation_AppRouteForVpnTarget_ConnectionPath = string;
+
+/**
+ * App Navigation.
+ *
  * @since 2.0.0
  */
 export type Web_AppNavigation_Items = Web_Navigation_Items;
@@ -31,6 +38,16 @@ export type Web_AppNavigation_Paths = {
   vpnConnection: string;
   vpnNew: string;
 };
+
+/**
+ * App Navigation.
+ *
+ * @since 2.4.1
+ */
+export type Web_AppNavigation_ResolveAppNavigationPath_Pathname = string;
+export type Web_AppNavigation_ResolveAppNavigationPath_ConnectionPrefix = string;
+export type Web_AppNavigation_ResolveAppNavigationPath_EncodedConnectionId = string;
+export type Web_AppNavigation_ResolveAppNavigationPath_ConnectionId = string;
 
 /**
  * App Navigation - Route.

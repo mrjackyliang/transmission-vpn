@@ -476,7 +476,7 @@ func TestAddTorrentURLStartPreference(testingObject *testing.T) {
 					}
 				},
 			)
-			server.transmission = client
+			server.transmission = transmissionrpc.NewAdapter(client)
 
 			response := performRequest(
 				testingObject,
@@ -539,7 +539,7 @@ func TestAddTorrentURLStartFailureUsesProfileErrorContract(testingObject *testin
 			}
 		},
 	)
-	server.transmission = client
+	server.transmission = transmissionrpc.NewAdapter(client)
 
 	response := performRequest(
 		testingObject,
@@ -764,7 +764,11 @@ func TestAddTorrentPostCheckUsesItsOwnRefresh(testingObject *testing.T) {
 				return map[string]any{"torrents": []map[string]any{}}
 			case "torrent-add":
 				duplicateVisible.Store(false)
-				fixture.server.mergedTorrents(context.Background(), []string{"hashString", "id", "name"}, nil)
+				fixture.server.mergedTorrents(context.Background(), []transmissionrpc.TorrentField{
+					transmissionrpc.TorrentFieldHashString,
+					transmissionrpc.TorrentFieldID,
+					transmissionrpc.TorrentFieldName,
+				}, nil)
 
 				return map[string]any{"torrent-added": map[string]any{
 					"hashString": secondTestHash,
@@ -1352,7 +1356,7 @@ func newMultiTransmissionFixture(
 		testingObject.Fatalf("configure multi-daemon clients: %v", err)
 	}
 	server.transmissionClients = clients
-	server.transmission = clients
+	server.transmission = transmissionrpc.NewAdapter(clients)
 
 	return multiTransmissionFixture{
 		server:     server,

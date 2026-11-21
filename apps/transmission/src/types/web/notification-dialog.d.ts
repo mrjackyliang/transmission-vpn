@@ -1,0 +1,91 @@
+import type {
+  Dispatch,
+  FormEvent,
+  ReactElement,
+  RefObject,
+  SetStateAction,
+} from 'react';
+
+import type {
+  Web_Notifications_DialogProps,
+  Web_Notifications_Event,
+  Web_Notifications_Field,
+  Web_Notifications_Service,
+  Web_Notifications_Target,
+} from '@/types/web/notifications.d.ts';
+
+/**
+ * Notification Dialog.
+ *
+ * @since 2.4.1
+ */
+export type Web_NotificationDialog_FieldHint_Field = Web_Notifications_Field;
+export type Web_NotificationDialog_FieldHint_Target = Web_Notifications_Target | null;
+export type Web_NotificationDialog_FieldHint_Interpreter = string;
+export type Web_NotificationDialog_FieldHint_Cleared = boolean;
+export type Web_NotificationDialog_FieldHint_Returns = string;
+
+/**
+ * Notification Dialog.
+ *
+ * @since 2.4.1
+ */
+export type Web_NotificationDialog_NotificationDialog_Props = Web_Notifications_DialogProps;
+export type Web_NotificationDialog_NotificationDialog_Returns = ReactElement | null;
+export type Web_NotificationDialog_NotificationDialog_Events = Web_Notifications_Event[];
+export type Web_NotificationDialog_NotificationDialog_Interpreter = string;
+export type Web_NotificationDialog_NotificationDialog_OnClose = () => void;
+export type Web_NotificationDialog_NotificationDialog_OnSaved = () => Promise<void>;
+export type Web_NotificationDialog_NotificationDialog_Open = boolean;
+export type Web_NotificationDialog_NotificationDialog_Target = Web_Notifications_Target | null;
+export type Web_NotificationDialog_NotificationDialog_Service = Web_Notifications_Service | '';
+export type Web_NotificationDialog_NotificationDialog_SetService = Dispatch<SetStateAction<Web_NotificationDialog_NotificationDialog_Service>>;
+export type Web_NotificationDialog_NotificationDialog_ServiceState = [Web_NotificationDialog_NotificationDialog_Service, Web_NotificationDialog_NotificationDialog_SetService];
+export type Web_NotificationDialog_NotificationDialog_ServiceSubmissionAttempted = boolean;
+export type Web_NotificationDialog_NotificationDialog_SetServiceSubmissionAttempted = Dispatch<SetStateAction<Web_NotificationDialog_NotificationDialog_ServiceSubmissionAttempted>>;
+export type Web_NotificationDialog_NotificationDialog_ServiceSubmissionAttemptedState = [Web_NotificationDialog_NotificationDialog_ServiceSubmissionAttempted, Web_NotificationDialog_NotificationDialog_SetServiceSubmissionAttempted];
+export type Web_NotificationDialog_NotificationDialog_Name = string;
+export type Web_NotificationDialog_NotificationDialog_SetName = Dispatch<SetStateAction<Web_NotificationDialog_NotificationDialog_Name>>;
+export type Web_NotificationDialog_NotificationDialog_NameState = [Web_NotificationDialog_NotificationDialog_Name, Web_NotificationDialog_NotificationDialog_SetName];
+export type Web_NotificationDialog_NotificationDialog_Values = Record<string, string>;
+export type Web_NotificationDialog_NotificationDialog_SetValues = Dispatch<SetStateAction<Web_NotificationDialog_NotificationDialog_Values>>;
+export type Web_NotificationDialog_NotificationDialog_ValuesState = [Web_NotificationDialog_NotificationDialog_Values, Web_NotificationDialog_NotificationDialog_SetValues];
+export type Web_NotificationDialog_NotificationDialog_SelectedEvents = string[];
+export type Web_NotificationDialog_NotificationDialog_SetSelectedEvents = Dispatch<SetStateAction<Web_NotificationDialog_NotificationDialog_SelectedEvents>>;
+export type Web_NotificationDialog_NotificationDialog_SelectedEventsState = [Web_NotificationDialog_NotificationDialog_SelectedEvents, Web_NotificationDialog_NotificationDialog_SetSelectedEvents];
+export type Web_NotificationDialog_NotificationDialog_ClearSecrets = string[];
+export type Web_NotificationDialog_NotificationDialog_SetClearSecrets = Dispatch<SetStateAction<Web_NotificationDialog_NotificationDialog_ClearSecrets>>;
+export type Web_NotificationDialog_NotificationDialog_ClearSecretsState = [Web_NotificationDialog_NotificationDialog_ClearSecrets, Web_NotificationDialog_NotificationDialog_SetClearSecrets];
+export type Web_NotificationDialog_NotificationDialog_Error = unknown;
+export type Web_NotificationDialog_NotificationDialog_SetError = Dispatch<SetStateAction<Web_NotificationDialog_NotificationDialog_Error>>;
+export type Web_NotificationDialog_NotificationDialog_ErrorState = [Web_NotificationDialog_NotificationDialog_Error, Web_NotificationDialog_NotificationDialog_SetError];
+export type Web_NotificationDialog_NotificationDialog_Busy = boolean;
+export type Web_NotificationDialog_NotificationDialog_SetBusy = Dispatch<SetStateAction<Web_NotificationDialog_NotificationDialog_Busy>>;
+export type Web_NotificationDialog_NotificationDialog_BusyState = [Web_NotificationDialog_NotificationDialog_Busy, Web_NotificationDialog_NotificationDialog_SetBusy];
+export type Web_NotificationDialog_NotificationDialog_BaseId = string;
+export type Web_NotificationDialog_NotificationDialog_ServiceSelectRefValue = HTMLSelectElement | null;
+export type Web_NotificationDialog_NotificationDialog_ServiceSelectRef = RefObject<Web_NotificationDialog_NotificationDialog_ServiceSelectRefValue>;
+export type Web_NotificationDialog_NotificationDialog_Fields = Web_Notifications_Field[];
+export type Web_NotificationDialog_NotificationDialog_ToggleEvent_Key = string;
+export type Web_NotificationDialog_NotificationDialog_ToggleEvent_Returns = void;
+export type Web_NotificationDialog_NotificationDialog_ToggleEvent = (key: Web_NotificationDialog_NotificationDialog_ToggleEvent_Key) => Web_NotificationDialog_NotificationDialog_ToggleEvent_Returns;
+export type Web_NotificationDialog_NotificationDialog_Submit_Event = FormEvent<HTMLFormElement>;
+export type Web_NotificationDialog_NotificationDialog_Submit_Returns = Promise<void>;
+export type Web_NotificationDialog_NotificationDialog_Submit = (event: Web_NotificationDialog_NotificationDialog_Submit_Event) => Web_NotificationDialog_NotificationDialog_Submit_Returns;
+export type Web_NotificationDialog_NotificationDialog_Submit_ServiceSelect = HTMLSelectElement | null;
+export type Web_NotificationDialog_NotificationDialog_Submit_OrderedEvents = string[];
+export type Web_NotificationDialog_NotificationDialog_Submit_Settings = Record<string, string>;
+export type Web_NotificationDialog_NotificationDialog_ServiceIssue = string;
+export type Web_NotificationDialog_NotificationDialog_NameIssue = string;
+export type Web_NotificationDialog_NotificationDialog_EventsIssue = string;
+export type Web_NotificationDialog_NotificationDialog_Summary = string;
+export type Web_NotificationDialog_NotificationDialog_NextService = Web_Notifications_Service | '';
+export type Web_NotificationDialog_NotificationDialog_Issue = string;
+export type Web_NotificationDialog_NotificationDialog_Cleared = boolean;
+export type Web_NotificationDialog_NotificationDialog_Hint = string;
+export type Web_NotificationDialog_NotificationDialog_Saved = boolean;
+export type Web_NotificationDialog_NotificationDialog_Missing = boolean;
+export type Web_NotificationDialog_NotificationDialog_CanClear = boolean;
+export type Web_NotificationDialog_NotificationDialog_ActionLabel = string;
+export type Web_NotificationDialog_NotificationDialog_Note = ReactElement | null;
+export type Web_NotificationDialog_NotificationDialog_NextValue = string;

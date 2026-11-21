@@ -163,7 +163,7 @@ type Server struct {
 	capacity                    CapacityReader
 	vpnCommands                 vpnCommandGate
 	directoryBrowser            DirectoryBrowser
-	transmission                transmissionrpc.Caller
+	transmission                *transmissionrpc.Adapter
 	transmissionClients         *transmissionrpc.ClientSet
 	downloadCatalog             func(context.Context, provider.CatalogSource) ([]byte, error)
 	runtimeDirectory            string
@@ -338,7 +338,7 @@ func NewServer(config Config) (*Server, error) {
 		controller:                      config.Controller,
 		capacity:                        config.Capacity,
 		directoryBrowser:                config.DirectoryBrowser,
-		transmission:                    config.Transmission,
+		transmission:                    transmissionrpc.NewAdapter(config.Transmission),
 		transmissionClients:             config.TransmissionClients,
 		downloadCatalog:                 downloadCatalog,
 		runtimeDirectory:                config.RuntimeDirectory,
@@ -379,7 +379,7 @@ func NewServer(config Config) (*Server, error) {
 	server.rpcCompatibilityAllowed.Store(rpcCompatibilityAllowed)
 	server.applyDebugLogging(debugLogging)
 	if server.transmission == nil && server.transmissionClients != nil {
-		server.transmission = server.transmissionClients
+		server.transmission = transmissionrpc.NewAdapter(server.transmissionClients)
 	}
 	server.ensureConfiguredStorageDirectories(context.Background(), configurationSnapshot)
 	server.ensureSavedTorrentProfileDirectories(context.Background())
