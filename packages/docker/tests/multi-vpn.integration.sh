@@ -131,10 +131,12 @@ my $server = IO::Socket::INET->new(LocalPort => $port, Listen => 128, ReuseAddr 
 
 while (1) {
   my $client = $server->accept or next;
+  # The marker is renamed into place so a polling reader never sees it empty.
   if (defined $marker) {
-    open my $seen, '>', $marker or die "tcp marker: $!\n";
+    open my $seen, '>', "$marker.tmp" or die "tcp marker: $!\n";
     print {$seen} $client->peerhost . "\n";
     close $seen;
+    rename "$marker.tmp", $marker or die "tcp marker: $!\n";
   }
   close $client;
 }
@@ -481,6 +483,26 @@ verify_connection_layout() {
   fi
 }
 
+# nc and the web proxy return once the kernel completes the handshake, which can be
+# before the peer accepts the connection and records its source, so the marker is
+# polled. A probe opens one connection, so once the expected peer has recorded it,
+# the unexpected peer's marker is already final and is checked once.
+read_tunnel_source() {
+  local peer="${1}"
+  local attempt
+  local observed_source=""
+  for attempt in $(seq 1 10); do
+    observed_source="$(docker exec "${peer}" cat /tmp/tunnel-source 2> /dev/null || true)"
+    if [[ -n "${observed_source}" ]]; then
+      break
+    fi
+
+    sleep 1
+  done
+
+  printf '%s' "${observed_source}"
+}
+
 verify_isolation() {
   docker exec "${peer_zero}" rm -f /tmp/tunnel-source
   docker exec "${peer_one}" rm -f /tmp/tunnel-source
@@ -489,7 +511,7 @@ verify_isolation() {
     nc -z -w 3 -s 198.18.0.1 1.1.1.1 443; then
     fail 'Slot 0 could not reach its WireGuard peer from 198.18.0.1.'
   fi
-  if [[ "$(docker exec "${peer_zero}" cat /tmp/tunnel-source 2> /dev/null || true)" != '10.99.0.2' ]]; then
+  if [[ "$(read_tunnel_source "${peer_zero}")" != '10.99.0.2' ]]; then
     fail 'Peer zero did not see slot 0 after SNAT as 10.99.0.2.'
   fi
   if docker exec "${peer_one}" test -e /tmp/tunnel-source; then
@@ -501,7 +523,7 @@ verify_isolation() {
     nc -z -w 3 -s 198.18.1.1 1.1.1.1 443; then
     fail 'Slot 1 could not reach its WireGuard peer from 198.18.1.1.'
   fi
-  if [[ "$(docker exec "${peer_one}" cat /tmp/tunnel-source 2> /dev/null || true)" != '10.99.1.2' ]]; then
+  if [[ "$(read_tunnel_source "${peer_one}")" != '10.99.1.2' ]]; then
     fail 'Peer one did not see slot 1 after SNAT as 10.99.1.2.'
   fi
   if docker exec "${peer_zero}" test -e /tmp/tunnel-source; then
@@ -701,7 +723,7 @@ verify_web_proxy_dns_route() {
   if docker exec "${unexpected_peer}" test -e /tmp/dns-hit; then
     fail "Web proxy DNS for ${username} also reached ${unexpected_peer}."
   fi
-  if [[ "$(docker exec "${expected_peer}" cat /tmp/tunnel-source 2> /dev/null || true)" != "${expected_provider_address}" ]]; then
+  if [[ "$(read_tunnel_source "${expected_peer}")" != "${expected_provider_address}" ]]; then
     fail "Web proxy DNS answer for ${username} was not used through ${expected_peer}."
   fi
   if docker exec "${unexpected_peer}" test -e /tmp/tunnel-source; then
@@ -724,8 +746,14 @@ verify_web_proxy_route() {
     docker exec "${peer_one}" rm -f /tmp/tunnel-source
 
     response="$(web_proxy_connect "${username}" "${password}")"
-    expected_source="$(docker exec "${expected_peer}" \
-      cat /tmp/tunnel-source 2> /dev/null || true)"
+    # Only a tunnel the proxy opened can leave a late marker, so a failed connect
+    # is retried without waiting for one.
+    if [[ "${response}" == *'HTTP/1.1 200 Connection Established'* ]]; then
+      expected_source="$(read_tunnel_source "${expected_peer}")"
+    else
+      expected_source="$(docker exec "${expected_peer}" \
+        cat /tmp/tunnel-source 2> /dev/null || true)"
+    fi
     unexpected_source="$(docker exec "${unexpected_peer}" \
       cat /tmp/tunnel-source 2> /dev/null || true)"
     if [[ "${response}" == *'HTTP/1.1 200 Connection Established'* \

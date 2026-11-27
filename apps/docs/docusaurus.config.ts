@@ -140,16 +140,35 @@ const config: DocusaurusNovaConfig = {
             light: '#C5193D',
             dark: '#FE707A',
           },
-          secondary: undefined,
-          text: undefined,
-          border: undefined,
-          warning: undefined,
-          danger: undefined,
+          secondary: {
+            light: '#B7700A',
+            dark: '#F59E0B',
+          },
+          text: {
+            light: '#2F1D21',
+            dark: '#E9DDDF',
+          },
+          border: {
+            light: '#DAC8CC',
+            dark: '#4D383C',
+          },
+          warning: {
+            light: '#B06111',
+            dark: '#F19941',
+          },
+          danger: {
+            light: '#B8232F',
+            dark: '#EF5D68',
+          },
+          success: {
+            light: '#1F8433',
+            dark: '#4ED068',
+          },
         },
         fonts: {
-          display: undefined,
-          body: undefined,
-          code: undefined,
+          display: 'Oswald',
+          body: 'Source Sans 3',
+          code: 'Red Hat Mono',
         },
         navbar: 'compass',
         footer: 'commons',
@@ -206,8 +225,11 @@ const config: DocusaurusNovaConfig = {
 
       // Analytics.
       analytics: {
-        gtm: {
-          containerId: 'GTM-NJN3C25S',
+        googleAnalytics: {
+          measurementId: 'G-4P0KHCMPS3',
+        },
+        clarity: {
+          projectId: 'zjw8yxuvyg',
         },
       },
 
@@ -532,10 +554,20 @@ const config: DocusaurusNovaConfig = {
             href: 'https://www.mrjackyliang.com/work/',
           },
         ],
-        legal: [{
-          label: 'License',
-          href: 'https://github.com/mrjackyliang/transmission-vpn/blob/HEAD/LICENSE',
-        }],
+        legal: [
+          {
+            label: 'License',
+            href: 'https://github.com/mrjackyliang/transmission-vpn/blob/HEAD/LICENSE',
+          },
+          {
+            label: 'Terms of Use',
+            href: 'https://mrjackyliang.github.io/mrjackyliang/terms/',
+          },
+          {
+            label: 'Privacy Policy',
+            href: 'https://mrjackyliang.github.io/mrjackyliang/privacy/',
+          },
+        ],
       },
       layout: {
         docs: {

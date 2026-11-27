@@ -464,8 +464,8 @@
       "https://github.com/sponsors/mrjackyliang",
       "https://liang.nyc/paypal"
     ],
-    "privacyPolicy": "https://github.com/mrjackyliang/mrjackyliang/blob/HEAD/PRIVACY.md",
-    "termsOfUse": "https://github.com/mrjackyliang/mrjackyliang/blob/HEAD/TERMS.md"
+    "privacyPolicy": "https://mrjackyliang.github.io/mrjackyliang/privacy/",
+    "termsOfUse": "https://mrjackyliang.github.io/mrjackyliang/terms/"
   },
   "readme": {
     "badges": [
@@ -519,7 +519,6 @@
         "nova"
       ],
       "patterns": [
-        "/assets/",
         "graphify-out/",
         ".integration-state.*/",
         ".openvpn-integration-state.*/"
@@ -829,6 +828,11 @@
     }
   },
   "settings": {
+    "changelog": {
+      "workspaceOrder": [
+        "transmission-vpn-app-transmission"
+      ]
+    },
     "coverage": {
       "minimum": 50
     },

@@ -1,5 +1,13 @@
 # transmission-vpn-app-transmission
 
+## 2.4.2 - 2026-11-27
+
+### UPDATED
+- The documentation site now loads Google Analytics and Microsoft Clarity directly instead of through Google Tag Manager and has its own fonts and colors, and the project uses Nova 0.54.0.
+
+### FIXED
+- The image's multi-VPN integration tests wait up to 10 seconds for the test peer to record the tunnel source address instead of reading it right after the connection opens, so a peer that hasn't picked the connection up yet no longer fails them with "did not see slot 0 after SNAT".
+
 ## 2.4.1 - 2026-11-21
 
 ### UPDATED
